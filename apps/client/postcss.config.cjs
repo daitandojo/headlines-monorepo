@@ -1,6 +1,3 @@
-IGNORE_WHEN_COPYING_START
-IGNORE_WHEN_COPYING_END
-
 // apps/client/postcss.config.cjs
 const path = require('path')
 
