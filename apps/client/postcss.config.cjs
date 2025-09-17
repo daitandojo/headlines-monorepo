@@ -1,8 +1,8 @@
-// apps/client/postcss.config.cjs (version 2.1.0 - CJS Naming Fix)
+// apps/client/postcss.config.cjs (version 2.2.0 - Final CJS Naming)
 const path = require('path')
 
 // This configuration explicitly tells PostCSS where to find the Tailwind config.
-// This bypasses any auto-discovery logic that is failing in the monorepo setup.
+// The .cjs extension is critical to ensure it's treated as a CommonJS module.
 module.exports = {
   plugins: {
     tailwindcss: {

@@ -1,7 +1,8 @@
-// apps/client/next.config.js (version 11.0.0 - CJS Naming Fix)
+// apps/client/next.config.js (version 12.0.0 - Monorepo Final CJS)
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // This is critical for monorepo setups, especially for Tailwind CSS.
+  // This is critical for monorepo setups.
+  // It tells Next.js to explicitly compile the shared packages.
   transpilePackages: ['@headlines/ui', '@headlines/utils'],
 
   webpack: (config, { isServer }) => {
