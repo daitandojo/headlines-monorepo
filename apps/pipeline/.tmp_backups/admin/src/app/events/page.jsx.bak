@@ -1,0 +1,83 @@
+// apps/admin/src/app/events/page.jsx (version 1.2.1)
+'use client'
+
+import { PageHeader, Input, Accordion, LoadingOverlay, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, ScrollArea } from '@headlines/ui';
+import { EventListItem, ListHeader } from './columns';
+// DEFINITIVE FIX: Import the new, correct hook
+import { useAdminListManager } from '@/hooks/useAdminListManager';
+import { deleteAdminEvent, updateAdminEvent } from '@headlines/data-access';
+import { toast } from 'sonner';
+import { useCallback, useMemo } from 'react';
+import { Search } from 'lucide-react';
+
+export default function EventsPage() {
+    const { data, total, isLoading, searchTerm, setSearchTerm, sort, setSort, refetch, handleUpdate, handleRemove, setFilter } = useAdminListManager('/api/events', 'createdAt_desc');
+    
+    const availableCountries = useMemo(() => {
+        if (!data) return [];
+        const countrySet = new Set(data.map(item => item.country).filter(Boolean));
+        return Array.from(countrySet).sort();
+    }, [data]);
+
+    const handleOptimisticUpdate = useCallback(async (event, updateData) => {
+        handleUpdate(event._id, updateData);
+        const result = await updateAdminEvent(event._id, updateData);
+        if (!result.success) {
+            toast.error(`Update failed: ${result.error}`);
+            refetch();
+        }
+    }, [handleUpdate, refetch]);
+
+    const handleDelete = useCallback(async (eventId) => {
+        handleRemove(eventId);
+        toast.success('Event and its relations deleted.');
+        const result = await deleteAdminEvent(eventId);
+        if (!result.success) {
+            toast.error(`Deletion failed on server: ${result.error}. Reverting.`);
+            refetch();
+        }
+    }, [handleRemove, refetch]);
+    
+    const description = `Review, audit, and manage all ${data.length.toLocaleString()} visible events (${total.toLocaleString()} total).`;
+    
+    return (
+        <div className="flex flex-col h-full">
+            <PageHeader title="Event Management" description={description} />
+            <div className="mt-8 flex-grow min-h-0 flex flex-col">
+                <div className="flex items-center py-4 justify-between">
+                     <div className="flex items-center gap-4">
+                        <div className="relative flex-grow">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
+                            <Input
+                                placeholder="Filter by headline, country..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="h-10 pl-10 w-80"
+                            />
+                        </div>
+                        <Select onValueChange={(value) => setFilter('country', value === 'all' ? null : value)}>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Filter by country..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <ScrollArea className="h-72">
+                                    <SelectItem value="all">All Countries</SelectItem>
+                                    {availableCountries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                                </ScrollArea>
+                            </SelectContent>
+                        </Select>
+                     </div>
+                </div>
+                <div className="relative rounded-md border flex-grow overflow-y-auto">
+                    <LoadingOverlay isLoading={isLoading && data.length === 0} />
+                    <ListHeader sort={sort} setSort={setSort} />
+                    <Accordion type="single" collapsible>
+                        {data.map(event => (
+                            <EventListItem key={event._id} event={event} onUpdate={handleOptimisticUpdate} onDelete={handleDelete} />
+                        ))}
+                    </Accordion>
+                </div>
+            </div>
+        </div>
+    );
+}

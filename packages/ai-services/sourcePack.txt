@@ -1,0 +1,2028 @@
+# 📁 PROJECT DIRECTORY STRUCTURE
+
+Total: 53 files, 4 directories
+
+```
+headlines/
+├── 📁 src/
+│   ├── 📁 chains/
+│   │   ├── 📄 articleChain.js
+│   │   ├── 📄 articlePreAssessmentChain.js
+│   │   ├── 📄 batchHeadlineChain.js
+│   │   ├── 📄 clusteringChain.js
+│   │   ├── 📄 contactFinderChain.js
+│   │   ├── 📄 contactResolverChain.js
+│   │   ├── 📄 countryCorrectionChain.js
+│   │   ├── 📄 disambiguationChain.js
+│   │   ├── 📄 emailIntroChain.js
+│   │   ├── 📄 emailSubjectChain.js
+│   │   ├── 📄 entityCanonicalizerChain.js
+│   │   ├── 📄 entityExtractorChain.js
+│   │   ├── 📄 executiveSummaryChain.js
+│   │   ├── 📄 headlineChain.js
+│   │   ├── 📄 index.js
+│   │   ├── 📄 judgeChain.js
+│   │   ├── 📄 opportunityChain.js
+│   │   ├── 📄 sectionClassifierChain.js
+│   │   ├── 📄 selectorRepairChain.js
+│   │   ├── 📄 synthesisChain.js
+│   │   ├── 📄 translateChain.js
+│   │   └── 📄 watchlistSuggestionChain.js
+│   ├── 📁 lib/
+│   │   ├── 📄 langchain.js
+│   │   └── 📄 safeInvoke.js
+│   ├── 📁 schemas/
+│   │   ├── 📄 articleAssessmentSchema.js
+│   │   ├── 📄 articlePreAssessmentSchema.js
+│   │   ├── 📄 batchArticleAssessmentSchema.js
+│   │   ├── 📄 batchHeadlineAssessmentSchema.js
+│   │   ├── 📄 canonicalizerSchema.js
+│   │   ├── 📄 clusterSchema.js
+│   │   ├── 📄 countryCorrectionSchema.js
+│   │   ├── 📄 disambiguationSchema.js
+│   │   ├── 📄 emailIntroSchema.js
+│   │   ├── 📄 emailSubjectSchema.js
+│   │   ├── 📄 enrichContactSchema.js
+│   │   ├── 📄 entitySchema.js
+│   │   ├── 📄 executiveSummarySchema.js
+│   │   ├── 📄 findContactSchema.js
+│   │   ├── 📄 headlineAssessmentSchema.js
+│   │   ├── 📄 index.js
+│   │   ├── 📄 judgeSchema.js
+│   │   ├── 📄 opportunitySchema.js
+│   │   ├── 📄 sectionClassifierSchema.js
+│   │   ├── 📄 selectorRepairSchema.js
+│   │   ├── 📄 synthesisSchema.js
+│   │   ├── 📄 translateSchema.js
+│   │   └── 📄 watchlistSuggestionSchema.js
+│   ├── 📄 embeddings.js
+│   ├── 📄 index.js
+│   ├── 📄 search.js
+│   ├── 📄 vectorSearch.js
+│   └── 📄 wikipedia.js
+└── 📄 package.json
+```
+
+# 📋 PROJECT METADATA
+
+**Generated**: 2025-09-17T10:46:26.437Z
+**Repository Path**: /home/mark/Repos/projects/headlines/packages/ai-services
+**Total Files**: 53
+**Package**: @headlines/ai-services@1.0.0
+**Description**: Centralized, LangChain-powered AI and external service logic.
+
+
+
+---
+
+
+## 📄 package.json
+*Lines: 27, Size: 670 Bytes*
+
+```json
+{
+  "name": "@headlines/ai-services",
+  "version": "1.0.0",
+  "description": "Centralized, LangChain-powered AI and external service logic.",
+  "main": "src/index.js",
+  "type": "module",
+  "license": "ISC",
+  "dependencies": {
+    "@langchain/community": "*",
+    "@langchain/core": "*",
+    "@langchain/openai": "*",
+    "@langchain/pinecone": "*",
+    "@xenova/transformers": "^2.17.2",
+    "axios": "^1.7.2",
+    "langchain": "*",
+    "newsapi": "^2.4.1",
+    "p-limit": "^5.0.0",
+    "zod": "*"
+  },
+  "peerDependencies": {
+    "@headlines/config": "3.0.0",
+    "@headlines/models": "1.0.0",
+    "@headlines/prompts": "1.0.0",
+    "@headlines/utils": "1.2.0"
+  }
+}
+
+```
+
+## 📄 src/chains/articleChain.js
+*Lines: 64, Size: 2.17 KB*
+
+```javascript
+// packages/ai-services/src/chains/articleChain.js (version 2.4 - Confirmed Final)
+import {
+  ChatPromptTemplate,
+  HumanMessagePromptTemplate,
+  SystemMessagePromptTemplate,
+} from '@langchain/core/prompts'
+import { AIMessage, HumanMessage } from '@langchain/core/messages'
+import { JsonOutputParser } from '@langchain/core/output_parsers'
+import { RunnableSequence } from '@langchain/core/runnables'
+import { settings } from '@headlines/config/server'
+import {
+  getInstructionArticle,
+  shotsInputArticle,
+  shotsOutputArticle,
+} from '@headlines/prompts'
+import { getHighPowerModel } from '../lib/langchain.js'
+import { safeInvoke } from '../lib/safeInvoke.js'
+import { logger } from '@headlines/utils/server';
+import { articleAssessmentSchema } from '../schemas/index.js'
+
+const instructions = getInstructionArticle(settings)
+const systemPrompt = [
+  instructions.whoYouAre,
+  instructions.whatYouDo,
+  instructions.primaryMandate,
+  instructions.analyticalFramework,
+  instructions.scoring,
+  instructions.outputFormatDescription,
+  instructions.reiteration,
+].join('\n\n')
+
+const messages = [
+  SystemMessagePromptTemplate.fromTemplate(systemPrompt),
+  ...shotsInputArticle.flatMap((input, i) => [
+    new HumanMessage(input),
+    new AIMessage(shotsOutputArticle[i]),
+  ]),
+  HumanMessagePromptTemplate.fromTemplate('{article_text}'),
+]
+
+const prompt = ChatPromptTemplate.fromMessages(messages)
+const chain = RunnableSequence.from([prompt, getHighPowerModel(), new JsonOutputParser()])
+
+async function invoke(input) {
+  const result = await safeInvoke(chain, input, 'articleChain', articleAssessmentSchema)
+  if (result.error) return result
+  if (result.key_individuals?.length > 0) {
+    const articleTextLower = input.article_text.toLowerCase()
+    result.key_individuals = result.key_individuals.filter((ind) => {
+      if (!ind.name) return false
+      const isPresent = ind.name
+        .split(' ')
+        .filter((p) => p.length > 2)
+        .some((p) => articleTextLower.includes(p.toLowerCase()))
+      if (!isPresent)
+        logger.warn({ individual: ind.name }, 'Discarding hallucinated key individual.')
+      return isPresent
+    })
+  }
+  return result
+}
+
+export const articleChain = { invoke }
+
+```
+
+## 📄 src/chains/articlePreAssessmentChain.js
+*Lines: 29, Size: 1.13 KB*
+
+```javascript
+// packages/ai-services/src/chains/articlePreAssessmentChain.js (version 2.3 - Final)
+import { ChatPromptTemplate } from '@langchain/core/prompts'
+import { JsonOutputParser } from '@langchain/core/output_parsers'
+import { RunnableSequence } from '@langchain/core/runnables'
+import { instructionArticlePreAssessment } from '@headlines/prompts'
+import { getUtilityModel } from '../lib/langchain.js'
+import { safeInvoke } from '../lib/safeInvoke.js'
+import { articlePreAssessmentSchema } from '../schemas/index.js'
+
+const systemPrompt = [
+  instructionArticlePreAssessment.whoYouAre,
+  instructionArticlePreAssessment.whatYouDo,
+  instructionArticlePreAssessment.classificationFramework,
+  instructionArticlePreAssessment.outputFormatDescription,
+  instructionArticlePreAssessment.reiteration,
+].join('\n\n')
+
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', systemPrompt],
+  ['human', '{input}'],
+])
+
+const chain = RunnableSequence.from([prompt, getUtilityModel(), new JsonOutputParser()])
+
+export const articlePreAssessmentChain = {
+  invoke: (input) =>
+    safeInvoke(chain, input, 'articlePreAssessmentChain', articlePreAssessmentSchema),
+}
+
+```
+
+## 📄 src/chains/batchHeadlineChain.js
+*Lines: 30, Size: 1.23 KB*
+
+```javascript
+// packages/ai-services/src/chains/batchHeadlineChain.js (version 1.0)
+import { ChatPromptTemplate } from '@langchain/core/prompts'
+import { JsonOutputParser } from '@langchain/core/output_parsers'
+import { RunnableSequence } from '@langchain/core/runnables'
+import { instructionBatchHeadlineAssessment } from '@headlines/prompts'
+import { getHeadlineModel } from '../lib/langchain.js' // Use the specific model for headlines
+import { safeInvoke } from '../lib/safeInvoke.js'
+import { batchHeadlineAssessmentSchema } from '../schemas/index.js'
+
+const systemPrompt = [
+  instructionBatchHeadlineAssessment.whoYouAre,
+  instructionBatchHeadlineAssessment.whatYouDo,
+  instructionBatchHeadlineAssessment.primaryMandate,
+  instructionBatchHeadlineAssessment.analyticalFramework,
+  instructionBatchHeadlineAssessment.outputFormatDescription,
+  instructionBatchHeadlineAssessment.reiteration,
+].join('\n\n')
+
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', systemPrompt],
+  ['human', '{headlines_json_string}'],
+])
+
+const chain = RunnableSequence.from([prompt, getHeadlineModel(), new JsonOutputParser()])
+
+export const batchHeadlineChain = {
+  invoke: (input) =>
+    safeInvoke(chain, input, 'batchHeadlineChain', batchHeadlineAssessmentSchema),
+}
+
+```
+
+## 📄 src/chains/clusteringChain.js
+*Lines: 28, Size: 1 KB*
+
+```javascript
+// packages/ai-services/src/chains/clusteringChain.js (version 3.2 - Final)
+import { ChatPromptTemplate } from '@langchain/core/prompts'
+import { JsonOutputParser } from '@langchain/core/output_parsers'
+import { RunnableSequence } from '@langchain/core/runnables'
+import { instructionCluster } from '@headlines/prompts'
+import { getHighPowerModel } from '../lib/langchain.js'
+import { safeInvoke } from '../lib/safeInvoke.js'
+import { clusterSchema } from '../schemas/index.js'
+
+const systemPrompt = [
+  instructionCluster.whoYouAre,
+  instructionCluster.whatYouDo,
+  ...instructionCluster.guidelines,
+  instructionCluster.outputFormatDescription,
+  instructionCluster.reiteration,
+].join('\n\n')
+
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', systemPrompt],
+  ['human', '{articles_json_string}'],
+])
+
+const chain = RunnableSequence.from([prompt, getHighPowerModel(), new JsonOutputParser()])
+
+export const clusteringChain = {
+  invoke: (input) => safeInvoke(chain, input, 'clusteringChain', clusterSchema),
+}
+
+```
+
+## 📄 src/chains/contactFinderChain.js
+*Lines: 28, Size: 1.01 KB*
+
+```javascript
+// packages/ai-services/src/chains/contactFinderChain.js (version 2.3 - Final)
+import { ChatPromptTemplate } from '@langchain/core/prompts'
+import { JsonOutputParser } from '@langchain/core/output_parsers'
+import { RunnableSequence } from '@langchain/core/runnables'
+import { instructionContacts } from '@headlines/prompts'
+import { getHighPowerModel } from '../lib/langchain.js'
+import { safeInvoke } from '../lib/safeInvoke.js'
+import { findContactSchema } from '../schemas/index.js'
+
+const systemPrompt = [
+  instructionContacts.whoYouAre,
+  instructionContacts.whatYouDo,
+  ...instructionContacts.guidelines,
+  instructionContacts.outputFormatDescription,
+  instructionContacts.reiteration,
+].join('\n\n')
+
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', systemPrompt],
+  ['human', '{snippets}'],
+])
+
+const chain = RunnableSequence.from([prompt, getHighPowerModel(), new JsonOutputParser()])
+
+export const contactFinderChain = {
+  invoke: (input) => safeInvoke(chain, input, 'contactFinderChain', findContactSchema),
+}
+
+```
+
+## 📄 src/chains/contactResolverChain.js
+*Lines: 28, Size: 1.02 KB*
+
+```javascript
+// packages/ai-services/src/chains/contactResolverChain.js (version 2.3 - Final)
+import { ChatPromptTemplate } from '@langchain/core/prompts'
+import { JsonOutputParser } from '@langchain/core/output_parsers'
+import { RunnableSequence } from '@langchain/core/runnables'
+import { instructionEnrichContact } from '@headlines/prompts'
+import { getHighPowerModel } from '../lib/langchain.js'
+import { safeInvoke } from '../lib/safeInvoke.js'
+import { enrichContactSchema } from '../schemas/index.js'
+
+const systemPrompt = [
+  instructionEnrichContact.whoYouAre,
+  instructionEnrichContact.whatYouDo,
+  ...instructionEnrichContact.guidelines,
+  instructionEnrichContact.outputFormatDescription,
+].join('\n\n')
+
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', systemPrompt],
+  ['human', '{context}'],
+])
+
+const chain = RunnableSequence.from([prompt, getHighPowerModel(), new JsonOutputParser()])
+
+export const contactResolverChain = {
+  invoke: (input) =>
+    safeInvoke(chain, input, 'contactResolverChain', enrichContactSchema),
+}
+
+```
+
+## 📄 src/chains/countryCorrectionChain.js
+*Lines: 40, Size: 2.07 KB*
+
+```javascript
+// packages/ai-services/src/chains/countryCorrectionChain.js
+import { ChatPromptTemplate } from '@langchain/core/prompts'
+import { JsonOutputParser } from '@langchain/core/output_parsers'
+import { RunnableSequence } from '@langchain/core/runnables'
+import { getUtilityModel } from '../lib/langchain.js'
+import { safeInvoke } from '../lib/safeInvoke.js'
+import { countryCorrectionSchema } from '../schemas/index.js'
+
+const systemPrompt = `You are a data cleaning expert. Your sole task is to analyze a given text string that is supposed to represent a country and extract the single, correct, UN-recognized sovereign country name from it.
+
+**CRITICAL INSTRUCTIONS:**
+1.  Analyze the input string.
+2.  Identify the most likely country. For example, "Denmark (Aarhus)" should be "Denmark". "London" should be "United Kingdom".
+4.  Anything starting with "Central Europe" should be "Europe".
+5.  "Denmark & Sweden" should be "Scandinavia"
+6.  "International" should be "Global"
+7. "Nordic Region" should be "Scandinavia" (also if followed by something between brackets)
+8. "Pan-Europe" should be "Europe"
+9. "Sweden & Norway" should be "Scandinavia"
+10. "United States" should be "United States of America"
+11. "UK" should be "United Kingdom"
+12. anything starting with "Unknown" should simply be "Unknown"
+13.  If a valid country name can be determined, return it.
+14.  If the input is ambiguous or does not contain a clear country, you MUST return null.
+15.  You MUST respond ONLY with a valid JSON object in this format: {{"country": "Correct Country Name"}} or {{"country": null}}`;
+
+// DEFINITIVE FIX: The template variable must match the key used in the input object.
+// Langchain expects the input variable to be directly in the template string.
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', systemPrompt],
+  ['human', 'Location String: "{location_string}"'],
+])
+
+const chain = RunnableSequence.from([prompt, getUtilityModel(), new JsonOutputParser()])
+
+export const countryCorrectionChain = {
+  invoke: (input) =>
+    safeInvoke(chain, input, 'countryCorrectionChain', countryCorrectionSchema),
+}
+
+```
+
+## 📄 src/chains/disambiguationChain.js
+*Lines: 28, Size: 1.02 KB*
+
+```javascript
+// packages/ai-services/src/chains/disambiguationChain.js (version 2.3 - Final)
+import { ChatPromptTemplate } from '@langchain/core/prompts'
+import { JsonOutputParser } from '@langchain/core/output_parsers'
+import { RunnableSequence } from '@langchain/core/runnables'
+import { instructionDisambiguation } from '@headlines/prompts'
+import { getUtilityModel } from '../lib/langchain.js'
+import { safeInvoke } from '../lib/safeInvoke.js'
+import { disambiguationSchema } from '../schemas/index.js'
+
+const systemPrompt = [
+  instructionDisambiguation.whoYouAre,
+  instructionDisambiguation.whatYouDo,
+  ...instructionDisambiguation.guidelines,
+  instructionDisambiguation.outputFormatDescription,
+].join('\n\n')
+
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', systemPrompt],
+  ['human', '{inputText}'],
+])
+
+const chain = RunnableSequence.from([prompt, getUtilityModel(), new JsonOutputParser()])
+
+export const disambiguationChain = {
+  invoke: (input) =>
+    safeInvoke(chain, input, 'disambiguationChain', disambiguationSchema),
+}
+
+```
+
+## 📄 src/chains/emailIntroChain.js
+*Lines: 28, Size: 1.05 KB*
+
+```javascript
+// packages/ai-services/src/chains/emailIntroChain.js (version 2.3 - Final)
+import { ChatPromptTemplate } from '@langchain/core/prompts'
+import { JsonOutputParser } from '@langchain/core/output_parsers'
+import { RunnableSequence } from '@langchain/core/runnables'
+import { instructionEmailIntro } from '@headlines/prompts'
+import { getHighPowerModel } from '../lib/langchain.js'
+import { safeInvoke } from '../lib/safeInvoke.js'
+import { emailIntroSchema } from '../schemas/index.js'
+
+const systemPrompt = [
+  instructionEmailIntro.whoYouAre,
+  instructionEmailIntro.whatYouDo,
+  ...instructionEmailIntro.guidelines,
+  instructionEmailIntro.outputFormatDescription,
+  instructionEmailIntro.reiteration,
+].join('\n\n')
+
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', systemPrompt],
+  ['human', 'Client and Event Data: {payload_json_string}'],
+])
+
+const chain = RunnableSequence.from([prompt, getHighPowerModel(), new JsonOutputParser()])
+
+export const emailIntroChain = {
+  invoke: (input) => safeInvoke(chain, input, 'emailIntroChain', emailIntroSchema),
+}
+
+```
+
+## 📄 src/chains/emailSubjectChain.js
+*Lines: 28, Size: 1.06 KB*
+
+```javascript
+// packages/ai-services/src/chains/emailSubjectChain.js (version 2.3 - Final)
+import { ChatPromptTemplate } from '@langchain/core/prompts'
+import { JsonOutputParser } from '@langchain/core/output_parsers'
+import { RunnableSequence } from '@langchain/core/runnables'
+import { instructionEmailSubject } from '@headlines/prompts'
+import { getHighPowerModel } from '../lib/langchain.js'
+import { safeInvoke } from '../lib/safeInvoke.js'
+import { emailSubjectSchema } from '../schemas/index.js'
+
+const systemPrompt = [
+  instructionEmailSubject.whoYouAre,
+  instructionEmailSubject.whatYouDo,
+  ...instructionEmailSubject.guidelines,
+  instructionEmailSubject.outputFormatDescription,
+  instructionEmailSubject.reiteration,
+].join('\n\n')
+
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', systemPrompt],
+  ['human', 'Events Data: {events_json_string}'],
+])
+
+const chain = RunnableSequence.from([prompt, getHighPowerModel(), new JsonOutputParser()])
+
+export const emailSubjectChain = {
+  invoke: (input) => safeInvoke(chain, input, 'emailSubjectChain', emailSubjectSchema),
+}
+
+```
+
+## 📄 src/chains/entityCanonicalizerChain.js
+*Lines: 28, Size: 1.03 KB*
+
+```javascript
+// packages/ai-services/src/chains/entityCanonicalizerChain.js (version 2.3 - Final)
+import { ChatPromptTemplate } from '@langchain/core/prompts'
+import { JsonOutputParser } from '@langchain/core/output_parsers'
+import { RunnableSequence } from '@langchain/core/runnables'
+import { instructionCanonicalizer } from '@headlines/prompts'
+import { getUtilityModel } from '../lib/langchain.js'
+import { safeInvoke } from '../lib/safeInvoke.js'
+import { canonicalizerSchema } from '../schemas/index.js'
+
+const systemPrompt = [
+  instructionCanonicalizer.whoYouAre,
+  instructionCanonicalizer.whatYouDo,
+  ...instructionCanonicalizer.guidelines,
+  instructionCanonicalizer.outputFormatDescription,
+].join('\n\n')
+
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', systemPrompt],
+  ['human', '{entity_name}'],
+])
+
+const chain = RunnableSequence.from([prompt, getUtilityModel(), new JsonOutputParser()])
+
+export const entityCanonicalizerChain = {
+  invoke: (input) =>
+    safeInvoke(chain, input, 'entityCanonicalizerChain', canonicalizerSchema),
+}
+
+```
+
+## 📄 src/chains/entityExtractorChain.js
+*Lines: 27, Size: 988 Bytes*
+
+```javascript
+// packages/ai-services/src/chains/entityExtractorChain.js (version 2.3 - Final)
+import { ChatPromptTemplate } from '@langchain/core/prompts'
+import { JsonOutputParser } from '@langchain/core/output_parsers'
+import { RunnableSequence } from '@langchain/core/runnables'
+import { instructionEntity } from '@headlines/prompts'
+import { getUtilityModel } from '../lib/langchain.js'
+import { safeInvoke } from '../lib/safeInvoke.js'
+import { entitySchema } from '../schemas/index.js'
+
+const systemPrompt = [
+  instructionEntity.whoYouAre,
+  instructionEntity.whatYouDo,
+  ...instructionEntity.guidelines,
+  instructionEntity.outputFormatDescription,
+].join('\n\n')
+
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', systemPrompt],
+  ['human', '{article_text}'],
+])
+
+const chain = RunnableSequence.from([prompt, getUtilityModel(), new JsonOutputParser()])
+
+export const entityExtractorChain = {
+  invoke: (input) => safeInvoke(chain, input, 'entityExtractorChain', entitySchema),
+}
+
+```
+
+## 📄 src/chains/executiveSummaryChain.js
+*Lines: 29, Size: 1.1 KB*
+
+```javascript
+// packages/ai-services/src/chains/executiveSummaryChain.js (version 2.3 - Final)
+import { ChatPromptTemplate } from '@langchain/core/prompts'
+import { JsonOutputParser } from '@langchain/core/output_parsers'
+import { RunnableSequence } from '@langchain/core/runnables'
+import { instructionExecutiveSummary } from '@headlines/prompts'
+import { getHighPowerModel } from '../lib/langchain.js'
+import { safeInvoke } from '../lib/safeInvoke.js'
+import { executiveSummarySchema } from '../schemas/index.js'
+
+const systemPrompt = [
+  instructionExecutiveSummary.whoYouAre,
+  instructionExecutiveSummary.whatYouDo,
+  ...instructionExecutiveSummary.guidelines,
+  instructionExecutiveSummary.outputFormatDescription,
+  instructionExecutiveSummary.reiteration,
+].join('\n\n')
+
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', systemPrompt],
+  ['human', 'Run Data: {payload_json_string}'],
+])
+
+const chain = RunnableSequence.from([prompt, getHighPowerModel(), new JsonOutputParser()])
+
+export const executiveSummaryChain = {
+  invoke: (input) =>
+    safeInvoke(chain, input, 'executiveSummaryChain', executiveSummarySchema),
+}
+
+```
+
+## 📄 src/chains/headlineChain.js
+*Lines: 85, Size: 2.72 KB*
+
+```javascript
+// packages/ai-services/src/chains/headlineChain.js (version 4.2.1 - Confirmed Final)
+import {
+  ChatPromptTemplate,
+  HumanMessagePromptTemplate,
+  SystemMessagePromptTemplate,
+} from '@langchain/core/prompts'
+import { AIMessage, HumanMessage } from '@langchain/core/messages'
+import { JsonOutputParser } from '@langchain/core/output_parsers'
+import { RunnableSequence } from '@langchain/core/runnables'
+import {
+  instructionHeadlines,
+  shotsInputHeadlines,
+  shotsOutputHeadlines,
+} from '@headlines/prompts'
+import { getHighPowerModel } from '../lib/langchain.js'
+import { safeInvoke } from '../lib/safeInvoke.js'
+import { headlineAssessmentSchema } from '../schemas/index.js'
+import { settings } from '@headlines/config/server'
+
+const systemPrompt = [
+  instructionHeadlines.whoYouAre,
+  instructionHeadlines.whatYouDo,
+  instructionHeadlines.primaryMandate,
+  instructionHeadlines.analyticalFramework,
+  instructionHeadlines.outputFormatDescription,
+].join('\n\n')
+
+const messages = [
+  SystemMessagePromptTemplate.fromTemplate(systemPrompt),
+  ...shotsInputHeadlines.flatMap((input, i) => [
+    new HumanMessage(input),
+    new AIMessage(shotsOutputHeadlines[i]),
+  ]),
+  HumanMessagePromptTemplate.fromTemplate('{headlineWithContext}'),
+]
+
+const prompt = ChatPromptTemplate.fromMessages(messages)
+const chain = RunnableSequence.from([prompt, getHighPowerModel(), new JsonOutputParser()])
+
+function prepareInput({ article, hits }) {
+  let headlineWithContext = `[COUNTRY CONTEXT: ${article.country}] ${article.headline}`
+  if (hits.length > 0) {
+    const hitStrings = hits
+      .map(
+        (hit) => `[WATCHLIST HIT: ${hit.entity.name} (matched on '${hit.matchedTerm}')]`
+      )
+      .join(' ')
+    headlineWithContext = `${hitStrings} ${headlineWithContext}`
+  }
+  return { headlineWithContext }
+}
+
+async function invoke({ article, hits }) {
+  const input = prepareInput({ article, hits })
+  const result = await safeInvoke(chain, input, 'headlineChain', headlineAssessmentSchema)
+
+  if (result.error) {
+    return {
+      relevance_headline: 0,
+      assessment_headline: 'AI assessment failed.',
+      headline_en: article.headline,
+    }
+  }
+
+  const assessment = result.assessment?.[0]
+  if (assessment && hits.length > 0) {
+    let score = assessment.relevance_headline
+    if (settings.WATCHLIST_SCORE_BOOST > 0) {
+      score = Math.min(100, score + settings.WATCHLIST_SCORE_BOOST)
+      assessment.assessment_headline = `Watchlist boost (+${settings.WATCHLIST_SCORE_BOOST}). ${assessment.assessment_headline}`
+    }
+    assessment.relevance_headline = score
+  }
+
+  return (
+    assessment || {
+      relevance_headline: 0,
+      assessment_headline: 'AI assessment failed.',
+      headline_en: article.headline,
+    }
+  )
+}
+
+export const headlineChain = { invoke }
+
+```
+
+## 📄 src/chains/index.js
+*Lines: 47, Size: 2.99 KB*
+
+```javascript
+// packages/ai-services/src/chains/index.js (version 3.1 - Final)
+import { articleChain as ac } from './articleChain.js'
+import { articlePreAssessmentChain as apac } from './articlePreAssessmentChain.js'
+import { clusteringChain as cc } from './clusteringChain.js'
+import { contactFinderChain as cfc } from './contactFinderChain.js'
+import { contactResolverChain as crc } from './contactResolverChain.js'
+import { disambiguationChain as dc } from './disambiguationChain.js'
+import { emailIntroChain as eic } from './emailIntroChain.js'
+import { emailSubjectChain as esc } from './emailSubjectChain.js'
+import { entityCanonicalizerChain as ecc } from './entityCanonicalizerChain.js'
+import { entityExtractorChain as eec } from './entityExtractorChain.js'
+import { executiveSummaryChain as exsc } from './executiveSummaryChain.js'
+import { headlineChain as hc } from './headlineChain.js'
+import { judgeChain as jc } from './judgeChain.js'
+import { opportunityChain as oc } from './opportunityChain.js'
+import { sectionClassifierChain as scc } from './sectionClassifierChain.js'
+import { selectorRepairChain as src } from './selectorRepairChain.js'
+import { synthesisChain as sc } from './synthesisChain.js'
+import { watchlistSuggestionChain as wsc } from './watchlistSuggestionChain.js'
+import { batchHeadlineChain as bhc } from './batchHeadlineChain.js'
+import { translateChain as tc } from './translateChain.js'
+import { countryCorrectionChain as ccc } from './countryCorrectionChain.js'
+
+// DEFINITIVE FIX: Export each chain's invoke method as a standalone async function
+// to comply with "use server" constraints.
+export const articleChain = async (input) => ac.invoke(input)
+export const articlePreAssessmentChain = async (input) => apac.invoke(input)
+export const clusteringChain = async (input) => cc.invoke(input)
+export const contactFinderChain = async (input) => cfc.invoke(input)
+export const contactResolverChain = async (input) => crc.invoke(input)
+export const disambiguationChain = async (input) => dc.invoke(input)
+export const emailIntroChain = async (input) => eic.invoke(input)
+export const emailSubjectChain = async (input) => esc.invoke(input)
+export const entityCanonicalizerChain = async (input) => ecc.invoke(input)
+export const entityExtractorChain = async (input) => eec.invoke(input)
+export const executiveSummaryChain = async (input) => exsc.invoke(input)
+export const headlineChain = async (input) => hc.invoke(input)
+export const judgeChain = async (input) => jc.invoke(input)
+export const opportunityChain = async (input) => oc.invoke(input)
+export const sectionClassifierChain = async (input) => scc.invoke(input)
+export const selectorRepairChain = async (input) => src.invoke(input)
+export const synthesisChain = async (input) => sc.invoke(input)
+export const watchlistSuggestionChain = async (input) => wsc.invoke(input)
+export const batchHeadlineChain = async (input) => bhc.invoke(input)
+export const translateChain = async (input) => tc.invoke(input)
+export const countryCorrectionChain = async (input) => ccc.invoke(input)
+
+```
+
+## 📄 src/chains/judgeChain.js
+*Lines: 28, Size: 1011 Bytes*
+
+```javascript
+// packages/ai-services/src/chains/judgeChain.js (version 2.3 - Final)
+import { ChatPromptTemplate } from '@langchain/core/prompts'
+import { JsonOutputParser } from '@langchain/core/output_parsers'
+import { RunnableSequence } from '@langchain/core/runnables'
+import { instructionJudge } from '@headlines/prompts'
+import { getHighPowerModel } from '../lib/langchain.js'
+import { safeInvoke } from '../lib/safeInvoke.js'
+import { judgeSchema } from '../schemas/index.js'
+
+const systemPrompt = [
+  instructionJudge.whoYouAre,
+  instructionJudge.whatYouDo,
+  ...instructionJudge.guidelines,
+  instructionJudge.outputFormatDescription,
+  instructionJudge.reiteration,
+].join('\n\n')
+
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', systemPrompt],
+  ['human', 'Data for review: {payload_json_string}'],
+])
+
+const chain = RunnableSequence.from([prompt, getHighPowerModel(), new JsonOutputParser()])
+
+export const judgeChain = {
+  invoke: (input) => safeInvoke(chain, input, 'judgeChain', judgeSchema),
+}
+
+```
+
+## 📄 src/chains/opportunityChain.js
+*Lines: 29, Size: 1.07 KB*
+
+```javascript
+// packages/ai-services/src/chains/opportunityChain.js (version 2.4 - Final)
+import { ChatPromptTemplate } from '@langchain/core/prompts'
+import { JsonOutputParser } from '@langchain/core/output_parsers'
+import { RunnableSequence } from '@langchain/core/runnables'
+import { getInstructionOpportunities } from '@headlines/prompts'
+import { getHighPowerModel } from '../lib/langchain.js'
+import { safeInvoke } from '../lib/safeInvoke.js'
+import { opportunitySchema } from '../schemas/index.js'
+import { settings } from '@headlines/config/server'
+
+const instructions = getInstructionOpportunities(settings)
+const systemPrompt = [
+  instructions.whoYouAre,
+  instructions.whatYouDo,
+  ...instructions.guidelines,
+  instructions.outputFormatDescription,
+].join('\n\n')
+
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', systemPrompt],
+  ['human', '{context_text}'],
+])
+
+const chain = RunnableSequence.from([prompt, getHighPowerModel(), new JsonOutputParser()])
+
+export const opportunityChain = {
+  invoke: (input) => safeInvoke(chain, input, 'opportunityChain', opportunitySchema),
+}
+
+```
+
+## 📄 src/chains/sectionClassifierChain.js
+*Lines: 34, Size: 1.95 KB*
+
+```javascript
+// packages/ai-services/src/chains/sectionClassifierChain.js (version 2.3.0)
+import { ChatPromptTemplate } from '@langchain/core/prompts'
+import { JsonOutputParser } from '@langchain/core/output_parsers'
+import { RunnableSequence } from '@langchain/core/runnables'
+import { getUtilityModel } from '../lib/langchain.js' // Correctly import the getter function
+import { safeInvoke } from '../lib/safeInvoke.js'
+import { sectionClassifierSchema } from '../schemas/index.js'
+
+const INSTRUCTION = {
+  whoYouAre:
+    'You are a master website navigation analyst. Your task is to analyze a list of hyperlinks (anchor text and href) from a webpage and classify each one into one of four categories.',
+  guidelines: [
+    '**Categories:**',
+    '1.  **"news_section"**: A link to a major category or section of news (e.g., "Business", "Technology", "World News", "/erhverv", "/økonomi").',
+    '2.  **"article_headline"**: A link to a specific news article or story. The text is usually a full sentence or a descriptive title.',
+    '3.  **"navigation"**: A link to a functional page on the site (e.g., "About Us", "Contact", "Login").',
+    '4.  **"other"**: Any other type of link (advertisements, privacy policies, etc.).',
+    '**Instructions:**',
+    '-   You will receive a JSON array of link objects.',
+    '-   You MUST return a JSON object with a single key, "classifications".',
+    '-   The "classifications" array MUST contain one classification object for EACH link in the input, in the EXACT SAME ORDER.',
+  ],
+}
+
+const systemPrompt = [INSTRUCTION.whoYouAre, ...INSTRUCTION.guidelines].join('\n\n')
+const fullPrompt = `${systemPrompt}\n\nUser Input:\n{links_json_string}`
+const prompt = ChatPromptTemplate.fromTemplate(fullPrompt)
+const chain = RunnableSequence.from([prompt, getUtilityModel(), new JsonOutputParser()]) // Call the getter function
+
+export const sectionClassifierChain = {
+  invoke: (input) =>
+    safeInvoke(chain, input, 'sectionClassifierChain', sectionClassifierSchema),
+}
+
+```
+
+## 📄 src/chains/selectorRepairChain.js
+*Lines: 29, Size: 1.07 KB*
+
+```javascript
+// packages/ai-services/src/chains/selectorRepairChain.js (version 2.3 - Final)
+import { ChatPromptTemplate } from '@langchain/core/prompts'
+import { JsonOutputParser } from '@langchain/core/output_parsers'
+import { RunnableSequence } from '@langchain/core/runnables'
+import { instructionSelectorRepair } from '@headlines/prompts'
+import { getUtilityModel } from '../lib/langchain.js'
+import { safeInvoke } from '../lib/safeInvoke.js'
+import { selectorRepairSchema } from '../schemas/index.js'
+
+const systemPrompt = [
+  instructionSelectorRepair.whoYouAre,
+  instructionSelectorRepair.whatYouDo,
+  ...instructionSelectorRepair.guidelines,
+  instructionSelectorRepair.outputFormatDescription,
+  instructionSelectorRepair.reiteration,
+].join('\n\n')
+
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', systemPrompt],
+  ['human', '{payload_json_string}'],
+])
+
+const chain = RunnableSequence.from([prompt, getUtilityModel(), new JsonOutputParser()])
+
+export const selectorRepairChain = {
+  invoke: (input) =>
+    safeInvoke(chain, input, 'selectorRepairChain', selectorRepairSchema),
+}
+
+```
+
+## 📄 src/chains/synthesisChain.js
+*Lines: 27, Size: 1007 Bytes*
+
+```javascript
+// packages/ai-services/src/chains/synthesisChain.js (version 2.3 - Final)
+import { ChatPromptTemplate } from '@langchain/core/prompts'
+import { JsonOutputParser } from '@langchain/core/output_parsers'
+import { RunnableSequence } from '@langchain/core/runnables'
+import { instructionSynthesize } from '@headlines/prompts'
+import { getHighPowerModel } from '../lib/langchain.js'
+import { safeInvoke } from '../lib/safeInvoke.js'
+import { synthesisSchema } from '../schemas/index.js'
+
+const systemPrompt = [
+  instructionSynthesize.whoYouAre,
+  instructionSynthesize.whatYouDo,
+  ...instructionSynthesize.guidelines,
+  instructionSynthesize.outputFormatDescription,
+].join('\n\n')
+
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', systemPrompt],
+  ['human', '{context_json_string}'],
+])
+
+const chain = RunnableSequence.from([prompt, getHighPowerModel(), new JsonOutputParser()])
+
+export const synthesisChain = {
+  invoke: (input) => safeInvoke(chain, input, 'synthesisChain', synthesisSchema),
+}
+
+```
+
+## 📄 src/chains/translateChain.js
+*Lines: 29, Size: 1.06 KB*
+
+```javascript
+// packages/ai-services/src/chains/translateChain.js (version 1.0.0)
+import { ChatPromptTemplate } from '@langchain/core/prompts'
+import { JsonOutputParser } from '@langchain/core/output_parsers'
+import { RunnableSequence } from '@langchain/core/runnables'
+import { instructionTranslate } from '@headlines/prompts'
+import { getUtilityModel } from '../lib/langchain.js'
+import { safeInvoke } from '../lib/safeInvoke.js'
+import { translateSchema } from '../schemas/index.js'
+
+const systemPrompt = [
+  instructionTranslate.whoYouAre,
+  instructionTranslate.whatYouDo,
+  ...instructionTranslate.guidelines,
+  instructionTranslate.outputFormatDescription,
+  instructionTranslate.reiteration,
+].join('\\n\\n')
+
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', systemPrompt],
+  ['human', 'Target Language: {language}\\n\\nHTML Content:\\n```{html_content}```'],
+])
+
+const chain = RunnableSequence.from([prompt, getUtilityModel(), new JsonOutputParser()])
+
+export const translateChain = {
+  invoke: (input) =>
+    safeInvoke(chain, input, 'translateChain', translateSchema),
+}
+
+```
+
+## 📄 src/chains/watchlistSuggestionChain.js
+*Lines: 29, Size: 1.14 KB*
+
+```javascript
+// packages/ai-services/src/chains/watchlistSuggestionChain.js (version 2.3 - Final)
+import { ChatPromptTemplate } from '@langchain/core/prompts'
+import { JsonOutputParser } from '@langchain/core/output_parsers'
+import { RunnableSequence } from '@langchain/core/runnables'
+import { instructionWatchlistSuggestion } from '@headlines/prompts'
+import { getHighPowerModel } from '../lib/langchain.js'
+import { safeInvoke } from '../lib/safeInvoke.js'
+import { watchlistSuggestionSchema } from '../schemas/index.js'
+
+const systemPrompt = [
+  instructionWatchlistSuggestion.whoYouAre,
+  instructionWatchlistSuggestion.whatYouDo,
+  ...instructionWatchlistSuggestion.guidelines,
+  instructionWatchlistSuggestion.outputFormatDescription,
+  instructionWatchlistSuggestion.reiteration,
+].join('\n\n')
+
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', systemPrompt],
+  ['human', 'Events Data: {events_json_string}'],
+])
+
+const chain = RunnableSequence.from([prompt, getHighPowerModel(), new JsonOutputParser()])
+
+export const watchlistSuggestionChain = {
+  invoke: (input) =>
+    safeInvoke(chain, input, 'watchlistSuggestionChain', watchlistSuggestionSchema),
+}
+
+```
+
+## 📄 src/embeddings.js
+*Lines: 31, Size: 1.01 KB*
+
+```javascript
+// packages/ai-services/src/embeddings.js (version 2.0)
+'use server'
+
+import { pipeline } from '@xenova/transformers'
+
+// Use a singleton pattern to ensure we only load the model once per server instance.
+class EmbeddingPipeline {
+  static task = 'feature-extraction'
+  static model = 'Xenova/all-MiniLM-L6-v2' // Correct 384-dimension model
+  static instance = null
+
+  static async getInstance() {
+    if (this.instance === null) {
+      this.instance = await pipeline(this.task, this.model)
+    }
+    return this.instance
+  }
+}
+
+/**
+ * Generates an embedding for a given text using the local transformer model.
+ * @param {string} text The text to embed.
+ * @returns {Promise<Array<number>>} A promise that resolves to the embedding vector.
+ */
+export async function generateEmbedding(text) {
+  const extractor = await EmbeddingPipeline.getInstance()
+  const output = await extractor(text, { pooling: 'mean', normalize: true })
+  // The output tensor needs to be converted to a standard array.
+  return Array.from(output.data)
+}
+
+```
+
+## 📄 src/index.js
+*Lines: 84, Size: 2.36 KB*
+
+```javascript
+// packages/ai-services/src/index.js (version 7.2.0)
+'use server'
+
+import { callLanguageModel } from './lib/langchain.js'
+import * as chains from './chains/index.js'
+import * as search from './search.js'
+import * as wikipedia from './wikipedia.js'
+import * as embeddings from './embeddings.js'
+import * as vectorSearch from './vectorSearch.js'
+import { logger } from '@headlines/utils/server'
+
+// This is the primary public API of the package.
+// It only exports async functions, making it compatible with Next.js "use server" modules.
+
+export async function performAiSanityCheck(settings) {
+  try {
+    logger.info('🔬 Performing AI service sanity check (OpenAI)...')
+    const answer = await callLanguageModel({
+      modelName: settings.LLM_MODEL_UTILITY, // Use the dynamic utility model
+      prompt: 'What is in one word the name of the capital of France',
+      isJson: false,
+    })
+    if (
+      answer &&
+      typeof answer === 'string' &&
+      answer.trim().toLowerCase().includes('paris')
+    ) {
+      logger.info('✅ AI service sanity check passed.')
+      return true
+    } else {
+      logger.fatal(
+        { details: { expected: 'paris', received: answer } },
+        `OpenAI sanity check failed.`
+      )
+      return false
+    }
+  } catch (error) {
+    if (error.status === 401 || error.message?.includes('Incorrect API key')) {
+      logger.fatal(`OpenAI sanity check failed due to INVALID API KEY (401).`)
+    } else {
+      logger.fatal(
+        { err: error },
+        'OpenAI sanity check failed with an unexpected API error.'
+      )
+    }
+    return false
+  }
+}
+
+// Re-export all functions from submodules.
+export { callLanguageModel }
+export const {
+  articleChain,
+  articlePreAssessmentChain,
+  clusteringChain,
+  contactFinderChain,
+  contactResolverChain,
+  disambiguationChain,
+  emailIntroChain,
+  emailSubjectChain,
+  entityCanonicalizerChain,
+  entityExtractorChain,
+  executiveSummaryChain,
+  headlineChain,
+  batchHeadlineChain,
+  judgeChain,
+  opportunityChain,
+  sectionClassifierChain,
+  selectorRepairChain,
+  synthesisChain,
+  watchlistSuggestionChain,
+  translateChain,
+  countryCorrectionChain,
+} = chains
+
+export const {
+  findAlternativeSources,
+  performGoogleSearch,
+  findNewsApiArticlesForEvent,
+} = search
+export const { fetchWikipediaSummary } = wikipedia
+export const { generateEmbedding } = embeddings
+export const { findSimilarArticles } = vectorSearch
+
+```
+
+## 📄 src/lib/langchain.js
+*Lines: 92, Size: 2.69 KB*
+
+```javascript
+// packages/ai-services/src/lib/langchain.js (version 3.1.0)
+import { ChatOpenAI } from '@langchain/openai'
+import { env, settings } from '@headlines/config/server'
+import { logger } from '@headlines/utils/server';
+import { safeExecute } from '@headlines/utils/server';
+import { tokenTracker } from '@headlines/utils/server';
+import OpenAI from 'openai'
+
+// --- Model Instances ---
+const modelConfig = {
+  response_format: { type: 'json_object' },
+}
+
+// These are now functions that will be called after settings are initialized.
+export const getHeadlineModel = () => new ChatOpenAI({
+  modelName: settings.LLM_MODEL_HEADLINE_ASSESSMENT,
+}).bind(modelConfig)
+
+export const getHighPowerModel = () => new ChatOpenAI({
+  modelName: settings.LLM_MODEL_ARTICLE_ASSESSMENT,
+}).bind(modelConfig)
+
+export const getUtilityModel = () => new ChatOpenAI({
+  modelName: settings.LLM_MODEL_UTILITY,
+}).bind(modelConfig)
+
+
+// --- Central LLM Invocation Function ---
+const baseClient = new OpenAI({
+    apiKey: env.OPENAI_API_KEY,
+    timeout: 120 * 1000,
+    maxRetries: 3,
+});
+
+export async function callLanguageModel({
+  modelName,
+  prompt,
+  systemPrompt,
+  userContent,
+  isJson = true,
+  fewShotInputs = [],
+  fewShotOutputs = [],
+}) {
+  const messages = []
+
+  if (systemPrompt) {
+    const systemContent = typeof systemPrompt === 'object' ? JSON.stringify(systemPrompt) : systemPrompt
+    messages.push({ role: 'system', content: systemContent })
+  }
+
+  fewShotInputs.forEach((input, i) => {
+    const shotContent = typeof input === 'string' ? input : JSON.stringify(input)
+    if (shotContent) {
+      messages.push({ role: 'user', content: shotContent })
+      messages.push({ role: 'assistant', content: fewShotOutputs[i] })
+    }
+  })
+
+  const finalUserContent = userContent || prompt;
+  messages.push({ role: 'user', content: finalUserContent })
+  
+  logger.trace({ payload: { model: modelName, messages_count: messages.length } }, 'Sending payload to LLM.')
+
+  const result = await safeExecute(() =>
+    baseClient.chat.completions.create({
+        model: modelName,
+        messages: messages,
+        response_format: isJson ? { type: 'json_object' } : undefined,
+    })
+  );
+
+  if (!result) return { error: 'API call failed' };
+
+  if (result.usage) {
+    tokenTracker.recordUsage(modelName, result.usage);
+  }
+
+  const responseContent = result.choices[0].message.content;
+  logger.trace({ chars: responseContent.length }, 'Received LLM response.');
+
+  if (isJson) {
+    try {
+      return JSON.parse(responseContent);
+    } catch (parseError) {
+      logger.error({ err: parseError, details: responseContent }, `LLM response JSON Parse Error for model ${modelName}`);
+      return { error: 'JSON Parsing Error' };
+    }
+  }
+
+  return responseContent;
+}
+
+```
+
+## 📄 src/lib/safeInvoke.js
+*Lines: 102, Size: 3.01 KB*
+
+```javascript
+// packages/ai-services/src/lib/safeInvoke.js (version 3.2.0)
+import { logger } from '@headlines/utils/server'
+import { createHash } from 'crypto'
+
+// This dynamic import approach allows the package to be used in different contexts
+// without a hard dependency on the pipeline's internal structure.
+let getRedisClient
+try {
+  ;({ getRedisClient } = await import(
+    '../../../../apps/pipeline/src/utils/redisClient.js'
+  ))
+} catch (e) {
+  logger.warn('Could not import Redis client. In-memory caching will be used.')
+  getRedisClient = async () => null
+}
+
+const MAX_RETRIES = 1
+const CACHE_TTL_SECONDS = 60 * 60 * 24 // 24 hours
+
+// --- In-Memory Cache Fallback ---
+const inMemoryCache = new Map();
+
+function createCacheKey(agentName, input) {
+  const hash = createHash('sha256')
+  hash.update(JSON.stringify(input))
+  return `ai_cache:${agentName}:${hash.digest('hex')}`
+}
+
+export async function safeInvoke(chain, input, agentName, zodSchema) {
+  const redis = await getRedisClient()
+  const cacheKey = createCacheKey(agentName, input)
+
+  // --- Cache GET ---
+  if (redis) {
+    try {
+      const cachedResult = await redis.get(cacheKey)
+      if (cachedResult) {
+        logger.trace({ agent: agentName }, `[Redis Cache HIT] for ${agentName}.`)
+        return JSON.parse(cachedResult)
+      }
+    } catch (err) {
+      logger.error({ err, agent: agentName }, `Redis GET failed for ${agentName}.`)
+    }
+  } else if (inMemoryCache.has(cacheKey)) {
+    logger.trace({ agent: agentName }, `[In-Memory Cache HIT] for ${agentName}.`)
+    return inMemoryCache.get(cacheKey);
+  }
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const result = await chain.invoke(input)
+      const validation = zodSchema.safeParse(result)
+      if (!validation.success) {
+        logger.error(
+          {
+            details: validation.error.flatten(),
+            agent: agentName,
+            input,
+            output: result,
+          },
+          `Zod validation failed for ${agentName}.`
+        )
+        throw new Error('Zod validation failed')
+      }
+
+      const dataToCache = validation.data
+      
+      // --- Cache SET ---
+      if (redis) {
+        try {
+          await redis.set(cacheKey, JSON.stringify(dataToCache), {
+            EX: CACHE_TTL_SECONDS,
+          })
+        } catch (err) {
+          logger.error({ err, agent: agentName }, `Redis SET failed for ${agentName}.`)
+        }
+      } else {
+        inMemoryCache.set(cacheKey, dataToCache);
+      }
+
+      return dataToCache
+    } catch (error) {
+      if (
+        (error.message.includes('JSON') ||
+          error.message.includes('Zod validation failed')) &&
+        attempt < MAX_RETRIES
+      ) {
+        logger.warn(
+          { agent: agentName, attempt: attempt + 1 },
+          `LLM output validation failed for ${agentName}. Retrying...`
+        )
+        continue
+      }
+      logger.error(
+        { err: error, agent: agentName },
+        `LangChain invocation failed for ${agentName}.`
+      )
+      return { error: `Agent ${agentName} failed: ${error.message}` }
+    }
+  }
+}
+
+```
+
+## 📄 src/schemas/articleAssessmentSchema.js
+*Lines: 24, Size: 753 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/articleAssessmentSchema.js (version 1.1)
+import { z } from 'zod'
+
+export const articleAssessmentSchema = z.object({
+  reasoning: z.object({
+    event_type: z.string(),
+    is_liquidity_event: z.boolean(),
+    beneficiary: z.string(),
+  }),
+  // NEW FIELD: Added classification to the schema.
+  classification: z.enum(['New wealth', 'Wealth detection', 'Interview', 'IPO', 'Other']),
+  relevance_article: z.number().min(0).max(100),
+  assessment_article: z.string().min(1),
+  amount: z.number().nullable().optional(),
+  key_individuals: z.array(
+    z.object({
+      name: z.string(),
+      role_in_event: z.string(),
+      company: z.string().nullable(),
+      email_suggestion: z.string().nullable(),
+    })
+  ),
+})
+
+```
+
+## 📄 src/schemas/articlePreAssessmentSchema.js
+*Lines: 7, Size: 223 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/articlePreAssessmentSchema.js (version 1.0)
+import { z } from 'zod'
+
+export const articlePreAssessmentSchema = z.object({
+  classification: z.enum(['private', 'public', 'corporate']),
+})
+
+```
+
+## 📄 src/schemas/batchArticleAssessmentSchema.js
+*Lines: 8, Size: 285 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/batchArticleAssessmentSchema.js (version 1.0)
+import { z } from 'zod'
+import { articleAssessmentSchema } from './articleAssessmentSchema.js'
+
+export const batchArticleAssessmentSchema = z.object({
+  assessments: z.array(articleAssessmentSchema),
+})
+
+```
+
+## 📄 src/schemas/batchHeadlineAssessmentSchema.js
+*Lines: 9, Size: 371 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/batchHeadlineAssessmentSchema.js (version 1.0)
+import { z } from 'zod'
+import { headlineAssessmentSchema } from './headlineAssessmentSchema.js'
+
+// The batch schema reuses the single assessment schema
+export const batchHeadlineAssessmentSchema = z.object({
+  assessments: z.array(headlineAssessmentSchema.shape.assessment.element),
+})
+
+```
+
+## 📄 src/schemas/canonicalizerSchema.js
+*Lines: 7, Size: 188 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/canonicalizerSchema.js (version 1.0)
+import { z } from 'zod'
+
+export const canonicalizerSchema = z.object({
+  canonical_name: z.string().nullable(),
+})
+
+```
+
+## 📄 src/schemas/clusterSchema.js
+*Lines: 12, Size: 250 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/clusterSchema.js (version 1.0)
+import { z } from 'zod'
+
+export const clusterSchema = z.object({
+  events: z.array(
+    z.object({
+      event_key: z.string(),
+      article_ids: z.array(z.string()),
+    })
+  ),
+})
+
+```
+
+## 📄 src/schemas/countryCorrectionSchema.js
+*Lines: 7, Size: 269 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/countryCorrectionSchema.js
+import { z } from 'zod';
+
+export const countryCorrectionSchema = z.object({
+  country: z.string().nullable().describe("The single, corrected, UN-recognized country name, or null if not determinable."),
+});
+
+```
+
+## 📄 src/schemas/disambiguationSchema.js
+*Lines: 7, Size: 186 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/disambiguationSchema.js (version 1.0)
+import { z } from 'zod'
+
+export const disambiguationSchema = z.object({
+  best_title: z.string().nullable(),
+})
+
+```
+
+## 📄 src/schemas/emailIntroSchema.js
+*Lines: 10, Size: 240 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/emailIntroSchema.js (version 2.0)
+import { z } from 'zod'
+
+export const emailIntroSchema = z.object({
+  greeting: z.string(),
+  body: z.string(),
+  bullets: z.array(z.string()),
+  signoff: z.string(),
+})
+
+```
+
+## 📄 src/schemas/emailSubjectSchema.js
+*Lines: 7, Size: 184 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/emailSubjectSchema.js (version 1.0)
+import { z } from 'zod'
+
+export const emailSubjectSchema = z.object({
+  subject_headline: z.string().min(1),
+})
+
+```
+
+## 📄 src/schemas/enrichContactSchema.js
+*Lines: 14, Size: 335 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/enrichContactSchema.js (version 1.0)
+import { z } from 'zod'
+
+export const enrichContactSchema = z.object({
+  enriched_contacts: z.array(
+    z.object({
+      name: z.string(),
+      role_in_event: z.string(),
+      company: z.string(),
+      email_suggestion: z.string().nullable(),
+    })
+  ),
+})
+
+```
+
+## 📄 src/schemas/entitySchema.js
+*Lines: 8, Size: 191 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/entitySchema.js (version 1.0)
+import { z } from 'zod'
+
+export const entitySchema = z.object({
+  reasoning: z.string(),
+  entities: z.array(z.string()),
+})
+
+```
+
+## 📄 src/schemas/executiveSummarySchema.js
+*Lines: 7, Size: 176 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/executiveSummarySchema.js (version 1.0)
+import { z } from 'zod'
+
+export const executiveSummarySchema = z.object({
+  summary: z.string(),
+})
+
+```
+
+## 📄 src/schemas/findContactSchema.js
+*Lines: 7, Size: 183 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/findContactSchema.js (version 1.0)
+import { z } from 'zod'
+
+export const findContactSchema = z.object({
+  email: z.string().email().nullable(),
+})
+
+```
+
+## 📄 src/schemas/headlineAssessmentSchema.js
+*Lines: 13, Size: 362 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/headlineAssessmentSchema.js (version 1.0)
+import { z } from 'zod'
+
+const singleAssessmentSchema = z.object({
+  headline_en: z.string(),
+  relevance_headline: z.number().min(0).max(100),
+  assessment_headline: z.string(),
+})
+
+export const headlineAssessmentSchema = z.object({
+  assessment: z.array(singleAssessmentSchema),
+})
+
+```
+
+## 📄 src/schemas/index.js
+*Lines: 25, Size: 1.02 KB*
+
+```javascript
+// packages/ai-services/src/schemas/index.js (version 2.1)
+export * from './articleAssessmentSchema.js'
+export * from './articlePreAssessmentSchema.js'
+export * from './batchArticleAssessmentSchema.js'
+export * from './canonicalizerSchema.js'
+export * from './clusterSchema.js'
+export * from './disambiguationSchema.js'
+export * from './emailIntroSchema.js'
+export * from './emailSubjectSchema.js'
+export * from './enrichContactSchema.js'
+export * from './entitySchema.js'
+export * from './executiveSummarySchema.js'
+export * from './findContactSchema.js'
+export * from './headlineAssessmentSchema.js'
+export * from './judgeSchema.js'
+export * from './opportunitySchema.js'
+export * from './selectorRepairSchema.js'
+export * from './synthesisSchema.js'
+export * from './watchlistSuggestionSchema.js'
+export * from './sectionClassifierSchema.js'
+export * from './batchHeadlineAssessmentSchema.js'
+export * from './translateSchema.js'
+// DEFINITIVE FIX: Add the missing export for the new schema.
+export * from './countryCorrectionSchema.js'
+
+```
+
+## 📄 src/schemas/judgeSchema.js
+*Lines: 14, Size: 404 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/judgeSchema.js (version 1.0)
+import { z } from 'zod'
+
+const verdictSchema = z.object({
+  identifier: z.string(),
+  quality: z.enum(['Excellent', 'Good', 'Acceptable', 'Marginal', 'Poor', 'Irrelevant']),
+  commentary: z.string(),
+})
+
+export const judgeSchema = z.object({
+  event_judgements: z.array(verdictSchema),
+  opportunity_judgements: z.array(verdictSchema),
+})
+
+```
+
+## 📄 src/schemas/opportunitySchema.js
+*Lines: 22, Size: 929 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/opportunitySchema.js (version 2.1)
+import { z } from 'zod'
+
+export const opportunitySchema = z.object({
+  opportunities: z.array(
+    // DEFINITIVE FIX: Use .passthrough() to allow the AI to include extra fields
+    // without causing a validation error. We will only use the fields we define.
+    z.object({
+      reachOutTo: z.string().describe("The full name of the individual or family to contact."),
+      contactDetails: z.object({
+        email: z.string().email().nullable(),
+        role: z.string().nullable(),
+        company: z.string().nullable(),
+      }),
+      basedIn: z.string().nullable(),
+      whyContact: z.array(z.string()).describe("An array of concise, one-sentence reasons for contact."),
+      likelyMMDollarWealth: z.number().nullable(),
+      event_key: z.string().describe("The unique key of the source event for this opportunity."),
+    }).passthrough()
+  ),
+})
+
+```
+
+## 📄 src/schemas/sectionClassifierSchema.js
+*Lines: 14, Size: 411 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/sectionClassifierSchema.js (version 1.0)
+import { z } from 'zod'
+
+export const sectionClassifierSchema = z.object({
+  classifications: z.array(
+    z.object({
+      classification: z.enum(['news_section', 'article_headline', 'navigation', 'other']),
+      reasoning: z
+        .string()
+        .describe('A brief explanation for the classification choice.'),
+    })
+  ),
+})
+
+```
+
+## 📄 src/schemas/selectorRepairSchema.js
+*Lines: 13, Size: 415 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/selectorRepairSchema.js (version 1.0)
+import { z } from 'zod'
+
+export const selectorRepairSchema = z.object({
+  reasoning: z.string(),
+  suggested_selectors: z.object({
+    headlineSelector: z.string().optional(),
+    linkSelector: z.string().optional().nullable(),
+    headlineTextSelector: z.string().optional().nullable(),
+    articleSelector: z.string().optional(),
+  }),
+})
+
+```
+
+## 📄 src/schemas/synthesisSchema.js
+*Lines: 27, Size: 819 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/synthesisSchema.js (version 1.1)
+import { z } from 'zod'
+
+export const synthesisSchema = z.object({
+  events: z.array(
+    z.object({
+      headline: z.string().min(1),
+      summary: z.string().min(1),
+      advisor_summary: z
+        .string()
+        .min(1)
+        .describe('The one-sentence actionable summary for wealth advisors.'),
+      // DEFINITIVE FIX: Add the new classification field to the schema.
+      eventClassification: z.string().min(1).describe("The event's classification type."),
+      country: z.string().min(1),
+      key_individuals: z.array(
+        z.object({
+          name: z.string(),
+          role_in_event: z.string(),
+          company: z.string().nullable(),
+          email_suggestion: z.string().nullable(),
+        })
+      ),
+    })
+  ),
+})
+
+```
+
+## 📄 src/schemas/translateSchema.js
+*Lines: 7, Size: 179 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/translateSchema.js (version 1.0.0)
+import { z } from 'zod'
+
+export const translateSchema = z.object({
+  translated_html: z.string().min(1),
+})
+
+```
+
+## 📄 src/schemas/watchlistSuggestionSchema.js
+*Lines: 16, Size: 496 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/watchlistSuggestionSchema.js (version 2.0.0 - With Search Terms)
+import { z } from 'zod'
+
+export const watchlistSuggestionSchema = z.object({
+  suggestions: z.array(
+    z.object({
+      name: z.string(),
+      type: z.enum(['person', 'family', 'company']),
+      country: z.string(),
+      rationale: z.string(),
+      sourceEvent: z.string(),
+      searchTerms: z.array(z.string()).describe("An array of 2-4 unique, lowercase search terms."),
+    })
+  ),
+})
+
+```
+
+## 📄 src/search.js
+*Lines: 100, Size: 3.51 KB*
+
+```javascript
+// packages/ai-services/src/search.js (version 1.3)
+import axios from 'axios'
+import NewsAPI from 'newsapi'
+import { env } from '@headlines/config'
+import { logger } from '@headlines/utils/server'
+import { apiCallTracker } from '@headlines/utils/server'
+// DEFINITIVE FIX: Removed the server-only 'p-limit' dependency.
+// import pLimit from 'p-limit'
+
+// const searchLimiter = pLimit(3) // REMOVED
+const { SERPER_API_KEY, NEWSAPI_API_KEY } = env
+
+const serperClient = SERPER_API_KEY
+  ? axios.create({
+      baseURL: 'https://google.serper.dev',
+      headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
+    })
+  : null
+
+const newsapi = NEWSAPI_API_KEY ? new NewsAPI(NEWSAPI_API_KEY) : null
+
+if (!serperClient) {
+  logger.warn(
+    'SERPER_API_KEY not found. Google Search dependent functions will be disabled.'
+  )
+}
+if (!newsapi) {
+  logger.warn('NEWSAPI_API_KEY not found. NewsAPI dependent functions will be disabled.')
+}
+
+// RESILIENCE FIX: Created a retry wrapper for external API calls.
+async function withRetry(apiCall, serviceName, maxRetries = 2) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await apiCall()
+    } catch (error) {
+      const isRetryable = error.response && error.response.status >= 500
+      if (!isRetryable || attempt === maxRetries) {
+        logger.error(
+          { err: error?.response?.data || error },
+          `${serviceName} search failed.`
+        )
+        return { success: false, error: error.message, results: [] }
+      }
+      const delay = 1000 * Math.pow(2, attempt - 1) // Exponential backoff
+      logger.warn(`[${serviceName}] Attempt ${attempt} failed. Retrying in ${delay}ms...`)
+      await new Promise((res) => setTimeout(res, delay))
+    }
+  }
+}
+
+export async function findAlternativeSources(headline) {
+  if (!serperClient) return { success: false, results: [] }
+  return withRetry(async () => {
+    apiCallTracker.recordCall('serper_news')
+    // REMOVED p-limit wrapper
+    const response = await serperClient.post('/news', { q: headline })
+    return { success: true, results: response.data.news || [] }
+  }, 'Serper News')
+}
+
+export async function performGoogleSearch(query) {
+  if (!serperClient) return { success: false, snippets: 'SERPER_API_KEY not configured.' }
+  return withRetry(async () => {
+    apiCallTracker.recordCall('serper_search')
+    // REMOVED p-limit wrapper
+    const response = await serperClient.post('/search', { q: query })
+    const organicResults = response.data.organic || []
+    if (organicResults.length > 0) {
+      const snippets = organicResults
+        .slice(0, 5)
+        .map((res) => `- ${res.title}: ${res.snippet}`)
+        .join('\n')
+      return { success: true, snippets }
+    }
+    return { success: false, snippets: 'No search results found.' }
+  }, 'Serper Search')
+}
+
+export async function findNewsApiArticlesForEvent(headline) {
+  if (!newsapi) return { success: false, snippets: 'NewsAPI key not configured.' }
+  return withRetry(async () => {
+    apiCallTracker.recordCall('newsapi_search')
+    // REMOVED p-limit wrapper
+    const response = await newsapi.v2.everything({
+      q: `"${headline}"`,
+      pageSize: 5,
+      sortBy: 'relevancy',
+      language: 'en,da,sv,no',
+    })
+    if (response.articles && response.articles.length > 0) {
+      const snippets = response.articles
+        .map((a) => `- ${a.title} (${a.source.name}): ${a.description || ''}`)
+        .join('\n')
+      return { success: true, snippets }
+    }
+    return { success: false, snippets: 'No related articles found.' }
+  }, 'NewsAPI')
+}
+
+```
+
+## 📄 src/vectorSearch.js
+*Lines: 68, Size: 2.29 KB*
+
+```javascript
+// packages/ai-services/src/vectorSearch.js (version 1.1.0)
+import { Pinecone } from '@pinecone-database/pinecone'
+import { logger } from '@headlines/utils/server';
+import { generateEmbedding } from './embeddings.js'
+import { env } from '@headlines/config'
+
+const { PINECONE_API_KEY, PINECONE_INDEX_NAME } = env
+
+const SIMILARITY_THRESHOLD = 0.65
+const MAX_CONTEXT_ARTICLES = 3
+
+let pineconeIndex
+if (PINECONE_API_KEY) {
+  const pc = new Pinecone({ apiKey: PINECONE_API_KEY })
+  pineconeIndex = pc.index(PINECONE_INDEX_NAME)
+} else {
+  logger.warn(
+    'Pinecone API Key not found. RAG/vector search functionality will be disabled.'
+  )
+}
+
+/**
+ * Finds historical articles similar to a given query text by querying Pinecone.
+ * @param {string} queryText - The text to search for (e.g., a headline or comma-separated entities).
+ * @returns {Promise<Array<Object>>} A promise that resolves to an array of relevant historical articles.
+ */
+export async function findSimilarArticles(queryText) {
+  if (!pineconeIndex) return []
+  logger.info('RAG: Searching for historical context in Pinecone...');
+  if (!queryText || typeof queryText !== 'string' || queryText.trim().length === 0) return [];
+
+  try {
+    const queryEmbedding = await generateEmbedding(queryText);
+
+    const queryResponse = await pineconeIndex.query({
+      topK: MAX_CONTEXT_ARTICLES,
+      vector: queryEmbedding,
+      includeMetadata: true,
+    });
+
+    const relevantMatches = queryResponse.matches.filter(
+      (match) => match.score >= SIMILARITY_THRESHOLD
+    );
+
+    if (relevantMatches.length > 0) {
+      const retrievedArticlesForLogging = relevantMatches
+        .map(
+          (match) => `  - [Score: ${match.score.toFixed(3)}] "${match.metadata.headline}"`
+        )
+        .join('\n')
+      logger.info(
+        `RAG: Found ${relevantMatches.length} relevant historical articles:\n${retrievedArticlesForLogging}`
+      )
+      return relevantMatches.map((match) => ({
+        headline: match.metadata.headline,
+        newspaper: match.metadata.newspaper,
+        assessment_article: match.metadata.summary,
+      }))
+    } else {
+      logger.info('RAG: Found no relevant historical articles in Pinecone.')
+      return []
+    }
+  } catch (error) {
+    logger.error({ err: error }, 'RAG: Pinecone query or embedding generation failed.')
+    return []
+  }
+}
+
+```
+
+## 📄 src/wikipedia.js
+*Lines: 92, Size: 3.13 KB*
+
+```javascript
+// packages/ai-services/src/wikipedia.js (version 2.4)
+import { logger } from '@headlines/utils/server'
+import { apiCallTracker } from '@headlines/utils/server'
+import { disambiguationChain } from './chains/index.js'
+
+const WIKI_API_ENDPOINT = 'https://en.wikipedia.org/w/api.php'
+const WIKI_SUMMARY_LENGTH = 750
+
+async function fetchWithRetry(url, options, maxRetries = 2) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options)
+      if (!response.ok) {
+        throw new Error(`API returned status ${response.status}`)
+      }
+      return response
+    } catch (error) {
+      if (attempt === maxRetries) {
+        throw error // Rethrow the final error
+      }
+      const delay = 1000 * Math.pow(2, attempt - 1)
+      logger.warn(
+        `[Wikipedia Fetch] Attempt ${attempt} failed for ${url}. Retrying in ${delay}ms...`
+      )
+      await new Promise((res) => setTimeout(res, delay))
+    }
+  }
+}
+
+export async function fetchWikipediaSummary(query) {
+  if (!query) return { success: false, error: 'Query cannot be empty.' }
+  try {
+    apiCallTracker.recordCall('wikipedia')
+    const searchParams = new URLSearchParams({
+      action: 'query',
+      list: 'search',
+      srsearch: query,
+      srlimit: '5',
+      format: 'json',
+    })
+    const searchResponse = await fetchWithRetry(
+      `${WIKI_API_ENDPOINT}?${searchParams.toString()}`
+    )
+    const searchData = await searchResponse.json()
+    const searchResults = searchData.query.search
+    if (!searchResults || searchResults.length === 0)
+      throw new Error(`No search results for "${query}".`)
+
+    const userContent = `Original Query: "${query}"\n\nSearch Results:\n${JSON.stringify(searchResults.map((r) => ({ title: r.title, snippet: r.snippet })))}`
+    // DEFINITIVE FIX: Changed from .invoke to direct await
+    const disambiguationResponse = await disambiguationChain({
+      inputText: userContent,
+    })
+
+    if (disambiguationResponse.error || !disambiguationResponse.best_title) {
+      throw new Error(
+        disambiguationResponse.error ||
+          `AI agent could not disambiguate a relevant page for "${query}".`
+      )
+    }
+
+    const { best_title } = disambiguationResponse
+
+    const summaryParams = new URLSearchParams({
+      action: 'query',
+      prop: 'extracts',
+      exintro: 'true',
+      explaintext: 'true',
+      titles: best_title,
+      format: 'json',
+      redirects: '1',
+    })
+    const summaryResponse = await fetchWithRetry(
+      `${WIKI_API_ENDPOINT}?${summaryParams.toString()}`
+    )
+    const summaryData = await summaryResponse.json()
+    const pages = summaryData.query.pages
+    const pageId = Object.keys(pages)[0]
+    const summary = pages[pageId]?.extract
+    if (!summary) throw new Error(`Could not extract summary for page "${best_title}".`)
+
+    const conciseSummary =
+      summary.length > WIKI_SUMMARY_LENGTH
+        ? summary.substring(0, WIKI_SUMMARY_LENGTH) + '...'
+        : summary
+    return { success: true, summary: conciseSummary }
+  } catch (error) {
+    logger.warn(`Wikipedia lookup for "${query}" failed: ${error.message}`)
+    return { success: false, error: error.message }
+  }
+}
+
+```

@@ -1,0 +1,73 @@
+// apps/admin/src/app/articles/columns.jsx (version 1.1.0)
+'use client'
+
+import React, { useState, useEffect, useRef } from 'react';
+import { Button, Badge, Input } from '@headlines/ui';
+import { ArrowUpDown, Trash2, ExternalLink, Edit } from 'lucide-react';
+import { format } from 'date-fns';
+
+const EditableCell = ({ initialValue, onSave }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [value, setValue] = useState(initialValue);
+    const inputRef = useRef(null);
+
+    useEffect(() => {
+        if (isEditing) inputRef.current?.focus();
+    }, [isEditing]);
+
+    const handleSave = () => {
+        if (value.trim() && value.trim() !== initialValue) {
+            onSave(value.trim());
+        }
+        setIsEditing(false);
+    };
+
+    if (isEditing) {
+        return <Input ref={inputRef} value={value} onChange={(e) => setValue(e.target.value)} onBlur={handleSave} onKeyDown={(e) => e.key === 'Enter' && handleSave()} className="h-8"/>;
+    }
+
+    return <div className="group flex items-center cursor-pointer" onClick={() => setIsEditing(true)}><span className="truncate">{initialValue}</span><Edit className="h-3 w-3 ml-2 text-muted-foreground opacity-0 group-hover:opacity-100"/></div>;
+}
+
+
+export const columns = (onUpdate, onDelete) => [
+    {
+        accessorKey: 'relevance_headline',
+        header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>HL Score <ArrowUpDown className="ml-2 h-4 w-4" /></Button>,
+        cell: ({ row }) => <Badge variant="outline">{row.original.relevance_headline}</Badge>
+    },
+    {
+        accessorKey: 'relevance_article',
+        header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>Article Score <ArrowUpDown className="ml-2 h-4 w-4" /></Button>,
+        cell: ({ row }) => <Badge variant={row.original.relevance_article > 50 ? 'default' : 'secondary'}>{row.original.relevance_article || 'N/A'}</Badge>
+    },
+    {
+        accessorKey: 'headline',
+        header: 'Headline',
+        cell: ({ row }) => <EditableCell initialValue={row.original.headline} onSave={(newValue) => onUpdate(row.original, { headline: newValue })} />
+    },
+    {
+        accessorKey: 'newspaper',
+        header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>Source <ArrowUpDown className="ml-2 h-4 w-4" /></Button>,
+    },
+    {
+        accessorKey: 'country',
+        header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>Country <ArrowUpDown className="ml-2 h-4 w-4" /></Button>,
+    },
+    {
+        accessorKey: 'createdAt',
+        header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>Discovered <ArrowUpDown className="ml-2 h-4 w-4" /></Button>,
+        cell: ({ row }) => format(new Date(row.original.createdAt), 'dd MMM yyyy, HH:mm'),
+    },
+    {
+        id: 'actions',
+        cell: ({ row }) => (
+            <div className="flex items-center justify-end gap-2">
+                <a href={row.original.link} target="_blank" rel="noopener noreferrer">
+                    <Button variant="ghost" size="icon" className="h-8 w-8"><ExternalLink className="h-4 w-4" /></Button>
+                </a>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => onDelete(row.original._id)}><Trash2 className="h-4 w-4" /></Button>
+            </div>
+        ),
+    }
+];

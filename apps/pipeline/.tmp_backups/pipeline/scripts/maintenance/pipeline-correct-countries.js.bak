@@ -1,0 +1,80 @@
+// apps/pipeline/scripts/maintenance/pipeline-correct-countries.js (version 1.0)
+'use server'
+
+import mongoose from 'mongoose';
+import { Opportunity } from '@headlines/models';
+import dbConnect from '@headlines/data-access/src/dbConnect.js';
+import { logger, reinitializeLogger } from '@headlines/utils/server';
+import { countryCorrectionChain } from '@headlines/ai-services';
+import { initializeScriptEnv } from '../seed/lib/script-init.js';
+import colors from 'ansi-colors';
+import cliProgress from 'cli-progress';
+import path from 'path';
+
+reinitializeLogger(path.resolve(process.cwd(), 'apps/pipeline/logs'));
+
+async function main() {
+  await initializeScriptEnv();
+  logger.info('🚀 Starting Retrospective Country Data Cleanup (Efficient Mode)...');
+
+  try {
+    // DEFINITIVE FIX 1: Find the unique set of all 'basedIn' values.
+    const allBasedInValues = await Opportunity.distinct('basedIn');
+    
+    if (allBasedInValues.length === 0) {
+        logger.info('✅ No opportunities with country data found to scan.');
+        return;
+    }
+
+    logger.info(`Found ${allBasedInValues.length} unique 'basedIn' values to analyze...`);
+    
+    const bulkOps = [];
+    const progressBar = new cliProgress.SingleBar({
+        format: `Analyzing | ${colors.cyan('{bar}')} | {percentage}% || {value}/{total} Unique Locations`,
+        barCompleteChar: '\u2588',
+        barIncompleteChar: '\u2591',
+        hideCursor: true,
+    });
+    progressBar.start(allBasedInValues.length, 0);
+
+    for (const originalCountry of allBasedInValues) {
+        // Skip null/empty or already correct-looking values
+        if (!originalCountry || originalCountry.length < 3 || !originalCountry.includes(' ')) {
+            progressBar.increment();
+            continue;
+        }
+
+        // DEFINITIVE FIX 2: Use direct await, not .invoke
+        const result = await countryCorrectionChain({ location_string: originalCountry });
+
+        if (result && !result.error && result.country && result.country !== originalCountry) {
+            logger.info(`Correction found: "${originalCountry}" -> "${result.country}"`);
+            bulkOps.push({
+                updateMany: {
+                    filter: { basedIn: originalCountry },
+                    update: { $set: { basedIn: result.country } }
+                }
+            });
+        }
+        progressBar.increment();
+    }
+    progressBar.stop();
+
+    if (bulkOps.length > 0) {
+        logger.info(`Found ${bulkOps.length} unique corrections to apply. Applying bulk update...`);
+        const result = await Opportunity.bulkWrite(bulkOps);
+        logger.info(colors.green(`✅ Cleanup complete. Modified ${result.modifiedCount} opportunity documents.`));
+    } else {
+        logger.info('✅ No country corrections were needed. Database is clean.');
+    }
+
+  } catch (error) {
+    logger.error({ err: error }, 'An error occurred during the country cleanup process.');
+  } finally {
+    if (mongoose.connection.readyState === 1){
+        await mongoose.disconnect();
+    }
+  }
+}
+
+main();

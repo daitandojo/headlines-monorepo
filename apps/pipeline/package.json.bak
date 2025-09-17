@@ -1,0 +1,43 @@
+{
+  "name": "headlines-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "//--- APP DEVELOPMENT ---//": "---",
+    "admin": "npm run dev -w @headlines/admin",
+    "client": "npm run dev -w @headlines/client",
+    "//--- PIPELINE EXECUTION ---//": "---",
+    "pipeline:run": "npm run pipeline:run -w @headlines/pipeline --",
+    "pipeline:test": "npm run pipeline:test -w @headlines/pipeline",
+    "//--- DATABASE SEEDING ---//": "---",
+    "seed": "npm run db:seed:all -w @headlines/pipeline",
+    "seed:admin": "npm run db:seed:admin -w @headlines/pipeline",
+    "seed:countries": "npm run db:seed:countries -w @headlines/pipeline",
+    "seed:settings": "npm run db:seed:settings -w @headlines/pipeline",
+    "//--- DATA MANAGEMENT ---//": "---",
+    "maintenance:delete-today": "npm run maintenance:delete-today -w @headlines/pipeline --",
+    "results:list-events": "npm run results:list-events -w @headlines/pipeline",
+    "results:send-last-events": "npm run results:send-last-events -w @headlines/pipeline --",
+    "subscribers:list": "npm run subscribers:list -w @headlines/pipeline",
+    "subscribers:update": "npm run subscribers:update -w @headlines/pipeline --",
+    "watchlist:list": "npm run watchlist:list -w @headlines/pipeline --",
+    "watchlist:add-term": "npm run watchlist:add-term -w @headlines/pipeline --",
+    "//--- SOURCE MANAGEMENT ---//": "---",
+    "sources:list": "npm run sources:list -w @headlines/pipeline --",
+    "sources:scrape-one": "npm run sources:scrape-one -w @headlines/pipeline --",
+    "sources:scrape-many": "npm run sources:scrape-many -w @headlines/pipeline --",
+    "sources:discover": "npm run sources:discover -w @headlines/pipeline --",
+    "sources:optimize": "npm run sources:optimize -w @headlines/pipeline --",
+    "sources:maintain": "npm run sources:maintain -w @headlines/pipeline --",
+    "sources:update": "npm run sources:update -w @headlines/pipeline --",
+    "sources:browse": "npm run sources:browse -w @headlines/pipeline --",
+    "//--- MONOREPO UTILITIES ---//": "---",
+    "cli": "npm run cli:help -w @headlines/pipeline",
+    "build": "npm run build -ws --if-present",
+    "lint": "npm run lint -ws --if-present"
+  }
+}

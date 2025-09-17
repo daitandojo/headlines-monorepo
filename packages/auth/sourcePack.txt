@@ -1,0 +1,438 @@
+# 📁 PROJECT DIRECTORY STRUCTURE
+
+Total: 8 files, 2 directories
+
+```
+headlines/
+├── 📁 src/
+│   ├── 📁 components/
+│   ├── 📄 authMiddleware.js
+│   ├── 📄 AuthProvider.js
+│   ├── 📄 AuthProvider.js.bak
+│   ├── 📄 getCookies.js
+│   ├── 📄 index.js
+│   ├── 📄 useAuth.js
+│   └── 📄 verifySession.js
+└── 📄 package.json
+```
+
+# 📋 PROJECT METADATA
+
+**Generated**: 2025-09-17T10:46:26.440Z
+**Repository Path**: /home/mark/Repos/projects/headlines/packages/auth
+**Total Files**: 8
+**Package**: @headlines/auth@1.0.0
+**Description**: Shared authentication logic for the Headlines monorepo.
+
+
+
+---
+
+
+## 📄 package.json
+*Lines: 20, Size: 453 Bytes*
+
+```json
+{
+  "name": "@headlines/auth",
+  "version": "1.0.0",
+  "description": "Shared authentication logic for the Headlines monorepo.",
+  "main": "src/index.js",
+  "type": "module",
+  "license": "ISC",
+  "dependencies": {
+    "jose": "^5.4.1",
+    "react": "18.3.1",
+    "sonner": "^1.5.0"
+  },
+  "peerDependencies": {
+    "@headlines/config": "3.0.0",
+    "@headlines/data-access": "1.0.0",
+    "@headlines/ui": "1.0.0",
+    "@headlines/utils": "1.2.0"
+  }
+}
+
+```
+
+## 📄 src/AuthProvider.js
+*Lines: 81, Size: 2.37 KB*
+
+```javascript
+// packages/auth/src/AuthProvider.js (version 8.1.0)
+'use client'
+
+import { createContext, useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import { LoadingOverlay } from '@headlines/ui'
+import { updateUserFilterPreference } from '@headlines/data-access'
+
+const AuthContext = createContext(null)
+
+export function AuthProvider({ children, appType }) {
+  const [user, setUser] = useState(null)
+  const [authStatus, setAuthStatus] = useState('verifying')
+  const router = useRouter()
+
+  const fetchUser = useCallback(async () => {
+    if (appType === 'admin' && process.env.NODE_ENV === 'development') {
+      setUser({ _id: 'dev_admin_id', firstName: 'Admin', role: 'admin', filterPreferences: { globalCountryFilter: [] } });
+      setAuthStatus('authenticated');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/subscribers/me');
+      if (res.ok) {
+        setUser(await res.json());
+        setAuthStatus('authenticated');
+      } else {
+        setUser(null);
+        setAuthStatus('unauthenticated');
+      }
+    } catch (error) {
+      setUser(null);
+      setAuthStatus('unauthenticated');
+    }
+  }, [appType]);
+
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]);
+
+  const login = async (email, password) => {
+    setAuthStatus('loading');
+    // ... login logic as before
+  };
+
+  const logout = async () => {
+    // ... logout logic as before
+  };
+
+  const updateUserPreferences = async (updateData) => {
+      // ... profile update logic as before
+  };
+
+  const updateFilters = useCallback(async (filterData) => {
+    if (!user) return;
+    
+    const result = await updateUserFilterPreference(filterData);
+    
+    if (result.success && result.user) {
+      // DEFINITIVE FIX: On success, update the context with the new user object from the DB.
+      setUser(result.user);
+    } else {
+      toast.error("Failed to save filter settings.", { description: result.error });
+      // Revert by refetching old state from DB.
+      await fetchUser();
+    }
+  }, [user, fetchUser]);
+
+  const value = { user, isLoading: authStatus === 'loading', login, logout, updateUserPreferences, updateFilters };
+
+  if (authStatus === 'verifying') {
+    return <LoadingOverlay isLoading={true} text="Verifying session..." />;
+  }
+  
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export default AuthContext;
+
+```
+
+## 📄 src/AuthProvider.js.bak
+*Lines: 98, Size: 3.35 KB*
+
+```
+// packages/auth/src/AuthProvider.js (version 7.1.0 - Admin No-Fetch)
+'use client'
+
+import { createContext, useState, useEffect, useCallback } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
+import { toast } from 'sonner'
+import { LoadingOverlay } from '@headlines/ui'
+
+const AuthContext = createContext(null)
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null)
+  const [authStatus, setAuthStatus] = useState('verifying')
+  const router = useRouter()
+  const pathname = usePathname()
+  
+  // A more robust check for the admin app context
+  const isAdminApp = typeof window !== 'undefined' && window.location.port === '3001';
+
+  const fetchUser = useCallback(async () => {
+    // DEFINITIVE FIX: For the admin app in development, create a mock user session
+    // and IMMEDIATELY set status to 'authenticated'. DO NOT make an API call.
+    if (isAdminApp && process.env.NODE_ENV === 'development') {
+      setUser({ _id: 'dev_admin_id', firstName: 'Admin', role: 'admin' });
+      setAuthStatus('authenticated');
+      return;
+    }
+
+    // This block now only runs for the client application
+    try {
+      const res = await fetch('/api/subscribers/me');
+      if (res.ok) {
+        setUser(await res.json());
+        setAuthStatus('authenticated');
+      } else {
+        setUser(null);
+        setAuthStatus('unauthenticated');
+      }
+    } catch (error) {
+      setUser(null);
+      setAuthStatus('unauthenticated');
+    }
+  }, [isAdminApp]);
+
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]);
+
+  const login = async (email, password) => {
+    setAuthStatus('loading');
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        toast.success(`Welcome back, ${data.user.firstName}!`);
+        window.location.assign('/events');
+      } else {
+        toast.error(data.error || 'Login failed.');
+        setAuthStatus('unauthenticated');
+      }
+    } catch (error) {
+      toast.error('An unexpected error occurred during login.');
+      setAuthStatus('unauthenticated');
+    }
+  };
+
+  const logout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    setUser(null);
+    setAuthStatus('unauthenticated');
+    toast.info('You have been logged out.');
+    window.location.assign('/login');
+  };
+
+  const updateUserPreferences = async (updateData) => {
+      console.log("Updating user preferences (placeholder):", updateData);
+      setUser(currentUser => ({...currentUser, ...updateData}));
+      toast.success("Preferences updated (local only).");
+  };
+
+  const value = { user, isLoading: authStatus === 'loading', login, logout, updateUserPreferences };
+
+  // For the admin app, we can skip the verifying overlay as the user is mocked instantly.
+  if (authStatus === 'verifying' && !isAdminApp) {
+    return <LoadingOverlay isLoading={true} text="Verifying session..." />;
+  }
+  
+  // If we are unauthenticated and not on the login page in the client app, the middleware will handle redirection.
+  // For the admin app, we always render the children as auth is handled by the mock and server-side checks.
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export default AuthContext;
+
+```
+
+## 📄 src/authMiddleware.js
+*Lines: 49, Size: 1.54 KB*
+
+```javascript
+// packages/auth/src/authMiddleware.js (version 10.0.0 - Edge Safe & Dependency-Free)
+'use server'
+
+import { NextResponse } from 'next/server'
+import * as jose from 'jose'
+
+// This middleware is now self-contained. It does not import from @headlines/config.
+// It reads environment variables directly, which is safe in the Edge runtime.
+
+const JWT_COOKIE_NAME = 'headlines-jwt'
+
+async function verifyTokenInMiddleware(token) {
+  const secret = process.env.JWT_SECRET;
+  if (!token || !secret) return { success: false };
+  try {
+    const secretKey = new TextEncoder().encode(secret);
+    await jose.jwtVerify(token, secretKey);
+    return { success: true };
+  } catch (e) {
+    return { success: false };
+  }
+}
+
+export async function authMiddleware(request, config) {
+  const { pathname } = request.nextUrl;
+
+  // Public paths are always allowed.
+  if (config.publicPaths.some((p) => pathname.startsWith(p))) {
+    return NextResponse.next();
+  }
+  
+  const token = request.cookies.get(JWT_COOKIE_NAME)?.value;
+  const { success: isAuthenticated } = await verifyTokenInMiddleware(token);
+
+  if (!isAuthenticated) {
+    // For API routes, return a JSON error.
+    if (pathname.startsWith('/api')) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+    // For pages, redirect to login.
+    const loginUrl = new URL(config.loginPath, request.url);
+    loginUrl.searchParams.set('from', pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // If authenticated, allow the request to proceed.
+  return NextResponse.next();
+}
+
+```
+
+## 📄 src/getCookies.js
+*Lines: 22, Size: 702 Bytes*
+
+```javascript
+// packages/auth/src/getCookies.js (version 3.0.0)
+'use server'
+
+/**
+ * An environment-aware cookie accessor.
+ * In a Next.js environment, it dynamically imports and returns the real `cookies()` function.
+ * In other environments (like the pipeline), it returns a mock object that
+ * safely returns `undefined` to simulate the absence of a request context.
+ */
+export async function getCookies() {
+  if (process.env.IS_PIPELINE_RUN === 'true') {
+    // Pipeline environment: return a mock.
+    return {
+      get: () => undefined,
+    };
+  } else {
+    // Next.js environment: dynamically import and use the real thing.
+    const { cookies } = await import('next/headers');
+    return cookies();
+  }
+}
+
+```
+
+## 📄 src/index.js
+*Lines: 10, Size: 401 Bytes*
+
+```javascript
+// packages/auth/src/index.js (version 2.2.0)
+'use server'
+
+// This entrypoint now ONLY exports server-side utilities that are environment-agnostic.
+// Client components and Next.js-specific middleware must be imported directly from their source files.
+
+import { verifySession, verifyAdmin, getUserIdFromSession } from './verifySession.js'
+
+export { verifySession, verifyAdmin, getUserIdFromSession }
+
+```
+
+## 📄 src/useAuth.js
+*Lines: 18, Size: 478 Bytes*
+
+```javascript
+// packages/auth/src/useAuth.js (version 2.0.0)
+'use client'
+
+import { useContext } from 'react'
+import AuthContext from './AuthProvider'
+
+/**
+ * Provides access to the authentication context (user, login, logout, etc.).
+ * This hook can only be used by components wrapped in an AuthProvider.
+ */
+export const useAuth = () => {
+  const context = useContext(AuthContext)
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
+}
+
+```
+
+## 📄 src/verifySession.js
+*Lines: 62, Size: 2.16 KB*
+
+```javascript
+// packages/auth/src/verifySession.js (version 9.0.0 - Pure & Portable)
+'use server'
+
+import { getCookies } from './getCookies.js'
+import * as jose from 'jose'
+import { env } from '@headlines/config/server'
+// REMOVED: import { headers } from 'next/headers'
+// REMOVED: import { seedDevUser } from '@headlines/data-access/src/seed/dev-user.js'
+
+const JWT_COOKIE_NAME = 'headlines-jwt'
+
+// This function is now PURE. It ONLY verifies a token passed to it.
+// It has no knowledge of Next.js headers or dev mode.
+async function verifyToken(token) {
+  if (!token) return { user: null, error: 'No token provided.' }
+  try {
+    const secret = new TextEncoder().encode(env.JWT_SECRET)
+    const { payload } = await jose.jwtVerify(token, secret)
+    return { user: payload, error: null }
+  } catch (e) {
+    return { user: null, error: 'Invalid or expired session token.' }
+  }
+}
+
+// This is the primary session verifier for the CLIENT APP.
+export async function verifySession() {
+  const cookieStore = await getCookies();
+  const token = cookieStore.get(JWT_COOKIE_NAME)?.value;
+  return await verifyToken(token);
+}
+
+export async function getUserIdFromSession() {
+  const { user } = await verifySession();
+  return user ? user.userId : null;
+}
+
+// This is the primary session verifier for the ADMIN APP.
+// It contains the Next.js-specific dev mode logic.
+export async function verifyAdmin() {
+    const { headers } = await import('next/headers');
+    const headersList = headers();
+    
+    // DEVELOPMENT ONLY BYPASS FOR ADMIN APP
+    if (process.env.NODE_ENV === 'development' && headersList.get('x-dev-mode') === 'true') {
+      const { seedDevUser } = await import('@headlines/data-access/src/seed/dev-user.js');
+      const devUser = {
+        userId: '662f831abb28052123530a43',
+        email: 'dev@headlines.dev',
+        role: 'admin',
+      };
+      seedDevUser().catch(console.error); 
+      return { isAdmin: true, user: devUser };
+    }
+
+    // Standard verification for production
+    const { user, error } = await verifySession();
+    if (error || user?.role !== 'admin') {
+        return { isAdmin: false, error: error || 'Administrator access required.' };
+    }
+    return { isAdmin: true, user };
+}
+
+```

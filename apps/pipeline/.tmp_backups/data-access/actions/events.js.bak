@@ -1,0 +1,48 @@
+// packages/data-access/src/actions/events.js (version 2.1.0)
+'use server'
+
+import dbConnect from '../dbConnect.js'
+import mongoose from 'mongoose'
+import { SynthesizedEvent, Opportunity, Article, Subscriber } from '@headlines/models'
+import { revalidatePath } from '../revalidate.js'
+import { buildQuery } from '../queryBuilder.js'
+import { getUserIdFromSession } from '@headlines/auth/src/verifySession.js' // Helper for server components
+
+const EVENTS_PER_PAGE = 5;
+
+export async function deleteEvent({ eventId, userId }) {
+  if (!eventId) return { success: false, message: 'Event ID is required.' }
+  try {
+    await dbConnect()
+    // Instead of deleting, we add it to the user's discarded list.
+    if (userId) {
+        await Subscriber.updateOne({ _id: userId }, { $addToSet: { 'discardedItems.events': eventId } });
+    }
+    await revalidatePath('/')
+    return { success: true, message: 'Event discarded.' }
+  } catch (error) {
+    return { success: false, message: `Failed to discard event: ${error.message}` }
+  }
+}
+
+const baseQuery = { highest_relevance_score: { $gt: 25 } }
+
+export async function getEvents({ page = 1, filters = {}, sort = 'date_desc' }) {
+  const userId = await getUserIdFromSession(); // Get current user's ID
+  await dbConnect();
+  const { queryFilter, sortOptions } = await buildQuery(SynthesizedEvent, { filters, sort, baseQuery, userId });
+  const skipAmount = (page - 1) * EVENTS_PER_PAGE;
+  const events = await SynthesizedEvent.find(queryFilter)
+    .sort(sortOptions)
+    .skip(skipAmount)
+    .limit(EVENTS_PER_PAGE)
+    .lean();
+  return JSON.parse(JSON.stringify(events));
+}
+
+export async function getTotalEventCount({ filters = {} } = {}) {
+  const userId = await getUserIdFromSession();
+  await dbConnect();
+  const { queryFilter } = await buildQuery(SynthesizedEvent, { filters, baseQuery, userId });
+  return await SynthesizedEvent.countDocuments(queryFilter);
+}

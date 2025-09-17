@@ -1,0 +1,55 @@
+// apps/client/src/components/SynthesizedEventCard.jsx (version 11.0.0)
+'use client'
+
+import { useTransition } from 'react'
+import { useRouter } from 'next/navigation'
+import { AccordionContent, AccordionItem } from '@headlines/ui'
+import useAppStore from '@/store/use-app-store'
+import { SwipeToDelete } from './swipe/SwipeToDelete'
+import { EventCardDesktop } from './events/EventCardDesktop'
+import { EventCardMobile } from './events/EventCardMobile'
+import { EventCardDetails } from './events/EventCardDetails'
+import { useAuth } from '@headlines/auth/src/useAuth.js'
+
+export const SynthesizedEventCard = ({ event, onDelete, onFavoriteToggle, isFavorited }) => {
+  const [isPending, startTransition] = useTransition()
+  const setChatContextPrompt = useAppStore((state) => state.setChatContextPrompt)
+  const router = useRouter()
+  const { user } = useAuth();
+  
+  const performDelete = () => {
+    startTransition(() => {
+      onDelete({ itemId: event._id })
+    })
+  }
+  
+  const handleChatAboutEvent = (e) => {
+    e.stopPropagation()
+    const prompt = `Tell me more about the event: "${event.synthesized_headline}". What are the key implications?`
+    setChatContextPrompt(prompt)
+    router.push('/chat')
+  }
+
+  const handleFavorite = (e) => {
+      e.stopPropagation();
+      onFavoriteToggle(event._id, !isFavorited);
+  }
+
+  return (
+    <div className="relative w-full">
+      <AccordionItem
+        value={event.event_key}
+        className={`relative border-none rounded-xl overflow-hidden transition-all duration-300 ${isPending ? 'opacity-50' : ''}`}
+      >
+        <SwipeToDelete onDelete={performDelete}>
+            {/* The action buttons are now passed as props to be rendered outside the trigger */}
+            <EventCardMobile event={event} onChat={handleChatAboutEvent} onDelete={performDelete} onFavorite={handleFavorite} isFavorited={isFavorited} isPending={isPending} />
+            <EventCardDesktop event={event} onChat={handleChatAboutEvent} onDelete={performDelete} onFavorite={handleFavorite} isFavorited={isFavorited} isPending={isPending} />
+        </SwipeToDelete>
+        <AccordionContent className="p-4 pt-4 bg-slate-900/50">
+          <EventCardDetails event={event} />
+        </AccordionContent>
+      </AccordionItem>
+    </div>
+  )
+}

@@ -1,0 +1,38 @@
+// apps/admin/src/app/api/events/route.js (version 1.0.0)
+import { NextResponse } from 'next/server';
+import { getAdminEvents, updateAdminEvent, deleteAdminEvent } from '@headlines/data-access';
+
+export const dynamic = 'force-dynamic';
+
+export async function GET(request) {
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const sort = searchParams.get('sort') || 'date_desc';
+    const q = searchParams.get('q') || '';
+    // DEFINITIVE FIX: Read the 'country' filter from the search parameters.
+    const country = searchParams.get('country') || '';
+    
+    const result = await getAdminEvents({ page, sort, filters: { q, country } });
+    if (!result.success) {
+        return NextResponse.json({ error: result.error }, { status: 500 });
+    }
+    return NextResponse.json(result);
+}
+
+export async function PATCH(request) {
+    const { eventId, updateData } = await request.json();
+    const result = await updateAdminEvent(eventId, updateData);
+     if (!result.success) {
+        return NextResponse.json({ error: result.error }, { status: result.error.includes('not found') ? 404 : 500 });
+    }
+    return NextResponse.json(result.data);
+}
+
+export async function DELETE(request) {
+    const { eventId } = await request.json();
+    const result = await deleteAdminEvent(eventId);
+    if (!result.success) {
+        return NextResponse.json({ error: result.error }, { status: result.error.includes('not found') ? 404 : 500 });
+    }
+    return NextResponse.json({ success: true });
+}

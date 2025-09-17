@@ -1,0 +1,11 @@
+{
+  "name": "@headlines/prompts",
+  "version": "1.0.0",
+  "description": "Shared AI prompts for the Headlines monorepo.",
+  "main": "src/index.js",
+  "type": "module",
+  "license": "ISC",
+  "peerDependencies": {
+    "@headlines/config": "3.0.0"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "@headlines/models",
+  "version": "1.0.0",
+  "description": "Shared Mongoose models for the Headlines monorepo.",
+  "main": "src/index.js",
+  "type": "module",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "mongoose": "^8.4.1"
+  }
+}

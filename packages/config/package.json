@@ -1,0 +1,17 @@
+{
+  "name": "@headlines/config",
+  "version": "3.0.0",
+  "description": "Shared environment schema validation for the Headlines monorepo.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./server": "./src/server.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "peerDependencies": {
+    "@headlines/models": "1.0.0"
+  }
+}

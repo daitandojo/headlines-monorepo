@@ -1,0 +1,148 @@
+// apps/admin/src/app/sources/page.jsx (version 5.0.0)
+'use client'
+
+import { useState, useCallback, useMemo, useEffect, Suspense } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { ServerCrash, PlusCircle, Wrench, Trash2, Pause, Play } from 'lucide-react'
+import {
+  PageHeader,
+  DataTable,
+  Button,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  ConfirmationDialog,
+  LoadingOverlay, 
+} from '@headlines/ui'
+import { useEntityManager } from '@/hooks/use-entity-manager'
+import { columns } from './columns'
+import { suggestionColumns } from './suggestion-columns'
+// DEFINITIVE FIX: The SourceIdeModal is no longer a modal and was moved. It should not be imported here.
+// Instead, navigation to the /scraper-ide page is handled directly.
+import { toast } from 'sonner'
+import TestResultsViewer from '../_components/test-results-viewer'
+import AddSourceModal from './add-source-modal'
+import {
+  processSourceSuggestion,
+  updateSource,
+  deleteSource,
+  testSourceConfig,
+} from '@headlines/data-access'
+import SourceList from '../_components/source-list' // Import the SourceList
+import { useSourceHealthChecker } from './use-source-health-checker'
+
+function SourcesPageContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const statusFilter = searchParams.get('status')
+  const action = searchParams.get('action')
+  const sourceIdToEdit = searchParams.get('sourceId')
+
+  const {
+    entities: sources,
+    setEntities,
+    isLoading: isLoadingSources,
+    error: sourcesError,
+    handleSave,
+    refetch: refetchSources,
+  } = useEntityManager('/api/sources', 'Source', 'name')
+  
+  const { 
+    entities: suggestions, 
+    isLoading: isLoadingSuggestions,
+    refetch: refetchSuggestions,
+    error: suggestionsError,
+  } = useEntityManager('/api/suggestions', 'SourceSuggestion', 'createdAt', { dataKey: 'sourceSuggestions' })
+  
+  const {
+    entities: countries,
+    isLoading: isLoadingCountries,
+    error: countriesError,
+  } = useEntityManager('/api/countries', 'Country', 'name')
+  
+  const [selectedSourceId, setSelectedSourceId] = useState(null);
+  const [isIdeOpen, setIsIdeOpen] = useState(false)
+  const [testResults, setTestResults] = useState(null)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [confirmState, setConfirmState] = useState({ isOpen: false, action: null });
+  
+  const availableCountries = useMemo(() => {
+    if (!countries) return ['all'];
+    const countryNames = countries.filter(c => c.status === 'active').map(c => c.name);
+    return ['all', ...countryNames.sort()];
+  }, [countries]);
+
+  const handleSourceUpdate = useCallback((updatedSource) => {
+    setEntities(prev => prev.map(s => s._id === updatedSource._id ? updatedSource : s));
+  }, [setEntities]);
+  
+  const { liveStatuses, isCheckingAll, handleCheckFiltered, handleStopCheck, handleTestComplete } = useSourceHealthChecker(handleSourceUpdate);
+
+  const activeSourceData = useMemo(() => {
+    if (selectedSourceId) return sources?.find(s => s._id === selectedSourceId) || null;
+    return null;
+  }, [selectedSourceId, sources]);
+  
+  useEffect(() => {
+    if (action === 'edit' && sourceIdToEdit) {
+      // DEFINITIVE FIX: Instead of opening a modal, navigate to the IDE page with the sourceId.
+      router.push(`/scraper-ide?sourceId=${sourceIdToEdit}`);
+    } else if (action === 'add') {
+      router.push(`/scraper-ide?action=add&name=${searchParams.get('name')}&sectionUrl=${searchParams.get('sectionUrl')}`);
+    }
+  }, [action, sourceIdToEdit, searchParams, router]);
+
+  const handleTest = useCallback(async (source) => {
+    const toastId = toast.loading(`Running test scrape for "${source.name}"...`);
+    const result = await testSourceConfig(source);
+    if (result.success) {
+      handleSave(result.data.updatedSource);
+      handleTestComplete(source._id, result.data.count, result.data.updatedSource);
+      setTestResults(result.data);
+      toast.success(`Test complete! Found ${result.data.count} headlines.`, { id: toastId });
+    } else {
+      toast.error(`Test failed: ${result.details || 'Unknown error'}`, { id: toastId });
+    }
+  }, [handleSave, handleTestComplete]);
+  
+  const error = sourcesError || suggestionsError || countriesError;
+  const isLoading = isLoadingSources || isLoadingCountries;
+
+  if (error) {
+    return ( <div className="flex h-full w-full items-center justify-center text-center p-4"> <div className="p-8 rounded-lg bg-destructive/10 border border-destructive/50 max-w-md"> <ServerCrash className="w-12 h-12 mx-auto text-destructive mb-4" /> <h1 className="text-2xl font-bold">Failed to Load Sources</h1> <p className="text-destructive-foreground/80 mt-2">{error}</p> </div> </div> )
+  }
+
+  return (
+    <div className="flex flex-row h-full w-full">
+      <SourceList 
+        sources={sources}
+        isLoading={isLoading}
+        selectedSourceId={selectedSourceId}
+        onSelectSource={(id) => router.push(`/scraper-ide?sourceId=${id}`)}
+        onAddSource={() => router.push('/scraper-ide')}
+        onCheckFiltered={handleCheckFiltered}
+        onStopCheck={handleStopCheck}
+        isCheckingAll={isCheckingAll}
+        liveStatuses={liveStatuses}
+        countries={availableCountries}
+      />
+      
+      <div className="flex-grow p-6 flex flex-col items-center justify-center text-center text-muted-foreground">
+          <div className="text-lg font-semibold">Source Management Hub</div>
+          <p>Select a source from the list to edit it in the IDE.</p>
+          <p className="mt-2">Or, click "Add New Source" to configure a new one.</p>
+      </div>
+
+      <TestResultsViewer results={testResults} open={!!testResults} onOpenChange={() => setTestResults(null)} />
+    </div>
+  )
+}
+
+export default function SourcesPage() {
+  return (
+    <Suspense fallback={<div className="relative flex items-center justify-center h-96"><LoadingOverlay isLoading={true} /></div>}>
+      <SourcesPageContent />
+    </Suspense>
+  )
+}

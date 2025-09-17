@@ -1,0 +1,2743 @@
+# 📁 PROJECT DIRECTORY STRUCTURE
+
+Total: 32 files, 3 directories
+
+```
+headlines/
+├── 📁 src/
+│   ├── 📁 actions/
+│   │   ├── 📄 admin.js
+│   │   ├── 📄 adminArticles.js
+│   │   ├── 📄 adminEvents.js
+│   │   ├── 📄 adminOpportunities.js
+│   │   ├── 📄 adminSources.js
+│   │   ├── 📄 aiSourceDiscovery.js
+│   │   ├── 📄 articles.js
+│   │   ├── 📄 chat.js
+│   │   ├── 📄 countries.js
+│   │   ├── 📄 dashboard.js
+│   │   ├── 📄 email.js
+│   │   ├── 📄 events.js
+│   │   ├── 📄 export.js
+│   │   ├── 📄 extract.js
+│   │   ├── 📄 knowledge.js
+│   │   ├── 📄 opportunities.js
+│   │   ├── 📄 pipeline.js
+│   │   ├── 📄 relationships.js
+│   │   ├── 📄 scrape.js
+│   │   ├── 📄 settings.js
+│   │   ├── 📄 subscriber.js
+│   │   ├── 📄 suggestions.js
+│   │   ├── 📄 upload.js
+│   │   ├── 📄 userSettings.js
+│   │   ├── 📄 verdicts.js
+│   │   └── 📄 watchlist.js
+│   ├── 📁 seed/
+│   │   └── 📄 dev-user.js
+│   ├── 📄 dbConnect.js
+│   ├── 📄 index.js
+│   ├── 📄 queryBuilder.js
+│   └── 📄 revalidate.js
+└── 📄 package.json
+```
+
+# 📋 PROJECT METADATA
+
+**Generated**: 2025-09-17T10:46:26.444Z
+**Repository Path**: /home/mark/Repos/projects/headlines/packages/data-access
+**Total Files**: 32
+**Package**: @headlines/data-access@1.0.0
+**Description**: Shared server actions and data access logic for the Headlines monorepo.
+
+
+
+---
+
+
+## 📄 package.json
+*Lines: 18, Size: 430 Bytes*
+
+```json
+{
+  "name": "@headlines/data-access",
+  "version": "1.0.0",
+  "description": "Shared server actions and data access logic for the Headlines monorepo.",
+  "main": "src/index.js",
+  "type": "module",
+  "license": "ISC",
+  "dependencies": {
+    "mongoose": "^8.4.1"
+  },
+  "peerDependencies": {
+    "@headlines/auth": "1.0.0",
+    "@headlines/config": "3.0.0",
+    "@headlines/models": "1.0.0",
+    "@headlines/utils": "1.2.0"
+  }
+}
+
+```
+
+## 📄 src/actions/admin.js
+*Lines: 123, Size: 4.11 KB*
+
+```javascript
+// packages/data-access/src/actions/admin.js (version 2.2.0)
+'use server'
+
+import { Subscriber } from '@headlines/models'
+import { verifyAdmin } from '@headlines/auth'
+import { revalidatePath } from '../revalidate.js'
+import dbConnect from '../dbConnect.js' // Internal helper
+
+export async function getAllSubscribers() {
+  const { isAdmin, error } = await verifyAdmin()
+  if (!isAdmin) return { success: false, error }
+
+  try {
+    await dbConnect()
+    const users = await Subscriber.find({}).sort({ createdAt: -1 }).lean()
+    return { success: true, data: JSON.parse(JSON.stringify(users)) }
+  } catch (e) {
+    console.error('[Admin Action Error - getAllSubscribers]:', e)
+    return { success: false, error: 'Failed to fetch subscribers.' }
+  }
+}
+
+export async function createSubscriber(userData) {
+  const { isAdmin, error } = await verifyAdmin()
+  if (!isAdmin) return { success: false, error }
+
+  try {
+    await dbConnect()
+    const newUser = new Subscriber(userData)
+    await newUser.save()
+    await revalidatePath('/admin/users')
+    return { success: true, data: JSON.parse(JSON.stringify(newUser)) }
+  } catch (e) {
+    console.error('[Admin Action Error - createSubscriber]:', e)
+    if (e.code === 11000) {
+      return { success: false, error: 'A user with this email already exists.' }
+    }
+    return { success: false, error: 'Failed to create subscriber.' }
+  }
+}
+
+export async function updateSubscriber(userId, updateData) {
+  const { isAdmin, error } = await verifyAdmin()
+  if (!isAdmin) return { success: false, error }
+
+  try {
+    await dbConnect()
+
+    // CRITICAL FIX: If the password in the update data is an empty string,
+    // delete it from the update object. This prevents the 'pre-save' hook
+    // from attempting to hash an empty password, which would overwrite the
+    // existing hash.
+    if (updateData.password === '') {
+      delete updateData.password
+    }
+    
+    // ROBUSTNESS FIX: Use findByIdAndUpdate with $set for a more reliable, atomic update.
+    // This correctly handles updates to nested fields and arrays like 'countries' and 'language',
+    // resolving the issue where language changes were not being saved.
+    const user = await Subscriber.findByIdAndUpdate(
+      userId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).lean();
+
+    if (!user) {
+      return { success: false, error: 'User not found.' }
+    }
+
+    await revalidatePath('/admin/users')
+    return { success: true, data: JSON.parse(JSON.stringify(user)) }
+  } catch (e) {
+    console.error('[Admin Action Error - updateSubscriber]:', e)
+    return { success: false, error: 'Failed to update subscriber.' }
+  }
+}
+
+export async function deleteSubscriber(userId) {
+  const { isAdmin, error } = await verifyAdmin()
+  if (!isAdmin) return { success: false, error }
+
+  try {
+    await dbConnect()
+    const result = await Subscriber.findByIdAndDelete(userId)
+    if (!result) {
+      return { success: false, error: 'User not found.' }
+    }
+    await revalidatePath('/admin/users')
+    return { success: true }
+  } catch (e) {
+    console.error('[Admin Action Error - deleteSubscriber]:', e)
+    return { success: false, error: 'Failed to delete subscriber.' }
+  }
+}
+
+export async function updateSubscribersStatus(userIds, isActive) {
+  const { isAdmin, error } = await verifyAdmin()
+  if (!isAdmin) return { success: false, error }
+  try {
+    await dbConnect()
+    await Subscriber.updateMany({ _id: { $in: userIds } }, { $set: { isActive } })
+    await revalidatePath('/admin/users')
+    return { success: true }
+  } catch (e) {
+    console.error('[Admin Action Error - updateSubscribersStatus]:', e)
+    return { success: false, error: 'Failed to bulk update subscribers.' }
+  }
+}
+
+export async function deleteSubscribers(userIds) {
+  const { isAdmin, error } = await verifyAdmin()
+  if (!isAdmin) return { success: false, error }
+  try {
+    await dbConnect()
+    await Subscriber.deleteMany({ _id: { $in: userIds } })
+    await revalidatePath('/admin/users')
+    return { success: true }
+  } catch (e) {
+    console.error('[Admin Action Error - deleteSubscribers]:', e)
+    return { success: false, error: 'Failed to bulk delete subscribers.' }
+  }
+}
+
+```
+
+## 📄 src/actions/adminArticles.js
+*Lines: 54, Size: 2.13 KB*
+
+```javascript
+// packages/data-access/src/actions/adminArticles.js (version 1.0.0)
+'use server'
+
+import dbConnect from '../dbConnect.js';
+import { Article } from '@headlines/models';
+import { buildQuery } from '../queryBuilder.js';
+import { verifyAdmin } from '@headlines/auth';
+import { revalidatePath } from '../revalidate.js';
+
+// DEFINITIVE FIX: Removed the hardcoded page limit.
+export async function getAdminArticles({ page = 1, filters = {}, sort = 'date_desc' }) {
+    const { isAdmin, error } = await verifyAdmin();
+    if (!isAdmin) return { success: false, error, data: [], total: 0 };
+    
+    await dbConnect();
+    const { queryFilter, sortOptions } = await buildQuery(Article, { filters, sort, baseQuery: {} });
+    
+    // Pagination is now fully handled by the client-side DataTable component.
+    const [articles, total] = await Promise.all([
+        Article.find(queryFilter).sort(sortOptions).lean(),
+        Article.countDocuments(queryFilter)
+    ]);
+
+    return { success: true, data: JSON.parse(JSON.stringify(articles)), total };
+}
+
+export async function updateAdminArticle(articleId, updateData) {
+    const { isAdmin, error } = await verifyAdmin();
+    if (!isAdmin) return { success: false, error };
+    try {
+        await dbConnect();
+        const article = await Article.findByIdAndUpdate(articleId, { $set: updateData }, { new: true }).lean();
+        if (!article) return { success: false, error: 'Article not found.' };
+        await revalidatePath('/admin/articles');
+        return { success: true, data: JSON.parse(JSON.stringify(article)) };
+    } catch (e) {
+        return { success: false, error: 'Failed to update article.' };
+    }
+}
+
+export async function deleteAdminArticle(articleId) {
+    const { isAdmin, error } = await verifyAdmin();
+    if (!isAdmin) return { success: false, error };
+    try {
+        await dbConnect();
+        const result = await Article.findByIdAndDelete(articleId);
+        if (!result) return { success: false, error: 'Article not found.' };
+        await revalidatePath('/admin/articles');
+        return { success: true };
+    } catch (e) {
+        return { success: false, error: 'Failed to delete article.' };
+    }
+}
+
+```
+
+## 📄 src/actions/adminEvents.js
+*Lines: 149, Size: 4.75 KB*
+
+```javascript
+// packages/data-access/src/actions/adminEvents.js (version 1.0.1 - Resilient)
+'use server'
+
+import dbConnect from '../dbConnect.js';
+import { SynthesizedEvent, Article, Opportunity } from '@headlines/models';
+import { buildQuery } from '../queryBuilder.js';
+import { verifyAdmin } from '@headlines/auth';
+import { revalidatePath } from '../revalidate.js';
+import mongoose from 'mongoose';
+
+const EVENTS_PER_PAGE = 50;
+
+export async function getAdminEvents({ page = 1, filters = {}, sort = 'createdAt_desc' }) {
+    const { isAdmin, error } = await verifyAdmin();
+    if (!isAdmin) return { success: false, error, data: [], total: 0 };
+    
+    try {
+        await dbConnect();
+        
+        const { queryFilter, sortOptions } = await buildQuery(SynthesizedEvent, { 
+            filters, 
+            sort, 
+            baseQuery: {} 
+        });
+        
+        const skipAmount = (page - 1) * EVENTS_PER_PAGE;
+
+        const [events, total] = await Promise.all([
+            SynthesizedEvent.find(queryFilter)
+                .select('-synthesized_summary')
+                .sort(sortOptions)
+                .skip(skipAmount)
+                .limit(EVENTS_PER_PAGE)
+                .lean(),
+            SynthesizedEvent.countDocuments(queryFilter)
+        ]);
+
+        return { 
+            success: true, 
+            data: JSON.parse(JSON.stringify(events)), 
+            total 
+        };
+    } catch (e) {
+        console.error('getAdminEvents error:', e);
+        return { 
+            success: false, 
+            error: 'Failed to fetch events', 
+            data: [], 
+            total: 0 
+        };
+    }
+}
+
+export async function getAdminEventDetails(eventId) {
+    const { isAdmin, error } = await verifyAdmin();
+    if (!isAdmin) return { success: false, error };
+
+    try {
+        await dbConnect();
+        
+        if (!mongoose.Types.ObjectId.isValid(eventId)) {
+            return { success: false, error: 'Invalid event ID' };
+        }
+        
+        const event = await SynthesizedEvent.findById(eventId)
+            .populate({ 
+                path: 'relatedOpportunities', 
+                model: Opportunity, 
+                select: 'reachOutTo likelyMMDollarWealth' 
+            })
+            .lean();
+
+        if (!event) return { success: false, error: 'Event not found' };
+
+        const articleLinks = event.source_articles?.map(a => a.link) || [];
+        const articles = articleLinks.length > 0 
+            ? await Article.find({ link: { $in: articleLinks } })
+                .select('headline link newspaper')
+                .lean()
+            : [];
+
+        event.source_articles_full = articles;
+        return { success: true, data: JSON.parse(JSON.stringify(event)) };
+    } catch (e) {
+        console.error('getAdminEventDetails error:', e);
+        return { success: false, error: 'Failed to fetch event details.' };
+    }
+}
+
+export async function updateAdminEvent(eventId, updateData) {
+    const { isAdmin, error } = await verifyAdmin();
+    if (!isAdmin) return { success: false, error };
+    
+    try {
+        await dbConnect();
+        
+        if (!mongoose.Types.ObjectId.isValid(eventId)) {
+            return { success: false, error: 'Invalid event ID' };
+        }
+        
+        const event = await SynthesizedEvent.findByIdAndUpdate(
+            eventId, 
+            { $set: updateData }, 
+            { new: true, runValidators: true }
+        ).lean();
+        
+        if (!event) return { success: false, error: 'Event not found.' };
+        
+        await revalidatePath('/admin/events');
+        return { success: true, data: JSON.parse(JSON.stringify(event)) };
+    } catch (e) {
+        console.error('updateAdminEvent error:', e);
+        return { success: false, error: 'Failed to update event.' };
+    }
+}
+
+export async function deleteAdminEvent(eventId) {
+    const { isAdmin, error } = await verifyAdmin();
+    if (!isAdmin) return { success: false, error };
+    
+    try {
+        await dbConnect();
+        
+        if (!mongoose.Types.ObjectId.isValid(eventId)) {
+            return { success: false, error: 'Invalid event ID' };
+        }
+        
+        const result = await SynthesizedEvent.findByIdAndDelete(eventId);
+        if (!result) return { success: false, error: 'Event not found.' };
+        
+        await Promise.all([
+            Opportunity.updateMany(
+                { events: eventId }, 
+                { $pull: { events: eventId } }
+            ),
+            Article.updateMany(
+                { synthesizedEventId: eventId }, 
+                { $unset: { synthesizedEventId: '' } }
+            )
+        ]);
+        
+        await revalidatePath('/admin/events');
+        return { success: true };
+    } catch (e) {
+        console.error('deleteAdminEvent error:', e);
+        return { success: false, error: 'Failed to delete event.' };
+    }
+}
+
+```
+
+## 📄 src/actions/adminOpportunities.js
+*Lines: 59, Size: 2.39 KB*
+
+```javascript
+// packages/data-access/src/actions/adminOpportunities.js (version 1.0.0)
+'use server'
+
+import dbConnect from '../dbConnect.js';
+import { Opportunity } from '@headlines/models';
+import { buildQuery } from '../queryBuilder.js';
+import { verifyAdmin } from '@headlines/auth';
+import { revalidatePath } from '../revalidate.js';
+
+export async function getAdminOpportunities({ page = 1, filters = {}, sort = 'date_desc' }) {
+    const { isAdmin, error } = await verifyAdmin();
+    if (!isAdmin) return { success: false, error, data: [], total: 0 };
+
+    await dbConnect();
+    const { queryFilter, sortOptions } = await buildQuery(Opportunity, { filters, sort, baseQuery: {} });
+
+    const [opportunities, total] = await Promise.all([
+        Opportunity.find(queryFilter)
+            .populate({ path: 'events', select: 'synthesized_headline', options: { limit: 1 } })
+            .sort(sortOptions)
+            .lean(),
+        Opportunity.countDocuments(queryFilter)
+    ]);
+    
+    return { success: true, data: JSON.parse(JSON.stringify(opportunities)), total };
+}
+
+export async function updateAdminOpportunity(oppId, updateData) {
+    const { isAdmin, error } = await verifyAdmin();
+    if (!isAdmin) return { success: false, error };
+    try {
+        await dbConnect();
+        const opp = await Opportunity.findByIdAndUpdate(oppId, { $set: updateData }, { new: true, runValidators: true }).lean();
+        if (!opp) return { success: false, error: 'Opportunity not found.' };
+        await revalidatePath('/admin/opportunities');
+        return { success: true, data: JSON.parse(JSON.stringify(opp)) };
+    } catch (e) {
+        // DEFINITIVE FIX: Check for MongoDB duplicate key error
+        if (e.code === 11000) {
+            return { success: false, error: 'An opportunity with this name already exists.' };
+        }
+        return { success: false, error: 'Failed to update opportunity.' };
+    }
+}
+
+export async function deleteAdminOpportunity(oppId) {
+    const { isAdmin, error } = await verifyAdmin();
+    if (!isAdmin) return { success: false, error };
+    try {
+        await dbConnect();
+        const result = await Opportunity.findByIdAndDelete(oppId);
+        if (!result) return { success: false, error: 'Opportunity not found.' };
+        await revalidatePath('/admin/opportunities');
+        return { success: true };
+    } catch (e) {
+        return { success: false, error: 'Failed to delete opportunity.' };
+    }
+}
+
+```
+
+## 📄 src/actions/adminSources.js
+*Lines: 79, Size: 2.52 KB*
+
+```javascript
+// packages/data-access/src/actions/adminSources.js (version 2.0)
+'use server'
+
+import { revalidatePath } from '../revalidate.js'
+import { Source } from '@headlines/models'
+import { verifyAdmin } from '@headlines/auth'
+import dbConnect from '../dbConnect.js' // Internal helper
+
+export async function getAllSources() {
+  const { isAdmin, error } = await verifyAdmin()
+  if (!isAdmin) return { success: false, error }
+
+  try {
+    await dbConnect()
+    const sources = await Source.find({}).sort({ country: 1, name: 1 }).lean()
+    return { success: true, data: JSON.parse(JSON.stringify(sources)) }
+  } catch (e) {
+    console.error('[Admin Action Error - getAllSources]:', e)
+    return { success: false, error: 'Failed to fetch sources.' }
+  }
+}
+
+export async function createSource(sourceData) {
+  const { isAdmin, error } = await verifyAdmin()
+  if (!isAdmin) return { success: false, error }
+
+  try {
+    await dbConnect()
+    const newSource = new Source(sourceData)
+    await newSource.save()
+    await revalidatePath('/admin/sources')
+    return { success: true, data: JSON.parse(JSON.stringify(newSource)) }
+  } catch (e) {
+    console.error('[Admin Action Error - createSource]:', e)
+    if (e.code === 11000) {
+      return { success: false, error: 'A source with this name already exists.' }
+    }
+    return { success: false, error: 'Failed to create source.' }
+  }
+}
+
+export async function updateSource(sourceId, updateData) {
+  const { isAdmin, error } = await verifyAdmin()
+  if (!isAdmin) return { success: false, error }
+
+  try {
+    await dbConnect()
+    const updatedSource = await Source.findByIdAndUpdate(sourceId, updateData, {
+      new: true,
+    }).lean()
+    if (!updatedSource) {
+      return { success: false, error: 'Source not found.' }
+    }
+    await revalidatePath('/admin/sources')
+    return { success: true, data: JSON.parse(JSON.stringify(updatedSource)) }
+  } catch (e) {
+    console.error('[Admin Action Error - updateSource]:', e)
+    return { success: false, error: 'Failed to update source.' }
+  }
+}
+
+export async function deleteSource(sourceId) {
+  const { isAdmin, error } = await verifyAdmin()
+  if (!isAdmin) return { success: false, error }
+
+  try {
+    await dbConnect()
+    const result = await Source.findByIdAndDelete(sourceId)
+    if (!result) {
+      return { success: false, error: 'Source not found.' }
+    }
+    await revalidatePath('/admin/sources')
+    return { success: true }
+  } catch (e) {
+    console.error('[Admin Action Error - deleteSource]:', e)
+    return { success: false, error: 'Failed to delete source.' }
+  }
+}
+
+```
+
+## 📄 src/actions/aiSourceDiscovery.js
+*Lines: 87, Size: 2.97 KB*
+
+```javascript
+// src/actions/aiSourceDiscovery.js (version 1.0)
+'use server'
+
+import { verifyAdmin } from '@/lib/adminAuth'
+import { scrapeUrl } from './scrape'
+import { callGroqWithRetry } from '@/lib/groq'
+import {
+  SECTION_SUGGESTER_PROMPT,
+  SELECTOR_SUGGESTER_PROMPT,
+} from '@/lib/prompts/sourceDiscoveryPrompts'
+
+const AI_AGENT_MODEL = 'llama3-70b-8192'
+
+/**
+ * Action that takes a base URL, scrapes it, and asks an AI agent to suggest relevant news sections.
+ */
+export async function suggestSections(url) {
+  const { isAdmin, error } = await verifyAdmin()
+  if (!isAdmin) return { success: false, error }
+
+  console.log(`[AI Source Discovery] Step 1: Suggesting sections for ${url}`)
+  const scrapeResult = await scrapeUrl(url)
+  if (!scrapeResult.success) {
+    return scrapeResult
+  }
+
+  try {
+    const response = await callGroqWithRetry({
+      model: AI_AGENT_MODEL,
+      messages: [
+        { role: 'system', content: SECTION_SUGGESTER_PROMPT },
+        {
+          role: 'user',
+          content: `Analyze the following HTML content from ${url} and suggest relevant news sections:\n\n---\n\n${scrapeResult.content.substring(0, 15000)}`,
+        },
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.0,
+    })
+
+    const data = JSON.parse(response.choices[0].message.content)
+    console.log(`[AI Source Discovery] Found ${data.suggestions.length} potential sections.`)
+    return { success: true, data: data.suggestions }
+  } catch (e) {
+    console.error('[AI Source Discovery Error - suggestSections]:', e)
+    return { success: false, error: 'AI agent failed to suggest sections.' }
+  }
+}
+
+/**
+ * Action that takes a URL and a target type (e.g., 'headlines'), scrapes it,
+ * and asks an AI agent to suggest a robust CSS selector.
+ */
+export async function suggestSelector(url, targetType) {
+  const { isAdmin, error } = await verifyAdmin()
+  if (!isAdmin) return { success: false, error }
+
+  console.log(`[AI Source Discovery] Step 2: Suggesting selector for ${targetType} on ${url}`)
+  const scrapeResult = await scrapeUrl(url)
+  if (!scrapeResult.success) {
+    return scrapeResult
+  }
+
+  const prompt = SELECTOR_SUGGESTER_PROMPT.replace('{TARGET_TYPE}', targetType)
+
+  try {
+    const response = await callGroqWithRetry({
+      model: AI_AGENT_MODEL,
+      messages: [
+        { role: 'system', content: prompt },
+        {
+          role: 'user',
+          content: `Analyze the following HTML from ${url} to find a selector for the ${targetType}:\n\n---\n\n${scrapeResult.content.substring(0, 15000)}`,
+        },
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.0,
+    })
+
+    const data = JSON.parse(response.choices[0].message.content)
+    console.log(`[AI Source Discovery] Suggested selector with confidence ${data.confidence}: ${data.selector}`)
+    return { success: true, data }
+  } catch (e) {
+    console.error('[AI Source Discovery Error - suggestSelector]:', e)
+    return { success: false, error: `AI agent failed to suggest a selector for ${targetType}.` }
+  }
+}
+```
+
+## 📄 src/actions/articles.js
+*Lines: 55, Size: 1.94 KB*
+
+```javascript
+// packages/data-access/src/actions/articles.js (version 2.1.0)
+'use server'
+
+import dbConnect from '../dbConnect.js'
+import { Article, Subscriber } from '@headlines/models'
+import { revalidatePath } from '../revalidate.js'
+import { buildQuery } from '../queryBuilder.js'
+import { getUserIdFromSession } from '@headlines/auth'
+
+const ARTICLES_PER_PAGE = 10;
+
+export async function deleteArticle({ itemId, userId }) {
+  if (!itemId || !userId) {
+    return { success: false, message: 'Article ID and user ID are required.' }
+  }
+  try {
+    await dbConnect()
+    // Soft-delete by adding to the user's discarded list.
+    await Subscriber.updateOne({ _id: userId }, { $addToSet: { 'discardedItems.articles': itemId } });
+    await revalidatePath('/')
+    return { success: true, message: 'Article discarded successfully.' }
+  } catch (error) {
+    return { success: false, message: 'Failed to discard article.' }
+  }
+}
+
+const baseQuery = {
+  $or: [{ relevance_article: { $gt: 25 } }, { relevance_headline: { $gt: 25 } }],
+}
+
+export async function getArticles({ page = 1, filters = {}, sort = 'date_desc', userId: explicitUserId = null }) {
+  const sessionUserId = await getUserIdFromSession();
+  const userId = explicitUserId || sessionUserId;
+  await dbConnect()
+  const { queryFilter, sortOptions } = await buildQuery(Article, { filters, sort, baseQuery, userId })
+  const skipAmount = (page - 1) * ARTICLES_PER_PAGE
+
+  const articles = await Article.find(queryFilter)
+    .sort(sortOptions)
+    .skip(skipAmount)
+    .limit(ARTICLES_PER_PAGE)
+    .lean()
+
+  return JSON.parse(JSON.stringify(articles))
+}
+
+export async function getTotalArticleCount({ filters = {}, userId: explicitUserId = null } = {}) {
+  const sessionUserId = await getUserIdFromSession();
+  const userId = explicitUserId || sessionUserId;
+  await dbConnect()
+  const { queryFilter } = await buildQuery(Article, { filters, baseQuery, userId })
+  const count = await Article.countDocuments(queryFilter)
+  return count
+}
+
+```
+
+## 📄 src/actions/chat.js
+*Lines: 61, Size: 2 KB*
+
+```javascript
+// src/actions/chat.js
+'use server'
+
+import OpenAI from 'openai'
+import { env } from '@/lib/env.mjs' // <-- Import the validated env object
+
+// Lazily initialize to create the client only when first needed.
+let groq
+function getGroqClient() {
+  if (!groq) {
+    // No more parsing here! Just use the pre-validated key.
+    groq = new OpenAI({
+      apiKey: env.GROQ_API_KEY,
+      baseURL: 'https://api.groq.com/openai/v1',
+    })
+  }
+  return groq
+}
+
+const TITLE_GENERATOR_MODEL = 'llama3-8b-8192'
+
+const TITLE_GENERATOR_PROMPT = `You are a title generation AI. Your task is to read a conversation and create a concise, 5-word-or-less title that accurately summarizes the main topic.
+- Be direct and factual.
+- Do not use quotes or introductory phrases.
+- The title should be in the same language as the conversation.
+
+Example Conversation:
+"user: Who is Anders Holch Povlsen?
+assistant: Anders Holch Povlsen is a Danish billionaire, the CEO and sole owner of the international fashion retailer Bestseller."
+
+Example Title:
+"Anders Holch Povlsen's Bestseller"`
+
+export async function generateChatTitle(messages) {
+  if (!messages || messages.length < 2) {
+    return { success: false, error: 'Not enough messages to generate a title.' }
+  }
+
+  try {
+    const client = getGroqClient()
+    console.log('[Chat Title] Generating title for conversation...')
+    const conversationText = messages.map((m) => `${m.role}: ${m.content}`).join('\n')
+
+    const response = await client.chat.completions.create({
+      model: TITLE_GENERATOR_MODEL,
+      messages: [
+        { role: 'system', content: TITLE_GENERATOR_PROMPT },
+        { role: 'user', content: conversationText },
+      ],
+      temperature: 0.1,
+    })
+
+    const title = response.choices[0].message.content.trim().replace(/"/g, '')
+    console.log(`[Chat Title] Successfully generated title: "${title}"`)
+    return { success: true, title }
+  } catch (error) {
+    console.error('[Chat Title Generation Error]', error)
+    return { success: false, error: 'Failed to generate title.' }
+  }
+}
+
+```
+
+## 📄 src/actions/countries.js
+*Lines: 117, Size: 3.47 KB*
+
+```javascript
+// packages/data-access/src/actions/countries.js (version 2.2.0)
+'use server'
+
+import { revalidatePath } from '../revalidate.js'
+import { Country } from '@headlines/models'
+import { verifyAdmin } from '@headlines/auth'
+import dbConnect from '../dbConnect.js'
+
+// This function is for the admin panel and requires authentication.
+export async function getAllCountries() {
+  const { isAdmin, error } = await verifyAdmin()
+  if (!isAdmin) return { success: false, error }
+  try {
+    await dbConnect()
+    const countries = await Country.aggregate([
+      { $match: {} },
+      {
+        $lookup: {
+          from: 'synthesized_events',
+          localField: 'name',
+          foreignField: 'country',
+          as: 'events',
+        },
+      },
+      {
+        $lookup: {
+          from: 'sources',
+          localField: 'name',
+          foreignField: 'country',
+          as: 'sources',
+        },
+      },
+      {
+        $project: {
+          name: 1,
+          isoCode: 1,
+          status: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          eventCount: { $size: '$events' },
+          sourceCount: { $size: '$sources' },
+          activeSourceCount: {
+            $size: {
+              $filter: {
+                input: '$sources',
+                as: 'source',
+                cond: { $eq: ['$$source.status', 'active'] },
+              },
+            },
+          },
+        },
+      },
+    ])
+    return { success: true, data: JSON.parse(JSON.stringify(countries)) }
+  } catch (e) {
+    console.error('[Action Error - getAllCountries]:', e)
+    return { success: false, error: 'Failed to fetch countries with aggregate data.' }
+  }
+}
+
+// This is a new, public-facing function for the client app layout. It does not require admin auth.
+export async function getGlobalCountries() {
+  try {
+    await dbConnect()
+    const countries = await Country.aggregate([
+      { $match: { status: 'active' } },
+      {
+        $lookup: {
+          from: 'synthesized_events',
+          localField: 'name',
+          foreignField: 'country',
+          as: 'events',
+        },
+      },
+      { $project: { name: 1, count: { $size: '$events' } } },
+      { $sort: { name: 1 } },
+    ])
+    return { success: true, data: JSON.parse(JSON.stringify(countries)) }
+  } catch (e) {
+    console.error('[Action Error - getGlobalCountries]:', e)
+    return { success: false, error: 'Failed to fetch global country list.' }
+  }
+}
+
+export async function createCountry(countryData) {
+  const { isAdmin, error } = await verifyAdmin()
+  if (!isAdmin) return { success: false, error }
+
+  try {
+    await dbConnect()
+    const newCountry = new Country(countryData)
+    await newCountry.save()
+    await revalidatePath('/admin/countries')
+    return { success: true, data: JSON.parse(JSON.stringify(newCountry)) }
+  } catch (e) {
+    if (e.code === 11000) return { success: false, error: 'Country already exists.' }
+    return { success: false, error: 'Failed to create country.' }
+  }
+}
+
+export async function updateCountry(countryId, updateData) {
+  const { isAdmin, error } = await verifyAdmin()
+  if (!isAdmin) return { success: false, error }
+
+  try {
+    await dbConnect()
+    const country = await Country.findByIdAndUpdate(countryId, updateData, {
+      new: true,
+    }).lean()
+    if (!country) return { success: false, error: 'Country not found.' }
+    await revalidatePath('/admin/countries')
+    return { success: true, data: JSON.parse(JSON.stringify(country)) }
+  } catch (e) {
+    return { success: false, error: 'Failed to update country.' }
+  }
+}
+
+```
+
+## 📄 src/actions/dashboard.js
+*Lines: 65, Size: 2.51 KB*
+
+```javascript
+// packages/data-access/src/actions/dashboard.js (version 2.0.0)
+'use server'
+
+import { Source, Subscriber, WatchlistEntity } from '@headlines/models'
+import { verifyAdmin } from '@headlines/auth'
+import dbConnect from '../dbConnect.js'
+
+export async function getDashboardStats() {
+  // This action is called by both the pipeline (no user session) and admin app (admin session).
+  // The admin check ensures security for the API route endpoint.
+  const { isAdmin, error } = await verifyAdmin()
+  if (!isAdmin) {
+    // A simple check to see if this is being called from the pipeline (where there's no user)
+    // This is a pragmatic way to allow dual use.
+    const isPipeline = process.env.IS_PIPELINE_RUN === 'true'
+    if (!isPipeline) {
+       return { success: false, error }
+    }
+  }
+
+  try {
+    await dbConnect()
+    const [sourceStats, userStats, watchlistStats] = await Promise.all([
+      Source.aggregate([
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            active: { $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] } },
+            paused: { $sum: { $cond: [{ $eq: ['$status', 'paused'] }, 1, 0] } },
+            failing: { $sum: { $cond: [{ $and: [{ $eq: ['$status', 'active'] }, { $eq: ['$analytics.lastRunHeadlineCount', 0] }, { $gt: ['$analytics.totalRuns', 0] }] }, 1, 0] } },
+          },
+        },
+      ]),
+      Subscriber.aggregate([
+        { $group: { _id: null, total: { $sum: 1 }, active: { $sum: { $cond: ['$isActive', 1, 0] } }, admin: { $sum: { $cond: [{ $eq: ['$role', 'admin'] }, 1, 0] } } } },
+      ]),
+      WatchlistEntity.aggregate([
+        { $match: { status: 'active' } }, // Only count active entities
+        { $group: { _id: '$type', count: { $sum: 1 } } },
+      ]),
+    ])
+
+    const totalWatchlist = watchlistStats.reduce((acc, item) => acc + item.count, 0)
+
+    const stats = {
+      sources: sourceStats[0] || { total: 0, active: 0, paused: 0, failing: 0 },
+      users: userStats[0] || { total: 0, active: 0, admin: 0 },
+      watchlist: {
+        total: totalWatchlist,
+        company: watchlistStats.find((s) => s._id === 'company')?.count || 0,
+        person: watchlistStats.find((s) => s._id === 'person')?.count || 0,
+        family: watchlistStats.find((s) => s._id === 'family')?.count || 0,
+      },
+    }
+    // Remove the internal _id field from aggregations
+    delete stats.sources._id;
+    delete stats.users._id;
+    
+    return { success: true, data: stats }
+  } catch (e) {
+    return { success: false, error: 'Failed to fetch dashboard stats.' }
+  }
+}
+
+```
+
+## 📄 src/actions/email.js
+*Lines: 53, Size: 1.89 KB*
+
+```javascript
+// packages/data-access/src/actions/email.js (version 1.0)
+'use server'
+
+import { getUserIdFromSession } from '@headlines/auth';
+import { SynthesizedEvent, Opportunity, Article } from '@headlines/models';
+import dbConnect from '../dbConnect.js';
+// This import will need a proper mailer service setup, for now we mock it.
+// import { sendSingleItemEmail } from '@/lib/mailer'; 
+
+async function sendItemByEmail(itemId, itemType) {
+    const userId = await getUserIdFromSession();
+    if (!userId) return { success: false, error: 'Authentication required.' };
+    
+    try {
+        await dbConnect();
+
+        let item;
+        const modelMap = {
+            event: SynthesizedEvent,
+            opportunity: Opportunity,
+            article: Article,
+        };
+
+        const Model = modelMap[itemType];
+        if (!Model) return { success: false, error: 'Invalid item type.' };
+
+        item = await Model.findById(itemId).lean();
+        if (!item) return { success: false, error: 'Item not found.' };
+
+        // In a real implementation, you would format this into a nice HTML email.
+        const emailContent = `
+            <h1>Item Reminder</h1>
+            <p><strong>Type:</strong> ${itemType}</p>
+            <p><strong>ID:</strong> ${itemId}</p>
+            <pre>${JSON.stringify(item, null, 2)}</pre>
+        `;
+        
+        console.log(`--- SIMULATING EMAIL ---`);
+        console.log(`TO: User ${userId}`);
+        console.log(`SUBJECT: Your Requested Item: ${item.headline || item.reachOutTo}`);
+        console.log(emailContent);
+        // await sendSingleItemEmail(userId, `Your Requested Item: ${item.headline || item.reachOutTo}`, emailContent);
+
+        return { success: true, message: 'Item has been sent to your email.' };
+
+    } catch (e) {
+        console.error('[sendItemByEmail Error]:', e);
+        return { success: false, error: 'Failed to send item by email.' };
+    }
+}
+
+export { sendItemByEmail };
+
+```
+
+## 📄 src/actions/events.js
+*Lines: 69, Size: 1.92 KB*
+
+```javascript
+// packages/data-access/src/actions/events.js (version 2.3.0)
+'use server'
+
+import dbConnect from '../dbConnect.js'
+import mongoose from 'mongoose'
+import { SynthesizedEvent, Subscriber } from '@headlines/models'
+import { revalidatePath } from '../revalidate.js'
+import { buildQuery } from '../queryBuilder.js'
+import { getUserIdFromSession } from '@headlines/auth'
+
+const EVENTS_PER_PAGE = 5
+
+export async function deleteEvent({ itemId, userId }) {
+  if (!itemId || !userId)
+    return { success: false, message: 'Event ID and user ID are required.' }
+  try {
+    await dbConnect()
+    await Subscriber.updateOne(
+      { _id: userId },
+      { $addToSet: { 'discardedItems.events': itemId } }
+    )
+    await revalidatePath('/')
+    return { success: true, message: 'Event discarded.' }
+  } catch (error) {
+    return { success: false, message: `Failed to discard event: ${error.message}` }
+  }
+}
+
+const baseQuery = { highest_relevance_score: { $gt: 25 } }
+
+export async function getEvents({
+  page = 1,
+  filters = {},
+  sort = 'date_desc',
+  userId: explicitUserId = null,
+}) {
+  const sessionUserId = await getUserIdFromSession()
+  const userId = explicitUserId || sessionUserId
+  await dbConnect()
+  const { queryFilter, sortOptions } = await buildQuery(SynthesizedEvent, {
+    filters,
+    sort,
+    baseQuery,
+    userId,
+  })
+  const skipAmount = (page - 1) * EVENTS_PER_PAGE
+  const events = await SynthesizedEvent.find(queryFilter)
+    .sort(sortOptions)
+    .skip(skipAmount)
+    .limit(EVENTS_PER_PAGE)
+    .lean()
+  return JSON.parse(JSON.stringify(events))
+}
+
+export async function getTotalEventCount({
+  filters = {},
+  userId: explicitUserId = null,
+} = {}) {
+  const sessionUserId = await getUserIdFromSession()
+  const userId = explicitUserId || sessionUserId
+  await dbConnect()
+  const { queryFilter } = await buildQuery(SynthesizedEvent, {
+    filters,
+    baseQuery,
+    userId,
+  })
+  return await SynthesizedEvent.countDocuments(queryFilter)
+}
+
+```
+
+## 📄 src/actions/export.js
+*Lines: 163, Size: 7.35 KB*
+
+```javascript
+// packages/data-access/src/actions/export.js (version 2.0.0)
+'use server'
+
+import { verifyAdmin } from '@headlines/auth';
+import { Opportunity, Subscriber, SynthesizedEvent, Article } from '@headlines/models';
+import { buildQuery } from '../queryBuilder.js';
+import dbConnect from '../dbConnect.js';
+
+// --- Helper Functions ---
+
+function escapeXml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/[<>&'"]/g, c => {
+        switch (c) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '&': return '&amp;';
+            case '\'': return '&apos;';
+            case '"': return '&quot;';
+        }
+    });
+}
+
+function convertToCSV(data, columns) {
+    if (!data || data.length === 0) return '';
+    const headers = columns.map(c => c.header);
+    const csvRows = [headers.join(',')];
+    for (const row of data) {
+        const values = headers.map(header => {
+            const column = columns.find(c => c.header === header);
+            let value = column ? row[column.key] : '';
+            if (column && column.key.includes('.')) {
+                value = column.key.split('.').reduce((o, i) => (o ? o[i] : ''), row);
+            }
+            if (value === null || value === undefined) value = '';
+            if (Array.isArray(value)) value = value.join('; ');
+            const stringValue = String(value);
+            const escaped = stringValue.replace(/"/g, '""');
+            if (escaped.includes(',')) return `"${escaped}"`;
+            return escaped;
+        });
+        csvRows.push(values.join(','));
+    }
+    return csvRows.join('\n');
+}
+
+function convertToExcelXML(data, columns) {
+    let xml = `<?xml version="1.0"?>
+    <?mso-application progid="Excel.Sheet"?>
+    <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+     xmlns:o="urn:schemas-microsoft-com:office:office"
+     xmlns:x="urn:schemas-microsoft-com:office:excel"
+     xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+     xmlns:html="http://www.w3.org/TR/REC-html40">
+     <Worksheet ss:Name="Export">
+      <Table>`;
+
+    xml += '<Row>';
+    columns.forEach(col => {
+        xml += `<Cell ss:StyleID="s1"><Data ss:Type="String">${escapeXml(col.header)}</Data></Cell>`;
+    });
+    xml += '</Row>';
+
+    data.forEach(row => {
+        xml += '<Row>';
+        columns.forEach(col => {
+            let value = col.key.split('.').reduce((o, i) => (o ? o[i] : ''), row);
+            if (value === null || value === undefined) value = '';
+            if (Array.isArray(value)) value = value.join('; ');
+            
+            let type = (typeof value === 'number') ? "Number" : "String";
+            if (value instanceof Date) {
+                type = "DateTime";
+                value = value.toISOString();
+            }
+
+            xml += `<Cell><Data ss:Type="${type}">${escapeXml(value)}</Data></Cell>`;
+        });
+        xml += '</Row>';
+    });
+
+    xml += `</Table><Styles><Style ss:ID="s1"><Font ss:Bold="1"/></Style></Styles></Worksheet></Workbook>`;
+    return xml;
+}
+
+// --- Generic Exporter ---
+async function genericExporter({ model, columns, filters, sort, fileType }) {
+    const { isAdmin, error } = await verifyAdmin();
+    if (!isAdmin) return { success: false, error };
+    try {
+        await dbConnect();
+        const { queryFilter, sortOptions } = await buildQuery(model, { filters, sort, baseQuery: {} });
+        const dataToExport = await model.find(queryFilter).sort(sortOptions).lean();
+
+        if (fileType === 'csv') {
+            const csv = convertToCSV(dataToExport, columns);
+            return { success: true, data: csv, contentType: 'text/csv' };
+        } else if (fileType === 'xlsx') {
+            const xml = convertToExcelXML(dataToExport, columns);
+            return { success: true, data: xml, contentType: 'application/vnd.ms-excel' };
+        }
+        return { success: false, error: 'Invalid file type.' };
+    } catch (e) {
+        return { success: false, error: `Failed to generate export: ${e.message}` };
+    }
+}
+
+// --- Specific Implementations ---
+
+export const exportOpportunitiesToCSV = (params) => genericExporter({ ...params, model: Opportunity, columns: [
+    { header: 'Country', key: 'basedIn' }, { header: 'City', key: 'city' },
+    { header: 'Contact', key: 'reachOutTo' }, { header: 'Wealth ($M)', key: 'likelyMMDollarWealth' },
+    { header: 'Email', key: 'contactDetails.email' }, { header: 'Reason', key: 'whyContact' },
+    { header: 'Created', key: 'createdAt' },
+], fileType: 'csv' });
+
+export const exportOpportunitiesToXLSX = (params) => genericExporter({ ...params, model: Opportunity, columns: [
+    { header: 'Country', key: 'basedIn' }, { header: 'City', key: 'city' },
+    { header: 'Contact', key: 'reachOutTo' }, { header: 'Wealth ($M)', key: 'likelyMMDollarWealth' },
+    { header: 'Email', key: 'contactDetails.email' }, { header: 'Reason', key: 'whyContact' },
+    { header: 'Created', key: 'createdAt' },
+], fileType: 'xlsx' });
+
+export const exportUsersToCSV = (params) => genericExporter({ ...params, model: Subscriber, columns: [
+    { header: 'Email', key: 'email' }, { header: 'FirstName', key: 'firstName' },
+    { header: 'LastName', key: 'lastName' }, { header: 'IsActive', key: 'isActive' },
+    { header: 'Role', key: 'role' }, { header: 'Tier', key: 'subscriptionTier' },
+    { header: 'Created', key: 'createdAt' },
+], fileType: 'csv' });
+
+export const exportUsersToXLSX = (params) => genericExporter({ ...params, model: Subscriber, columns: [
+    { header: 'Email', key: 'email' }, { header: 'FirstName', key: 'firstName' },
+    { header: 'LastName', key: 'lastName' }, { header: 'IsActive', key: 'isActive' },
+    { header: 'Role', key: 'role' }, { header: 'Tier', key: 'subscriptionTier' },
+    { header: 'Created', key: 'createdAt' },
+], fileType: 'xlsx' });
+
+export const exportEventsToCSV = (params) => genericExporter({ ...params, model: SynthesizedEvent, columns: [
+    { header: 'Headline', key: 'synthesized_headline' }, { header: 'Summary', key: 'synthesized_summary' },
+    { header: 'Score', key: 'highest_relevance_score' }, { header: 'Country', key: 'country' },
+    { header: 'Created', key: 'createdAt' },
+], fileType: 'csv' });
+
+export const exportEventsToXLSX = (params) => genericExporter({ ...params, model: SynthesizedEvent, columns: [
+    { header: 'Headline', key: 'synthesized_headline' }, { header: 'Summary', key: 'synthesized_summary' },
+    { header: 'Score', key: 'highest_relevance_score' }, { header: 'Country', key: 'country' },
+    { header: 'Created', key: 'createdAt' },
+], fileType: 'xlsx' });
+
+export const exportArticlesToCSV = (params) => genericExporter({ ...params, model: Article, columns: [
+    { header: 'Headline', key: 'headline' }, { header: 'Newspaper', key: 'newspaper' },
+    { header: 'Country', key: 'country' }, { header: 'Headline Score', key: 'relevance_headline' },
+    { header: 'Article Score', key: 'relevance_article' }, { header: 'Link', key: 'link' },
+    { header: 'Created', key: 'createdAt' },
+], fileType: 'csv' });
+
+export const exportArticlesToXLSX = (params) => genericExporter({ ...params, model: Article, columns: [
+    { header: 'Headline', key: 'headline' }, { header: 'Newspaper', key: 'newspaper' },
+    { header: 'Country', key: 'country' }, { header: 'Headline Score', key: 'relevance_headline' },
+    { header: 'Article Score', key: 'relevance_article' }, { header: 'Link', key: 'link' },
+    { header: 'Created', key: 'createdAt' },
+], fileType: 'xlsx' });
+
+```
+
+## 📄 src/actions/extract.js
+*Lines: 147, Size: 6.19 KB*
+
+```javascript
+// src/actions/extract.js
+'use server';
+
+import OpenAI from 'openai';
+import { JSDOM } from 'jsdom';
+import { Readability } from '@mozilla/readability';
+import { COMMON_COUNTRIES } from '@/lib/countries';
+import { fetchWikipediaSummary } from '@/lib/wikipedia';
+import { env } from '@/lib/env.mjs'; // <-- Import the validated env object
+
+let groq;
+function getGroqClient() {
+  if (!groq) {
+    groq = new OpenAI({
+      apiKey: env.GROQ_API_KEY,
+      baseURL: 'https://api.groq.com/openai/v1',
+    });
+  }
+  return groq;
+}
+
+const QUERY_PLANNER_MODEL = 'llama3-8b-8192';
+const ANALYST_MODEL = 'llama3-70b-8192';
+
+// --- Agent Prompts ---
+const QUERY_PLANNER_PROMPT = `You are a research planning agent. Your task is to analyze the provided "Article Text" and determine the most critical entities to look up on Wikipedia for factual verification and enrichment.
+
+**Instructions:**
+1.  Identify the primary subject of the article (a person or a company).
+2.  Determine the 1-2 most important, specific proper nouns for which a Wikipedia search would provide essential background context.
+3.  Formulate these as precise, high-quality search queries.
+
+Respond ONLY with a valid JSON object with the following structure:
+{
+  "reasoning": "A brief, one-sentence explanation of your decision-making process.",
+  "wikipedia_queries": ["Precise Search Query 1", "Precise Search Query 2"]
+}`;
+
+const FINAL_SYNTHESIS_PROMPT = `You are a senior analyst at a top-tier wealth management firm. Your task is to synthesize a business-critical summary from the provided "Article Text", fact-checking and enriching it with the "Wikipedia Context".
+
+**Your Mandate:**
+1.  **Prioritize the Article:** The main story and facts must come from the "Article Text".
+2.  **Use Wikipedia for Verification & Enrichment:** Use the "Wikipedia Context" to verify names, roles, and foundational facts (like founding dates or parent companies). Add relevant background details from Wikipedia that add value.
+3.  **AGGRESSIVELY DISCARD FLUFF:** You MUST ignore all generic marketing language, mission statements, and other non-factual embellishments. Focus only on tangible, factual intelligence (company names, investment relationships, key individuals, strategic moves).
+4.  **Deduce Metadata:** Determine the publication name and the primary country of relevance.
+
+Respond ONLY with a valid JSON object with the following structure:
+{
+  "headline": "A concise, factual headline for the synthesized summary.",
+  "publication": "The name of the newspaper or website.",
+  "country": "The country this news is about. Choose one from this list: [${COMMON_COUNTRIES.join(', ')}].",
+  "business_summary": "The final, synthesized, fact-checked summary, formatted with Markdown."
+}`;
+
+export async function scrapeAndExtractWithAI(url) {
+  const client = getGroqClient();
+  console.log(`[AI Extract] Starting extraction for URL: ${url}`);
+  if (!url) {
+    return { success: false, error: 'URL is required.' };
+  }
+
+  try {
+    console.log('[AI Extract] Fetching and parsing content...');
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
+      },
+    });
+    if (!response.ok) {
+      console.error(`[AI Extract] Fetch failed with status: ${response.status}`);
+      return { success: false, error: `Fetch failed: ${response.status}` };
+    }
+
+    const html = await response.text();
+    const doc = new JSDOM(html, { url });
+    const article = new Readability(doc.window.document).parse();
+    if (!article || !article.textContent) {
+      console.error('[AI Extract] Readability could not extract content.');
+      return { success: false, error: 'Readability could not extract content.' };
+    }
+
+    const articleText = article.textContent.trim().substring(0, 12000);
+    console.log(`[AI Extract] Extracted ${articleText.length} characters of text.`);
+
+    console.log('[AI Extract] Running Query Planner Agent...');
+    const plannerResponse = await client.chat.completions.create({
+      model: QUERY_PLANNER_MODEL,
+      messages: [
+        { role: 'system', content: QUERY_PLANNER_PROMPT },
+        { role: 'user', content: `Article Text:\n${articleText}` },
+      ],
+      response_format: { type: 'json_object' },
+    });
+    const plan = JSON.parse(plannerResponse.choices[0].message.content);
+    console.log('[AI Extract] Planner decided on queries:', plan.wikipedia_queries);
+
+    console.log('[AI Extract] Fetching Wikipedia context...');
+    const wikipediaPromises = (plan.wikipedia_queries || [])
+      .slice(0, 2)
+      .map((entity) => fetchWikipediaSummary(entity));
+    const wikipediaResults = await Promise.all(wikipediaPromises);
+    const wikipediaContext = wikipediaResults
+      .filter((res) => res.success)
+      .map((res) => res.summary)
+      .join('\n\n---\n\n');
+    console.log(
+      `[AI Extract] Fetched ${wikipediaResults.filter((r) => r.success).length} Wikipedia summaries.`
+    );
+
+    console.log('[AI Extract] Running Final Synthesis Analyst Agent...');
+    const finalAnalysis = await client.chat.completions.create({
+      model: ANALYST_MODEL,
+      messages: [
+        {
+          role: 'system',
+          content: FINAL_SYNTHESIS_PROMPT.replace(
+            "[${COMMON_COUNTRIES.join(', ')}]",
+            COMMON_COUNTRIES.join(', ')
+          ),
+        },
+        {
+          role: 'user',
+          content: `URL: ${url}\n\n---ARTICLE TEXT---\n${articleText}\n\n---WIKIPEDIA CONTEXT---\n${wikipediaContext || 'None'}`,
+        },
+      ],
+      response_format: { type: 'json_object' },
+    });
+
+    const finalData = JSON.parse(finalAnalysis.choices[0].message.content);
+    console.log('[AI Extract] Final synthesis complete.');
+
+    if (!finalData.headline || !finalData.business_summary) {
+      console.error('[AI Extract] AI Analyst failed to produce required fields.');
+      return {
+        success: false,
+        error: 'AI Analyst could not reliably synthesize a summary.',
+      };
+    }
+
+    console.log('[AI Extract] Extraction successful.');
+    return { success: true, data: finalData };
+  } catch (error) {
+    console.error('[AI Extraction Error]', error);
+    return { success: false, error: `An unexpected error occurred: ${error.message}` };
+  }
+}
+```
+
+## 📄 src/actions/knowledge.js
+*Lines: 89, Size: 2.97 KB*
+
+```javascript
+// src/actions/knowledge.js (version 2.0)
+'use server'
+
+import { revalidatePath } from 'next/cache'
+import { Pinecone } from '@pinecone-database/pinecone'
+import mongoose from 'mongoose'
+import dbConnect from '@/lib/mongodb'
+import Article from '@/models/Article'
+import { generateEmbedding } from '@/lib/embeddings'
+import { env } from '@/lib/env.mjs' // <-- Import the validated env object
+
+let pineconeIndex
+function getPineconeIndex() {
+  if (!pineconeIndex) {
+    const pc = new Pinecone({ apiKey: env.PINECONE_API_KEY })
+    pineconeIndex = pc.index(env.PINECONE_INDEX_NAME)
+  }
+  return pineconeIndex
+}
+
+export async function addKnowledge(data) {
+  const { headline, business_summary, source, country, link } = data
+  console.log(`[Add Knowledge] Attempting to add new knowledge: "${headline}"`)
+
+  if (!headline || !business_summary || !source || !country || !link) {
+    console.error('[Add Knowledge] Validation failed: Missing required fields.')
+    return { success: false, message: 'All fields are required.' }
+  }
+
+  try {
+    const index = getPineconeIndex()
+    await dbConnect()
+    console.log('[Add Knowledge] Database connected.')
+
+    console.log('[Add Knowledge] Generating embedding...')
+    const textToEmbed = `${headline}\n${business_summary}`
+    const embedding = await generateEmbedding(textToEmbed)
+    console.log('[Add Knowledge] Embedding generated successfully.')
+
+    const newArticle = new Article({
+      _id: new mongoose.Types.ObjectId(),
+      headline,
+      link,
+      newspaper: source,
+      source: 'Manual Upload',
+      country,
+      relevance_headline: 100,
+      assessment_headline: 'Manually uploaded by user.',
+      relevance_article: 100,
+      assessment_article: business_summary,
+      embedding: embedding,
+      // For simplicity, we assume key individuals might be extracted by another process
+      // or we can leave it empty for manual uploads. Here, we'll ensure it's an empty array.
+      key_individuals: [],
+    })
+    console.log('[Add Knowledge] MongoDB document created.')
+
+    await newArticle.save()
+    console.log('[Add Knowledge] Saved to MongoDB.')
+
+    // Extract names for Pinecone metadata
+    const key_individual_names = (newArticle.key_individuals || []).map((p) => p.name)
+
+    await index.upsert([
+      {
+        id: newArticle._id.toString(),
+        values: embedding,
+        metadata: {
+          headline: newArticle.headline,
+          summary: newArticle.assessment_article,
+          newspaper: newArticle.newspaper,
+          country: newArticle.country,
+          key_individuals: key_individual_names,
+        },
+      },
+    ])
+    console.log('[Add Knowledge] Upserted to Pinecone.')
+
+    await revalidatePath('/articles')
+    await revalidatePath('/events')
+    console.log('[Add Knowledge] Revalidated paths.')
+
+    return { success: true, message: 'Knowledge successfully added and embedded.' }
+  } catch (error) {
+    console.error('[Add Knowledge Error]', error)
+    return { success: false, message: 'Failed to add knowledge.' }
+  }
+}
+
+```
+
+## 📄 src/actions/opportunities.js
+*Lines: 98, Size: 3.22 KB*
+
+```javascript
+// packages/data-access/src/actions/opportunities.js (version 2.3.0)
+'use server'
+
+import dbConnect from '../dbConnect.js'
+import { Opportunity, Subscriber } from '@headlines/models'
+import { revalidatePath } from '../revalidate.js'
+import { buildQuery } from '../queryBuilder.js'
+import { getUserIdFromSession } from '@headlines/auth'
+import mongoose from 'mongoose'
+
+const OPPORTUNITIES_PER_PAGE = 10
+
+export async function deleteOpportunity({ itemId, userId }) {
+  if (!itemId || !userId) return { success: false, message: 'ID and user ID are required.' }
+  try {
+    await dbConnect()
+    await Subscriber.updateOne(
+      { _id: userId },
+      { $addToSet: { 'discardedItems.opportunities': itemId } }
+    )
+    await revalidatePath('/opportunities')
+    return { success: true, message: 'Opportunity discarded.' }
+  } catch (error) {
+    return { success: false, message: 'Failed to discard opportunity.' }
+  }
+}
+
+
+export async function getOpportunities({ page = 1, filters = {}, sort = 'date_desc', userId: explicitUserId = null }) {
+  const sessionUserId = await getUserIdFromSession();
+  const userId = explicitUserId || sessionUserId;
+  await dbConnect()
+  const { queryFilter, sortOptions } = await buildQuery(Opportunity, {
+    filters,
+    sort,
+    userId,
+  })
+  const skipAmount = (page - 1) * OPPORTUNITIES_PER_PAGE
+
+  const opportunities = await Opportunity.find(queryFilter)
+    .populate({
+      path: 'events',
+      select:
+        'synthesized_headline synthesized_summary source_articles highest_relevance_score',
+      options: { limit: 1, sort: { createdAt: -1 } },
+    })
+    .sort(sortOptions)
+    .skip(skipAmount)
+    .limit(OPPORTUNITIES_PER_PAGE)
+    .lean()
+
+  const processed = opportunities.map((opp) => ({
+    ...opp,
+    sourceEventId: opp.events?.[0] || null,
+  }))
+  return JSON.parse(JSON.stringify(processed))
+}
+
+export async function getTotalOpportunitiesCount({ filters = {}, userId: explicitUserId = null } = {}) {
+  const sessionUserId = await getUserIdFromSession();
+  const userId = explicitUserId || sessionUserId;
+  await dbConnect()
+  const { queryFilter } = await buildQuery(Opportunity, { filters, userId })
+  return await Opportunity.countDocuments(queryFilter)
+}
+
+export async function getOpportunityDetails(opportunityId) {
+  if (!mongoose.Types.ObjectId.isValid(opportunityId)) {
+    return { success: false, error: 'Invalid ID format.' }
+  }
+  try {
+    await dbConnect()
+    const opportunity = await Opportunity.findById(opportunityId)
+      .populate({
+        path: 'events',
+        options: { sort: { createdAt: -1 } },
+      })
+      .lean()
+
+    if (!opportunity) {
+      return { success: false, error: 'Opportunity not found.' }
+    }
+
+    return { success: true, data: JSON.parse(JSON.stringify(opportunity)) }
+  } catch (error) {
+    return { success: false, error: 'Database error while fetching opportunity details.' }
+  }
+}
+
+export async function getUniqueOpportunityCountries() {
+  const sessionUserId = await getUserIdFromSession();
+  const userId = sessionUserId;
+  await dbConnect();
+  const { queryFilter } = await buildQuery(Opportunity, { userId });
+  const countries = await Opportunity.distinct('basedIn', { ...queryFilter, basedIn: { $ne: null, $ne: '' } });
+  return JSON.parse(JSON.stringify(countries.sort()));
+}
+
+```
+
+## 📄 src/actions/pipeline.js
+*Lines: 104, Size: 3.49 KB*
+
+```javascript
+// packages/data-access/src/actions/pipeline.js (version 1.0.0)
+'use server'
+
+import { Source, Article, SynthesizedEvent, Opportunity, WatchlistEntity, WatchlistSuggestion } from '@headlines/models'
+import dbConnect from '../dbConnect.js'
+
+// --- Source Analytics & Status ---
+export async function updateSourceAnalyticsBatch(bulkOps) {
+  if (!bulkOps || bulkOps.length === 0) return { success: true, modifiedCount: 0 };
+  try {
+    await dbConnect();
+    const result = await Source.bulkWrite(bulkOps);
+    return { success: true, modifiedCount: result.modifiedCount };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function findSourcesForScraping(queryCriteria) {
+  try {
+    await dbConnect();
+    const sources = await Source.find(queryCriteria).lean();
+    return { success: true, data: JSON.parse(JSON.stringify(sources)) };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+// --- Housekeeping ---
+export async function performHousekeeping(deletionCriteria) {
+  try {
+    await dbConnect();
+    const result = await Article.deleteMany(deletionCriteria);
+    return { success: true, deletedCount: result.deletedCount };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+// --- Data Commits ---
+export async function bulkWriteEvents(eventOps) {
+  if (!eventOps || eventOps.length === 0) return { success: true, upsertedCount: 0, modifiedCount: 0 };
+  try {
+    await dbConnect();
+    const result = await SynthesizedEvent.bulkWrite(eventOps, { ordered: false });
+    return { success: true, upsertedCount: result.upsertedCount, modifiedCount: result.modifiedCount };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function bulkWriteArticles(articleOps) {
+    if (!articleOps || articleOps.length === 0) return { success: true, result: null };
+    try {
+        await dbConnect();
+        const result = await Article.bulkWrite(articleOps, { ordered: false });
+        return { success: true, result };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function findEventsByKeys(eventKeys) {
+    try {
+        await dbConnect();
+        const events = await SynthesizedEvent.find({ event_key: { $in: eventKeys } }).lean();
+        return { success: true, data: JSON.parse(JSON.stringify(events)) };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function findArticlesByLinks(links) {
+    try {
+        await dbConnect();
+        const articles = await Article.find({ link: { $in: links } }).select('link _id').lean();
+        return { success: true, data: JSON.parse(JSON.stringify(articles)) };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+}
+
+// --- Watchlist Suggestions ---
+export async function getActiveWatchlistEntityNames() {
+    try {
+        await dbConnect();
+        const entities = await WatchlistEntity.find({}).select('name').lean();
+        return { success: true, data: entities };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function bulkWriteWatchlistSuggestions(bulkOps) {
+    if (!bulkOps || bulkOps.length === 0) return { success: true, result: null };
+    try {
+        await dbConnect();
+        const result = await WatchlistSuggestion.bulkWrite(bulkOps);
+        return { success: true, result };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+}
+
+```
+
+## 📄 src/actions/relationships.js
+*Lines: 55, Size: 2.1 KB*
+
+```javascript
+// packages/data-access/src/actions/relationships.js (version 1.0)
+'use server'
+
+import { verifyAdmin } from '@headlines/auth';
+import { SynthesizedEvent, Opportunity } from '@headlines/models';
+import dbConnect from '../dbConnect.js';
+import { revalidatePath } from '../revalidate.js';
+import mongoose from 'mongoose';
+
+async function linkOpportunityToEvent(eventId, opportunityId) {
+    const { isAdmin, error } = await verifyAdmin();
+    if (!isAdmin) return { success: false, error };
+
+    if (!mongoose.Types.ObjectId.isValid(eventId) || !mongoose.Types.ObjectId.isValid(opportunityId)) {
+        return { success: false, error: 'Invalid ID format.' };
+    }
+
+    try {
+        await dbConnect();
+        await Promise.all([
+            SynthesizedEvent.findByIdAndUpdate(eventId, { $addToSet: { relatedOpportunities: opportunityId } }),
+            Opportunity.findByIdAndUpdate(opportunityId, { $addToSet: { events: eventId } })
+        ]);
+        revalidatePath('/admin/events');
+        revalidatePath('/admin/opportunities');
+        return { success: true, message: 'Relationship linked.' };
+    } catch (e) {
+        return { success: false, error: 'Database operation failed.' };
+    }
+}
+
+async function unlinkOpportunityFromEvent(eventId, opportunityId) {
+    const { isAdmin, error } = await verifyAdmin();
+    if (!isAdmin) return { success: false, error };
+
+    if (!mongoose.Types.ObjectId.isValid(eventId) || !mongoose.Types.ObjectId.isValid(opportunityId)) {
+        return { success: false, error: 'Invalid ID format.' };
+    }
+
+    try {
+        await dbConnect();
+        await Promise.all([
+            SynthesizedEvent.findByIdAndUpdate(eventId, { $pull: { relatedOpportunities: opportunityId } }),
+            Opportunity.findByIdAndUpdate(opportunityId, { $pull: { events: eventId } })
+        ]);
+        revalidatePath('/admin/events');
+        revalidatePath('/admin/opportunities');
+        return { success: true, message: 'Relationship unlinked.' };
+    } catch (e) {
+        return { success: false, error: 'Database operation failed.' };
+    }
+}
+
+export { linkOpportunityToEvent, unlinkOpportunityFromEvent };
+
+```
+
+## 📄 src/actions/scrape.js
+*Lines: 61, Size: 1.87 KB*
+
+```javascript
+// packages/data-access/src/actions/scrape.js (version 1.1.0)
+'use server'
+
+// REMOVED: import { NextResponse } from 'next/server'
+import { Source } from '@headlines/models'
+import {
+  testHeadlineExtraction,
+  scrapeArticleContentForTest,
+} from '@headlines/scraper-logic/src/scraper/index.js'
+import { verifyAdmin } from '@headlines/auth'
+
+export async function testSourceConfig(sourceConfig) {
+  const { isAdmin, error: authError } = await verifyAdmin()
+  if (!isAdmin) return { success: false, error: authError }
+
+  try {
+    const headlines = await testHeadlineExtraction(sourceConfig)
+    const success = headlines.length > 0
+    let firstArticleContent = ''
+
+    if (success) {
+      firstArticleContent = await scrapeArticleContentForTest(
+        headlines[0].link,
+        sourceConfig.articleSelector
+      )
+    }
+
+    const updatedSource = await Source.findByIdAndUpdate(
+      sourceConfig._id,
+      {
+        $set: {
+          lastScrapedAt: new Date(),
+          lastSuccessAt: success ? new Date() : undefined,
+          'analytics.lastRunHeadlineCount': headlines.length,
+          'analytics.lastRunRelevantCount': 0, // Reset on manual test
+        },
+        $inc: {
+          'analytics.totalRuns': 1,
+          'analytics.totalSuccesses': success ? 1 : 0,
+          'analytics.totalFailures': success ? 0 : 1,
+        },
+      },
+      { new: true }
+    ).lean()
+
+    return {
+      success: true,
+      data: {
+        count: headlines.length,
+        headlines: headlines.slice(0, 5),
+        firstArticleContent,
+        updatedSource: JSON.parse(JSON.stringify(updatedSource)),
+      },
+    }
+  } catch (error) {
+    console.error(`[Action Test Config Error for ${sourceConfig?._id}]`, error)
+    // In a server action context, we should return a plain object for the client to handle.
+    return { success: false, error: 'Failed to perform test scrape.', details: error.message }
+  }
+}
+
+```
+
+## 📄 src/actions/settings.js
+*Lines: 43, Size: 1.53 KB*
+
+```javascript
+// packages/data-access/src/actions/settings.js (version 1.0.1)
+'use server'
+
+import { Setting } from '@headlines/models'
+import { verifyAdmin } from '@headlines/auth'
+import dbConnect from '../dbConnect.js'
+import { revalidatePath } from '../revalidate.js'
+
+export async function getSettings() {
+    const { isAdmin, error } = await verifyAdmin()
+    if (!isAdmin) return { success: false, error }
+
+    try {
+        await dbConnect()
+        const settings = await Setting.find({}).sort({ key: 1 }).lean();
+        return { success: true, data: JSON.parse(JSON.stringify(settings)) }
+    } catch(e) {
+        return { success: false, error: 'Failed to fetch settings.' }
+    }
+}
+
+export async function updateSettings(settingsData) {
+    const { isAdmin, error } = await verifyAdmin()
+    if (!isAdmin) return { success: false, error }
+
+    try {
+        await dbConnect()
+        const bulkOps = settingsData.map(setting => {
+            let castValue = setting.value;
+            if (setting.type === 'number') castValue = Number(setting.value);
+            if (setting.type === 'boolean') castValue = Boolean(setting.value);
+            return { updateOne: { filter: { _id: setting._id }, update: { $set: { value: castValue } } } };
+        });
+        if (bulkOps.length > 0) {
+            await Setting.bulkWrite(bulkOps);
+        }
+        await revalidatePath('/admin/settings')
+        return { success: true, message: `${bulkOps.length} settings updated.` }
+    } catch(e) {
+        return { success: false, error: 'Failed to update settings.' }
+    }
+}
+
+```
+
+## 📄 src/actions/subscriber.js
+*Lines: 83, Size: 3.1 KB*
+
+```javascript
+// packages/data-access/src/actions/subscriber.js (version 1.4.0)
+'use server'
+
+import dbConnect from '../dbConnect.js'
+import { Subscriber } from '@headlines/models'
+import { revalidatePath } from '../revalidate.js'
+import { verifySession, getUserIdFromSession } from '@headlines/auth'
+
+export async function updateUserProfile({ userId, updateData }) {
+  const { user: sessionUser, error } = await verifySession();
+  if (!sessionUser || sessionUser.userId !== userId) {
+      return { success: false, error: error || 'Unauthorized' };
+  }
+
+  if (!userId) return { success: false, error: 'User ID is required.' }
+  if (!updateData) return { success: false, error: 'No update data provided.' }
+
+  try {
+    await dbConnect()
+    const updatedUser = await Subscriber.findByIdAndUpdate(userId, { $set: updateData }, { new: true })
+      .select('-password')
+      .lean()
+    if (!updatedUser) return { success: false, error: 'User not found.' }
+    await revalidatePath('/')
+    return { success: true, user: JSON.parse(JSON.stringify(updatedUser)) }
+  } catch (error) {
+    return { success: false, error: 'Failed to update profile.' }
+  }
+}
+
+export async function updateUserInteraction({ userId, itemId, itemType, action }) {
+    if (!userId || !itemId || !itemType || !action) return { success: false, error: 'Missing parameters.' };
+    
+    const fieldMap = { event: 'events', article: 'articles', opportunity: 'opportunities' };
+    const field = fieldMap[itemType];
+    if (!field) return { success: false, error: 'Invalid item type.' };
+
+    let updateOperation = {};
+    switch (action) {
+        case 'discard':
+            updateOperation = { $addToSet: { [`discardedItems.${field}`]: itemId } };
+            break;
+        case 'favorite':
+            updateOperation = { $addToSet: { [`favoritedItems.${field}`]: itemId } };
+            break;
+        case 'unfavorite':
+            updateOperation = { $pull: { [`favoritedItems.${field}`]: itemId } };
+            break;
+        default:
+            return { success: false, error: 'Invalid action.' };
+    }
+
+    try {
+        await dbConnect();
+        await Subscriber.updateOne({ _id: userId }, updateOperation);
+        await revalidatePath('/');
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: 'Failed to update user interaction.' };
+    }
+}
+
+export async function updateUserFilterPreference(filterData) {
+    const userId = await getUserIdFromSession();
+    if (!userId) return { success: false, error: 'Authentication required.' };
+
+    try {
+        await dbConnect();
+        const updatedUser = await Subscriber.findByIdAndUpdate(
+            userId,
+            { $set: { filterPreferences: filterData } },
+            { new: true } // Return the full updated document
+        ).lean();
+
+        if (!updatedUser) return { success: false, error: 'User not found.' };
+
+        revalidatePath('/', 'layout'); // Revalidate all pages as this affects layout data
+        return { success: true, user: JSON.parse(JSON.stringify(updatedUser)) };
+    } catch (error) {
+        return { success: false, error: 'Failed to update filter preferences.' };
+    }
+}
+
+```
+
+## 📄 src/actions/suggestions.js
+*Lines: 87, Size: 3.63 KB*
+
+```javascript
+// packages/data-access/src/actions/suggestions.js (version 3.0.0 - With Update)
+'use server'
+
+import { WatchlistSuggestion, WatchlistEntity, SourceSuggestion, Source } from '@headlines/models'
+import { verifyAdmin } from '@headlines/auth'
+import { revalidatePath } from '../revalidate.js'
+import dbConnect from '../dbConnect.js'
+
+export async function getSuggestions() {
+    const { isAdmin, error } = await verifyAdmin()
+    if (!isAdmin) return { success: false, error }
+    try {
+        await dbConnect()
+        const [watchlistSuggestions, sourceSuggestions] = await Promise.all([
+            WatchlistSuggestion.find({ status: 'candidate' }).sort({ createdAt: -1 }).lean(),
+            SourceSuggestion.find({ status: 'pending' }).sort({ createdAt: -1 }).lean(),
+        ])
+        return { success: true, data: { watchlistSuggestions, sourceSuggestions } }
+    } catch(e) {
+        return { success: false, error: 'Failed to fetch suggestions.' }
+    }
+}
+
+// DEFINITIVE FIX: Create the missing update function.
+export async function updateWatchlistSuggestion(suggestionId, updateData) {
+    const { isAdmin, error } = await verifyAdmin();
+    if (!isAdmin) return { success: false, error };
+    try {
+        await dbConnect();
+        const suggestion = await WatchlistSuggestion.findByIdAndUpdate(suggestionId, { $set: updateData }, { new: true }).lean();
+        if (!suggestion) return { success: false, error: 'Suggestion not found.' };
+        await revalidatePath('/admin/watchlist');
+        return { success: true, data: JSON.parse(JSON.stringify(suggestion)) };
+    } catch (e) {
+        return { success: false, error: 'Failed to update suggestion.' };
+    }
+}
+
+export async function processWatchlistSuggestion({ suggestionId, action }) {
+    const { isAdmin, error } = await verifyAdmin()
+    if (!isAdmin) return { success: false, error }
+    try {
+        await dbConnect()
+        const suggestion = await WatchlistSuggestion.findById(suggestionId)
+        if (!suggestion) return { success: false, error: 'Suggestion not found.' }
+        suggestion.status = action
+        await suggestion.save()
+
+        if (action === 'approved') {
+            await WatchlistEntity.updateOne({ name: suggestion.name }, {
+                $setOnInsert: {
+                    name: suggestion.name,
+                    type: suggestion.type,
+                    country: suggestion.country,
+                    context: suggestion.rationale,
+                    searchTerms: suggestion.searchTerms,
+                    status: 'active',
+                },
+            }, { upsert: true });
+        }
+        await revalidatePath('/admin/watchlist')
+        return { success: true, message: `Watchlist suggestion for "${suggestion.name}" was ${action}.` }
+    } catch(e) {
+        return { success: false, error: 'Failed to process suggestion.' }
+    }
+}
+
+export async function processSourceSuggestion({ suggestionId, action }) {
+    const { isAdmin, error } = await verifyAdmin()
+    if (!isAdmin) return { success: false, error }
+    try {
+        await dbConnect()
+        const suggestion = await SourceSuggestion.findById(suggestionId)
+        if (!suggestion) return { success: false, error: 'Suggestion not found.' }
+        suggestion.status = action
+        await suggestion.save()
+
+        if (action === 'approved') {
+            await Source.findByIdAndUpdate(suggestion.sourceId, { $set: suggestion.suggestedSelectors });
+        }
+        await revalidatePath('/admin/sources')
+        return { success: true, message: `Source repair suggestion for "${suggestion.sourceName}" was ${action}.` }
+    } catch(e) {
+        return { success: false, error: 'Failed to process suggestion.' }
+    }
+}
+
+```
+
+## 📄 src/actions/upload.js
+*Lines: 63, Size: 2.27 KB*
+
+```javascript
+// packages/data-access/src/actions/upload.js (version 1.0)
+'use server'
+
+import { revalidatePath } from '../revalidate.js';
+import { SynthesizedEvent, Opportunity } from '@headlines/models';
+import { verifySession } from '@headlines/auth';
+// DEFINITIVE FIX: Corrected the import path to be explicit.
+import {
+  assessArticleContent,
+  synthesizeEvent,
+  generateOpportunitiesFromEvent,
+} from '@headlines/scraper-logic/src/ai/index.js';
+
+// This is a simplified, single-item pipeline for uploaded content.
+export async function processUploadedArticle(item) {
+  const { user, error } = await verifySession();
+  if (!user) return { success: false, error: error || 'Authentication required' };
+
+  try {
+    // 1. Assess & Enrich (Simulated)
+    // We treat the uploaded content as already enriched.
+    const enrichedArticle = {
+      ...item,
+      relevance_article: 100, // Assume high relevance for manual uploads
+      assessment_article: item.article,
+      articleContent: { contents: [item.article] },
+      newspaper: 'Manual Upload',
+      country: 'Denmark', // Default or could be a param
+      key_individuals: [], // Will be extracted during synthesis
+    };
+
+    // 2. Synthesize Event
+    const synthesizedResult = await synthesizeEvent([enrichedArticle], [], '', '');
+    if (!synthesizedResult || !synthesizedResult.headline) {
+      throw new Error('AI failed to synthesize an event from the provided text.');
+    }
+
+    const eventToSave = new SynthesizedEvent({
+      ...synthesizedResult,
+      event_key: `manual-${new Date().toISOString()}`,
+      highest_relevance_score: 100,
+      source_articles: [{ headline: item.headline, link: '#manual', newspaper: 'Manual Upload' }],
+    });
+
+    // 3. Generate Opportunities
+    const opportunitiesToSave = await generateOpportunitiesFromEvent(eventToSave, [enrichedArticle]);
+
+    // 4. Save to DB
+    await eventToSave.save();
+    if (opportunitiesToSave.length > 0) {
+      await Opportunity.insertMany(opportunitiesToSave.map(opp => ({...opp, events: [eventToSave._id]})));
+    }
+    
+    await revalidatePath('/events');
+    await revalidatePath('/opportunities');
+
+    return { success: true, event: eventToSave.synthesized_headline };
+  } catch (e) {
+    console.error('[Upload Action Error]:', e);
+    return { success: false, error: e.message };
+  }
+}
+
+```
+
+## 📄 src/actions/userSettings.js
+*Lines: 34, Size: 1.15 KB*
+
+```javascript
+// packages/data-access/src/actions/userSettings.js (version 1.1)
+'use server'
+
+import { verifySession } from '@headlines/auth';
+import { Subscriber } from '@headlines/models';
+import dbConnect from '../dbConnect.js'
+import { revalidatePath } from '../revalidate.js'
+
+export async function clearDiscardedItems() {
+    const { user, error } = await verifySession();
+    if (!user) return { success: false, error: error || 'Authentication required.' };
+
+    try {
+        await dbConnect();
+        await Subscriber.findByIdAndUpdate(user.userId, {
+            $set: {
+                'discardedItems.articles': [],
+                'discardedItems.events': [],
+                'discardedItems.opportunities': [],
+            }
+        });
+
+        // Revalidate all data paths as this affects all lists
+        await revalidatePath('/articles');
+        await revalidatePath('/events');
+        await revalidatePath('/opportunities');
+
+        return { success: true, message: 'Your discarded items have been cleared.' };
+    } catch (e) {
+        console.error('[clearDiscardedItems Error]:', e);
+        return { success: false, error: 'Failed to clear discarded items.' };
+    }
+}
+
+```
+
+## 📄 src/actions/verdicts.js
+*Lines: 44, Size: 1.56 KB*
+
+```javascript
+// packages/data-access/src/actions/verdicts.js (version 1.1.0)
+'use server'
+
+import { RunVerdict, SynthesizedEvent, Opportunity } from '@headlines/models'
+import { verifyAdmin } from '@headlines/auth'
+import dbConnect from '../dbConnect.js'
+
+export async function getRecentRunVerdicts() {
+  const { isAdmin, error } = await verifyAdmin()
+  if (!isAdmin) return { success: false, error }
+
+  try {
+    await dbConnect()
+    // MODIFICATION: Select the entire 'runStats' object instead of individual fields.
+    // This provides the detailed data needed for the new dashboard view, including
+    // relevantHeadlines and enrichmentOutcomes for funnel analysis.
+    const verdicts = await RunVerdict.find({})
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select('runStats createdAt')
+      .lean()
+    return { success: true, data: JSON.parse(JSON.stringify(verdicts)) }
+  } catch (e) {
+    return { success: false, error: 'Failed to fetch run verdicts.' }
+  }
+}
+
+export async function getRunVerdictById(runId) {
+  const { isAdmin, error } = await verifyAdmin()
+  if (!isAdmin) return { success: false, error }
+
+  try {
+    await dbConnect()
+    const verdict = await RunVerdict.findById(runId)
+      .populate({ path: 'generatedEvents', model: SynthesizedEvent })
+      .populate({ path: 'generatedOpportunities', model: Opportunity })
+      .lean()
+    if (!verdict) return { success: false, error: 'Verdict not found.' }
+    return { success: true, data: JSON.parse(JSON.stringify(verdict)) }
+  } catch (e) {
+    return { success: false, error: 'Failed to fetch verdict details.' }
+  }
+}
+
+```
+
+## 📄 src/actions/watchlist.js
+*Lines: 87, Size: 3.2 KB*
+
+```javascript
+// packages/data-access/src/actions/watchlist.js (version 1.1.0)
+'use server'
+
+import { revalidatePath } from '../revalidate.js'
+import { WatchlistEntity, Article } from '@headlines/models'
+import { verifyAdmin } from '@headlines/auth'
+import dbConnect from '../dbConnect.js'
+
+export async function getAllWatchlistEntities() {
+  const { isAdmin, error } = await verifyAdmin()
+  if (!isAdmin) return { success: false, error }
+
+  try {
+    await dbConnect()
+    const entities = await WatchlistEntity.find({}).sort({ name: 1 }).lean()
+    return { success: true, data: JSON.parse(JSON.stringify(entities)) }
+  } catch (e) {
+    return { success: false, error: 'Failed to fetch watchlist.' }
+  }
+}
+
+export async function createWatchlistEntity(entityData) {
+  const { isAdmin, error } = await verifyAdmin()
+  if (!isAdmin) return { success: false, error }
+
+  try {
+    await dbConnect()
+    const newEntity = new WatchlistEntity(entityData)
+    await newEntity.save()
+    await revalidatePath('/admin/watchlist')
+    return { success: true, data: JSON.parse(JSON.stringify(newEntity)) }
+  } catch (e) {
+    if (e.code === 11000) return { success: false, error: 'An entity with this name already exists.' }
+    return { success: false, error: 'Failed to create entity.' }
+  }
+}
+
+export async function updateWatchlistEntity(entityId, updateData) {
+  const { isAdmin, error } = await verifyAdmin()
+  if (!isAdmin) return { success: false, error }
+
+  try {
+    await dbConnect()
+
+    // If searchTerms are being updated, recalculate the hitCount.
+    if (updateData.searchTerms && Array.isArray(updateData.searchTerms)) {
+      // Sanitize and unique the terms
+      updateData.searchTerms = [...new Set(updateData.searchTerms.map(t => t.toLowerCase().trim()).filter(Boolean))];
+      
+      const entity = await WatchlistEntity.findById(entityId).select('name').lean();
+      const allTerms = [entity.name, ...updateData.searchTerms].map(t => t.toLowerCase().trim()).filter(Boolean);
+      const uniqueTerms = [...new Set(allTerms)];
+
+      if (uniqueTerms.length > 0) {
+        const termRegexes = uniqueTerms.map(term => new RegExp(`\\b${term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`, 'i'));
+        const newHitCount = await Article.countDocuments({ headline: { $in: termRegexes } });
+        updateData.hitCount = newHitCount;
+      } else {
+        updateData.hitCount = 0;
+      }
+    }
+    
+    const entity = await WatchlistEntity.findByIdAndUpdate(entityId, { $set: updateData }, { new: true }).lean()
+    if (!entity) return { success: false, error: 'Entity not found.' }
+    
+    await revalidatePath('/admin/watchlist')
+    return { success: true, data: JSON.parse(JSON.stringify(entity)) }
+  } catch (e) {
+    return { success: false, error: 'Failed to update entity.' }
+  }
+}
+
+export async function deleteWatchlistEntity(entityId) {
+  const { isAdmin, error } = await verifyAdmin()
+  if (!isAdmin) return { success: false, error }
+
+  try {
+    await dbConnect()
+    const result = await WatchlistEntity.findByIdAndDelete(entityId)
+    if (!result) return { success: false, error: 'Entity not found.' }
+    await revalidatePath('/admin/watchlist')
+    return { success: true }
+  } catch (e) {
+    return { success: false, error: 'Failed to delete entity.' }
+  }
+}
+
+```
+
+## 📄 src/dbConnect.js
+*Lines: 36, Size: 955 Bytes*
+
+```javascript
+// packages/data-access/src/dbConnect.js (version 3.0.0 - Connection Only)
+import mongoose from 'mongoose';
+import { env } from '@headlines/config/server';
+
+const MONGO_URI = env.MONGO_URI;
+
+let cached = globalThis.mongoose;
+if (!cached) {
+  cached = globalThis.mongoose = { conn: null, promise: null };
+}
+
+async function dbConnect() {
+  if (cached.conn) {
+    return cached.conn;
+  }
+  if (!cached.promise) {
+    if (!MONGO_URI) {
+      throw new Error('MONGO_URI is not defined. Please check your .env file.');
+    }
+    cached.promise = mongoose.connect(MONGO_URI, { bufferCommands: false }).then((mongooseInstance) => {
+      console.log("[dbConnect] MongoDB connection successful.");
+      return mongooseInstance;
+    });
+  }
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    console.error("[dbConnect] MongoDB connection failed:", e);
+    throw e;
+  }
+  return cached.conn;
+}
+
+export default dbConnect;
+
+```
+
+## 📄 src/index.js
+*Lines: 115, Size: 4 KB*
+
+```javascript
+// packages/data-access/src/index.js (version 5.2.0)
+'use server'
+
+import {
+  getAdminArticles,
+  updateAdminArticle,
+  deleteAdminArticle,
+} from './actions/adminArticles.js'
+import {
+  getAdminEvents,
+  getAdminEventDetails,
+  updateAdminEvent,
+  deleteAdminEvent,
+} from './actions/adminEvents.js'
+import {
+  getAdminOpportunities,
+  updateAdminOpportunity,
+  deleteAdminOpportunity,
+} from './actions/adminOpportunities.js'
+import { deleteArticle, getArticles, getTotalArticleCount } from './actions/articles.js'
+import { deleteEvent, getEvents, getTotalEventCount } from './actions/events.js'
+import {
+  getOpportunities,
+  getTotalOpportunitiesCount,
+  deleteOpportunity,
+  getOpportunityDetails,
+  getUniqueOpportunityCountries,
+} from './actions/opportunities.js'
+
+import { sendItemByEmail } from './actions/email.js';
+import { 
+  exportOpportunitiesToCSV, 
+  exportOpportunitiesToXLSX, 
+  exportUsersToCSV, 
+  exportUsersToXLSX, 
+  exportEventsToCSV, 
+  exportEventsToXLSX, 
+  exportArticlesToCSV, 
+  exportArticlesToXLSX 
+} from './actions/export.js';
+import { linkOpportunityToEvent, unlinkOpportunityFromEvent } from './actions/relationships.js';
+import { clearDiscardedItems } from './actions/userSettings.js';
+import { updateUserProfile, updateUserInteraction, updateUserFilterPreference } from './actions/subscriber.js'
+import {
+  getAllCountries,
+  createCountry,
+  updateCountry,
+  getGlobalCountries,
+} from './actions/countries.js'
+import {
+  getAllSubscribers,
+  createSubscriber,
+  updateSubscriber,
+  deleteSubscriber,
+  updateSubscribersStatus,
+  deleteSubscribers,
+} from './actions/admin.js'
+import {
+  getAllSources,
+  createSource,
+  updateSource,
+  deleteSource,
+} from './actions/adminSources.js'
+import { getDashboardStats } from './actions/dashboard.js'
+import { getRecentRunVerdicts, getRunVerdictById } from './actions/verdicts.js'
+import {
+  getSuggestions,
+  processWatchlistSuggestion,
+  processSourceSuggestion,
+  updateWatchlistSuggestion,
+} from './actions/suggestions.js'
+import {
+  getAllWatchlistEntities,
+  createWatchlistEntity,
+  updateWatchlistEntity,
+  deleteWatchlistEntity,
+} from './actions/watchlist.js'
+import { getSettings, updateSettings } from './actions/settings.js'
+import { testSourceConfig } from './actions/scrape.js'
+import {
+  updateSourceAnalyticsBatch,
+  findSourcesForScraping,
+  performHousekeeping,
+  bulkWriteEvents,
+  bulkWriteArticles,
+  findEventsByKeys,
+  findArticlesByLinks,
+  getActiveWatchlistEntityNames,
+  bulkWriteWatchlistSuggestions,
+} from './actions/pipeline.js'
+
+export {
+  getAdminArticles, updateAdminArticle, deleteAdminArticle,
+  getAdminEvents, getAdminEventDetails, updateAdminEvent, deleteAdminEvent,
+  getAdminOpportunities, updateAdminOpportunity, deleteAdminOpportunity,
+  deleteArticle, getArticles, getTotalArticleCount,
+  deleteEvent, getEvents, getTotalEventCount,
+  getOpportunities, getTotalOpportunitiesCount, deleteOpportunity, getOpportunityDetails, getUniqueOpportunityCountries,
+  sendItemByEmail,
+  exportOpportunitiesToCSV, exportOpportunitiesToXLSX, exportUsersToCSV, exportUsersToXLSX, exportEventsToCSV, exportEventsToXLSX, exportArticlesToCSV, exportArticlesToXLSX,
+  linkOpportunityToEvent, unlinkOpportunityFromEvent,
+  clearDiscardedItems,
+  updateUserProfile, updateUserInteraction, updateUserFilterPreference,
+  getAllCountries, createCountry, updateCountry, getGlobalCountries,
+  getAllSubscribers, createSubscriber, updateSubscriber, deleteSubscriber, updateSubscribersStatus, deleteSubscribers,
+  getAllSources, createSource, updateSource, deleteSource,
+  getDashboardStats,
+  getRecentRunVerdicts, getRunVerdictById,
+  getSuggestions, processWatchlistSuggestion, processSourceSuggestion, updateWatchlistSuggestion,
+  getAllWatchlistEntities, createWatchlistEntity, updateWatchlistEntity, deleteWatchlistEntity,
+  getSettings, updateSettings,
+  testSourceConfig,
+  updateSourceAnalyticsBatch, findSourcesForScraping, performHousekeeping, bulkWriteEvents, bulkWriteArticles, findEventsByKeys, findArticlesByLinks, getActiveWatchlistEntityNames, bulkWriteWatchlistSuggestions,
+}
+
+```
+
+## 📄 src/queryBuilder.js
+*Lines: 111, Size: 4.26 KB*
+
+```javascript
+// packages/data-access/src/queryBuilder.js (version 4.0.0)
+'use server'
+
+import { Subscriber } from '@headlines/models'
+
+export async function buildQuery(
+  model,
+  { filters = {}, sort = 'date_desc', baseQuery = {}, userId = null }
+) {
+  const andConditions = [{ ...baseQuery }]
+  const effectiveUserId = filters.userId || userId
+  const user = effectiveUserId ? await Subscriber.findById(effectiveUserId).select('discardedItems favoritedItems countries filterPreferences role').lean() : null;
+  const countryField = model.schema.paths.basedIn ? 'basedIn' : 'country';
+
+  // --- DEFINITIVE HIERARCHICAL FILTERING LOGIC ---
+  if (user) {
+    let allowedCountries;
+
+    // 1. Determine the user's absolute "universe" of accessible countries.
+    if (user.role === 'admin') {
+      // Admins can see everything by default.
+      allowedCountries = null; // null means no restriction
+    } else {
+      // Regular users are strictly limited to their active subscriptions.
+      allowedCountries = new Set((user.countries || []).filter(c => c.active).map(c => c.name));
+    }
+
+    // 2. Determine the user's desired filter set, prioritizing saved preferences.
+    const hasPersistentFilter = user.filterPreferences?.globalCountryFilter?.length > 0;
+    let desiredFilter = null;
+    
+    if (hasPersistentFilter) {
+      // The user's saved preference is the absolute source of truth.
+      desiredFilter = new Set(user.filterPreferences.globalCountryFilter);
+    } else if (filters.country) {
+      // Only if no persistent filter exists, use the temporary one from the UI.
+      desiredFilter = new Set(filters.country.split(','));
+    }
+
+    // 3. Apply the final filter logic.
+    let finalCountriesToQuery = [];
+    if (desiredFilter) {
+      if (allowedCountries) {
+        // User has subscriptions AND a filter: find the intersection.
+        finalCountriesToQuery = [...allowedCountries].filter(c => desiredFilter.has(c));
+      } else {
+        // Admin has a filter: use the filter directly.
+        finalCountriesToQuery = [...desiredFilter];
+      }
+      andConditions.push({ [countryField]: { $in: finalCountriesToQuery } });
+    } else if (allowedCountries) {
+      // User has subscriptions but NO filter: show all subscribed countries.
+      finalCountriesToQuery = [...allowedCountries];
+      andConditions.push({ [countryField]: { $in: finalCountriesToQuery } });
+    }
+    // If user is admin and has no filter, no country condition is added, showing all.
+
+  } else if (filters.country) {
+      // Fallback for non-user contexts (e.g., initial pipeline run) that still might use a country filter
+      andConditions.push({ [countryField]: { $in: filters.country.split(',') } });
+  }
+
+  // --- Other Filters ---
+  if (filters.q) {
+    const searchRegex = { $regex: filters.q, $options: 'i' }
+    const textSearchablePaths = Object.keys(model.schema.paths).filter(p => model.schema.paths[p].instance === 'String')
+    const orConditions = textSearchablePaths.map((path) => ({ [path]: searchRegex }))
+    if (orConditions.length > 0) andConditions.push({ $or: orConditions })
+  }
+
+  if (filters.category) {
+    andConditions.push({ eventClassification: filters.category })
+  }
+
+  if (filters.withEmail) {
+    andConditions.push({ 'contactDetails.email': { $exists: true, $ne: null, $ne: '' } })
+  }
+
+  if (user?.favoritedItems && filters.favoritesOnly) {
+    const modelName = model.modelName.toLowerCase()
+    const favoritedIds = user.favoritedItems[`${modelName}s`] || []
+    andConditions.push({ _id: { $in: favoritedIds } })
+  }
+
+  if (user?.discardedItems) {
+    const modelName = model.modelName.toLowerCase()
+    const discardedIds = user.discardedItems[`${modelName}s`]
+    if (discardedIds && discardedIds.length > 0) {
+      andConditions.push({ _id: { $nin: discardedIds } })
+    }
+  }
+
+  const queryFilter = andConditions.length > 1 ? { $and: andConditions } : andConditions[0] || {}
+
+  const sortOptions = {}
+  if (sort) {
+    let [key, direction] = sort.split('_')
+    const sortKeyMap = { date: 'createdAt', relevance: 'highest_relevance_score', size: 'likelyMMDollarWealth' };
+    key = sortKeyMap[key] || key;
+    if (key && direction) {
+      sortOptions[key] = direction === 'desc' ? -1 : 1
+    } else {
+      sortOptions.createdAt = -1
+    }
+  } else {
+    sortOptions.createdAt = -1
+  }
+
+  return { queryFilter, sortOptions }
+}
+
+```
+
+## 📄 src/revalidate.js
+*Lines: 26, Size: 947 Bytes*
+
+```javascript
+// packages/data-access/src/revalidate.js (version 2.0.0)
+'use server'
+
+/**
+ * An environment-aware revalidation function.
+ * This function is now async to handle the dynamic import safely.
+ * @param {string} path - The path to revalidate.
+ * @param {('layout'|'page')} [type] - The type of revalidation.
+ */
+export async function revalidatePath(path, type) {
+  // In the pipeline environment, this function is a no-op.
+  if (process.env.IS_PIPELINE_RUN === 'true') {
+    return;
+  }
+
+  try {
+    // This dynamic import will only succeed in a Next.js environment.
+    // By placing it inside an async function, we avoid top-level await issues.
+    const { revalidatePath: nextRevalidate } = await import('next/cache');
+    return nextRevalidate(path, type);
+  } catch (e) {
+    // This catch block handles cases where it might be run in an unexpected env.
+    console.log('[data-access] Failed to import next/cache. Revalidation skipped.');
+  }
+}
+
+```
+
+## 📄 src/seed/dev-user.js
+*Lines: 61, Size: 1.91 KB*
+
+```javascript
+// packages/data-access/src/seed/dev-user.js (version 2.0.0 - Standalone Safe)
+'use server'
+
+import { Subscriber } from '@headlines/models'
+import dbConnect from '../dbConnect.js'
+import mongoose from 'mongoose'
+// We cannot use a logger here as this might be called before initialization
+// import { logger } from '@headlines/utils/server';
+
+const DEV_USER_ID = '662f831abb28052123530a43'
+const DEV_USER_EMAIL = 'dev@headlines.dev'
+
+export async function seedDevUser() {
+  console.log(`[Seed] Seeding development user: ${DEV_USER_EMAIL}...`)
+  try {
+    await dbConnect()
+
+    const devUser = {
+      _id: new mongoose.Types.ObjectId(DEV_USER_ID),
+      email: DEV_USER_EMAIL,
+      password: 'devpassword', // This will be hashed by the pre-save hook
+      firstName: 'Dev',
+      lastName: 'User',
+      role: 'admin',
+      isActive: true,
+      countries: [],
+      subscriptionTier: 'enterprise',
+      isLifetimeFree: true,
+    }
+
+    const result = await Subscriber.updateOne(
+      { _id: devUser._id },
+      { $set: devUser },
+      { upsert: true }
+    )
+
+    if (result.upsertedCount > 0) {
+      console.log(`[Seed] ✅ Successfully created development user.`)
+    } else {
+      console.log(`[Seed] ✅ Development user is already up-to-date.`)
+    }
+    return { success: true }
+  } catch (error) {
+    console.error('[Seed] ❌ Failed to seed development user:', error)
+    // Close connection on error if it's open and this is a standalone script run
+    if (mongoose.connection.readyState === 1 && import.meta.url.startsWith('file:')) {
+        await mongoose.disconnect();
+    }
+    return { success: false, error: error.message }
+  }
+}
+
+// Allow script to be run directly from the command line
+if (import.meta.url.startsWith('file://') && process.argv[1] === import.meta.url.substring(7)) {
+    seedDevUser().finally(() => {
+        if (mongoose.connection.readyState === 1) {
+            mongoose.disconnect();
+        }
+    });
+}
+
+```

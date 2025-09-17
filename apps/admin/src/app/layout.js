@@ -1,0 +1,56 @@
+// apps/admin/src/app/layout.js (version 5.0.0 - With AuthProvider)
+import { Inter } from 'next/font/google'
+import './globals.css'
+import { Toaster } from '@headlines/ui'
+import { cn } from '@headlines/utils'
+import MainNav from './_components/main-nav'
+import { ThemeProvider } from './_components/theme-provider'
+// DEFINITIVE FIX: Import the AuthProvider
+import { AuthProvider } from '@headlines/auth/src/AuthProvider.js'
+
+const fontSans = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+})
+
+export const metadata = {
+  title: 'Headlines Admin',
+  description: 'Management Console for the Headlines Intelligence Pipeline.',
+  icons: {
+    icon: '/favicon.ico',
+  },
+}
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={cn(
+          'min-h-screen bg-background font-sans antialiased',
+          fontSans.variable
+        )}
+      >
+        {/* DEFINITIVE FIX: Wrap the entire body content with AuthProvider */}
+        <AuthProvider appType="admin">
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <div className="flex h-screen w-full overflow-hidden">
+              <MainNav />
+              <main className="flex-1 flex flex-col overflow-y-auto">
+                <div className="w-full mx-auto p-6 lg:p-8">
+                  {children}
+                </div>
+              </main>
+            </div>
+            <Toaster theme="dark" position="bottom-right" />
+          </ThemeProvider>
+        </AuthProvider>
+      </body>
+    </html>
+  )
+}

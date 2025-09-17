@@ -1,0 +1,30 @@
+{
+  "name": "headlines-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/pipeline",
+    "apps/admin",
+    "apps/client",
+    "packages/config",
+    "packages/models",
+    "packages/scraper-logic",
+    "packages/utils",
+    "packages/ui",
+    "packages/auth",
+    "packages/data-access"
+  ],
+  "scripts": {
+    "dev:admin": "npm run dev --workspace=@headlines/admin",
+    "dev:client": "npm run dev --workspace=headlines-client",
+    "build:admin": "npm run build --workspace=@headlines/admin",
+    "build:client": "npm run build --workspace=headlines-client",
+    "pipeline": "node --env-file=.env apps/pipeline/app.js",
+    "db:delete-source-today": "node --env-file=.env apps/pipeline/scripts/maintenance/delete-by-source-and-date.js"
+    "db:delete-today": "node --env-file=.env apps/pipeline/scripts/maintenance/delete-today.js",
+  },
+  "overrides": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  }
+}

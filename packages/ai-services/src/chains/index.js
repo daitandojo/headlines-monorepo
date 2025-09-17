@@ -1,0 +1,46 @@
+// packages/ai-services/src/chains/index.js (version 3.1 - Final)
+import { articleChain as ac } from './articleChain.js'
+import { articlePreAssessmentChain as apac } from './articlePreAssessmentChain.js'
+import { clusteringChain as cc } from './clusteringChain.js'
+import { contactFinderChain as cfc } from './contactFinderChain.js'
+import { contactResolverChain as crc } from './contactResolverChain.js'
+import { disambiguationChain as dc } from './disambiguationChain.js'
+import { emailIntroChain as eic } from './emailIntroChain.js'
+import { emailSubjectChain as esc } from './emailSubjectChain.js'
+import { entityCanonicalizerChain as ecc } from './entityCanonicalizerChain.js'
+import { entityExtractorChain as eec } from './entityExtractorChain.js'
+import { executiveSummaryChain as exsc } from './executiveSummaryChain.js'
+import { headlineChain as hc } from './headlineChain.js'
+import { judgeChain as jc } from './judgeChain.js'
+import { opportunityChain as oc } from './opportunityChain.js'
+import { sectionClassifierChain as scc } from './sectionClassifierChain.js'
+import { selectorRepairChain as src } from './selectorRepairChain.js'
+import { synthesisChain as sc } from './synthesisChain.js'
+import { watchlistSuggestionChain as wsc } from './watchlistSuggestionChain.js'
+import { batchHeadlineChain as bhc } from './batchHeadlineChain.js'
+import { translateChain as tc } from './translateChain.js'
+import { countryCorrectionChain as ccc } from './countryCorrectionChain.js'
+
+// DEFINITIVE FIX: Export each chain's invoke method as a standalone async function
+// to comply with "use server" constraints.
+export const articleChain = async (input) => ac.invoke(input)
+export const articlePreAssessmentChain = async (input) => apac.invoke(input)
+export const clusteringChain = async (input) => cc.invoke(input)
+export const contactFinderChain = async (input) => cfc.invoke(input)
+export const contactResolverChain = async (input) => crc.invoke(input)
+export const disambiguationChain = async (input) => dc.invoke(input)
+export const emailIntroChain = async (input) => eic.invoke(input)
+export const emailSubjectChain = async (input) => esc.invoke(input)
+export const entityCanonicalizerChain = async (input) => ecc.invoke(input)
+export const entityExtractorChain = async (input) => eec.invoke(input)
+export const executiveSummaryChain = async (input) => exsc.invoke(input)
+export const headlineChain = async (input) => hc.invoke(input)
+export const judgeChain = async (input) => jc.invoke(input)
+export const opportunityChain = async (input) => oc.invoke(input)
+export const sectionClassifierChain = async (input) => scc.invoke(input)
+export const selectorRepairChain = async (input) => src.invoke(input)
+export const synthesisChain = async (input) => sc.invoke(input)
+export const watchlistSuggestionChain = async (input) => wsc.invoke(input)
+export const batchHeadlineChain = async (input) => bhc.invoke(input)
+export const translateChain = async (input) => tc.invoke(input)
+export const countryCorrectionChain = async (input) => ccc.invoke(input)
