@@ -1,8 +1,7 @@
-// apps/client/postcss.config.js (version 2.1.0 - Explicit Path)
+// apps/client/postcss.config.cjs (version 2.1.0 - CJS Naming Fix)
 const path = require('path')
 
-// This configuration explicitly tells PostCSS where to find the Tailwind config,
-// mirroring the robust setup of the working 'admin' application.
+// This configuration explicitly tells PostCSS where to find the Tailwind config.
 // This bypasses any auto-discovery logic that is failing in the monorepo setup.
 module.exports = {
   plugins: {
