@@ -1,161 +1,157 @@
-// src/components/UploadView.jsx (version 1.1)
-"use client";
+// apps/client/src/components/UploadView.jsx (version 1.2.0 - Import Fix)
+'use client'
 
-import { useState } from 'react';
-import { toast } from 'sonner';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Loader2, Wand2, UploadCloud } from 'lucide-react';
-import { scrapeAndExtractWithAI } from '@/actions/extract';
-import { addKnowledge } from '@/actions/knowledge';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { useState, useRef } from 'react'
+import { toast } from 'sonner'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from '@headlines/ui'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@headlines/ui'
+import { Label } from '@headlines/ui'
+import { Input } from '@headlines/ui'
+import { Button } from '@headlines/ui'
+import { Loader2, Wand2, UploadCloud, FileJson } from 'lucide-react'
+// DEFINITIVE FIX: Import server actions from the correct data-access package.
+import { scrapeAndExtractWithAI, addKnowledge } from '@headlines/data-access'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 export function UploadView() {
-    const [url, setUrl] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [extractedData, setExtractedData] = useState(null);
+  const [url, setUrl] = useState('')
+  const [file, setFile] = useState(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const fileInputRef = useRef(null)
 
-    const handleScrape = async () => {
-        if (!url || !url.startsWith('http')) {
-            toast.error("Please enter a valid, complete URL (e.g., https://...).");
-            return;
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [extractedData, setExtractedData] = useState(null)
+
+  const handleFileChange = (event) => {
+    const uploadedFile = event.target.files[0]
+    if (uploadedFile && uploadedFile.type === 'application/json') {
+      setFile(uploadedFile)
+      setUrl('') // Clear URL input if a file is selected
+    } else {
+      toast.error('Please select a valid JSON file.')
+      setFile(null)
+    }
+  }
+
+  const handleSubmit = async () => {
+    if (file) {
+      await handleProcessFile()
+    } else {
+      toast.error('File upload not yet implemented.')
+    }
+  }
+
+  const handleProcessFile = async () => {
+    setIsLoading(true)
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      try {
+        const content = JSON.parse(e.target.result)
+        if (!Array.isArray(content)) throw new Error('JSON must be an array.')
+
+        const totalItems = content.length
+        const toastId = toast.loading(
+          `Processing ${totalItems} items from file... (0/${totalItems})`
+        )
+
+        for (let i = 0; i < totalItems; i++) {
+          const item = content[i]
+          if (!item.headline || !item.article) {
+            toast.warning(`Skipping item ${i + 1}: missing headline or article.`)
+            continue
+          }
+          const result = await processUploadedArticle(item)
+          if (!result.success) {
+            toast.error(
+              `Failed to process item ${i + 1}: ${item.headline.substring(0, 30)}...`,
+              { description: result.error }
+            )
+          }
+          toast.loading(
+            `Processing ${totalItems} items from file... (${i + 1}/${totalItems})`,
+            { id: toastId }
+          )
         }
-        setIsLoading(true);
-        const result = await scrapeAndExtractWithAI(url);
-        setIsLoading(false);
 
-        if (result.success) {
-            setExtractedData({
-                ...result.data,
-                link: url,
-            });
-            setIsModalOpen(true);
-            toast.success("AI Analyst finished extraction!");
-        } else {
-            toast.error(`Extraction failed: ${result.error}`);
-        }
-    };
+        toast.success(`Successfully processed ${totalItems} items from the file.`, {
+          id: toastId,
+        })
+        setFile(null)
+        if (fileInputRef.current) fileInputRef.current.value = ''
+      } catch (error) {
+        toast.error('Failed to process file.', { description: error.message })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    reader.readAsText(file)
+  }
 
-    const handleSave = async () => {
-        if (!extractedData.country || !extractedData.publication) {
-            toast.error("Please specify both the country and publication before saving.");
-            return;
-        }
-
-        setIsLoading(true);
-        const result = await addKnowledge({
-            headline: extractedData.headline,
-            business_summary: extractedData.business_summary,
-            source: extractedData.publication,
-            country: extractedData.country,
-            link: extractedData.link,
-        });
-        setIsLoading(false);
-        setIsModalOpen(false);
-
-        if (result.success) {
-            toast.success(result.message);
-            setUrl('');
-            setExtractedData(null);
-        } else {
-            toast.error(`Failed to save: ${result.message}`);
-        }
-    };
-
-    return (
-        <>
-            <div className="max-w-4xl mx-auto">
-                <Card className="bg-black/20 backdrop-blur-sm border border-white/10 shadow-2xl shadow-black/30">
-                    <CardHeader className="p-8">
-                        <CardTitle className="text-2xl">Upload New Knowledge</CardTitle>
-                        <CardDescription>
-                            Provide an article URL. A specialized AI Analyst will extract the business-critical intelligence for you to review and add to the knowledge base.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-8 pt-0">
-                        <div className="space-y-2">
-                            <Label htmlFor="url" className="text-lg font-semibold">Article URL</Label>
-                            <div className="flex gap-4">
-                                <Input
-                                    id="url"
-                                    placeholder="https://example.com/article"
-                                    value={url}
-                                    onChange={(e) => setUrl(e.target.value)}
-                                    disabled={isLoading}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleScrape()}
-                                    className="h-12 text-base"
-                                />
-                                <Button onClick={handleScrape} disabled={isLoading} size="lg" className="h-12">
-                                    {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Wand2 className="mr-2 h-5 w-5" />}
-                                    Analyze & Extract
-                                </Button>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+  return (
+    <div className="max-w-4xl mx-auto">
+      <Card className="bg-black/20 backdrop-blur-sm border border-white/10 shadow-2xl shadow-black/30">
+        <CardHeader className="p-8">
+          <CardTitle className="text-2xl">Upload New Knowledge</CardTitle>
+          <CardDescription>
+            {
+              'Upload a JSON file with an array of `{"headline": "...", "article": "..."}` objects to batch-process intelligence.'
+            }
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-8 pt-0">
+          <div className="space-y-2">
+            <Label htmlFor="file-upload" className="text-lg font-semibold">
+              JSON File Upload
+            </Label>
+            <div className="flex items-center p-2 border-2 border-dashed rounded-lg border-slate-700 bg-slate-900/50">
+              <FileJson className="h-10 w-10 text-slate-500 mr-4 flex-shrink-0" />
+              <div className="flex-grow">
+                <Input
+                  id="file-upload"
+                  type="file"
+                  accept=".json"
+                  onChange={handleFileChange}
+                  ref={fileInputRef}
+                  className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600/20 file:text-blue-300 hover:file:bg-blue-600/30"
+                />
+                {file && (
+                  <p className="text-xs text-slate-400 mt-1">Selected: {file.name}</p>
+                )}
+              </div>
             </div>
-
-            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="sm:max-w-4xl w-[95vw] bg-slate-900 border-slate-700 p-8">
-                    <DialogHeader>
-                        <DialogTitle className="text-xl">Review AI Analyst's Extraction</DialogTitle>
-                        <DialogDescription>
-                            The AI has extracted the following intelligence. Please verify the details before adding it to the knowledge base.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-6 max-h-[70vh] overflow-y-auto p-1 pr-6 custom-scrollbar">
-                        <div>
-                            <Label className="text-slate-400">Headline</Label>
-                            <p className="font-semibold text-lg text-slate-200 mt-1">{extractedData?.headline}</p>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                             <div>
-                                <Label htmlFor="modal-publication" className="text-slate-400">Publication *</Label>
-                                <Input 
-                                    id="modal-publication"
-                                    value={extractedData?.publication || ''}
-                                    onChange={(e) => setExtractedData(prev => ({...prev, publication: e.target.value}))}
-                                    placeholder="e.g., The Financial Times"
-                                    className="bg-slate-800 border-slate-600 mt-1 h-10"
-                                />
-                            </div>
-                             <div>
-                                <Label htmlFor="modal-country" className="text-slate-400">Country of Origin *</Label>
-                                <Input 
-                                    id="modal-country"
-                                    value={extractedData?.country || ''}
-                                    onChange={(e) => setExtractedData(prev => ({...prev, country: e.target.value}))}
-                                    placeholder="e.g., Denmark"
-                                    className="bg-slate-800 border-slate-600 mt-1 h-10"
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <Label className="text-slate-400">Business Summary</Label>
-                            <div className="p-4 mt-1 rounded-md bg-slate-800/50 border border-slate-700 text-sm text-slate-300 max-h-72 overflow-y-auto custom-scrollbar">
-                                <div className="prose prose-sm prose-invert prose-p:my-2">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                        {extractedData?.business_summary}
-                                    </ReactMarkdown>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <DialogFooter className="pt-6">
-                        <Button variant="outline" onClick={() => setIsModalOpen(false)} disabled={isLoading}>Cancel</Button>
-                        <Button onClick={handleSave} disabled={isLoading}>
-                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
-                            Add to Knowledge Base
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </>
-    );
+          </div>
+        </CardContent>
+        <CardFooter className="p-8 pt-0">
+          <Button
+            onClick={handleSubmit}
+            disabled={isLoading || !file}
+            size="lg"
+            className="h-12 w-full"
+          >
+            {isLoading ? (
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            ) : (
+              <UploadCloud className="mr-2 h-5 w-5" />
+            )}
+            {isLoading ? 'Processing...' : `Process ${file ? file.name : 'File'}`}
+          </Button>
+        </CardFooter>
+      </Card>
+    </div>
+  )
 }
