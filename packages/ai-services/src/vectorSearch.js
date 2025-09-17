@@ -1,8 +1,8 @@
 // packages/ai-services/src/vectorSearch.js (version 1.1.0)
 import { Pinecone } from '@pinecone-database/pinecone'
-import { logger } from '@headlines/utils/server';
+import { logger } from '../../utils/src/server.js';
 import { generateEmbedding } from './embeddings.js'
-import { env } from '@headlines/config'
+import { env } from '../../config/src/index.js'
 
 const { PINECONE_API_KEY, PINECONE_INDEX_NAME } = env
 

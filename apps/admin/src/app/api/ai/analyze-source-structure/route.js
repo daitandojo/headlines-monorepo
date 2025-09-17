@@ -1,6 +1,6 @@
 // apps/admin/src/app/api/ai/analyze-source-structure/route.js (version 2.1)
 import { NextResponse } from 'next/server';
-import { verifyAdmin } from '@headlines/auth';
+import { verifyAdmin } from '@headlines/auth/src/index.js';
 import { fetchPageWithPlaywright } from '@headlines/scraper-logic/src/browser.js';
 import { heuristicallyFindSelectors } from '@headlines/scraper-logic/src/scraper/selectorOptimizer.js';
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';

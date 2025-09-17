@@ -1,6 +1,6 @@
 // apps/admin/src/app/api/scrape/fetch-html/route.js (version 1.0)
 import { NextResponse } from 'next/server';
-import { verifyAdmin } from '@headlines/auth';
+import { verifyAdmin } from '@headlines/auth/src/index.js';
 import { fetchPageWithPlaywright } from '@headlines/scraper-logic/src/browser.js';
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 

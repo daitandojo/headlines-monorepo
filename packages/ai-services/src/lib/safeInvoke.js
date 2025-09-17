@@ -1,6 +1,7 @@
 // packages/ai-services/src/lib/safeInvoke.js (version 3.2.0)
-import { logger } from '@headlines/utils/server'
+import { logger } from '../../../utils/src/server.js'
 import { createHash } from 'crypto'
+import { env } from '../../../config/src/server.js'
 
 // This dynamic import approach allows the package to be used in different contexts
 // without a hard dependency on the pipeline's internal structure.
@@ -10,7 +11,15 @@ try {
     '../../../../apps/pipeline/src/utils/redisClient.js'
   ))
 } catch (e) {
-  logger.warn('Could not import Redis client. In-memory caching will be used.')
+  // DEFINITIVE FIX: Add a smarter warning that checks if Redis was configured.
+  if (env.UPSTASH_REDIS_REST_URL || env.REDIS_URL) {
+    logger.error(
+      { err: e },
+      'CRITICAL: Redis is configured in the environment, but the client module failed to import. Caching will be degraded to in-memory only.'
+    )
+  } else {
+    logger.info('Redis is not configured. Using in-memory cache as a fallback.')
+  }
   getRedisClient = async () => null
 }
 
@@ -18,7 +27,7 @@ const MAX_RETRIES = 1
 const CACHE_TTL_SECONDS = 60 * 60 * 24 // 24 hours
 
 // --- In-Memory Cache Fallback ---
-const inMemoryCache = new Map();
+const inMemoryCache = new Map()
 
 function createCacheKey(agentName, input) {
   const hash = createHash('sha256')
@@ -43,7 +52,7 @@ export async function safeInvoke(chain, input, agentName, zodSchema) {
     }
   } else if (inMemoryCache.has(cacheKey)) {
     logger.trace({ agent: agentName }, `[In-Memory Cache HIT] for ${agentName}.`)
-    return inMemoryCache.get(cacheKey);
+    return inMemoryCache.get(cacheKey)
   }
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
@@ -64,7 +73,7 @@ export async function safeInvoke(chain, input, agentName, zodSchema) {
       }
 
       const dataToCache = validation.data
-      
+
       // --- Cache SET ---
       if (redis) {
         try {
@@ -75,7 +84,7 @@ export async function safeInvoke(chain, input, agentName, zodSchema) {
           logger.error({ err, agent: agentName }, `Redis SET failed for ${agentName}.`)
         }
       } else {
-        inMemoryCache.set(cacheKey, dataToCache);
+        inMemoryCache.set(cacheKey, dataToCache)
       }
 
       return dataToCache

@@ -1,7 +1,7 @@
 // apps/admin/src/app/api/watchlist/route.js (version 3.0.1)
 import { NextResponse } from 'next/server'
-import { getAllWatchlistEntities, createWatchlistEntity } from '@headlines/data-access'
-import { verifyAdmin } from '@headlines/auth'
+import { getAllWatchlistEntities, createWatchlistEntity } from '@headlines/data-access/src/index.js'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 
 export const dynamic = 'force-dynamic'

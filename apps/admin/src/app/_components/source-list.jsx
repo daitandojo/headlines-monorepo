@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Button, Input, ScrollArea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge } from '@headlines/ui'
+import { Button, Input, ScrollArea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge } from '@headlines/ui/src/index.js'
 import {
   PlusCircle,
   DatabaseZap,
@@ -13,7 +13,7 @@ import {
   Ban,
   ExternalLink,
 } from 'lucide-react'
-import { cn } from '@headlines/utils'
+import { cn } from '@headlines/utils/src/index.js'
 
 function DynamicStatus({ source, status }) {
   if (status?.checking) {

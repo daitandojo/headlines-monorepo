@@ -1,6 +1,6 @@
 // packages/ai-services/src/wikipedia.js (version 2.4)
-import { logger } from '@headlines/utils/server'
-import { apiCallTracker } from '@headlines/utils/server'
+import { logger } from '../../utils/src/server.js'
+import { apiCallTracker } from '../../utils/src/server.js'
 import { disambiguationChain } from './chains/index.js'
 
 const WIKI_API_ENDPOINT = 'https://en.wikipedia.org/w/api.php'

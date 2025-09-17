@@ -1,0 +1,30 @@
+# Monorepo-level ignores
+node_modules
+future
+logs
+script.sh
+.DS_Store
+norway.json
+norway.backup
+debug_html
+papers.json
+workbox-*
+*.pem
+*.log*
+.env*
+!/.env.template
+
+# Apps
+apps/admin/.next
+apps/admin/out
+apps/admin/build
+apps/admin/.vercel
+
+# Pipeline
+apps/pipeline/debug_html
+apps/pipeline/logs
+
+# Packages
+packages/**/node_modules
+packages/**/*.tsbuildinfo
+

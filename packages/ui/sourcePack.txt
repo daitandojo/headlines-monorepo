@@ -48,7 +48,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-17T10:46:26.456Z
+**Generated**: 2025-09-17T18:58:29.082Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/ui
 **Total Files**: 37
 **Package**: @headlines/ui@1.0.0
@@ -60,7 +60,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 38, Size: 1.13 KB*
+*Lines: 37, Size: 1.13 KB*
 
 ```json
 {
@@ -100,7 +100,6 @@ headlines/
     "@headlines/utils": "1.2.0"
   }
 }
-
 ```
 
 ## 📄 src/ConfirmationDialog.jsx
@@ -159,14 +158,14 @@ export function ConfirmationDialog({
 ```
 
 ## 📄 src/DataTableColumnHeader.jsx
-*Lines: 69, Size: 2.33 KB*
+*Lines: 69, Size: 2.34 KB*
 
 ```jsx
 // packages/ui/src/DataTableColumnHeader.jsx (version 2.0.0 - With Filtering)
 'use client'
 
 import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from 'lucide-react'
-import { cn } from '@headlines/utils'
+import { cn } from '../../utils/src/index.js'
 import { Button } from './components/button'
 import {
   DropdownMenu,
@@ -244,7 +243,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Input } from './components/input';
 import { Textarea } from './components/textarea';
 import { Edit } from 'lucide-react';
-import { cn } from '@headlines/utils';
+import { cn } from '../../utils/src/index.js';
 
 export const EditableCell = ({ initialValue, onSave, placeholder = 'N/A', type = 'text', allowWrap = false, useTextarea = false }) => {
     const [isEditing, setIsEditing] = useState(false);
@@ -436,14 +435,14 @@ export function LoadingOverlay({ isLoading, text }) {
 ```
 
 ## 📄 src/PremiumSpinner.jsx
-*Lines: 86, Size: 2.46 KB*
+*Lines: 86, Size: 2.47 KB*
 
 ```jsx
 // packages/ui/src/PremiumSpinner.jsx (version 1.1.0)
 'use client'
 
 import { motion } from 'framer-motion'
-import { cn } from '@headlines/utils' // CORRECTED: Package import instead of alias
+import { cn } from '../../utils/src/index.js' // CORRECTED: Package import instead of alias
 
 /**
  * A visually rich, multi-layered, animated spinner component.
@@ -528,14 +527,14 @@ export function PremiumSpinner({ size = 80 }) {
 ```
 
 ## 📄 src/SkeletonCard.jsx
-*Lines: 29, Size: 1.07 KB*
+*Lines: 29, Size: 1.08 KB*
 
 ```jsx
 // packages/ui/src/SkeletonCard.jsx (version 1.0.0)
 'use client'
 
 import { Card, CardContent } from './components/card';
-import { cn } from '@headlines/utils';
+import { cn } from '../../utils/src/index.js';
 
 export const SkeletonCard = ({ className }) => {
   return (
@@ -563,7 +562,7 @@ export const SkeletonCard = ({ className }) => {
 ```
 
 ## 📄 src/ViewHeader.jsx
-*Lines: 95, Size: 4.62 KB*
+*Lines: 95, Size: 4.64 KB*
 
 ```jsx
 // packages/ui/src/ViewHeader.jsx (version 5.2.0)
@@ -571,10 +570,10 @@ export const SkeletonCard = ({ className }) => {
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useState, useEffect, useMemo } from 'react'
-import { useDebounce } from '@headlines/utils'
+import { useDebounce } from '../../utils/src/index.js'
 import { Input, Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, ScrollArea } from './index'
 import { Search, Clock, BarChart, ArrowDownUp, Mail, Star, X } from 'lucide-react'
-import { cn } from '@headlines/utils'
+import { cn } from '../../utils/src/index.js'
 
 const iconMap = { clock: Clock, relevance: BarChart, size: ArrowDownUp };
 
@@ -664,7 +663,7 @@ export function ViewHeader({
 ```
 
 ## 📄 src/components/accordion.jsx
-*Lines: 44, Size: 1.6 KB*
+*Lines: 44, Size: 1.61 KB*
 
 ```jsx
 "use client"
@@ -673,7 +672,7 @@ import * as React from "react"
 import * as AccordionPrimitive from "@radix-ui/react-accordion"
 import { ChevronDown } from "lucide-react"
 
-import { cn } from '@headlines/utils'
+import { cn } from '../../../utils/src/index.js'
 
 const Accordion = AccordionPrimitive.Root
 
@@ -714,7 +713,7 @@ export { Accordion, AccordionItem, AccordionTrigger, AccordionContent }
 ```
 
 ## 📄 src/components/alert-dialog.jsx
-*Lines: 51, Size: 3.35 KB*
+*Lines: 51, Size: 3.36 KB*
 
 ```jsx
 // packages/ui/src/components/alert-dialog.jsx (version 1.3.0 - Definitive Slot Fix)
@@ -722,7 +721,7 @@ export { Accordion, AccordionItem, AccordionTrigger, AccordionContent }
 
 import * as React from "react"
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
-import { cn } from "@headlines/utils"
+import { cn } from '../../../utils/src/index.js'
 import { buttonVariants } from "./button"
 
 const AlertDialog = AlertDialogPrimitive.Root
@@ -771,13 +770,13 @@ export { AlertDialog, AlertDialogPortal, AlertDialogOverlay, AlertDialogTrigger,
 ```
 
 ## 📄 src/components/badge.jsx
-*Lines: 35, Size: 995 Bytes*
+*Lines: 35, Size: 1006 Bytes*
 
 ```jsx
 import * as React from "react"
 import { cva } from "class-variance-authority";
 
-import { cn } from '@headlines/utils'
+import { cn } from '../../../utils/src/index.js'
 
 const badgeVariants = cva(
   "inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
@@ -812,7 +811,7 @@ export { Badge, badgeVariants }
 ```
 
 ## 📄 src/components/button.jsx
-*Lines: 50, Size: 1.63 KB*
+*Lines: 50, Size: 1.64 KB*
 
 ```jsx
 // src/components/ui/button.jsx (version 1.1)
@@ -820,7 +819,7 @@ import * as React from 'react'
 import { Slot } from '@radix-ui/react-slot'
 import { cva } from 'class-variance-authority'
 
-import { cn } from '@headlines/utils'
+import { cn } from '../../../utils/src/index.js'
 
 const buttonVariants = cva(
   'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
@@ -868,13 +867,13 @@ export { Button, buttonVariants }
 ```
 
 ## 📄 src/components/card.jsx
-*Lines: 45, Size: 1.43 KB*
+*Lines: 45, Size: 1.44 KB*
 
 ```jsx
 // src/components/ui/card.jsx (version 1.1)
 import * as React from 'react'
 
-import { cn } from '@headlines/utils'
+import { cn } from '../../../utils/src/index.js'
 
 const Card = React.forwardRef(({ className, ...props }, ref) => (
   <div
@@ -919,7 +918,7 @@ export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
 ```
 
 ## 📄 src/components/checkbox.jsx
-*Lines: 26, Size: 1002 Bytes*
+*Lines: 26, Size: 1013 Bytes*
 
 ```jsx
 // src/components/ui/checkbox.jsx (version 1.0)
@@ -928,7 +927,7 @@ import * as React from 'react'
 import * as CheckboxPrimitive from '@radix-ui/react-checkbox'
 import { Check } from 'lucide-react'
 
-import { cn } from '@headlines/utils'
+import { cn } from '../../../utils/src/index.js'
 const Checkbox = React.forwardRef(({ className, ...props }, ref) => (
   <CheckboxPrimitive.Root
     ref={ref}
@@ -951,7 +950,7 @@ export { Checkbox }
 ```
 
 ## 📄 src/components/command.jsx
-*Lines: 122, Size: 3.83 KB*
+*Lines: 122, Size: 3.84 KB*
 
 ```jsx
 // packages/ui/src/components/command.jsx (version 1.2.0 - Definitive Slot Fix)
@@ -961,7 +960,7 @@ import * as React from 'react'
 import { Dialog, DialogContent } from './dialog'
 import { Search } from 'lucide-react'
 import { Command as CommandPrimitive } from 'cmdk'
-import { cn } from '@headlines/utils'
+import { cn } from '../../../utils/src/index.js'
 
 const Command = React.forwardRef(({ className, ...props }, ref) => (
   <CommandPrimitive
@@ -1079,7 +1078,7 @@ export {
 ```
 
 ## 📄 src/components/dialog.jsx
-*Lines: 55, Size: 3.09 KB*
+*Lines: 55, Size: 3.1 KB*
 
 ```jsx
 // packages/ui/src/components/dialog.jsx (version 2.0.0 - Definitive Slot Fix)
@@ -1089,7 +1088,7 @@ import * as React from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
 
-import { cn } from '@headlines/utils'
+import { cn } from '../../../utils/src/index.js'
 
 const Dialog = DialogPrimitive.Root
 const DialogTrigger = DialogPrimitive.Trigger
@@ -1140,7 +1139,7 @@ export { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter, Dialo
 ```
 
 ## 📄 src/components/dropdown-menu.jsx
-*Lines: 89, Size: 5.8 KB*
+*Lines: 89, Size: 5.81 KB*
 
 ```jsx
 // packages/ui/src/components/dropdown-menu.jsx (version 3.0.0 - Definitive Slot Fix)
@@ -1148,7 +1147,7 @@ export { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter, Dialo
 import * as React from 'react'
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
 import { Check, ChevronRight, Circle } from 'lucide-react'
-import { cn } from '@headlines/utils'
+import { cn } from '../../../utils/src/index.js'
 
 const DropdownMenu = DropdownMenuPrimitive.Root
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger
@@ -1235,12 +1234,12 @@ export { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 ```
 
 ## 📄 src/components/input.jsx
-*Lines: 25, Size: 944 Bytes*
+*Lines: 25, Size: 955 Bytes*
 
 ```jsx
 import * as React from "react"
 
-import { cn } from '@headlines/utils'
+import { cn } from '../../../utils/src/index.js'
 
 function Input({
   className,
@@ -1266,7 +1265,7 @@ export { Input }
 ```
 
 ## 📄 src/components/label.jsx
-*Lines: 20, Size: 588 Bytes*
+*Lines: 20, Size: 599 Bytes*
 
 ```jsx
 // src/components/ui/label.jsx (version 1.1)
@@ -1276,7 +1275,7 @@ import * as React from 'react'
 import * as LabelPrimitive from '@radix-ui/react-label'
 import { cva } from 'class-variance-authority'
 
-import { cn } from '@headlines/utils'
+import { cn } from '../../../utils/src/index.js'
 
 const labelVariants = cva(
   'text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
@@ -1292,7 +1291,7 @@ export { Label }
 ```
 
 ## 📄 src/components/popover.jsx
-*Lines: 32, Size: 1.21 KB*
+*Lines: 32, Size: 1.22 KB*
 
 ```jsx
 // packages/ui/src/components/popover.jsx (version 2.0.0 - Definitive Slot Fix)
@@ -1301,7 +1300,7 @@ export { Label }
 import * as React from 'react'
 import * as PopoverPrimitive from '@radix-ui/react-popover'
 
-import { cn } from '@headlines/utils'
+import { cn } from '../../../utils/src/index.js'
 
 const Popover = PopoverPrimitive.Root
 
@@ -1330,7 +1329,7 @@ export { Popover, PopoverTrigger, PopoverContent }
 ```
 
 ## 📄 src/components/scroll-area.jsx
-*Lines: 53, Size: 1.43 KB*
+*Lines: 53, Size: 1.44 KB*
 
 ```jsx
 // packages/ui/src/components/scroll-area.jsx (version 1.1.0)
@@ -1339,7 +1338,7 @@ export { Popover, PopoverTrigger, PopoverContent }
 import * as React from "react"
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
 
-import { cn } from "@headlines/utils"
+import { cn } from '../../../utils/src/index.js'
 
 function ScrollArea({
   className,
@@ -1389,7 +1388,7 @@ export { ScrollArea, ScrollBar }
 ```
 
 ## 📄 src/components/select.jsx
-*Lines: 167, Size: 5.43 KB*
+*Lines: 167, Size: 5.44 KB*
 
 ```jsx
 "use client"
@@ -1398,7 +1397,7 @@ import * as React from "react"
 import * as SelectPrimitive from "@radix-ui/react-select"
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
 
-import { cn } from '@headlines/utils'
+import { cn } from '../../../utils/src/index.js'
 
 function Select({
   ...props
@@ -1562,7 +1561,7 @@ export {
 ```
 
 ## 📄 src/components/separator.jsx
-*Lines: 28, Size: 647 Bytes*
+*Lines: 28, Size: 658 Bytes*
 
 ```jsx
 "use client"
@@ -1570,7 +1569,7 @@ export {
 import * as React from "react"
 import * as SeparatorPrimitive from "@radix-ui/react-separator"
 
-import { cn } from '@headlines/utils'
+import { cn } from '../../../utils/src/index.js'
 
 function Separator({
   className,
@@ -1596,7 +1595,7 @@ export { Separator }
 ```
 
 ## 📄 src/components/sheet.jsx
-*Lines: 156, Size: 4.27 KB*
+*Lines: 156, Size: 4.28 KB*
 
 ```jsx
 'use client'
@@ -1605,7 +1604,7 @@ import * as React from 'react'
 import * as SheetPrimitive from '@radix-ui/react-dialog'
 import { cva } from 'class-variance-authority'
 import { X } from 'lucide-react'
-import { cn } from '@headlines/utils'
+import { cn } from '../../../utils/src/index.js'
 
 // Base components from Radix
 const Sheet = SheetPrimitive.Root
@@ -1789,7 +1788,7 @@ export { Toaster }
 ```
 
 ## 📄 src/components/switch.jsx
-*Lines: 25, Size: 1.06 KB*
+*Lines: 25, Size: 1.07 KB*
 
 ```jsx
 // src/components/ui/switch.jsx (version 1.0)
@@ -1797,7 +1796,7 @@ export { Toaster }
 import * as React from 'react'
 import * as SwitchPrimitives from '@radix-ui/react-switch'
 
-import { cn } from '@headlines/utils'
+import { cn } from '../../../utils/src/index.js'
 const Switch = React.forwardRef(({ className, ...props }, ref) => (
   <SwitchPrimitives.Root
     className={cn(
@@ -1820,13 +1819,13 @@ export { Switch }
 ```
 
 ## 📄 src/components/table.jsx
-*Lines: 88, Size: 2.19 KB*
+*Lines: 88, Size: 2.2 KB*
 
 ```jsx
 // src/components/ui/table.jsx (version 1.1)
 import * as React from 'react'
 
-import { cn } from '@headlines/utils'
+import { cn } from '../../../utils/src/index.js'
 
 const Table = React.forwardRef(({ className, ...props }, ref) => (
   // CORRECTIVE ACTION: Removed the wrapping div with `overflow-auto`.
@@ -1914,7 +1913,7 @@ export {
 ```
 
 ## 📄 src/components/tabs.jsx
-*Lines: 44, Size: 1.51 KB*
+*Lines: 44, Size: 1.52 KB*
 
 ```jsx
 "use client"
@@ -1922,7 +1921,7 @@ export {
 import * as React from "react"
 import * as TabsPrimitive from "@radix-ui/react-tabs"
 
-import { cn } from '@headlines/utils'
+import { cn } from '../../../utils/src/index.js'
 
 const Tabs = TabsPrimitive.Root
 
@@ -1964,12 +1963,12 @@ export { Tabs, TabsList, TabsTrigger, TabsContent }
 ```
 
 ## 📄 src/components/textarea.jsx
-*Lines: 19, Size: 590 Bytes*
+*Lines: 19, Size: 601 Bytes*
 
 ```jsx
 import * as React from "react"
 
-import { cn } from '@headlines/utils'
+import { cn } from '../../../utils/src/index.js'
 
 const Textarea = React.forwardRef(({ className, ...props }, ref) => {
   return (
@@ -1989,7 +1988,7 @@ export { Textarea }
 ```
 
 ## 📄 src/components/tooltip.jsx
-*Lines: 31, Size: 1.12 KB*
+*Lines: 31, Size: 1.13 KB*
 
 ```jsx
 // packages/ui/src/components/tooltip.jsx (version 2.0.0 - Definitive Slot Fix)
@@ -1998,7 +1997,7 @@ export { Textarea }
 import * as React from 'react'
 import * as TooltipPrimitive from '@radix-ui/react-tooltip'
 
-import { cn } from '@headlines/utils'
+import { cn } from '../../../utils/src/index.js'
 
 const TooltipProvider = TooltipPrimitive.Provider
 

@@ -1,8 +1,8 @@
 // packages/data-access/src/actions/dashboard.js (version 2.0.0)
 'use server'
 
-import { Source, Subscriber, WatchlistEntity } from '@headlines/models'
-import { verifyAdmin } from '@headlines/auth'
+import { Source, Subscriber, WatchlistEntity } from '../../../models/src/index.js'
+import { verifyAdmin } from '../../../auth/src/index.js'
 import dbConnect from '../dbConnect.js'
 
 export async function getDashboardStats() {

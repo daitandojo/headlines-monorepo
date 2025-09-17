@@ -9,10 +9,10 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@headlines/ui'
-import { Input } from '@headlines/ui'
-import { Label } from '@headlines/ui'
-import { Button } from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
+import { Input } from '@headlines/ui/src/index.js'
+import { Label } from '@headlines/ui/src/index.js'
+import { Button } from '@headlines/ui/src/index.js'
 import { Wand2, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 

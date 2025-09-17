@@ -3,10 +3,10 @@
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useState, useEffect, useMemo } from 'react'
-import { useDebounce } from '@headlines/utils'
+import { useDebounce } from '../../utils/src/index.js'
 import { Input, Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, ScrollArea } from './index'
 import { Search, Clock, BarChart, ArrowDownUp, Mail, Star, X } from 'lucide-react'
-import { cn } from '@headlines/utils'
+import { cn } from '../../utils/src/index.js'
 
 const iconMap = { clock: Clock, relevance: BarChart, size: ArrowDownUp };
 

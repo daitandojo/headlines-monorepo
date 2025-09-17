@@ -2,10 +2,10 @@
 'use server'
 
 import dbConnect from '../dbConnect.js'
-import { Article, Subscriber } from '@headlines/models'
+import { Article, Subscriber } from '../../../models/src/index.js'
 import { revalidatePath } from '../revalidate.js'
 import { buildQuery } from '../queryBuilder.js'
-import { getUserIdFromSession } from '@headlines/auth'
+import { getUserIdFromSession } from '../../../auth/src/index.js'
 
 const ARTICLES_PER_PAGE = 10;
 

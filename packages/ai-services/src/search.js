@@ -1,9 +1,9 @@
 // packages/ai-services/src/search.js (version 1.3)
 import axios from 'axios'
 import NewsAPI from 'newsapi'
-import { env } from '@headlines/config'
-import { logger } from '@headlines/utils/server'
-import { apiCallTracker } from '@headlines/utils/server'
+import { env } from '../../config/src/index.js'
+import { logger } from '../../utils/src/server.js'
+import { apiCallTracker } from '../../utils/src/server.js'
 // DEFINITIVE FIX: Removed the server-only 'p-limit' dependency.
 // import pLimit from 'p-limit'
 

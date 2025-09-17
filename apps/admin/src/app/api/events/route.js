@@ -1,6 +1,6 @@
 // apps/admin/src/app/api/events/route.js (version 2.0.0 - Correct Param Handling)
 import { NextResponse } from 'next/server';
-import { getAdminEvents, updateAdminEvent, deleteAdminEvent } from '@headlines/data-access';
+import { getAdminEvents, updateAdminEvent, deleteAdminEvent } from '@headlines/data-access/src/index.js';
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 
 export const dynamic = 'force-dynamic';

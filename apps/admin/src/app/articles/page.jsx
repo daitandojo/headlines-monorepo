@@ -1,7 +1,7 @@
 // apps/admin/src/app/articles/page.jsx (version 1.2.0)
 'use client'
 
-import { PageHeader, DataTable, ExportButton } from '@headlines/ui'
+import { PageHeader, DataTable, ExportButton } from '@headlines/ui/src/index.js'
 import { columns } from './columns'
 import { useAdminManager } from '@/hooks/use-admin-manager'
 import {
@@ -9,7 +9,7 @@ import {
   updateAdminArticle,
   exportArticlesToCSV,
   exportArticlesToXLSX,
-} from '@headlines/data-access'
+} from '@headlines/data-access/src/index.js'
 import { toast } from 'sonner'
 import { useCallback, useState } from 'react'
 

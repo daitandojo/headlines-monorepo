@@ -7,15 +7,15 @@ import {
 import { AIMessage, HumanMessage } from '@langchain/core/messages'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { settings } from '@headlines/config/server'
+import { settings } from '../../../config/src/server.js'
 import {
   getInstructionArticle,
   shotsInputArticle,
   shotsOutputArticle,
-} from '@headlines/prompts'
+} from '../../../prompts/src/index.js'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
-import { logger } from '@headlines/utils/server';
+import { logger } from '../../../utils/src/server.js';
 import { articleAssessmentSchema } from '../schemas/index.js'
 
 const instructions = getInstructionArticle(settings)

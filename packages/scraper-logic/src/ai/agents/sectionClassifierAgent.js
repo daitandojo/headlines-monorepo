@@ -1,7 +1,7 @@
 // packages/scraper-logic/src/ai/agents/sectionClassifierAgent.js (version 1.0)
 import { AIAgent } from '../AIAgent.js';
 import { sectionClassifierSchema } from '../schemas/sectionClassifierSchema.js';
-import { env } from '@headlines/config';
+import { env } from '../../../../config/src/index.js';
 
 const INSTRUCTION = `You are a master website navigation analyst. Your task is to analyze a list of hyperlinks (anchor text and href) from a webpage and classify each one into one of four categories.
 

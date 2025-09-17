@@ -26,7 +26,7 @@ import {
   TooltipTrigger,
   TooltipContent,
   DataTableColumnHeader,
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 import {
   ArrowUpDown,
   MoreHorizontal,

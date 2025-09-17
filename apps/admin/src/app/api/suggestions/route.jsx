@@ -1,9 +1,9 @@
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 // apps/admin/src/app/api/suggestions/route.jsx (version 2.0.1)
 import { NextResponse } from 'next/server'
-import { getSuggestions, processWatchlistSuggestion, processSourceSuggestion } from '@headlines/data-access'
+import { getSuggestions, processWatchlistSuggestion, processSourceSuggestion } from '@headlines/data-access/src/index.js'
 import mongoose from 'mongoose'
-import { verifyAdmin } from '@headlines/auth'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 
 export const dynamic = 'force-dynamic'
 

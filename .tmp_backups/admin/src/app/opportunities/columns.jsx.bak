@@ -1,0 +1,61 @@
+// apps/admin/src/app/opportunities/columns.jsx (version 1.4.0)
+'use client'
+
+import React, { useState, useEffect, useRef } from 'react';
+import { Button, EditableCell } from '@headlines/ui';
+import { ArrowUpDown, Trash2 } from 'lucide-react';
+import { format } from 'date-fns';
+
+export const columns = (onUpdate, onDelete) => [
+    {
+        accessorKey: 'basedIn',
+        header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>Country <ArrowUpDown className="ml-2 h-4 w-4" /></Button>,
+        cell: ({ row }) => <EditableCell initialValue={row.original.basedIn} placeholder="Add country..." onSave={(newValue) => onUpdate(row.original, { basedIn: newValue })} />,
+        size: 130,
+    },
+    {
+        accessorKey: 'city',
+        header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>City <ArrowUpDown className="ml-2 h-4 w-4" /></Button>,
+        cell: ({ row }) => <EditableCell initialValue={row.original.city} placeholder="Add city..." onSave={(newValue) => onUpdate(row.original, { city: newValue })} />,
+        size: 130,
+    },
+    {
+        accessorKey: 'reachOutTo',
+        header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>Contact <ArrowUpDown className="ml-2 h-4 w-4" /></Button>,
+        cell: ({ row }) => <EditableCell initialValue={row.original.reachOutTo} onSave={(newValue) => onUpdate(row.original, { reachOutTo: newValue })} allowWrap={true} />,
+        size: 250,
+    },
+    {
+        accessorKey: 'likelyMMDollarWealth',
+        header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>Wealth ($M) <ArrowUpDown className="ml-2 h-4 w-4" /></Button>,
+        cell: ({ row }) => <EditableCell initialValue={row.original.likelyMMDollarWealth} placeholder="Add wealth..." onSave={(newValue) => onUpdate(row.original, { likelyMMDollarWealth: newValue })} type="number" />,
+        size: 120,
+    },
+    {
+        accessorKey: 'contactDetails.email',
+        header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>Email <ArrowUpDown className="ml-2 h-4 w-4" /></Button>,
+        // DEFINITIVE FIX: The `onSave` handler now passes an object with dot notation
+        // to ensure MongoDB updates the nested field correctly.
+        cell: ({ row }) => <EditableCell initialValue={row.original.contactDetails?.email} placeholder="Add email..." onSave={(newValue) => onUpdate(row.original, { 'contactDetails.email': newValue })} />,
+        size: 200,
+    },
+    {
+        accessorKey: 'whyContact',
+        header: 'Reason',
+        cell: ({ row }) => {
+            const reasons = Array.isArray(row.original.whyContact) ? row.original.whyContact : [row.original.whyContact];
+            return <p className="text-sm text-muted-foreground line-clamp-2">{reasons.join(' ')}</p>
+        },
+    },
+    {
+        accessorKey: 'createdAt',
+        header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>Created <ArrowUpDown className="ml-2 h-4 w-4" /></Button>,
+        cell: ({ row }) => format(new Date(row.original.createdAt), 'dd MMM yyyy'),
+        size: 120,
+    },
+    {
+        id: 'actions',
+        cell: ({ row }) => <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => onDelete(row.original._id)}><Trash2 className="h-4 w-4" /></Button>,
+        size: 60,
+    }
+];

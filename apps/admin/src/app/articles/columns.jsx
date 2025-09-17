@@ -2,7 +2,7 @@
 'use client'
 
 import React from 'react'
-import { Button, Badge, EditableCell, DataTableColumnHeader } from '@headlines/ui'
+import { Button, Badge, EditableCell, DataTableColumnHeader } from '@headlines/ui/src/index.js'
 import { Trash2, ExternalLink } from 'lucide-react'
 import { format } from 'date-fns'
 

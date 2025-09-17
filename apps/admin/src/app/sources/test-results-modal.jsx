@@ -8,10 +8,10 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@headlines/ui'
-import { Button } from '@headlines/ui'
-import { Alert, AlertDescription, AlertTitle } from '@headlines/ui'
-import { Separator } from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
+import { Button } from '@headlines/ui/src/index.js'
+import { Alert, AlertDescription, AlertTitle } from '@headlines/ui/src/index.js'
+import { Separator } from '@headlines/ui/src/index.js'
 import {
   CheckCircle2,
   XCircle,

@@ -1,8 +1,8 @@
 // packages/scraper-logic/src/ai/agents/articlePreAssessmentAgent.js (version 2.2.1)
 import { AIAgent } from '../AIAgent.js'
 import { articlePreAssessmentSchema } from '../schemas/articlePreAssessmentSchema.js'
-import { env } from '@headlines/config'
-import { instructionArticlePreAssessment } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { instructionArticlePreAssessment } from '../../../../prompts/src/index.js'
 
 const getAgent = () =>
   new AIAgent({

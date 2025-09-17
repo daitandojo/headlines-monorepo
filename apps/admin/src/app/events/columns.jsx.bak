@@ -22,7 +22,7 @@ import {
   CardFooter,
   Label,
   Textarea,
-} from '@headlines/ui'
+} from '../../../../../packages/ui/src/index.js'
 import { Trash2, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { RelationshipManager } from '../_components/relationships/RelationshipManager'

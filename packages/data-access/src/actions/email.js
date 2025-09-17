@@ -1,8 +1,8 @@
 // packages/data-access/src/actions/email.js (version 1.0)
 'use server'
 
-import { getUserIdFromSession } from '@headlines/auth';
-import { SynthesizedEvent, Opportunity, Article } from '@headlines/models';
+import { getUserIdFromSession } from '../../../auth/src/index.js';
+import { SynthesizedEvent, Opportunity, Article } from '../../../models/src/index.js';
 import dbConnect from '../dbConnect.js';
 // This import will need a proper mailer service setup, for now we mock it.
 // import { sendSingleItemEmail } from '@/lib/mailer'; 

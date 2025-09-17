@@ -1,16 +1,11 @@
-// apps/admin/tailwind.config.js (version 6.0.0 - Monorepo Root Relative)
+// apps/admin/tailwind.config.js (version 6.1.0 - Consistent Relative Paths)
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  // Use the shared preset from the UI package for a consistent theme.
   presets: [require('../../packages/ui/tailwind.preset.cjs')],
-
-  // The 'content' paths must be relative to the MONOREPO ROOT,
-  // not the current file. This ensures that when the Tailwind
-  // compiler runs from the root, it can correctly locate all
-  // source files that contain Tailwind classes. This is the
-  // definitive fix for CSS not loading in a monorepo setup.
+  // DEFINITIVE FIX: The content paths are now relative to this config file's
+  // location, matching the corrected client app config for consistency.
   content: [
-    './apps/admin/src/**/*.{js,jsx}',
-    './packages/ui/src/**/*.{js,jsx}',
+    './src/**/*.{js,jsx}', // Scans the admin app's own source files.
+    '../../packages/ui/src/**/*.{js,jsx}', // Scans the shared UI package.
   ],
 }

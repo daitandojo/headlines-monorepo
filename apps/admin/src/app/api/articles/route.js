@@ -1,7 +1,7 @@
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 // apps/admin/src/app/api/articles/route.js (version 1.0.0)
 import { NextResponse } from 'next/server';
-import { getAdminArticles, updateAdminArticle, deleteAdminArticle } from '@headlines/data-access';
+import { getAdminArticles, updateAdminArticle, deleteAdminArticle } from '@headlines/data-access/src/index.js';
 
 export const dynamic = 'force-dynamic';
 

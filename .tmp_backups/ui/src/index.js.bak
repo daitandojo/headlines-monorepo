@@ -1,0 +1,64 @@
+// packages/ui/src/index.js (version 3.1.0)
+'use client'
+
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './components/accordion';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogOverlay, AlertDialogPortal, AlertDialogTitle, AlertDialogTrigger } from './components/alert-dialog';
+import { Badge, badgeVariants } from './components/badge';
+import { Button, buttonVariants } from './components/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './components/card';
+import { Checkbox } from './components/checkbox';
+import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut } from './components/command';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogOverlay, DialogPortal, DialogTitle, DialogTrigger } from './components/dialog';
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuPortal, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from './components/dropdown-menu';
+import { Input } from './components/input';
+import { Label } from './components/label';
+import { Popover, PopoverContent, PopoverTrigger } from './components/popover';
+import { ScrollArea, ScrollBar } from './components/scroll-area';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectScrollDownButton, SelectScrollUpButton, SelectSeparator, SelectTrigger, SelectValue } from './components/select';
+import { Separator } from './components/separator';
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetOverlay, SheetPortal, SheetTitle, SheetTrigger } from './components/sheet';
+import { Toaster } from './components/sonner';
+import { Switch } from './components/switch';
+import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from './components/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/tabs';
+import { Textarea } from './components/textarea';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './components/tooltip';
+import { ConfirmationDialog } from './ConfirmationDialog.jsx';
+import { DataTable } from './data-table.jsx';
+import { LoadingOverlay } from './LoadingOverlay.jsx';
+import PageHeader from './page-header.jsx';
+import { PremiumSpinner } from './PremiumSpinner.jsx';
+import { SkeletonCard } from './SkeletonCard.jsx';
+import { EditableCell } from './EditableCell.jsx'; // DEFINITIVE ADDITION
+
+export {
+  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogOverlay, AlertDialogPortal, AlertDialogTitle, AlertDialogTrigger,
+  Badge, badgeVariants,
+  Button, buttonVariants,
+  Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle,
+  Checkbox,
+  Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut,
+  Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogOverlay, DialogPortal, DialogTitle, DialogTrigger,
+  DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuPortal, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger,
+  Input,
+  Label,
+  Popover, PopoverContent, PopoverTrigger,
+  ScrollArea, ScrollBar,
+  Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectScrollDownButton, SelectScrollUpButton, SelectSeparator, SelectTrigger, SelectValue,
+  Separator,
+  Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetOverlay, SheetPortal, SheetTitle, SheetTrigger,
+  Toaster,
+  Switch,
+  Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow,
+  Tabs, TabsContent, TabsList, TabsTrigger,
+  Textarea,
+  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
+  ConfirmationDialog,
+  DataTable,
+  LoadingOverlay,
+  PageHeader,
+  PremiumSpinner,
+  SkeletonCard,
+  EditableCell, // DEFINITIVE ADDITION
+};

@@ -1,6 +1,6 @@
 // packages/scraper-logic/src/ai/index.js (version 6.1.0)
 import { getConfig } from '../config.js'
-import { callLanguageModel } from '@headlines/ai-services'
+import { callLanguageModel } from '../../../ai-services/src/index.js'
 import { AIAgent } from './AIAgent.js'
 import { assessArticleContent } from './agents/articleAgent.js'
 import { articleAssessmentSchema } from './schemas/articleAssessmentSchema.js'

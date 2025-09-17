@@ -1,12 +1,12 @@
 // packages/scraper-logic/src/scraper/orchestrator.js (version 5.0.0)
 import pLimit from 'p-limit'
-import { sleep } from '@headlines/utils'
+import { sleep } from '../../../utils/src/index.js'
 import { getConfig } from '../config.js'
 import { scrapeSiteForHeadlines } from './headlineScraper.js'
 // NEWSAPI REWORK: The direct import of scrapeNewsAPI is removed as it's no longer used for proactive scraping.
 // import { scrapeNewsAPI } from './newsApiScraper.js'
-import { updateSourceAnalyticsBatch } from '@headlines/data-access'
-import { env } from '@headlines/config'
+import { updateSourceAnalyticsBatch } from '../../../data-access/src/index.js'
+import { env } from '../../../config/src/index.js'
 
 async function performStandardScraping(sourcesToScrape) {
   if (sourcesToScrape.length === 0) {

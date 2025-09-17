@@ -2,9 +2,9 @@
 import { AIAgent } from '../AIAgent.js'
 import { entitySchema } from '../schemas/entitySchema.js'
 import { canonicalizerSchema } from '../schemas/canonicalizerSchema.js'
-import { env } from '@headlines/config'
-import { instructionEntity } from '@headlines/prompts'
-import { instructionCanonicalizer } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { instructionEntity } from '../../../../prompts/src/index.js'
+import { instructionCanonicalizer } from '../../../../prompts/src/index.js'
 // DEFINITIVE FIX: Removed the duplicate import of getConfig.
 import { getConfig } from '../../config.js'
 

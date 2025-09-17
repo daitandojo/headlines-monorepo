@@ -2,7 +2,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Popover, PopoverContent, PopoverTrigger } from '@headlines/ui'
+import { Popover, PopoverContent, PopoverTrigger } from '@headlines/ui/src/index.js'
 import {
   Command,
   CommandEmpty,
@@ -10,11 +10,11 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@headlines/ui'
-import { Button } from '@headlines/ui'
-import { Switch } from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
+import { Button } from '@headlines/ui/src/index.js'
+import { Switch } from '@headlines/ui/src/index.js'
 import { Check, ChevronsUpDown, X } from 'lucide-react'
-import { cn } from '@headlines/utils'
+import { cn } from '@headlines/utils/src/index.js'
 
 export default function CountrySubscriptionManager({
   availableCountries,

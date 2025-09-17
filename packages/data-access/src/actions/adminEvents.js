@@ -2,9 +2,9 @@
 'use server'
 
 import dbConnect from '../dbConnect.js';
-import { SynthesizedEvent, Article, Opportunity } from '@headlines/models';
+import { SynthesizedEvent, Article, Opportunity } from '../../../models/src/index.js';
 import { buildQuery } from '../queryBuilder.js';
-import { verifyAdmin } from '@headlines/auth';
+import { verifyAdmin } from '../../../auth/src/index.js';
 import { revalidatePath } from '../revalidate.js';
 import mongoose from 'mongoose';
 

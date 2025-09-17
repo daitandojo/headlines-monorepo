@@ -1,8 +1,8 @@
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 // apps/admin/src/app/api/sources/route.js (version 3.0.1)
 import { NextResponse } from 'next/server'
-import { getAllSources, createSource } from '@headlines/data-access'
-import { verifyAdmin } from '@headlines/auth'
+import { getAllSources, createSource } from '@headlines/data-access/src/index.js'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 
 export const dynamic = 'force-dynamic'
 

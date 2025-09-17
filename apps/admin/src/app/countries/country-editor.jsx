@@ -3,17 +3,17 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Button } from '@headlines/ui'
-import { CardFooter } from '@headlines/ui'
-import { Input } from '@headlines/ui'
-import { Label } from '@headlines/ui'
+import { Button } from '@headlines/ui/src/index.js'
+import { CardFooter } from '@headlines/ui/src/index.js'
+import { Input } from '@headlines/ui/src/index.js'
+import { Label } from '@headlines/ui/src/index.js'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 import { toast } from 'sonner'
 import { Save, Loader2, PlusCircle, X } from 'lucide-react'
 

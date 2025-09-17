@@ -3,9 +3,9 @@ import { getConfig } from '../../config.js';
 import { AIAgent } from '../AIAgent.js'
 import { emailSubjectSchema } from '../schemas/emailSubjectSchema.js'
 import { emailIntroSchema } from '../schemas/emailIntroSchema.js'
-import { env } from '@headlines/config'
-import { instructionEmailSubject } from '@headlines/prompts'
-import { instructionEmailIntro } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { instructionEmailSubject } from '../../../../prompts/src/index.js'
+import { instructionEmailIntro } from '../../../../prompts/src/index.js'
 
 const getAgent = (systemPrompt, zodSchema) =>
   new AIAgent({

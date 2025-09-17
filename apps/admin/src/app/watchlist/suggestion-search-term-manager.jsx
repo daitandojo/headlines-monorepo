@@ -2,7 +2,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { Button, Badge, Input, Popover, PopoverContent, PopoverTrigger } from '@headlines/ui'
+import { Button, Badge, Input, Popover, PopoverContent, PopoverTrigger } from '@headlines/ui/src/index.js'
 import { PlusCircle, X } from 'lucide-react'
 
 const EditableTermBadge = ({ term, onUpdate, onRemove }) => {

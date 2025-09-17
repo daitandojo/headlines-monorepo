@@ -2,7 +2,7 @@
 'use client'
 
 import React from 'react'
-import { Button, EditableCell } from '@headlines/ui'
+import { Button, EditableCell } from '@headlines/ui/src/index.js'
 import { ArrowUpDown, Trash2, Edit } from 'lucide-react'
 import { format } from 'date-fns'
 import { toast } from 'sonner'

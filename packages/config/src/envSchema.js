@@ -1,7 +1,10 @@
 // packages/config/src/envSchema.js (version 8.0.0)
 import { z } from 'zod'
 
-const stringToBoolean = z.string().transform((val) => val === 'true').or(z.boolean())
+const stringToBoolean = z
+  .string()
+  .transform((val) => val === 'true')
+  .or(z.boolean())
 const stringToNumber = z.string().transform((val) => parseInt(val, 10))
 
 const envSchema = z.object({
@@ -25,6 +28,7 @@ const envSchema = z.object({
   SMTP_FROM_NAME: z.string().min(1).default('Headlines AI'),
   NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().min(1),
   VAPID_PRIVATE_KEY: z.string().min(1),
+  // THIS IS THE CORRECTED LINE: It no longer looks for quotes.
   VAPID_SUBJECT: z.string().startsWith('mailto:'),
   NEXT_PUBLIC_PUSHER_KEY: z.string().min(1),
   NEXT_PUBLIC_PUSHER_CLUSTER: z.string().min(1),
@@ -35,24 +39,24 @@ const envSchema = z.object({
   GROQ_API_KEY: z.string().startsWith('gsk_').optional(),
   SERPER_API_KEY: z.string().min(1).optional(),
   NEWSAPI_API_KEY: z.string().min(1),
-});
+})
 
-let validatedEnv = null;
+let validatedEnv = null
 
 function validateAndExportEnv() {
-    if (validatedEnv) return validatedEnv;
-    try {
-        validatedEnv = envSchema.parse(process.env);
-        return validatedEnv;
-    } catch (error) {
-        console.error("\n❌ CRITICAL: Invalid environment variables found!\n");
-        console.error(JSON.stringify(error.flatten().fieldErrors, null, 2));
-        console.error("\nHalting application. Please update your .env file.\n");
-        if (typeof process !== 'undefined' && process.exit) {
-          process.exit(1);
-        }
-        throw new Error("Invalid environment variables");
+  if (validatedEnv) return validatedEnv
+  try {
+    validatedEnv = envSchema.parse(process.env)
+    return validatedEnv
+  } catch (error) {
+    console.error('\n❌ CRITICAL: Invalid environment variables found!\n')
+    console.error(JSON.stringify(error.flatten().fieldErrors, null, 2))
+    console.error('\nHalting application. Please update your .env file.\n')
+    if (typeof process !== 'undefined' && process.exit) {
+      process.exit(1)
     }
+    throw new Error('Invalid environment variables')
+  }
 }
 
-export const env = validateAndExportEnv();
+export const env = validateAndExportEnv()

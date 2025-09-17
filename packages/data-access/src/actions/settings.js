@@ -1,8 +1,8 @@
 // packages/data-access/src/actions/settings.js (version 1.0.1)
 'use server'
 
-import { Setting } from '@headlines/models'
-import { verifyAdmin } from '@headlines/auth'
+import { Setting } from '../../../models/src/index.js'
+import { verifyAdmin } from '../../../auth/src/index.js'
 import dbConnect from '../dbConnect.js'
 import { revalidatePath } from '../revalidate.js'
 

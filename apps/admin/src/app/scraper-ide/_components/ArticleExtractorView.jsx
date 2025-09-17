@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Button, Textarea, Label, Accordion, AccordionItem, AccordionTrigger, AccordionContent, Badge } from '@headlines/ui';
+import { Button, Textarea, Label, Accordion, AccordionItem, AccordionTrigger, AccordionContent, Badge } from '@headlines/ui/src/index.js';
 import { toast } from 'sonner';
 import { heuristicallyFindSelectors } from '@headlines/scraper-logic/src/scraper/selectorOptimizer.js';
 import * as cheerio from 'cheerio';

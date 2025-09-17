@@ -1,9 +1,9 @@
 // packages/scraper-logic/src/ai/agents/synthesisAgent.js (version 3.0.2)
-import { truncateString } from '@headlines/utils'
+import { truncateString } from '../../../../utils/src/index.js'
 import { AIAgent } from '../AIAgent.js'
 import { synthesisSchema } from '../schemas/synthesisSchema.js'
-import { env } from '@headlines/config'
-import { instructionSynthesize } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { instructionSynthesize } from '../../../../prompts/src/index.js'
 // DEFINITIVE FIX: Removed the duplicate import of getConfig.
 import { getConfig } from '../../config.js'
 

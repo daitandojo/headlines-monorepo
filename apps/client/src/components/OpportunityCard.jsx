@@ -1,128 +1,109 @@
-// src/components/OpportunityCard.jsx (version 11.2)
+// apps/client/src/components/OpportunityCard.jsx (version 15.3.0 - Flag Added)
 'use client'
 
-import { useState } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { useState, useTransition } from 'react'
+import { Card, CardContent } from '@headlines/ui'
+import { Button } from '@headlines/ui'
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
-import {
-  ExternalLink,
   User,
   Briefcase,
   MapPin,
-  Trash2,
   Mail,
   Zap,
   MessageSquare,
+  ArrowRight,
+  Trash2,
 } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@headlines/ui'
 import { SwipeToDelete } from './swipe/SwipeToDelete'
-import { cn } from '@/lib/utils'
+import { cn } from '@headlines/utils'
 import { EventContextDialog } from './EventContextDialog'
-import { DeletionConfirmationDialog } from './DeletionConfirmationDialog'
-import useAppStore from '@/store/use-app-store'
+import Link from 'next/link'
+// DEFINITIVE FIX: Import the getCountryFlag utility
+import { getCountryFlag } from '@headlines/utils'
 
-export function OpportunityCard({ opportunity, onDelete, isDeleting }) {
+export function OpportunityCard({ opportunity, onSwipeLeft, isDeleting }) {
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const skipConfirmation = useAppStore(
-    (state) => state.deletePreferences.skipOpportunityConfirmation
-  )
+  const [isPending, startTransition] = useTransition()
 
-  const handleDelete = (e) => {
-    if (e) e.preventDefault()
-    onDelete()
+  const performSwipe = () => {
+    startTransition(() => {
+      onSwipeLeft()
+    })
   }
 
-  const handleDeleteClick = (e) => {
-    e.stopPropagation()
-    if (skipConfirmation) {
-      handleDelete(e)
-    } else {
-      setIsDeleteDialogOpen(true)
-    }
+  const handleDelete = () => {
+    performSwipe()
   }
 
-  const sourceArticle = opportunity.sourceArticleId
   const sourceEvent = opportunity.sourceEventId
   const { contactDetails } = opportunity
   const isPremiumOpportunity = opportunity.likelyMMDollarWealth > 49
-
   const reasonsToContact = Array.isArray(opportunity.whyContact)
     ? opportunity.whyContact
     : [opportunity.whyContact]
+
+  // DEFINITIVE FIX: Get the flag emoji for the opportunity's country
+  const flag = getCountryFlag(opportunity.basedIn)
 
   return (
     <>
       <Card
         className={cn(
-          'bg-slate-900/50 border border-slate-700/80 transition-all duration-300 ease-out overflow-hidden',
-          isDeleting ? 'opacity-50' : 'opacity-100',
+          'bg-slate-900/50 border border-slate-700 transition-all duration-300 ease-out overflow-hidden hover:border-blue-500/50 hover:bg-slate-900',
+          isPending ? 'opacity-50' : 'opacity-100',
           isPremiumOpportunity && 'card-glow impatient-wobble'
         )}
       >
-        <SwipeToDelete onDelete={handleDelete}>
-          <CardContent className="p-4 space-y-3 bg-slate-900/50 relative z-10">
+        <SwipeToDelete onSwipeLeft={handleDelete}>
+          <div className="p-4 space-y-3 bg-slate-900/50 relative z-10">
             <div className="flex justify-between items-start gap-3">
-              <div className="flex-1 space-y-1">
-                <p className="font-bold text-base text-slate-100 flex items-center gap-2">
-                  <User className="h-4 w-4 text-slate-400" />
-                  {opportunity.reachOutTo}
-                </p>
-                {opportunity.basedIn && (
-                  <p className="text-xs text-slate-400 flex items-center gap-2 pl-6">
-                    <MapPin className="h-3 w-3" /> {opportunity.basedIn}
-                  </p>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                {opportunity.likelyMMDollarWealth > 0 && (
-                  <Badge variant="outline" className="border-green-500/50 text-green-300">
-                    ${opportunity.likelyMMDollarWealth}M
-                  </Badge>
-                )}
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        disabled={isDeleting || !sourceArticle?.link}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          window.open(sourceArticle?.link, '_blank')
-                        }}
+              <Link
+                href={`/opportunities/${opportunity._id}`}
+                className="block group flex-grow min-w-0"
+              >
+                <div className="flex justify-between items-start gap-3">
+                  <div className="flex-1 space-y-1">
+                    <p className="font-bold text-base text-slate-100 flex items-center gap-2">
+                      <User className="h-4 w-4 text-slate-400" />
+                      {opportunity.reachOutTo}
+                    </p>
+                    {/* DEFINITIVE FIX: Add the flag emoji before the location text */}
+                    {(opportunity.city || opportunity.basedIn) && (
+                      <p className="text-xs text-slate-400 flex items-center gap-2 pl-6">
+                        <MapPin className="h-3 w-3" />
+                        <span className="text-base mr-1">{flag}</span>
+                        {opportunity.city}
+                        {opportunity.city && opportunity.basedIn ? ', ' : ''}
+                        {opportunity.basedIn}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {opportunity.likelyMMDollarWealth > 0 && (
+                      <Badge
+                        variant="outline"
+                        className="border-green-500/50 text-green-300"
                       >
-                        <ExternalLink className="h-4 w-4 text-slate-400" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>View Source Article</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        disabled={isDeleting}
-                        onClick={handleDeleteClick}
-                      >
-                        <Trash2 className="h-4 w-4 text-slate-500 hover:text-red-400" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Delete Opportunity</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                        ${opportunity.likelyMMDollarWealth}M
+                      </Badge>
+                    )}
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ArrowRight className="h-5 w-5 text-blue-400" />
+                    </div>
+                  </div>
+                </div>
+              </Link>
+              <div className="flex-shrink-0 hidden sm:block">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleDelete}
+                  disabled={isPending}
+                  className="h-8 w-8 text-slate-500 hover:bg-red-500/10 hover:text-red-400"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             </div>
 
@@ -147,13 +128,13 @@ export function OpportunityCard({ opportunity, onDelete, isDeleting }) {
                 )}
               </div>
               <div className="space-y-2">
-                {reasonsToContact.map((reason, index) => (
+                {reasonsToContact.slice(0, 1).map((reason, index) => (
                   <div
                     key={index}
                     className="flex items-start gap-2 text-sm text-slate-300 italic"
                   >
                     <MessageSquare className="h-4 w-4 mt-0.5 text-slate-500 flex-shrink-0" />
-                    <p>“{reason}”</p>
+                    <p className="line-clamp-2">“{reason}”</p>
                   </div>
                 ))}
               </div>
@@ -164,7 +145,11 @@ export function OpportunityCard({ opportunity, onDelete, isDeleting }) {
                 <Button
                   variant="ghost"
                   className="w-full h-auto text-left justify-start p-2 hover:bg-slate-800/50"
-                  onClick={() => setIsEventDialogOpen(true)}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setIsEventDialogOpen(true)
+                  }}
                 >
                   <Zap className="h-4 w-4 mr-3 text-blue-400 flex-shrink-0" />
                   <div className="min-w-0">
@@ -176,10 +161,9 @@ export function OpportunityCard({ opportunity, onDelete, isDeleting }) {
                 </Button>
               </div>
             )}
-          </CardContent>
+          </div>
         </SwipeToDelete>
       </Card>
-
       {sourceEvent && (
         <EventContextDialog
           event={sourceEvent}
@@ -187,15 +171,6 @@ export function OpportunityCard({ opportunity, onDelete, isDeleting }) {
           onOpenChange={setIsEventDialogOpen}
         />
       )}
-      <DeletionConfirmationDialog
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-        onConfirm={handleDelete}
-        isPending={isDeleting}
-        itemType="opportunity"
-        itemDescription={`for ${opportunity.reachOutTo}`}
-        preferenceKey="skipOpportunityConfirmation"
-      />
     </>
   )
 }

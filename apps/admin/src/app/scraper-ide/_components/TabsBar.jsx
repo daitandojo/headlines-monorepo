@@ -1,7 +1,7 @@
 // apps/admin/src/app/scraper-ide/_components/TabsBar.jsx (version 1.1)
 'use client';
 
-import { cn } from '@headlines/utils';
+import { cn } from '@headlines/utils/src/index.js';
 import { LayoutList, FileText, X } from 'lucide-react';
 
 export default function TabsBar({ tabs, activeTabId, onSelectTab, onCloseTab }) {

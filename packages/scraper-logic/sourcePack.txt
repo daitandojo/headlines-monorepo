@@ -77,7 +77,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-17T10:46:26.452Z
+**Generated**: 2025-09-17T18:58:29.078Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/scraper-logic
 **Total Files**: 60
 **Package**: @headlines/scraper-logic@1.0.0
@@ -89,7 +89,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 30, Size: 782 Bytes*
+*Lines: 29, Size: 781 Bytes*
 
 ```json
 {
@@ -121,15 +121,14 @@ headlines/
   },
   "peerDependencies": {}
 }
-
 ```
 
 ## 📄 src/ai/AIAgent.js
-*Lines: 64, Size: 1.83 KB*
+*Lines: 64, Size: 1.84 KB*
 
 ```javascript
 // packages/scraper-logic/src/ai/AIAgent.js (version 3.2.0)
-import { callLanguageModel } from '@headlines/ai-services'
+import { callLanguageModel } from '../../../ai-services/src/index.js'
 import { getConfig } from '../config.js';
 
 export class AIAgent {
@@ -195,17 +194,17 @@ export class AIAgent {
 ```
 
 ## 📄 src/ai/agents/articleAgent.js
-*Lines: 90, Size: 3.54 KB*
+*Lines: 90, Size: 3.6 KB*
 
 ```javascript
 // packages/scraper-logic/src/ai/agents/articleAgent.js (version 3.4.1)
-import { truncateString } from '@headlines/utils';
+import { truncateString } from '../../../../utils/src/index.js';
 import { AIAgent } from '../AIAgent.js'
 import { articleAssessmentSchema } from '../schemas/articleAssessmentSchema.js'
-import { env } from '@headlines/config'
-import { getInstructionArticle } from '@headlines/prompts'
-import { shotsInputArticle } from '@headlines/prompts'
-import { shotsOutputArticle } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { getInstructionArticle } from '../../../../prompts/src/index.js'
+import { shotsInputArticle } from '../../../../prompts/src/index.js'
+import { shotsOutputArticle } from '../../../../prompts/src/index.js'
 import { getConfig } from '../../config.js'
 
 const getAgent = () =>
@@ -291,14 +290,14 @@ export async function assessArticleContent(article, isSalvaged = false) {
 ```
 
 ## 📄 src/ai/agents/articlePreAssessmentAgent.js
-*Lines: 22, Size: 780 Bytes*
+*Lines: 22, Size: 808 Bytes*
 
 ```javascript
 // packages/scraper-logic/src/ai/agents/articlePreAssessmentAgent.js (version 2.2.1)
 import { AIAgent } from '../AIAgent.js'
 import { articlePreAssessmentSchema } from '../schemas/articlePreAssessmentSchema.js'
-import { env } from '@headlines/config'
-import { instructionArticlePreAssessment } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { instructionArticlePreAssessment } from '../../../../prompts/src/index.js'
 
 const getAgent = () =>
   new AIAgent({
@@ -319,15 +318,15 @@ export async function preAssessArticle(articleContent) {
 ```
 
 ## 📄 src/ai/agents/batchArticleAgent.js
-*Lines: 59, Size: 1.98 KB*
+*Lines: 59, Size: 2.01 KB*
 
 ```javascript
 // packages/scraper-logic/src/ai/agents/batchArticleAgent.js (version 1.0)
 import { getConfig } from '../../config.js';
 import { AIAgent } from '../AIAgent.js'
 import { batchArticleAssessmentSchema } from '../schemas/batchArticleAssessmentSchema.js'
-import { env } from '@headlines/config'
-import { getInstructionBatchArticleAssessment } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { getInstructionBatchArticleAssessment } from '../../../../prompts/src/index.js'
 import { assessArticleContent } from './articleAgent.js' // Fallback
 
 const BATCH_SIZE = 5;
@@ -384,15 +383,15 @@ export async function batchAssessArticles(articles) {
 ```
 
 ## 📄 src/ai/agents/clusteringAgent.js
-*Lines: 67, Size: 2.27 KB*
+*Lines: 67, Size: 2.3 KB*
 
 ```javascript
 // packages/scraper-logic/src/ai/agents/clusteringAgent.js (version 2.2.1)
 import { getConfig } from '../../config.js';
 import { AIAgent } from '../AIAgent.js'
 import { clusterSchema } from '../schemas/clusterSchema.js'
-import { env } from '@headlines/config'
-import { instructionCluster } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { instructionCluster } from '../../../../prompts/src/index.js'
 
 const getAgent = () =>
   new AIAgent({
@@ -457,16 +456,16 @@ export async function clusterArticlesIntoEvents(articles) {
 ```
 
 ## 📄 src/ai/agents/contactAgent.js
-*Lines: 104, Size: 3.25 KB*
+*Lines: 104, Size: 3.29 KB*
 
 ```javascript
 // packages/scraper-logic/src/ai/agents/contactAgent.js (version 3.1.3)
 import { AIAgent } from '../AIAgent.js'
 import { enrichContactSchema } from '../schemas/enrichContactSchema.js'
 import { findContactSchema } from '../schemas/findContactSchema.js'
-import { env } from '@headlines/config'
-import { instructionEnrichContact } from '@headlines/prompts'
-import { instructionContacts } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { instructionEnrichContact } from '../../../../prompts/src/index.js'
+import { instructionContacts } from '../../../../prompts/src/index.js'
 // DEFINITIVE FIX: Removed the duplicate import of getConfig.
 import { getConfig } from '../../config.js'
 
@@ -567,7 +566,7 @@ export async function findContactDetails(person) {
 ```
 
 ## 📄 src/ai/agents/emailAgents.js
-*Lines: 58, Size: 2.21 KB*
+*Lines: 58, Size: 2.25 KB*
 
 ```javascript
 // packages/scraper-logic/src/ai/agents/emailAgents.js (version 2.2.1)
@@ -575,9 +574,9 @@ import { getConfig } from '../../config.js';
 import { AIAgent } from '../AIAgent.js'
 import { emailSubjectSchema } from '../schemas/emailSubjectSchema.js'
 import { emailIntroSchema } from '../schemas/emailIntroSchema.js'
-import { env } from '@headlines/config'
-import { instructionEmailSubject } from '@headlines/prompts'
-import { instructionEmailIntro } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { instructionEmailSubject } from '../../../../prompts/src/index.js'
+import { instructionEmailIntro } from '../../../../prompts/src/index.js'
 
 const getAgent = (systemPrompt, zodSchema) =>
   new AIAgent({
@@ -631,16 +630,16 @@ export async function generatePersonalizedIntro(user, events) {
 ```
 
 ## 📄 src/ai/agents/entityAgent.js
-*Lines: 73, Size: 2.37 KB*
+*Lines: 73, Size: 2.41 KB*
 
 ```javascript
 // packages/scraper-logic/src/ai/agents/entityAgent.js (version 3.1.2)
 import { AIAgent } from '../AIAgent.js'
 import { entitySchema } from '../schemas/entitySchema.js'
 import { canonicalizerSchema } from '../schemas/canonicalizerSchema.js'
-import { env } from '@headlines/config'
-import { instructionEntity } from '@headlines/prompts'
-import { instructionCanonicalizer } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { instructionEntity } from '../../../../prompts/src/index.js'
+import { instructionCanonicalizer } from '../../../../prompts/src/index.js'
 // DEFINITIVE FIX: Removed the duplicate import of getConfig.
 import { getConfig } from '../../config.js'
 
@@ -710,14 +709,14 @@ export async function extractEntities(text) {
 ```
 
 ## 📄 src/ai/agents/executiveSummaryAgent.js
-*Lines: 39, Size: 1.33 KB*
+*Lines: 39, Size: 1.36 KB*
 
 ```javascript
 // packages/scraper-logic/src/ai/agents/executiveSummaryAgent.js (version 2.0)
 import { getConfig } from '../../config.js';
 import { AIAgent } from '../AIAgent.js';
-import { env } from '@headlines/config';
-import { instructionExecutiveSummary } from '@headlines/prompts';
+import { env } from '../../../../config/src/index.js';
+import { instructionExecutiveSummary } from '../../../../prompts/src/index.js';
 import { z } from 'zod';
 
 const executiveSummarySchema = z.object({
@@ -755,7 +754,7 @@ export async function generateExecutiveSummary(judgeVerdict, runStats) {
 ```
 
 ## 📄 src/ai/agents/headlineAgent.js
-*Lines: 89, Size: 3.38 KB*
+*Lines: 89, Size: 3.44 KB*
 
 ```javascript
 // packages/scraper-logic/src/ai/agents/headlineAgent.js (version 4.1.3)
@@ -763,10 +762,10 @@ export async function generateExecutiveSummary(judgeVerdict, runStats) {
 // Using Promise.all is sufficient for this use case.
 import { AIAgent } from '../AIAgent.js'
 import { headlineAssessmentSchema } from '../schemas/headlineAssessmentSchema.js'
-import { env } from '@headlines/config'
-import { instructionHeadlines } from '@headlines/prompts'
-import { shotsInputHeadlines } from '@headlines/prompts'
-import { shotsOutputHeadlines } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { instructionHeadlines } from '../../../../prompts/src/index.js'
+import { shotsInputHeadlines } from '../../../../prompts/src/index.js'
+import { shotsOutputHeadlines } from '../../../../prompts/src/index.js'
 import { getConfig } from '../../config.js'
 
 const getAgent = () =>
@@ -850,15 +849,15 @@ export async function assessHeadlinesInBatches(articles) {
 ```
 
 ## 📄 src/ai/agents/judgeAgent.js
-*Lines: 54, Size: 1.82 KB*
+*Lines: 54, Size: 1.85 KB*
 
 ```javascript
 // packages/scraper-logic/src/ai/agents/judgeAgent.js (version 2.3.2)
 import { getConfig } from '../../config.js';
 import { AIAgent } from '../AIAgent.js'
 import { judgeSchema } from '../schemas/judgeSchema.js'
-import { env } from '@headlines/config'
-import { instructionJudge } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { instructionJudge } from '../../../../prompts/src/index.js'
 
 const getAgent = () =>
   new AIAgent({
@@ -910,17 +909,17 @@ export async function judgePipelineOutput(events, opportunities) {
 ```
 
 ## 📄 src/ai/agents/opportunityAgent.js
-*Lines: 76, Size: 2.57 KB*
+*Lines: 76, Size: 2.62 KB*
 
 ```javascript
 // packages/scraper-logic/src/ai/agents/opportunityAgent.js (version 3.2.2)
-import { truncateString } from '@headlines/utils';
+import { truncateString } from '../../../../utils/src/index.js';
 import { AIAgent } from '../AIAgent.js'
 import { opportunitySchema } from '../schemas/opportunitySchema.js'
 import { enrichContactSchema } from '../schemas/enrichContactSchema.js'
-import { env } from '@headlines/config'
-import { getInstructionOpportunities } from '@headlines/prompts'
-import { instructionEnrichContact } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { getInstructionOpportunities } from '../../../../prompts/src/index.js'
+import { instructionEnrichContact } from '../../../../prompts/src/index.js'
 import { getConfig } from '../../config.js'
 
 const getOppAgent = () =>
@@ -992,13 +991,13 @@ export async function generateOpportunitiesFromEvent(
 ```
 
 ## 📄 src/ai/agents/sectionClassifierAgent.js
-*Lines: 36, Size: 1.82 KB*
+*Lines: 36, Size: 1.83 KB*
 
 ```javascript
 // packages/scraper-logic/src/ai/agents/sectionClassifierAgent.js (version 1.0)
 import { AIAgent } from '../AIAgent.js';
 import { sectionClassifierSchema } from '../schemas/sectionClassifierSchema.js';
-import { env } from '@headlines/config';
+import { env } from '../../../../config/src/index.js';
 
 const INSTRUCTION = `You are a master website navigation analyst. Your task is to analyze a list of hyperlinks (anchor text and href) from a webpage and classify each one into one of four categories.
 
@@ -1034,16 +1033,16 @@ export async function classifyLinks(links) {
 ```
 
 ## 📄 src/ai/agents/selectorRepairAgent.js
-*Lines: 44, Size: 1.43 KB*
+*Lines: 44, Size: 1.47 KB*
 
 ```javascript
 // packages/scraper-logic/src/ai/agents/selectorRepairAgent.js (version 3.0.0)
-import { truncateString } from '@headlines/utils';
+import { truncateString } from '../../../../utils/src/index.js';
 import { getConfig } from '../../config.js';
 import { AIAgent } from '../AIAgent.js'
 import { selectorRepairSchema } from '../schemas/selectorRepairSchema.js'
-import { env } from '@headlines/config'
-import { instructionSelectorRepair } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { instructionSelectorRepair } from '../../../../prompts/src/index.js'
 
 const getAgent = () =>
   new AIAgent({
@@ -1084,15 +1083,15 @@ export async function suggestNewSelector(url, failedSelector, htmlContent, heuri
 ```
 
 ## 📄 src/ai/agents/synthesisAgent.js
-*Lines: 102, Size: 3.09 KB*
+*Lines: 102, Size: 3.13 KB*
 
 ```javascript
 // packages/scraper-logic/src/ai/agents/synthesisAgent.js (version 3.0.2)
-import { truncateString } from '@headlines/utils'
+import { truncateString } from '../../../../utils/src/index.js'
 import { AIAgent } from '../AIAgent.js'
 import { synthesisSchema } from '../schemas/synthesisSchema.js'
-import { env } from '@headlines/config'
-import { instructionSynthesize } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { instructionSynthesize } from '../../../../prompts/src/index.js'
 // DEFINITIVE FIX: Removed the duplicate import of getConfig.
 import { getConfig } from '../../config.js'
 
@@ -1192,15 +1191,15 @@ export async function synthesizeFromHeadline(article) {
 ```
 
 ## 📄 src/ai/agents/watchlistAgent.js
-*Lines: 43, Size: 1.59 KB*
+*Lines: 43, Size: 1.62 KB*
 
 ```javascript
 // packages/scraper-logic/src/ai/agents/watchlistAgent.js (version 2.3.1)
 import { getConfig } from '../../config.js';
 import { AIAgent } from '../AIAgent.js'
 import { watchlistSuggestionSchema } from '../schemas/watchlistSuggestionSchema.js'
-import { env } from '@headlines/config'
-import { instructionWatchlistSuggestion } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { instructionWatchlistSuggestion } from '../../../../prompts/src/index.js'
 
 const getAgent = () =>
   new AIAgent({
@@ -1241,12 +1240,12 @@ export async function generateWatchlistSuggestions(events, existingWatchlistName
 ```
 
 ## 📄 src/ai/index.js
-*Lines: 136, Size: 5.31 KB*
+*Lines: 136, Size: 5.32 KB*
 
 ```javascript
 // packages/scraper-logic/src/ai/index.js (version 6.1.0)
 import { getConfig } from '../config.js'
-import { callLanguageModel } from '@headlines/ai-services'
+import { callLanguageModel } from '../../../ai-services/src/index.js'
 import { AIAgent } from './AIAgent.js'
 import { assessArticleContent } from './agents/articleAgent.js'
 import { articleAssessmentSchema } from './schemas/articleAssessmentSchema.js'
@@ -1981,13 +1980,13 @@ export function getConfig() {
 ```
 
 ## 📄 src/push/client.js
-*Lines: 26, Size: 929 Bytes*
+*Lines: 26, Size: 940 Bytes*
 
 ```javascript
 // packages/scraper-logic/src/push/client.js (version 2.0.0)
 import webpush from 'web-push'
 import { getConfig } from '../config.js';
-import { env } from '@headlines/config'
+import { env } from '../../../config/src/index.js'
 
 let isPushConfigured = false
 
@@ -2539,7 +2538,7 @@ export const verdaneExtractor = ($, el, site) => {
 ```
 
 ## 📄 src/scraper/headlineScraper.js
-*Lines: 158, Size: 6.14 KB*
+*Lines: 158, Size: 6.15 KB*
 
 ```javascript
 // packages/scraper-logic/src/scraper/headlineScraper.js (version 5.2.0)
@@ -2548,7 +2547,7 @@ import axios from 'axios'
 import fs from 'fs/promises'
 import path from 'path'
 import Parser from 'rss-parser'
-import { Source } from '@headlines/models'
+import { Source } from '../../../models/src/index.js'
 import { BROWSER_HEADERS } from './constants.js'
 import { fetchPageWithPlaywright } from '../browser.js'
 import { getConfig } from '../config.js'
@@ -2721,14 +2720,14 @@ export {
 ```
 
 ## 📄 src/scraper/newsApiScraper.js
-*Lines: 133, Size: 4.04 KB*
+*Lines: 133, Size: 4.06 KB*
 
 ```javascript
 // packages/scraper-logic/src/scraper/newsApiScraper.js (version 2.3.0)
 import NewsAPI from 'newsapi'
 import { getConfig } from '../config.js';
-import { Source, WatchlistEntity } from '@headlines/models'
-import { env } from '@headlines/config'
+import { Source, WatchlistEntity } from '../../../models/src/index.js'
+import { env } from '../../../config/src/index.js'
 import colors from 'ansi-colors';
 
 async function getWatchlist() {
@@ -2860,18 +2859,18 @@ export async function scrapeNewsAPI() {
 ```
 
 ## 📄 src/scraper/orchestrator.js
-*Lines: 105, Size: 3.44 KB*
+*Lines: 105, Size: 3.47 KB*
 
 ```javascript
 // packages/scraper-logic/src/scraper/orchestrator.js (version 5.0.0)
 import pLimit from 'p-limit'
-import { sleep } from '@headlines/utils'
+import { sleep } from '../../../utils/src/index.js'
 import { getConfig } from '../config.js'
 import { scrapeSiteForHeadlines } from './headlineScraper.js'
 // NEWSAPI REWORK: The direct import of scrapeNewsAPI is removed as it's no longer used for proactive scraping.
 // import { scrapeNewsAPI } from './newsApiScraper.js'
-import { updateSourceAnalyticsBatch } from '@headlines/data-access'
-import { env } from '@headlines/config'
+import { updateSourceAnalyticsBatch } from '../../../data-access/src/index.js'
+import { env } from '../../../config/src/index.js'
 
 async function performStandardScraping(sourcesToScrape) {
   if (sourcesToScrape.length === 0) {

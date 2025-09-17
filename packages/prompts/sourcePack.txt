@@ -38,7 +38,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-17T10:46:26.449Z
+**Generated**: 2025-09-17T18:58:29.073Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/prompts
 **Total Files**: 28
 **Package**: @headlines/prompts@1.0.0
@@ -50,7 +50,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 12, Size: 251 Bytes*
+*Lines: 11, Size: 250 Bytes*
 
 ```json
 {
@@ -64,7 +64,6 @@ headlines/
     "@headlines/config": "3.0.0"
   }
 }
-
 ```
 
 ## 📄 src/examples/shotsInputArticle.js
@@ -465,7 +464,7 @@ export * from './examples/shotsOutputHeadlines.js';
 
 ```javascript
 // packages/prompts/src/instructionArticle.js (version 3.2)
-import { settings } from '@headlines/config/server'
+import { settings } from '../../config/src/server.js'
 
 export const getInstructionArticle = () => ({
   whoYouAre: `You are a "Due Diligence" analyst for an elite, multi-billion dollar wealth advisory team. Your job is to read the full article to verify intelligence, enrich it with details, and make a final recommendation on its relevance. Your work is the final filter before it reaches advisors. A missed opportunity is a massive failure, but a false positive is a waste of time.`,
@@ -901,7 +900,7 @@ export const instructionJudge = {
 
 ```javascript
 // packages/prompts/src/instructionOpportunities.js (version 3.2)
-import { settings } from '@headlines/config/server'
+import { settings } from '../../config/src/server.js'
 
 export const getInstructionOpportunities = () => ({
   whoYouAre:

@@ -2,14 +2,14 @@
 'use server'
 
 import { revalidatePath } from '../revalidate.js';
-import { SynthesizedEvent, Opportunity } from '@headlines/models';
-import { verifySession } from '@headlines/auth';
+import { SynthesizedEvent, Opportunity } from '../../../models/src/index.js';
+import { verifySession } from '../../../auth/src/index.js';
 // DEFINITIVE FIX: Corrected the import path to be explicit.
 import {
   assessArticleContent,
   synthesizeEvent,
   generateOpportunitiesFromEvent,
-} from '@headlines/scraper-logic/src/ai/index.js';
+} from '../../../scraper-logic/src/ai/index.js';
 
 // This is a simplified, single-item pipeline for uploaded content.
 export async function processUploadedArticle(item) {

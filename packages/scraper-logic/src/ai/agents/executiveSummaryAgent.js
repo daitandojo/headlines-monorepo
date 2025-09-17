@@ -1,8 +1,8 @@
 // packages/scraper-logic/src/ai/agents/executiveSummaryAgent.js (version 2.0)
 import { getConfig } from '../../config.js';
 import { AIAgent } from '../AIAgent.js';
-import { env } from '@headlines/config';
-import { instructionExecutiveSummary } from '@headlines/prompts';
+import { env } from '../../../../config/src/index.js';
+import { instructionExecutiveSummary } from '../../../../prompts/src/index.js';
 import { z } from 'zod';
 
 const executiveSummarySchema = z.object({

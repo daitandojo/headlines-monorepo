@@ -1,9 +1,9 @@
 // packages/ai-services/src/lib/langchain.js (version 3.1.0)
 import { ChatOpenAI } from '@langchain/openai'
-import { env, settings } from '@headlines/config/server'
-import { logger } from '@headlines/utils/server';
-import { safeExecute } from '@headlines/utils/server';
-import { tokenTracker } from '@headlines/utils/server';
+import { env, settings } from '../../../config/src/server.js'
+import { logger } from '../../../utils/src/server.js';
+import { safeExecute } from '../../../utils/src/server.js';
+import { tokenTracker } from '../../../utils/src/server.js';
 import OpenAI from 'openai'
 
 // --- Model Instances ---

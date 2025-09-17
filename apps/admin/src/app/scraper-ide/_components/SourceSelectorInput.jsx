@@ -1,9 +1,9 @@
 // apps/admin/src/app/scraper-ide/_components/SourceSelectorInput.jsx (version 2.3 - UX Improvement)
 'use client';
 import * as React from 'react';
-import { Button, Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, Popover, PopoverContent, PopoverTrigger } from '@headlines/ui';
+import { Button, Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, Popover, PopoverContent, PopoverTrigger } from '@headlines/ui/src/index.js';
 import { Check, ChevronsUpDown } from 'lucide-react';
-import { cn } from '@headlines/utils';
+import { cn } from '@headlines/utils/src/index.js';
 
 export default function SourceSelectorInput({ sources, selectedSource, onSelectSource, disabled }) {
   const [open, setOpen] = React.useState(false);

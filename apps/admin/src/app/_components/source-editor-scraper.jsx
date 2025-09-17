@@ -1,7 +1,7 @@
 // src/app/_components/source-editor-scraper.jsx (version 1.1)
 'use client'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Textarea } from '@headlines/ui'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Textarea } from '@headlines/ui/src/index.js'
 
 const FormField = ({ id, label, children, description }) => (
   <div className="space-y-2">

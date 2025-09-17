@@ -2,8 +2,8 @@
 'use server'
 
 import { NextResponse } from 'next/server';
-import { updateWatchlistSuggestion } from '@headlines/data-access';
-import { verifyAdmin } from '@headlines/auth';
+import { updateWatchlistSuggestion } from '@headlines/data-access/src/index.js';
+import { verifyAdmin } from '@headlines/auth/src/index.js';
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 import mongoose from 'mongoose';
 

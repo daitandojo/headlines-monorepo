@@ -5,8 +5,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import React from 'react'
 import { BotMessageSquare, Newspaper, Users, Rss, Gauge, Settings, Globe, Zap, Target, FileText, Code } from 'lucide-react'
-import { cn } from '@headlines/utils'
-import { Separator } from '@headlines/ui'
+import { cn } from '@headlines/utils/src/index.js'
+import { Separator } from '@headlines/ui/src/index.js'
 import { ThemeToggle } from './theme-toggle'
 
 const navSections = [

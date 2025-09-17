@@ -1,5 +1,5 @@
 // packages/prompts/src/instructionArticle.js (version 3.2)
-import { settings } from '@headlines/config/server'
+import { settings } from '../../config/src/server.js'
 
 export const getInstructionArticle = () => ({
   whoYouAre: `You are a "Due Diligence" analyst for an elite, multi-billion dollar wealth advisory team. Your job is to read the full article to verify intelligence, enrich it with details, and make a final recommendation on its relevance. Your work is the final filter before it reaches advisors. A missed opportunity is a massive failure, but a false positive is a waste of time.`,

@@ -1,0 +1,245 @@
+// packages/ui/src/data-table.jsx (version 2.9.2)
+'use client'
+
+import React, { useState, useEffect, useRef, useCallback } from 'react'
+import {
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from './components/table'
+import { Input } from './components/input'
+import { Button } from './components/button'
+import { Checkbox } from './components/checkbox'
+import { LoadingOverlay } from './LoadingOverlay'
+import { ScrollArea } from './components/scroll-area'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './components/select'
+
+const ROW_HEIGHT = 65; 
+
+const useDynamicPageSize = (containerRef, dataLength) => {
+    const [pageSize, setPageSize] = useState(10);
+
+    const calculatePageSize = useCallback(() => {
+        if (containerRef.current) {
+            const containerHeight = containerRef.current.offsetHeight;
+            const headerFooterHeight = 150; 
+            const tableBodyHeight = containerHeight - headerFooterHeight;
+            const newPageSize = Math.floor(tableBodyHeight / ROW_HEIGHT);
+            // DEFINITIVE FIX: Changed minimum page size from 5 to 13.
+            setPageSize(Math.max(13, newPageSize));
+        }
+    }, [containerRef]);
+
+    useEffect(() => {
+        calculatePageSize();
+        const handleResize = () => calculatePageSize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [calculatePageSize, dataLength]);
+
+    return pageSize;
+};
+
+const PaginationControls = ({ table }) => {
+    if (table.getPageCount() <= 1) {
+        return <div className="h-10"></div>; 
+    }
+
+    return (
+        <div className="flex items-center justify-end space-x-2 h-10">
+            <span className="text-sm text-muted-foreground">
+              Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+            </span>
+            {table.getCanPreviousPage() && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => table.previousPage()}
+                >
+                  Previous
+                </Button>
+            )}
+            {table.getCanNextPage() && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => table.nextPage()}
+                >
+                  Next
+                </Button>
+            )}
+        </div>
+    )
+}
+
+const addSelectionColumn = (columns) => [
+  { id: 'select', header: ({ table }) => (<Checkbox checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')} onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)} aria-label="Select all"/>), cell: ({ row }) => (<Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row"/>), enableSorting: false, enableHiding: false, },
+  ...columns,
+]
+
+export function DataTable({
+  columns,
+  data,
+  isLoading,
+  filterColumn,
+  filterPlaceholder,
+  secondaryFilterColumn,
+  secondaryFilterOptions = [],
+  initialSort = [],
+  initialStatusFilter,
+  enableRowSelection = false,
+  onRowSelectionChange, onSecondaryFilterChange,
+}) {
+  const containerRef = useRef(null);
+  const dynamicPageSize = useDynamicPageSize(containerRef, data.length);
+
+  const [sorting, setSorting] = useState(initialSort)
+  const [rowSelection, setRowSelection] = useState({})
+  const [columnFilters, setColumnFilters] = useState(() => {
+    const filters = []
+    if (initialStatusFilter) {
+      filters.push({ id: 'health', value: initialStatusFilter })
+    }
+    return filters
+  })
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: dynamicPageSize });
+  
+  const tableColumns = React.useMemo(() => enableRowSelection ? addSelectionColumn(columns) : columns, [enableRowSelection, columns]);
+
+  const table = useReactTable({
+    data,
+    columns: tableColumns,
+    getCoreRowModel: getCoreRowModel(),
+    onSortingChange: setSorting,
+    getSortedRowModel: getSortedRowModel(),
+    onColumnFiltersChange: setColumnFilters,
+    getFilteredRowModel: getFilteredRowModel(),
+    onPaginationChange: setPagination,
+    getPaginationRowModel: getPaginationRowModel(),
+    onRowSelectionChange: setRowSelection,
+    autoResetPageIndex: false,
+    state: { sorting, columnFilters, rowSelection, pagination },
+  })
+  
+  useEffect(() => {
+    table.setPageSize(dynamicPageSize);
+  }, [dynamicPageSize, table]);
+
+  useEffect(() => {
+    if (onRowSelectionChange) {
+      onRowSelectionChange(table.getSelectedRowModel().flatRows.map(row => row.original));
+    }
+  }, [rowSelection, onRowSelectionChange, table]);
+  
+  useEffect(() => {
+    table.setPageIndex(0)
+  }, [columnFilters, sorting, table])
+
+  return (
+    <div className="relative isolate flex flex-col h-full" ref={containerRef}>
+      <LoadingOverlay isLoading={isLoading} />
+      <div className="relative z-10 flex-shrink-0">
+          <div className="flex items-center justify-between py-4">
+            <div className="flex items-center gap-4">
+              <Input
+                placeholder={filterPlaceholder}
+                value={table.getColumn(filterColumn)?.getFilterValue() ?? ''}
+                onChange={(event) =>
+                  table.getColumn(filterColumn)?.setFilterValue(event.target.value)
+                }
+                className="max-w-sm"
+              />
+              {secondaryFilterColumn && (
+                <Select
+                  value={table.getColumn(secondaryFilterColumn)?.getFilterValue() || 'all'}
+                  onValueChange={(value) =>
+                    table
+                      .getColumn(secondaryFilterColumn)
+                      ?.setFilterValue(value === 'all' ? undefined : value)
+                  }
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="All..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <ScrollArea className="h-72">
+                      <SelectItem value="all">
+                        All{' '}
+                        {secondaryFilterColumn.charAt(0).toUpperCase() +
+                          secondaryFilterColumn.slice(1)}
+                        s
+                      </SelectItem>
+                      {secondaryFilterOptions.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </ScrollArea>
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+            <PaginationControls table={table} />
+          </div>
+      </div>
+      <div className="flex-grow rounded-md border overflow-hidden">
+        <ScrollArea className="h-full">
+            <Table>
+              <TableHeader className="sticky top-0 bg-background z-10">
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <TableHead key={header.id} style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(header.column.columnDef.header, header.getContext())}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && 'selected'}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={tableColumns.length} className="h-24 text-center">
+                      No results.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+        </ScrollArea>
+      </div>
+    </div>
+  )
+}

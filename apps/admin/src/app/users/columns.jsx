@@ -2,8 +2,8 @@
 'use client'
 
 import React from 'react'
-import { Button } from '@headlines/ui'
-import { Popover, PopoverTrigger, PopoverContent } from '@headlines/ui'
+import { Button } from '@headlines/ui/src/index.js'
+import { Popover, PopoverTrigger, PopoverContent } from '@headlines/ui/src/index.js'
 import { MultiSelect } from '../_components/multi-select'
 import {
   Select,
@@ -11,7 +11,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +19,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 import {
   ArrowUpDown,
   MoreHorizontal,
@@ -38,7 +38,7 @@ import {
   Newspaper,
   Languages,
 } from 'lucide-react'
-import { SUBSCRIPTION_TIERS, SUBSCRIBER_ROLES } from '@headlines/models/src/constants'
+import { SUBSCRIPTION_TIERS, SUBSCRIBER_ROLES } from '@headlines/models/constants'
 
 const InlineCountryEditor = ({ user, allCountries, onAction }) => {
   const subscribedCountryNames = (user.countries || []).map((c) => c.name)

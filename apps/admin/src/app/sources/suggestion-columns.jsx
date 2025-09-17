@@ -1,13 +1,13 @@
 // apps/admin/src/app/sources/suggestion-columns.jsx (version 1.0)
 'use client'
 
-import { Button } from '@headlines/ui'
+import { Button } from '@headlines/ui/src/index.js'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 import { ArrowUpDown, Check, X, Code } from 'lucide-react'
 
 export const suggestionColumns = (onAction) => [

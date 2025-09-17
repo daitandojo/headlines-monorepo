@@ -18,7 +18,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-17T10:46:26.440Z
+**Generated**: 2025-09-17T18:58:29.064Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/auth
 **Total Files**: 8
 **Package**: @headlines/auth@1.0.0
@@ -30,7 +30,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 20, Size: 453 Bytes*
+*Lines: 19, Size: 452 Bytes*
 
 ```json
 {
@@ -52,11 +52,10 @@ headlines/
     "@headlines/utils": "1.2.0"
   }
 }
-
 ```
 
 ## 📄 src/AuthProvider.js
-*Lines: 81, Size: 2.37 KB*
+*Lines: 118, Size: 3.35 KB*
 
 ```javascript
 // packages/auth/src/AuthProvider.js (version 8.1.0)
@@ -66,7 +65,7 @@ import { createContext, useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { LoadingOverlay } from '@headlines/ui'
-import { updateUserFilterPreference } from '@headlines/data-access'
+import { updateUserFilterPreference, updateUserProfile } from '@headlines/data-access'
 
 const AuthContext = createContext(null)
 
@@ -76,74 +75,111 @@ export function AuthProvider({ children, appType }) {
   const router = useRouter()
 
   const fetchUser = useCallback(async () => {
+    // For admin app in dev, create a mock user session instantly.
     if (appType === 'admin' && process.env.NODE_ENV === 'development') {
-      setUser({ _id: 'dev_admin_id', firstName: 'Admin', role: 'admin', filterPreferences: { globalCountryFilter: [] } });
-      setAuthStatus('authenticated');
-      return;
+      setUser({
+        _id: 'dev_admin_id',
+        firstName: 'Admin',
+        role: 'admin',
+        filterPreferences: { globalCountryFilter: [] },
+      })
+      setAuthStatus('authenticated')
+      return
     }
 
+    // For the client app, fetch the real user.
     try {
-      const res = await fetch('/api/subscribers/me');
+      const res = await fetch('/api/subscribers/me')
       if (res.ok) {
-        setUser(await res.json());
-        setAuthStatus('authenticated');
+        setUser(await res.json())
+        setAuthStatus('authenticated')
       } else {
-        setUser(null);
-        setAuthStatus('unauthenticated');
+        setUser(null)
+        setAuthStatus('unauthenticated')
       }
     } catch (error) {
-      setUser(null);
-      setAuthStatus('unauthenticated');
+      setUser(null)
+      setAuthStatus('unauthenticated')
     }
-  }, [appType]);
+  }, [appType])
 
   useEffect(() => {
-    fetchUser();
-  }, [fetchUser]);
+    fetchUser()
+  }, [fetchUser])
 
   const login = async (email, password) => {
-    setAuthStatus('loading');
-    // ... login logic as before
-  };
+    setAuthStatus('loading')
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    })
+    const data = await response.json()
+    if (response.ok) {
+      toast.success(`Welcome back, ${data.user.firstName}!`)
+      window.location.assign('/events')
+    } else {
+      toast.error(data.error || 'Login failed.')
+      setAuthStatus('unauthenticated')
+    }
+  }
 
   const logout = async () => {
-    // ... logout logic as before
-  };
+    await fetch('/api/auth/logout', { method: 'POST' })
+    setUser(null)
+    setAuthStatus('unauthenticated')
+    toast.info('You have been logged out.')
+    window.location.assign('/login')
+  }
 
   const updateUserPreferences = async (updateData) => {
-      // ... profile update logic as before
-  };
-
-  const updateFilters = useCallback(async (filterData) => {
-    if (!user) return;
-    
-    const result = await updateUserFilterPreference(filterData);
-    
+    if (!user) return
+    const result = await updateUserProfile({ userId: user._id, updateData })
     if (result.success && result.user) {
-      // DEFINITIVE FIX: On success, update the context with the new user object from the DB.
-      setUser(result.user);
+      setUser(result.user)
+      toast.success('Profile updated successfully.')
     } else {
-      toast.error("Failed to save filter settings.", { description: result.error });
-      // Revert by refetching old state from DB.
-      await fetchUser();
+      toast.error('Failed to update profile.', { description: result.error })
+      await fetchUser() // Re-fetch to revert optimistic update
     }
-  }, [user, fetchUser]);
+  }
 
-  const value = { user, isLoading: authStatus === 'loading', login, logout, updateUserPreferences, updateFilters };
+  const updateFilters = useCallback(
+    async (filterData) => {
+      if (!user) return
+      const result = await updateUserFilterPreference(filterData)
+      if (result.success && result.user) {
+        setUser(result.user)
+      } else {
+        toast.error('Failed to save filter settings.', { description: result.error })
+        await fetchUser()
+      }
+    },
+    [user, fetchUser]
+  )
+
+  const value = {
+    user,
+    isLoading: authStatus === 'loading' || authStatus === 'verifying',
+    login,
+    logout,
+    updateUserPreferences,
+    updateFilters,
+  }
 
   if (authStatus === 'verifying') {
-    return <LoadingOverlay isLoading={true} text="Verifying session..." />;
+    return <LoadingOverlay isLoading={true} text="Verifying session..." />
   }
-  
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
-export default AuthContext;
+export default AuthContext
 
 ```
 
 ## 📄 src/AuthProvider.js.bak
-*Lines: 98, Size: 3.35 KB*
+*Lines: 98, Size: 3.36 KB*
 
 ```
 // packages/auth/src/AuthProvider.js (version 7.1.0 - Admin No-Fetch)
@@ -152,7 +188,7 @@ export default AuthContext;
 import { createContext, useState, useEffect, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { toast } from 'sonner'
-import { LoadingOverlay } from '@headlines/ui'
+import { LoadingOverlay } from '../../ui/src/index.js'
 
 const AuthContext = createContext(null)
 
@@ -378,9 +414,9 @@ export const useAuth = () => {
 
 import { getCookies } from './getCookies.js'
 import * as jose from 'jose'
-import { env } from '@headlines/config/server'
+import { env } from '../../config/src/server.js'
 // REMOVED: import { headers } from 'next/headers'
-// REMOVED: import { seedDevUser } from '@headlines/data-access/src/seed/dev-user.js'
+// REMOVED: import { seedDevUser } from '@headlines/data-access/seed/dev-user.js'
 
 const JWT_COOKIE_NAME = 'headlines-jwt'
 

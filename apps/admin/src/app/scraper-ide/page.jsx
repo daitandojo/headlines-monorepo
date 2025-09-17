@@ -1,5 +1,8 @@
-// apps/admin/src/app/sources/source-ide-modal.jsx (version 2.2.0)
-'use client'
+IGNORE_WHEN_COPYING_START
+IGNORE_WHEN_COPYING_END
+
+// apps/admin/src/app/scraper-ide/page.jsx (version 2.2.0)
+;('use client')
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -10,23 +13,23 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@headlines/ui'
-import { Button } from '@headlines/ui'
-import { Input } from '@headlines/ui'
-import { Label } from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
+import { Button } from '@headlines/ui/src/index.js'
+import { Input } from '@headlines/ui/src/index.js'
+import { Label } from '@headlines/ui/src/index.js'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@headlines/ui'
-import { ScrollArea } from '@headlines/ui'
-import { Card, CardContent, CardHeader, CardTitle } from '@headlines/ui'
-import { Badge } from '@headlines/ui'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@headlines/ui'
-import { Alert, AlertDescription } from '@headlines/ui'
-import { Separator } from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
+import { ScrollArea } from '@headlines/ui/src/index.js'
+import { Card, CardContent, CardHeader, CardTitle } from '@headlines/ui/src/index.js'
+import { Badge } from '@headlines/ui/src/index.js'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@headlines/ui/src/index.js'
+import { Alert, AlertDescription } from '@headlines/ui/src/index.js'
+import { Separator } from '@headlines/ui/src/index.js'
 import { toast } from 'sonner'
 import {
   Save,
@@ -605,7 +608,9 @@ export default function SourceIdeModal({
             <Button
               variant="secondary"
               onClick={handleTest}
-              disabled={isTesting || isCoPilotRunning || Object.keys(validationErrors).length > 0}
+              disabled={
+                isTesting || isCoPilotRunning || Object.keys(validationErrors).length > 0
+              }
             >
               {isTesting ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

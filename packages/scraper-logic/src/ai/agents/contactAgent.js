@@ -2,9 +2,9 @@
 import { AIAgent } from '../AIAgent.js'
 import { enrichContactSchema } from '../schemas/enrichContactSchema.js'
 import { findContactSchema } from '../schemas/findContactSchema.js'
-import { env } from '@headlines/config'
-import { instructionEnrichContact } from '@headlines/prompts'
-import { instructionContacts } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { instructionEnrichContact } from '../../../../prompts/src/index.js'
+import { instructionContacts } from '../../../../prompts/src/index.js'
 // DEFINITIVE FIX: Removed the duplicate import of getConfig.
 import { getConfig } from '../../config.js'
 

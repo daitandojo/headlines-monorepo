@@ -6,8 +6,8 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@headlines/ui'
-import { Button } from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
+import { Button } from '@headlines/ui/src/index.js'
 import { Loader2 } from 'lucide-react'
 
 export default function ArticleAnalysisViewer({ article, open, onOpenChange }) {

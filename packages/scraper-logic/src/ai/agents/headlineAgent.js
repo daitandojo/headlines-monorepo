@@ -3,10 +3,10 @@
 // Using Promise.all is sufficient for this use case.
 import { AIAgent } from '../AIAgent.js'
 import { headlineAssessmentSchema } from '../schemas/headlineAssessmentSchema.js'
-import { env } from '@headlines/config'
-import { instructionHeadlines } from '@headlines/prompts'
-import { shotsInputHeadlines } from '@headlines/prompts'
-import { shotsOutputHeadlines } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { instructionHeadlines } from '../../../../prompts/src/index.js'
+import { shotsInputHeadlines } from '../../../../prompts/src/index.js'
+import { shotsOutputHeadlines } from '../../../../prompts/src/index.js'
 import { getConfig } from '../../config.js'
 
 const getAgent = () =>

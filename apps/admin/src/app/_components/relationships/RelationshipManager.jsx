@@ -2,10 +2,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Button, Input, Label, Card, CardContent, CardHeader, CardTitle, CardDescription } from '@headlines/ui';
+import { Button, Input, Label, Card, CardContent, CardHeader, CardTitle, CardDescription } from '@headlines/ui/src/index.js';
 import { toast } from 'sonner';
 import { Link, Unlink, Plus, Loader2 } from 'lucide-react';
-import { linkOpportunityToEvent, unlinkOpportunityFromEvent } from '@headlines/data-access';
+import { linkOpportunityToEvent, unlinkOpportunityFromEvent } from '@headlines/data-access/src/index.js';
 
 export function RelationshipManager({ item, itemType, refetch }) {
     const [newItemId, setNewItemId] = useState('');

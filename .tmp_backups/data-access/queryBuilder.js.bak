@@ -1,0 +1,79 @@
+// packages/data-access/src/queryBuilder.js (version 2.2.0)
+'use server'
+
+import { Subscriber } from '@headlines/models'
+
+export async function buildQuery(
+  model,
+  { filters = {}, sort = 'date_desc', baseQuery = {}, userId = null }
+) {
+  const andConditions = [{ ...baseQuery }]
+
+  // Text search condition
+  if (filters.q) {
+    const searchRegex = { $regex: filters.q, $options: 'i' }
+    const textSearchablePaths = Object.keys(model.schema.paths).filter(
+      (p) => model.schema.paths[p].instance === 'String'
+    )
+    const orConditions = textSearchablePaths.map((path) => ({ [path]: searchRegex }))
+    if (orConditions.length > 0) andConditions.push({ $or: orConditions })
+  }
+
+  // Country filter condition
+  if (filters.country && Array.isArray(filters.country) && filters.country.length > 0) {
+    const countryField = model.schema.paths.basedIn ? 'basedIn' : 'country'
+    andConditions.push({ [countryField]: { $in: filters.country } })
+  } else if (filters.country && typeof filters.country === 'string') {
+    // Handle single country filter from opportunities page
+    const countryField = model.schema.paths.basedIn ? 'basedIn' : 'country'
+    andConditions.push({ [countryField]: filters.country })
+  }
+
+  // CRITICAL FIX: Add logic to handle the 'withEmail' filter.
+  // This checks that the nested 'email' field exists and is not null.
+  if (filters.withEmail) {
+    andConditions.push({ 'contactDetails.email': { $exists: true, $ne: null } })
+  }
+
+  // Favorites filter
+  if (filters.favoritesOnly && userId) {
+    const user = await Subscriber.findById(userId).select('favoritedItems').lean()
+    const modelName = model.modelName.toLowerCase()
+    const favoritedIds = user?.favoritedItems?.[`${modelName}s`] || []
+    andConditions.push({ _id: { $in: favoritedIds } })
+  }
+
+  // Filter out discarded items if a user is specified
+  if (userId) {
+    const user = await Subscriber.findById(userId).select('discardedItems').lean()
+    if (user && user.discardedItems) {
+      const modelName = model.modelName.toLowerCase()
+      const discardedIds = user.discardedItems[`${modelName}s`]
+      if (discardedIds && discardedIds.length > 0) {
+        andConditions.push({ _id: { $nin: discardedIds } })
+      }
+    }
+  }
+
+  const queryFilter =
+    andConditions.length > 1 ? { $and: andConditions } : andConditions[0] || {}
+
+  const sortOptions = {}
+  switch (sort) {
+    case 'date_asc':
+      sortOptions.createdAt = 1
+      break
+    case 'relevance_desc':
+      sortOptions.highest_relevance_score = -1
+      sortOptions.relevance_article = -1
+      break
+    case 'size_desc':
+      sortOptions.likelyMMDollarWealth = -1
+      break
+    default:
+      sortOptions.createdAt = -1
+      break
+  }
+
+  return { queryFilter, sortOptions }
+}

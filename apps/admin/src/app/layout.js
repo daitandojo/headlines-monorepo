@@ -1,8 +1,8 @@
 // apps/admin/src/app/layout.js (version 5.0.0 - With AuthProvider)
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { Toaster } from '@headlines/ui'
-import { cn } from '@headlines/utils'
+import { Toaster } from '@headlines/ui/src/index.js'
+import { cn } from '@headlines/utils/src/index.js'
 import MainNav from './_components/main-nav'
 import { ThemeProvider } from './_components/theme-provider'
 // DEFINITIVE FIX: Import the AuthProvider

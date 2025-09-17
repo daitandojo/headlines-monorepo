@@ -33,7 +33,7 @@ import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 
 const StatCard = ({ title, value, icon, children, href }) => (
   <Link href={href}>

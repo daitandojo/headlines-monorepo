@@ -2,11 +2,11 @@
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { getInstructionOpportunities } from '@headlines/prompts'
+import { getInstructionOpportunities } from '../../../prompts/src/index.js'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { opportunitySchema } from '../schemas/index.js'
-import { settings } from '@headlines/config/server'
+import { settings } from '../../../config/src/server.js'
 
 const instructions = getInstructionOpportunities(settings)
 const systemPrompt = [

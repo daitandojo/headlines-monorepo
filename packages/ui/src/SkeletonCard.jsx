@@ -2,7 +2,7 @@
 'use client'
 
 import { Card, CardContent } from './components/card';
-import { cn } from '@headlines/utils';
+import { cn } from '../../utils/src/index.js';
 
 export const SkeletonCard = ({ className }) => {
   return (

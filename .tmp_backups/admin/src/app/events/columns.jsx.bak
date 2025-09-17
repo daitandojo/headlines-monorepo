@@ -1,0 +1,155 @@
+// apps/admin/src/app/events/columns.jsx (version 1.4.1)
+'use client'
+
+import React, { useState, useEffect, useRef } from 'react';
+import { Button, Badge, Input, Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@headlines/ui';
+import { ArrowUpDown, Trash2, Loader2, Newspaper, Target, ExternalLink, Edit, ChevronsUpDown, User, Building } from 'lucide-react';
+import { format } from 'date-fns';
+
+const EditableCell = ({ initialValue, onSave }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [value, setValue] = useState(initialValue);
+    const inputRef = useRef(null);
+
+    useEffect(() => {
+        if (isEditing) inputRef.current?.focus();
+    }, [isEditing]);
+
+    const handleSave = () => {
+        if (value.trim() && value.trim() !== initialValue) {
+            onSave(value.trim());
+        }
+        setIsEditing(false);
+    };
+
+    if (isEditing) {
+        return <Input ref={inputRef} value={value} onChange={(e) => setValue(e.target.value)} onBlur={handleSave} onKeyDown={(e) => e.key === 'Enter' && handleSave()} className="h-8 w-full bg-secondary"/>;
+    }
+
+    return <div className="group flex items-center cursor-pointer font-medium text-sm" onClick={() => setIsEditing(true)}><span className="line-clamp-2 whitespace-normal pr-2">{initialValue}</span><Edit className="h-3 w-3 ml-auto text-muted-foreground opacity-0 group-hover:opacity-100 flex-shrink-0"/></div>;
+}
+
+const ExpandedRowContent = ({ eventId }) => {
+    const [details, setDetails] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        fetch(`/api/events/${eventId}`)
+            .then(res => res.json())
+            .then(data => {
+                setDetails(data);
+                setIsLoading(false);
+            })
+            .catch(() => setIsLoading(false));
+    }, [eventId]);
+
+    if (isLoading) return <div className="p-4 flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading details...</div>;
+    if (!details) return <div className="p-4 text-destructive">Failed to load details.</div>;
+
+    return (
+        <div className="p-6 bg-black/20 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-4">
+                <div>
+                    <h4 className="font-semibold text-sm text-muted-foreground mb-1">Synthesized Summary</h4>
+                    <p className="text-sm">{details.synthesized_summary}</p>
+                </div>
+                 <div>
+                    <h4 className="font-semibold text-sm text-muted-foreground mb-1">AI Assessment</h4>
+                    <p className="text-sm italic text-muted-foreground">"{details.ai_assessment_reason}"</p>
+                </div>
+                <div>
+                    <h4 className="font-semibold text-sm mb-2">Key Individuals ({details.key_individuals?.length || 0})</h4>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {(details.key_individuals || []).map((p, i) => (
+                            <div key={i} className="text-xs p-2 rounded bg-secondary/50">
+                                <p className="font-medium flex items-center gap-2"><User className="h-3 w-3"/>{p.name}</p>
+                                <p className="pl-5 text-muted-foreground flex items-center gap-2"><Building className="h-3 w-3"/>{p.role_in_event} at {p.company}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+            <div className="space-y-4">
+                <div>
+                    <h4 className="font-semibold text-sm mb-2">Source Articles ({details.source_articles_full?.length || 0})</h4>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {(details.source_articles_full || []).map(article => (
+                            <div key={article._id} className="text-xs p-2 rounded bg-secondary/50 flex justify-between items-center">
+                                <span className="truncate pr-4">{article.newspaper}: {article.headline}</span>
+                                <a href={article.link} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-3 w-3" /></a>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <div>
+                    <h4 className="font-semibold text-sm mb-2">Related Opportunities ({details.relatedOpportunities?.length || 0})</h4>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                         {(details.relatedOpportunities || []).map(opp => (
+                            <div key={opp._id} className="text-xs p-2 rounded bg-secondary/50">
+                                {opp.reachOutTo} (~${opp.likelyMMDollarWealth}M)
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export const EventListItem = ({ event, onUpdate, onDelete }) => {
+    const score = event.highest_relevance_score;
+    const scoreColorClass = score >= 80 ? 'bg-green-500/20 text-green-300' : score >= 60 ? 'bg-yellow-500/20 text-yellow-300' : 'bg-muted';
+    const articleCount = event.source_articles?.length || 0;
+    const opportunityCount = event.relatedOpportunities?.length || 0;
+    
+    return (
+        <AccordionItem value={event._id} className="border-b border-border">
+            <div className="flex items-center p-2">
+                <AccordionTrigger className="w-10 h-10 flex-shrink-0 flex items-center justify-center p-2 [&[data-state=open]>svg]:rotate-180">
+                    <ChevronsUpDown className="h-4 w-4 transition-transform duration-200" />
+                </AccordionTrigger>
+                <div className="w-20 flex-shrink-0 text-center">
+                    <Badge className={scoreColorClass}>{score}</Badge>
+                </div>
+                <div className="flex-grow min-w-0 pr-4">
+                     <EditableCell initialValue={event.synthesized_headline} onSave={(newValue) => onUpdate(event, { synthesized_headline: newValue })} />
+                </div>
+                <div className="w-36 flex-shrink-0 text-sm">{event.country}</div>
+                <div className="w-44 flex-shrink-0 text-sm">{format(new Date(event.createdAt), 'dd MMM yyyy')}</div>
+                <div className="w-32 flex-shrink-0 flex items-center gap-4 text-sm text-muted-foreground">
+                    {articleCount > 0 && (
+                        <span className="flex items-center gap-1.5" title="Source Articles"><Newspaper className="h-4 w-4" /> {articleCount}</span>
+                    )}
+                    {opportunityCount > 0 && (
+                        <span className="flex items-center gap-1.5" title="Related Opportunities"><Target className="h-4 w-4" /> {opportunityCount}</span>
+                    )}
+                </div>
+                <div className="w-16 flex-shrink-0 text-right">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => onDelete(event._id)}><Trash2 className="h-4 w-4" /></Button>
+                </div>
+            </div>
+            <AccordionContent>
+                <ExpandedRowContent eventId={event._id} />
+            </AccordionContent>
+        </AccordionItem>
+    )
+};
+
+const SortableHeader = ({ children, value, sort, setSort }) => {
+    const isSorted = sort.startsWith(value);
+    const isDesc = isSorted && sort.endsWith('_desc');
+    const newSort = isSorted ? (isDesc ? `${value}_asc` : `${value}_desc`) : `${value}_desc`;
+    return <Button variant="ghost" size="sm" onClick={() => setSort(newSort)}>{children} {isSorted && <ArrowUpDown className="ml-2 h-4 w-4" />}</Button>
+};
+
+export const ListHeader = ({ sort, setSort }) => (
+    <div className="flex items-center p-2 border-b font-medium text-muted-foreground text-sm sticky top-0 bg-background z-10">
+        <div className="w-10 flex-shrink-0"></div>
+        <div className="w-20 flex-shrink-0 text-center"><SortableHeader value="highest_relevance_score" sort={sort} setSort={setSort}>Score</SortableHeader></div>
+        <div className="flex-grow min-w-0 pr-4">Headline</div>
+        <div className="w-36 flex-shrink-0"><SortableHeader value="country" sort={sort} setSort={setSort}>Country</SortableHeader></div>
+        <div className="w-44 flex-shrink-0"><SortableHeader value="createdAt" sort={sort} setSort={setSort}>Discovered</SortableHeader></div>
+        <div className="w-32 flex-shrink-0">Relations</div>
+        <div className="w-16 flex-shrink-0 text-right">Actions</div>
+    </div>
+);

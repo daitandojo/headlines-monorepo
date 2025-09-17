@@ -1,7 +1,7 @@
 // apps/admin/src/app/scraper-ide/_components/ConfirmationModal.jsx (version 2.1 - Wider & Interactive)
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, ScrollArea, LoadingOverlay, Textarea } from '@headlines/ui';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, ScrollArea, LoadingOverlay, Textarea } from '@headlines/ui/src/index.js';
 import { ExternalLink, Save } from 'lucide-react';
 import { toast } from 'sonner';
 

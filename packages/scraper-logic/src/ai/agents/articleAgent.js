@@ -1,11 +1,11 @@
 // packages/scraper-logic/src/ai/agents/articleAgent.js (version 3.4.1)
-import { truncateString } from '@headlines/utils';
+import { truncateString } from '../../../../utils/src/index.js';
 import { AIAgent } from '../AIAgent.js'
 import { articleAssessmentSchema } from '../schemas/articleAssessmentSchema.js'
-import { env } from '@headlines/config'
-import { getInstructionArticle } from '@headlines/prompts'
-import { shotsInputArticle } from '@headlines/prompts'
-import { shotsOutputArticle } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { getInstructionArticle } from '../../../../prompts/src/index.js'
+import { shotsInputArticle } from '../../../../prompts/src/index.js'
+import { shotsOutputArticle } from '../../../../prompts/src/index.js'
 import { getConfig } from '../../config.js'
 
 const getAgent = () =>

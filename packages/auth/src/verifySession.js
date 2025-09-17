@@ -3,9 +3,9 @@
 
 import { getCookies } from './getCookies.js'
 import * as jose from 'jose'
-import { env } from '@headlines/config/server'
+import { env } from '../../config/src/server.js'
 // REMOVED: import { headers } from 'next/headers'
-// REMOVED: import { seedDevUser } from '@headlines/data-access/src/seed/dev-user.js'
+// REMOVED: import { seedDevUser } from '@headlines/data-access/seed/dev-user.js'
 
 const JWT_COOKIE_NAME = 'headlines-jwt'
 

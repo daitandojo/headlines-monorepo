@@ -2,8 +2,8 @@
 import { getConfig } from '../../config.js';
 import { AIAgent } from '../AIAgent.js'
 import { judgeSchema } from '../schemas/judgeSchema.js'
-import { env } from '@headlines/config'
-import { instructionJudge } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { instructionJudge } from '../../../../prompts/src/index.js'
 
 const getAgent = () =>
   new AIAgent({

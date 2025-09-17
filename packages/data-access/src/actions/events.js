@@ -3,10 +3,10 @@
 
 import dbConnect from '../dbConnect.js'
 import mongoose from 'mongoose'
-import { SynthesizedEvent, Subscriber } from '@headlines/models'
+import { SynthesizedEvent, Subscriber } from '../../../models/src/index.js'
 import { revalidatePath } from '../revalidate.js'
 import { buildQuery } from '../queryBuilder.js'
-import { getUserIdFromSession } from '@headlines/auth'
+import { getUserIdFromSession } from '../../../auth/src/index.js'
 
 const EVENTS_PER_PAGE = 5
 

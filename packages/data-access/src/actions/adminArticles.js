@@ -2,9 +2,9 @@
 'use server'
 
 import dbConnect from '../dbConnect.js';
-import { Article } from '@headlines/models';
+import { Article } from '../../../models/src/index.js';
 import { buildQuery } from '../queryBuilder.js';
-import { verifyAdmin } from '@headlines/auth';
+import { verifyAdmin } from '../../../auth/src/index.js';
 import { revalidatePath } from '../revalidate.js';
 
 // DEFINITIVE FIX: Removed the hardcoded page limit.

@@ -1,35 +1,31 @@
-// src/app/(main)/layout.js (version 9.1)
+// apps/client/src/app/(main)/layout.js (version 13.0.0)
+'use server'
+
 import { cache } from 'react'
-import { getTotalArticleCount } from '@/actions/articles'
-import { getTotalEventCount } from '@/actions/events'
-import { getTotalOpportunitiesCount } from '@/actions/opportunities'
-import { getGlobalCountries } from '@/actions/countries'
+import { getGlobalCountries } from '@headlines/data-access'
 import { Providers } from '../providers'
 import { ConditionalLayout } from '@/components/ConditionalLayout'
 
-// Wrap the data fetching logic in a cached function
 const getLayoutData = cache(
   async () => {
-    console.log('[Layout] Fetching global data for layout...')
-    const [articleCount, eventCount, opportunityCount, globalCountries] =
-      await Promise.all([
-        getTotalArticleCount(),
-        getTotalEventCount(),
-        getTotalOpportunitiesCount(),
-        getGlobalCountries(),
-      ])
-    return { articleCount, eventCount, opportunityCount, globalCountries }
+    const result = await getGlobalCountries()
+    // DEFINITIVE FIX: Filter the list to only include countries with at least one event
+    // before passing it down to any client components.
+    const countriesWithEvents = (result?.data || []).filter(
+      (country) => country.count > 0
+    )
+    return { globalCountries: countriesWithEvents }
   },
   ['global-layout-data'],
-  { revalidate: 60 }
-) // Revalidate every 60 seconds
+  { revalidate: 3600 } // Revalidate every hour
+)
 
 export default async function MainLayout({ children }) {
-  const layoutProps = await getLayoutData()
+  const { globalCountries } = await getLayoutData()
 
   return (
     <Providers>
-      <ConditionalLayout serverProps={layoutProps}>{children}</ConditionalLayout>
+      <ConditionalLayout serverProps={{ globalCountries }}>{children}</ConditionalLayout>
     </Providers>
   )
 }

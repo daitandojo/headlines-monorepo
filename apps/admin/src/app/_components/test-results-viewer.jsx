@@ -9,7 +9,7 @@ import {
   DialogFooter,
   ScrollArea,
   Button,
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 import { ExternalLink, FileText, XCircle } from 'lucide-react'
 import ArticleAnalysisViewer from './article-analysis-viewer'
 

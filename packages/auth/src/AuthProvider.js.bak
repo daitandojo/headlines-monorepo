@@ -4,7 +4,7 @@
 import { createContext, useState, useEffect, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { toast } from 'sonner'
-import { LoadingOverlay } from '@headlines/ui'
+import { LoadingOverlay } from '../../ui/src/index.js'
 
 const AuthContext = createContext(null)
 

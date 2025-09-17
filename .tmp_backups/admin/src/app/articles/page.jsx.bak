@@ -1,0 +1,66 @@
+// apps/admin/src/app/articles/page.jsx (version 1.1.0)
+'use client'
+
+import { PageHeader, DataTable } from '@headlines/ui';
+import { columns } from './columns';
+import { useAdminManager } from '@/hooks/use-admin-manager';
+import { deleteAdminArticle, updateAdminArticle } from '@headlines/data-access';
+import { toast } from 'sonner';
+import { useCallback, useMemo } from 'react';
+
+export default function ArticlesPage() {
+    const { data, total, isLoading, searchTerm, setSearchTerm, sort, setSort, refetch, handleUpdate, handleRemove, setFilter } = useAdminManager('/api/articles', 'createdAt_desc');
+
+    const availableCountries = useMemo(() => {
+        if (!data) return [];
+        const countrySet = new Set(data.map(item => item.country).filter(Boolean));
+        return Array.from(countrySet).sort();
+    }, [data]);
+
+    const handleOptimisticUpdate = useCallback(async (article, updateData) => {
+        handleUpdate(article._id, updateData);
+        const result = await updateAdminArticle(article._id, updateData);
+        if (!result.success) {
+            toast.error(`Update failed: ${result.error}`);
+            refetch();
+        }
+    }, [handleUpdate, refetch]);
+
+    const handleDelete = useCallback(async (articleId) => {
+        handleRemove(articleId);
+        toast.success('Article deleted.');
+        const result = await deleteAdminArticle(articleId);
+        if (!result.success) {
+            toast.error(`Deletion failed on server: ${result.error}. Reverting.`);
+            refetch();
+        }
+    }, [handleRemove, refetch]);
+    
+    // DEFINITIVE FIX: Create a dynamic description based on the length of the `data` array.
+    const description = `Review and manage all ${data.length.toLocaleString()} visible articles (${total.toLocaleString()} total).`;
+
+    return (
+        <div className="flex flex-col h-full">
+            <PageHeader title="Article Management" description={description} />
+            <div className="mt-8 flex-grow min-h-0 max-w-none">
+                <DataTable
+                    columns={columns(handleOptimisticUpdate, handleDelete)}
+                    data={data}
+                    isLoading={isLoading}
+                    filterColumn="headline"
+                    filterPlaceholder="Filter by headline, source..."
+                    secondaryFilterColumn="country"
+                    secondaryFilterOptions={availableCountries}
+                    onSecondaryFilterChange={(value) => setFilter('country', value === 'all' ? null : value)}
+                    initialSort={[{id: sort.split('_')[0], desc: sort.endsWith('desc')}]}
+                    onSortingChange={(updater) => {
+                        const newSort = updater([{id: sort.split('_')[0], desc: sort.endsWith('desc')}]);
+                        if (newSort && newSort[0]) {
+                             setSort(`${newSort[0].id}_${newSort[0].desc ? 'desc' : 'asc'}`);
+                        }
+                    }}
+                />
+            </div>
+        </div>
+    );
+}

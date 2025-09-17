@@ -2,9 +2,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Button, Card, CardContent, CardHeader, CardTitle, Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@headlines/ui';
+import { Button, Card, CardContent, CardHeader, CardTitle, Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@headlines/ui/src/index.js';
 import { Link as LinkIcon, CheckCircle2 } from 'lucide-react';
-import { cn } from '@headlines/utils';
+import { cn } from '@headlines/utils/src/index.js';
 
 export default function AnalysisPanel({ analysis, onSetSelector, onDrillDown, activeHeadlineSelector }) {
   const [openAccordion, setOpenAccordion] = useState(activeHeadlineSelector ? `item-${analysis?.suggestions.findIndex(s => s.selector === activeHeadlineSelector)}` : null);

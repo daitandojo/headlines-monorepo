@@ -2,8 +2,8 @@
 'use server'
 
 import { revalidatePath } from '../revalidate.js'
-import { Country } from '@headlines/models'
-import { verifyAdmin } from '@headlines/auth'
+import { Country } from '../../../models/src/index.js'
+import { verifyAdmin } from '../../../auth/src/index.js'
 import dbConnect from '../dbConnect.js'
 
 // This function is for the admin panel and requires authentication.

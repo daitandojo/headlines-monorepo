@@ -1,0 +1,63 @@
+// apps/pipeline/scripts/seed/lib/enrich-thin-profile.js
+import { callLanguageModel } from '@headlines/ai-services';
+import { settings } from '@headlines/config/server';
+// DEFINITIVE FIX: Import loggers from the shared utils package
+import { logger, auditLogger } from '@headlines/utils/server';
+import { z } from 'zod';
+
+const enrichmentSchema = z.object({
+  summary: z.string().min(20).describe("The generated 2-3 sentence background summary based on the provided facts."),
+});
+
+const createFallbackText = (person) => `This is a wealth profile for ${person.name}, a notable figure in the ${person.industry} sector, primarily associated with the company ${person.primaryCompany}. Their estimated wealth is approximately $${person.wealthMillionsUSD}M USD.`;
+
+/**
+ * Uses a direct AI call to generate a background summary for an individual
+ * based on structured data from a trusted source (the rich list).
+ * The AI's role is to enrich, not to verify, the individual's significance.
+ * @param {object} person - A person object from the rich list.
+ * @returns {Promise<{generated_background: string}>} The AI-generated or fallback text.
+ */
+export async function enrichThinProfile(person) {
+  logger.info(`  -> AI Enrichment: Attempting to generate background for ${person.name}...`);
+
+  const systemPrompt = `You are a financial biographer. Your task is to synthesize the provided, trusted data points into a concise, professional background summary (2-3 sentences) suitable for a rich list publication. Use your general knowledge to gracefully weave the facts together. If you have no additional public knowledge, simply rephrase the provided data into a coherent summary.
+
+Respond ONLY with a valid JSON object: {"summary": "Your generated text."}`;
+  
+  const userContent = `
+    DATA:
+    - Name: ${person.name}
+    - Primary Company / Industry: ${person.primaryCompany} / ${person.industry}
+    - Estimated Wealth: $${person.wealthMillionsUSD}M USD
+    - Country: ${person.country}
+  `;
+
+  try {
+    auditLogger.info({ context: { system_prompt: systemPrompt, user_content: userContent }}, `Enrichment Input for ${person.name}`);
+    const response = await callLanguageModel({
+        modelName: settings.LLM_MODEL_UTILITY,
+        systemPrompt: systemPrompt,
+        userContent: userContent,
+        isJson: true,
+    });
+    auditLogger.info({ context: { llm_response: response }}, `Enrichment Raw Output for ${person.name}`);
+
+    const validation = enrichmentSchema.safeParse(response);
+
+    if (!validation.success) {
+      logger.warn(`  -> AI enrichment for ${person.name} failed validation or returned no summary. Using structured fallback text.`, { err: validation.error?.flatten(), raw_response: response });
+      return { generated_background: createFallbackText(person) };
+    }
+    
+    logger.info(`  -> AI enrichment successful for ${person.name}.`);
+    return { generated_background: validation.data.summary };
+
+  } catch (error) {
+    logger.error(
+      { err: error },
+      `AI enrichment process failed for ${person.name}. Using fallback text.`
+    );
+    return { generated_background: createFallbackText(person) };
+  }
+}

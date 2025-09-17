@@ -2,8 +2,8 @@
 import { getConfig } from '../../config.js';
 import { AIAgent } from '../AIAgent.js'
 import { batchArticleAssessmentSchema } from '../schemas/batchArticleAssessmentSchema.js'
-import { env } from '@headlines/config'
-import { getInstructionBatchArticleAssessment } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { getInstructionBatchArticleAssessment } from '../../../../prompts/src/index.js'
 import { assessArticleContent } from './articleAgent.js' // Fallback
 
 const BATCH_SIZE = 5;

@@ -1,11 +1,11 @@
 // packages/scraper-logic/src/ai/agents/opportunityAgent.js (version 3.2.2)
-import { truncateString } from '@headlines/utils';
+import { truncateString } from '../../../../utils/src/index.js';
 import { AIAgent } from '../AIAgent.js'
 import { opportunitySchema } from '../schemas/opportunitySchema.js'
 import { enrichContactSchema } from '../schemas/enrichContactSchema.js'
-import { env } from '@headlines/config'
-import { getInstructionOpportunities } from '@headlines/prompts'
-import { instructionEnrichContact } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { getInstructionOpportunities } from '../../../../prompts/src/index.js'
+import { instructionEnrichContact } from '../../../../prompts/src/index.js'
 import { getConfig } from '../../config.js'
 
 const getOppAgent = () =>

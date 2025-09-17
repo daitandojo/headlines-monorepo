@@ -11,11 +11,11 @@ import {
   instructionHeadlines,
   shotsInputHeadlines,
   shotsOutputHeadlines,
-} from '@headlines/prompts'
+} from '../../../prompts/src/index.js'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { headlineAssessmentSchema } from '../schemas/index.js'
-import { settings } from '@headlines/config/server'
+import { settings } from '../../../config/src/server.js'
 
 const systemPrompt = [
   instructionHeadlines.whoYouAre,

@@ -1,8 +1,8 @@
 // apps/admin/src/app/scraper-ide/_components/SourceDefinitionPanel.jsx (version 3.8 - Relative Selectors)
 'use client';
-import { Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Separator, Textarea } from '@headlines/ui';
+import { Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Separator, Textarea } from '@headlines/ui/src/index.js';
 import { Save, Loader2, TestTube2 } from 'lucide-react';
-import { SOURCE_STATUSES, SOURCE_FREQUENCIES } from '@headlines/models/src/constants.js';
+import { SOURCE_STATUSES, SOURCE_FREQUENCIES } from '@headlines/models/constants.js';
 
 const FormField = ({ id, label, children, description }) => (
   <div className="space-y-1">

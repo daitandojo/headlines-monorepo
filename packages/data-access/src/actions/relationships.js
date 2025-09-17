@@ -1,8 +1,8 @@
 // packages/data-access/src/actions/relationships.js (version 1.0)
 'use server'
 
-import { verifyAdmin } from '@headlines/auth';
-import { SynthesizedEvent, Opportunity } from '@headlines/models';
+import { verifyAdmin } from '../../../auth/src/index.js';
+import { SynthesizedEvent, Opportunity } from '../../../models/src/index.js';
 import dbConnect from '../dbConnect.js';
 import { revalidatePath } from '../revalidate.js';
 import mongoose from 'mongoose';

@@ -1,0 +1,61 @@
+// packages/ui/src/EditableCell.jsx (version 1.0.0)
+'use client'
+
+import React, { useState, useEffect, useRef } from 'react';
+import { Input } from './components/input';
+import { Edit } from 'lucide-react';
+import { cn } from '@headlines/utils';
+
+export const EditableCell = ({ initialValue, onSave, placeholder = 'N/A', type = 'text', allowWrap = false }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [value, setValue] = useState(initialValue || '');
+    const inputRef = useRef(null);
+    const wrapperRef = useRef(null);
+
+    const handleSave = () => {
+        const finalValue = type === 'number' ? (value ? Number(value) : null) : value.trim();
+        if (finalValue !== (initialValue || (type === 'number' ? null : ''))) {
+            onSave(finalValue);
+        }
+        setIsEditing(false);
+    };
+
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+                if (isEditing) {
+                    handleSave();
+                }
+            }
+        }
+        
+        if (isEditing) {
+            inputRef.current?.focus();
+            // Bind the event listener
+            document.addEventListener("mousedown", handleClickOutside);
+            return () => {
+                // Unbind the event listener on clean up
+                document.removeEventListener("mousedown", handleClickOutside);
+            };
+        }
+    }, [isEditing]); // Only re-run the effect if isEditing changes
+
+    if (isEditing) {
+        return (
+            <div ref={wrapperRef}>
+                <Input type={type} ref={inputRef} value={value} onChange={(e) => setValue(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleSave() }} className="h-8 bg-secondary"/>
+            </div>
+        );
+    }
+    
+    let displayValue = initialValue;
+    if (type === 'number' && initialValue) displayValue = `$${initialValue}M`;
+    if (!initialValue || initialValue.length === 0) displayValue = <span className="text-muted-foreground italic">{placeholder}</span>;
+
+    return (
+        <div className="group flex items-center cursor-pointer p-2 -m-2 rounded-md hover:bg-secondary/50" onClick={() => setIsEditing(true)}>
+            <span className={cn(!allowWrap && "truncate", allowWrap && "whitespace-normal")}>{displayValue}</span>
+            <Edit className="h-3 w-3 ml-auto text-muted-foreground opacity-0 group-hover:opacity-100 flex-shrink-0"/>
+        </div>
+    );
+}

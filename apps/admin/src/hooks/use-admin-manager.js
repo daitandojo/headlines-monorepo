@@ -2,9 +2,9 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useDebounce } from '@headlines/utils'
+import { useDebounce } from '@headlines/utils/src/index.js'
 import { toast } from 'sonner'
-import { useAuth } from '@headlines/auth/src/useAuth'
+import { useAuth } from '@headlines/auth/useAuth'
 
 export function useAdminManager(
   apiPath,

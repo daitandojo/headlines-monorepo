@@ -14,7 +14,7 @@ import {
   TabsTrigger,
   ConfirmationDialog,
   LoadingOverlay, 
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 import { useEntityManager } from '@/hooks/use-entity-manager'
 import { columns } from './columns'
 import { suggestionColumns } from './suggestion-columns'
@@ -28,7 +28,7 @@ import {
   updateSource,
   deleteSource,
   testSourceConfig,
-} from '@headlines/data-access'
+} from '@headlines/data-access/src/index.js'
 import SourceList from '../_components/source-list' // Import the SourceList
 import { useSourceHealthChecker } from './use-source-health-checker'
 

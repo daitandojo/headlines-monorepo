@@ -2,13 +2,13 @@
 'use client'
 
 import { ServerCrash, PlusCircle, UserCheck, UserX, Trash2 } from 'lucide-react'
-import { PageHeader, Button, ConfirmationDialog, Sheet, SheetContent, DataTable } from '@headlines/ui'
+import { PageHeader, Button, ConfirmationDialog, Sheet, SheetContent, DataTable } from '@headlines/ui/src/index.js'
 import { useEntityManager } from '@/hooks/use-entity-manager'
 import { columns } from './columns'
 import UserEditor from './user-editor'
 import { toast } from 'sonner'
 import { useMemo, useState, useCallback } from 'react'
-import { languageList } from '@headlines/utils'
+import { languageList } from '@headlines/utils/src/index.js'
 
 // API call functions are defined locally to avoid complex imports
 async function deleteSubscriber(userId) {

@@ -2,7 +2,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { cn } from '@headlines/utils' // CORRECTED: Package import instead of alias
+import { cn } from '../../utils/src/index.js' // CORRECTED: Package import instead of alias
 
 /**
  * A visually rich, multi-layered, animated spinner component.

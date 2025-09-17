@@ -5,10 +5,6 @@
   "main": "src/index.js",
   "type": "module",
   "license": "ISC",
-  "exports": {
-    ".": "./src/index.js",
-    "./server": "./src/server.js"
-  },
   "dependencies": {},
   "peerDependencies": {
     "@headlines/ai-services": "1.0.0"

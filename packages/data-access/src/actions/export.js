@@ -1,8 +1,8 @@
 // packages/data-access/src/actions/export.js (version 2.0.0)
 'use server'
 
-import { verifyAdmin } from '@headlines/auth';
-import { Opportunity, Subscriber, SynthesizedEvent, Article } from '@headlines/models';
+import { verifyAdmin } from '../../../auth/src/index.js';
+import { Opportunity, Subscriber, SynthesizedEvent, Article } from '../../../models/src/index.js';
 import { buildQuery } from '../queryBuilder.js';
 import dbConnect from '../dbConnect.js';
 

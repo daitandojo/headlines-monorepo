@@ -2,8 +2,8 @@
 'use server'
 
 import { revalidatePath } from '../revalidate.js'
-import { Source } from '@headlines/models'
-import { verifyAdmin } from '@headlines/auth'
+import { Source } from '../../../models/src/index.js'
+import { verifyAdmin } from '../../../auth/src/index.js'
 import dbConnect from '../dbConnect.js' // Internal helper
 
 export async function getAllSources() {

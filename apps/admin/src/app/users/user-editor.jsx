@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Button, CardFooter, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Switch, Separator, Textarea } from '@headlines/ui'
+import { Button, CardFooter, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Switch, Separator, Textarea } from '@headlines/ui/src/index.js'
 import { toast } from 'sonner'
 import { Save, Loader2, UserPlus, X } from 'lucide-react'
 import CountrySubscriptionManager from './country-subscription-manager'

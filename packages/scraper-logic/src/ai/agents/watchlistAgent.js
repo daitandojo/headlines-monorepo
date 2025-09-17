@@ -2,8 +2,8 @@
 import { getConfig } from '../../config.js';
 import { AIAgent } from '../AIAgent.js'
 import { watchlistSuggestionSchema } from '../schemas/watchlistSuggestionSchema.js'
-import { env } from '@headlines/config'
-import { instructionWatchlistSuggestion } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { instructionWatchlistSuggestion } from '../../../../prompts/src/index.js'
 
 const getAgent = () =>
   new AIAgent({

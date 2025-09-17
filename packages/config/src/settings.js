@@ -1,6 +1,6 @@
 // packages/config/src/settings.js (version 2.2.0)
-import { Setting } from '@headlines/models'
-import { logger } from '@headlines/utils/server';
+import { Setting } from '../../models/src/index.js'
+import { logger } from '../../utils/src/server.js';
 
 // These defaults are used ONLY if the values are not found in the database.
 const DEFAULTS = {

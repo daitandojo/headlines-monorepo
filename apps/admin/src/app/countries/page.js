@@ -4,12 +4,12 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { ServerCrash, PlusCircle, ChevronsRight } from 'lucide-react'
-import { PageHeader, SheetHeader, SheetTitle, SheetDescription } from '@headlines/ui'
+import { PageHeader, SheetHeader, SheetTitle, SheetDescription } from '@headlines/ui/src/index.js'
 import { useEntityManager } from '@/hooks/use-entity-manager'
-import { Button } from '@headlines/ui'
-import { Sheet, SheetContent } from '@headlines/ui'
+import { Button } from '@headlines/ui/src/index.js'
+import { Sheet, SheetContent } from '@headlines/ui/src/index.js'
 import { columns } from './columns'
-import { DataTable } from '@headlines/ui'
+import { DataTable } from '@headlines/ui/src/index.js'
 import CountryEditor from './country-editor'
 
 export default function CountriesPage() {

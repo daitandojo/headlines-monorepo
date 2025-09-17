@@ -1,7 +1,7 @@
 // apps/admin/src/app/api/subscribers/route.js (version 3.0.2)
 import { NextResponse } from 'next/server'
-import { getAllSubscribers, createSubscriber } from '@headlines/data-access'
-import { verifyAdmin } from '@headlines/auth'
+import { getAllSubscribers, createSubscriber } from '@headlines/data-access/src/index.js'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 
 export const dynamic = 'force-dynamic'

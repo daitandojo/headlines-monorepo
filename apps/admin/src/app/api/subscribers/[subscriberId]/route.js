@@ -1,8 +1,8 @@
 // apps/admin/src/app/api/subscribers/[subscriberId]/route.js (version 3.0.1)
 import { NextResponse } from 'next/server'
-import { updateSubscriber, deleteSubscriber } from '@headlines/data-access'
+import { updateSubscriber, deleteSubscriber } from '@headlines/data-access/src/index.js'
 import mongoose from 'mongoose'
-import { verifyAdmin } from '@headlines/auth'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 
 export async function PATCH(request, { params }) {

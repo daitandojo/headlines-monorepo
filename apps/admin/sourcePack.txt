@@ -173,7 +173,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-17T10:46:26.397Z
+**Generated**: 2025-09-17T18:58:29.000Z
 **Repository Path**: /home/mark/Repos/projects/headlines/apps/admin
 **Total Files**: 102
 **Package**: @headlines/admin@0.5.8
@@ -332,7 +332,7 @@ export default nextConfig;
 ```
 
 ## 📄 package.json
-*Lines: 45, Size: 1.1 KB*
+*Lines: 45, Size: 1.12 KB*
 
 ```json
 {
@@ -377,9 +377,9 @@ export default nextConfig;
     "next": "14.2.3",
     "postcss": "^8.5.1",
     "tailwindcss": "^3.4.1"
-  }
+  },
+  "type": "module"
 }
-
 ```
 
 ## 📄 package.json.bak
@@ -517,7 +517,7 @@ https://www2.deloitte.com/dk/da/pages/finance/articles/mergers-and-acquisitions.
 ```
 
 ## 📄 src/app/_components/article-analysis-viewer.jsx
-*Lines: 45, Size: 1.43 KB*
+*Lines: 45, Size: 1.46 KB*
 
 ```jsx
 // src/app/_components/article-analysis-viewer.jsx (version 1.1)
@@ -528,8 +528,8 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@headlines/ui'
-import { Button } from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
+import { Button } from '@headlines/ui/src/index.js'
 import { Loader2 } from 'lucide-react'
 
 export default function ArticleAnalysisViewer({ article, open, onOpenChange }) {
@@ -568,7 +568,7 @@ export default function ArticleAnalysisViewer({ article, open, onOpenChange }) {
 ```
 
 ## 📄 src/app/_components/main-nav.jsx
-*Lines: 90, Size: 3.18 KB*
+*Lines: 90, Size: 3.21 KB*
 
 ```jsx
 // apps/admin/src/app/_components/main-nav.jsx (version 1.8.1)
@@ -578,8 +578,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import React from 'react'
 import { BotMessageSquare, Newspaper, Users, Rss, Gauge, Settings, Globe, Zap, Target, FileText, Code } from 'lucide-react'
-import { cn } from '@headlines/utils'
-import { Separator } from '@headlines/ui'
+import { cn } from '@headlines/utils/src/index.js'
+import { Separator } from '@headlines/ui/src/index.js'
 import { ThemeToggle } from './theme-toggle'
 
 const navSections = [
@@ -664,7 +664,7 @@ export default function MainNav() {
 ```
 
 ## 📄 src/app/_components/multi-select.jsx
-*Lines: 62, Size: 1.97 KB*
+*Lines: 62, Size: 2.02 KB*
 
 ```jsx
 // src/app/_components/multi-select.jsx (version 1.2.0)
@@ -676,11 +676,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@headlines/ui'
-import { Button } from '@headlines/ui'
-import { Checkbox } from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
+import { Button } from '@headlines/ui/src/index.js'
+import { Checkbox } from '@headlines/ui/src/index.js'
 import { ChevronsUpDown } from 'lucide-react'
-import { ScrollArea } from '@headlines/ui'
+import { ScrollArea } from '@headlines/ui/src/index.js'
 
 export function MultiSelect({ options, selected, onChange, placeholder = 'Select...' }) {
   const handleSelect = (option) => {
@@ -732,17 +732,17 @@ export function MultiSelect({ options, selected, onChange, placeholder = 'Select
 ```
 
 ## 📄 src/app/_components/relationships/RelationshipManager.jsx
-*Lines: 85, Size: 3.7 KB*
+*Lines: 85, Size: 3.72 KB*
 
 ```jsx
 // apps/admin/src/app/_components/relationships/RelationshipManager.jsx (version 1.0)
 'use client';
 
 import { useState } from 'react';
-import { Button, Input, Label, Card, CardContent, CardHeader, CardTitle, CardDescription } from '@headlines/ui';
+import { Button, Input, Label, Card, CardContent, CardHeader, CardTitle, CardDescription } from '@headlines/ui/src/index.js';
 import { toast } from 'sonner';
 import { Link, Unlink, Plus, Loader2 } from 'lucide-react';
-import { linkOpportunityToEvent, unlinkOpportunityFromEvent } from '@headlines/data-access';
+import { linkOpportunityToEvent, unlinkOpportunityFromEvent } from '@headlines/data-access/src/index.js';
 
 export function RelationshipManager({ item, itemType, refetch }) {
     const [newItemId, setNewItemId] = useState('');
@@ -823,14 +823,14 @@ export function RelationshipManager({ item, itemType, refetch }) {
 ```
 
 ## 📄 src/app/_components/source-editor-ai.jsx
-*Lines: 122, Size: 4.08 KB*
+*Lines: 122, Size: 4.09 KB*
 
 ```jsx
 // src/app/_components/source-editor-ai.jsx (version 1.1)
 'use client'
 
 import { useState } from 'react'
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Textarea, Label, Separator } from '@headlines/ui'
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Textarea, Label, Separator } from '@headlines/ui/src/index.js'
 import { toast } from 'sonner'
 import { Loader2, Wand2 } from 'lucide-react'
 import SuggestionAccordion from './suggestion-accordion'
@@ -951,14 +951,14 @@ export default function SourceEditorAI({ sectionUrl, isBusy, onApplySuggestion }
 ```
 
 ## 📄 src/app/_components/source-editor-ide.jsx
-*Lines: 154, Size: 5.2 KB*
+*Lines: 154, Size: 5.22 KB*
 
 ```jsx
 // src/app/_components/source-editor-ide.jsx (version 1.4)
 'use client'
 
 import { useState } from 'react'
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Separator } from '@headlines/ui'
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Separator } from '@headlines/ui/src/index.js'
 import { toast } from 'sonner'
 import { Wand2, Loader2, ExternalLink, ShieldAlert } from 'lucide-react'
 import SuggestionAccordion from './suggestion-accordion'
@@ -1111,13 +1111,13 @@ export default function SourceEditorIDE({ source, onApplySuggestion, onSave }) {
 ```
 
 ## 📄 src/app/_components/source-editor-scraper.jsx
-*Lines: 104, Size: 3.75 KB*
+*Lines: 104, Size: 3.76 KB*
 
 ```jsx
 // src/app/_components/source-editor-scraper.jsx (version 1.1)
 'use client'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Textarea } from '@headlines/ui'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Textarea } from '@headlines/ui/src/index.js'
 
 const FormField = ({ id, label, children, description }) => (
   <div className="space-y-2">
@@ -1221,14 +1221,14 @@ export default function SourceEditorScraper({
 ```
 
 ## 📄 src/app/_components/source-list.jsx
-*Lines: 198, Size: 6.67 KB*
+*Lines: 198, Size: 6.7 KB*
 
 ```jsx
 // src/app/_components/source-list.jsx (version 2.4)
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Button, Input, ScrollArea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge } from '@headlines/ui'
+import { Button, Input, ScrollArea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge } from '@headlines/ui/src/index.js'
 import {
   PlusCircle,
   DatabaseZap,
@@ -1239,7 +1239,7 @@ import {
   Ban,
   ExternalLink,
 } from 'lucide-react'
-import { cn } from '@headlines/utils'
+import { cn } from '@headlines/utils/src/index.js'
 
 function DynamicStatus({ source, status }) {
   if (status?.checking) {
@@ -1425,13 +1425,13 @@ export default function SourceList({
 ```
 
 ## 📄 src/app/_components/suggestion-accordion.jsx
-*Lines: 76, Size: 3.05 KB*
+*Lines: 76, Size: 3.06 KB*
 
 ```jsx
 // src/app/_components/suggestion-accordion.jsx (version 1.3)
 'use client'
 
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, Button } from '@headlines/ui'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, Button } from '@headlines/ui/src/index.js'
 import { ExternalLink, Wand2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -1507,7 +1507,7 @@ export default function SuggestionAccordion({ suggestions, onApply }) {
 ```
 
 ## 📄 src/app/_components/test-results-viewer.jsx
-*Lines: 96, Size: 3.44 KB*
+*Lines: 96, Size: 3.45 KB*
 
 ```jsx
 // src/app/_components/test-results-viewer.jsx (version 1.2)
@@ -1521,7 +1521,7 @@ import {
   DialogFooter,
   ScrollArea,
   Button,
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 import { ExternalLink, FileText, XCircle } from 'lucide-react'
 import ArticleAnalysisViewer from './article-analysis-viewer'
 
@@ -1625,7 +1625,7 @@ export function ThemeProvider({ children, ...props }) {
 ```
 
 ## 📄 src/app/_components/theme-toggle.jsx
-*Lines: 36, Size: 1.19 KB*
+*Lines: 36, Size: 1.21 KB*
 
 ```jsx
 // apps/admin/src/app/_components/theme-toggle.jsx (version 1.0)
@@ -1635,13 +1635,13 @@ import * as React from 'react'
 import { Moon, Sun } from 'lucide-react'
 import { useTheme } from 'next-themes'
 
-import { Button } from '@headlines/ui'
+import { Button } from '@headlines/ui/src/index.js'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 
 export function ThemeToggle() {
   const { setTheme } = useTheme()
@@ -1667,12 +1667,12 @@ export function ThemeToggle() {
 ```
 
 ## 📄 src/app/api/ai/analyze-source-structure/route.js
-*Lines: 61, Size: 2.25 KB*
+*Lines: 61, Size: 2.27 KB*
 
 ```javascript
 // apps/admin/src/app/api/ai/analyze-source-structure/route.js (version 2.1)
 import { NextResponse } from 'next/server';
-import { verifyAdmin } from '@headlines/auth';
+import { verifyAdmin } from '@headlines/auth/src/index.js';
 import { fetchPageWithPlaywright } from '@headlines/scraper-logic/src/browser.js';
 import { heuristicallyFindSelectors } from '@headlines/scraper-logic/src/scraper/selectorOptimizer.js';
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
@@ -1959,14 +1959,14 @@ export async function POST(request) {
 ```
 
 ## 📄 src/app/api/ai/enrich-entity/route.js
-*Lines: 55, Size: 2.08 KB*
+*Lines: 55, Size: 2.11 KB*
 
 ```javascript
 // apps/admin/src/app/api/ai/enrich-entity/route.js (version 2.0.1)
 import { NextResponse } from 'next/server'
 import { initializeSharedLogic } from '@/lib/init-shared-logic'
-import { callLanguageModel } from '@headlines/ai-services'
-import { verifyAdmin } from '@headlines/auth'
+import { callLanguageModel } from '@headlines/ai-services/src/index.js'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 
 const getEntityEnrichmentPrompt = () => `
 You are a corporate intelligence analyst. Your task is to provide a brief, factual, one-sentence context for a given person, family, or company name. This context will be used in a financial intelligence watchlist.
@@ -2079,17 +2079,17 @@ export async function POST(request) {
 ```
 
 ## 📄 src/app/api/ai/full-source-analysis/route.js
-*Lines: 75, Size: 3.31 KB*
+*Lines: 75, Size: 3.35 KB*
 
 ```javascript
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 // apps/admin/src/app/api/ai/full-source-analysis/route.js (version 2.0.1)
 import { NextResponse } from 'next/server'
 import { initializeSharedLogic } from '@/lib/init-shared-logic'
-import {  smartStripHtml  } from '@headlines/utils/server';
+import {  smartStripHtml  } from '@headlines/utils/src/server.js';
 import { fetchPageWithPlaywright, testHeadlineExtraction } from '@headlines/scraper-logic/src/scraper/index.js'
-import { callLanguageModel } from '@headlines/ai-services'
-import { verifyAdmin } from '@headlines/auth'
+import { callLanguageModel } from '@headlines/ai-services/src/index.js'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 
 const getSourceAnalysisPrompt = () => `
 You are an expert web scraping engineer. Your task is to devise a complete, robust "Extraction Recipe" for scraping headlines from the provided HTML.
@@ -2160,13 +2160,13 @@ export async function POST(request) {
 ```
 
 ## 📄 src/app/api/ai/suggest-search-terms/route.js
-*Lines: 50, Size: 2.36 KB*
+*Lines: 50, Size: 2.38 KB*
 
 ```javascript
 // src/app/api/ai/suggest-search-terms/route.js (version 1.0)
 import { NextResponse } from 'next/server'
-import { callLanguageModel } from '@headlines/ai-services'
-import { verifyAdmin } from '@headlines/auth'
+import { callLanguageModel } from '@headlines/ai-services/src/index.js'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 
 const getSearchTermPrompt = () => `
@@ -2216,13 +2216,13 @@ export async function POST(request) {
 ```
 
 ## 📄 src/app/api/articles/route.js
-*Lines: 42, Size: 1.63 KB*
+*Lines: 42, Size: 1.64 KB*
 
 ```javascript
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 // apps/admin/src/app/api/articles/route.js (version 1.0.0)
 import { NextResponse } from 'next/server';
-import { getAdminArticles, updateAdminArticle, deleteAdminArticle } from '@headlines/data-access';
+import { getAdminArticles, updateAdminArticle, deleteAdminArticle } from '@headlines/data-access/src/index.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -2264,15 +2264,15 @@ export async function DELETE(request) {
 ```
 
 ## 📄 src/app/api/countries/[countryId]/route.js
-*Lines: 29, Size: 1.06 KB*
+*Lines: 29, Size: 1.08 KB*
 
 ```javascript
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 // apps/admin/src/app/api/countries/[countryId]/route.js (version 3.0.1)
 import { NextResponse } from 'next/server'
-import { updateCountry } from '@headlines/data-access'
+import { updateCountry } from '@headlines/data-access/src/index.js'
 import mongoose from 'mongoose'
-import { verifyAdmin } from '@headlines/auth'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 
 export async function PATCH(request, { params }) {
   await initializeSharedLogic();
@@ -2299,14 +2299,14 @@ export async function PATCH(request, { params }) {
 ```
 
 ## 📄 src/app/api/countries/route.js
-*Lines: 39, Size: 1.32 KB*
+*Lines: 39, Size: 1.35 KB*
 
 ```javascript
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 // apps/admin/src/app/api/countries/route.js (version 4.0.1)
 import { NextResponse } from 'next/server'
-import { getAllCountries, createCountry } from '@headlines/data-access'
-import { verifyAdmin } from '@headlines/auth'
+import { getAllCountries, createCountry } from '@headlines/data-access/src/index.js'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 
 export const dynamic = 'force-dynamic'
 
@@ -2344,14 +2344,14 @@ export async function POST(request) {
 ```
 
 ## 📄 src/app/api/dashboard-stats/route.js
-*Lines: 23, Size: 789 Bytes*
+*Lines: 23, Size: 815 Bytes*
 
 ```javascript
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 // apps/admin/src/app/api/dashboard-stats/route.js (version 4.0.1)
 import { NextResponse } from 'next/server'
-import { getDashboardStats } from '@headlines/data-access'
-import { verifyAdmin } from '@headlines/auth'
+import { getDashboardStats } from '@headlines/data-access/src/index.js'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 
 export const dynamic = 'force-dynamic'
 
@@ -2373,13 +2373,13 @@ export async function GET(request) {
 ```
 
 ## 📄 src/app/api/events/[eventId]/route.js
-*Lines: 17, Size: 652 Bytes*
+*Lines: 17, Size: 665 Bytes*
 
 ```javascript
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 // apps/admin/src/app/api/events/[eventId]/route.js (version 1.0.0)
 import { NextResponse } from 'next/server';
-import { getAdminEventDetails } from '@headlines/data-access';
+import { getAdminEventDetails } from '@headlines/data-access/src/index.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -2396,12 +2396,12 @@ export async function GET(request, { params }) {
 ```
 
 ## 📄 src/app/api/events/route.js
-*Lines: 56, Size: 2.04 KB*
+*Lines: 56, Size: 2.05 KB*
 
 ```javascript
 // apps/admin/src/app/api/events/route.js (version 2.0.0 - Correct Param Handling)
 import { NextResponse } from 'next/server';
-import { getAdminEvents, updateAdminEvent, deleteAdminEvent } from '@headlines/data-access';
+import { getAdminEvents, updateAdminEvent, deleteAdminEvent } from '@headlines/data-access/src/index.js';
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 
 export const dynamic = 'force-dynamic';
@@ -2458,13 +2458,13 @@ export async function DELETE(request) {
 ```
 
 ## 📄 src/app/api/opportunities/route.js
-*Lines: 44, Size: 1.79 KB*
+*Lines: 44, Size: 1.81 KB*
 
 ```javascript
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 // apps/admin/src/app/api/opportunities/route.js (version 1.0.0)
 import { NextResponse } from 'next/server';
-import { getAdminOpportunities, updateAdminOpportunity, deleteAdminOpportunity } from '@headlines/data-access';
+import { getAdminOpportunities, updateAdminOpportunity, deleteAdminOpportunity } from '@headlines/data-access/src/index.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -2508,15 +2508,15 @@ export async function DELETE(request) {
 ```
 
 ## 📄 src/app/api/run-verdicts/[runId]/route.js
-*Lines: 29, Size: 1.02 KB*
+*Lines: 29, Size: 1.04 KB*
 
 ```javascript
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 // apps/admin/src/app/api/run-verdicts/[runId]/route.js (version 3.0.1)
 import { NextResponse } from 'next/server'
-import { getRunVerdictById } from '@headlines/data-access'
+import { getRunVerdictById } from '@headlines/data-access/src/index.js'
 import mongoose from 'mongoose'
-import { verifyAdmin } from '@headlines/auth'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 
 export const dynamic = 'force-dynamic'
 
@@ -2543,14 +2543,14 @@ export async function GET(request, { params }) {
 ```
 
 ## 📄 src/app/api/run-verdicts/route.js
-*Lines: 24, Size: 847 Bytes*
+*Lines: 24, Size: 873 Bytes*
 
 ```javascript
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 // apps/admin/src/app/api/run-verdicts/route.js (version 3.0.2)
 import { NextResponse } from 'next/server'
-import { getRecentRunVerdicts } from '@headlines/data-access'
-import { verifyAdmin } from '@headlines/auth'
+import { getRecentRunVerdicts } from '@headlines/data-access/src/index.js'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 
 export const dynamic = 'force-dynamic'
 
@@ -2573,17 +2573,17 @@ export async function GET(request) {
 ```
 
 ## 📄 src/app/api/scrape/analyze-url/route.js
-*Lines: 66, Size: 3.6 KB*
+*Lines: 66, Size: 3.63 KB*
 
 ```javascript
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 // apps/admin/src/app/api/scrape/analyze-url/route.js (version 4.0.1)
 import { NextResponse } from 'next/server'
 import { initializeSharedLogic } from '@/lib/init-shared-logic'
-import {  smartStripHtml  } from '@headlines/utils/server';
+import {  smartStripHtml  } from '@headlines/utils/src/server.js';
 import { fetchPageWithPlaywright, testHeadlineExtraction } from '@headlines/scraper-logic/src/scraper/index.js'
-import { callLanguageModel } from '@headlines/ai-services'
-import { verifyAdmin } from '@headlines/auth'
+import { callLanguageModel } from '@headlines/ai-services/src/index.js'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 
 const getScraperAnalysisPrompt = () => `
 You are a master web scraping engineer. You will be given the cleaned HTML from a news website's front page and, optionally, some example headlines. Your task is to analyze the structure and determine the most robust CSS selectors for scraping all headlines.
@@ -2698,12 +2698,12 @@ export async function POST(request) {
 ```
 
 ## 📄 src/app/api/scrape/fetch-html/route.js
-*Lines: 34, Size: 1.11 KB*
+*Lines: 34, Size: 1.12 KB*
 
 ```javascript
 // apps/admin/src/app/api/scrape/fetch-html/route.js (version 1.0)
 import { NextResponse } from 'next/server';
-import { verifyAdmin } from '@headlines/auth';
+import { verifyAdmin } from '@headlines/auth/src/index.js';
 import { fetchPageWithPlaywright } from '@headlines/scraper-logic/src/browser.js';
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 
@@ -2738,20 +2738,20 @@ export async function POST(request) {
 ```
 
 ## 📄 src/app/api/scrape/test-config/route.js
-*Lines: 85, Size: 2.56 KB*
+*Lines: 85, Size: 2.59 KB*
 
 ```javascript
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 // apps/admin/src/app/api/scrape/test-config/route.js (version 2.0.1)
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
-import { Source } from '@headlines/models'
+import { Source } from '@headlines/models/src/index.js'
 import { initializeSharedLogic } from '@/lib/init-shared-logic'
 import {
   testHeadlineExtraction,
   scrapeArticleContentForTest,
 } from '@headlines/scraper-logic/src/scraper/index.js'
-import { verifyAdmin } from '@headlines/auth'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 
 export async function POST(request) {
   await initializeSharedLogic();
@@ -2829,7 +2829,7 @@ export async function POST(request) {
 ```
 
 ## 📄 src/app/api/scrape/test-recipe/route.js
-*Lines: 61, Size: 2.08 KB*
+*Lines: 61, Size: 2.09 KB*
 
 ```javascript
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
@@ -2840,7 +2840,7 @@ import {
   testHeadlineExtraction,
   scrapeArticleContentForTest,
 } from '@headlines/scraper-logic/src/scraper/index.js'
-import { verifyAdmin } from '@headlines/auth'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 
 export async function POST(request) {
   await initializeSharedLogic();
@@ -2896,14 +2896,14 @@ export async function POST(request) {
 ```
 
 ## 📄 src/app/api/settings/route.js
-*Lines: 42, Size: 1.44 KB*
+*Lines: 42, Size: 1.47 KB*
 
 ```javascript
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 // apps/admin/src/app/api/settings/route.js (version 3.0.3)
 import { NextResponse } from 'next/server'
-import { getSettings, updateSettings } from '@headlines/data-access'
-import { verifyAdmin } from '@headlines/auth'
+import { getSettings, updateSettings } from '@headlines/data-access/src/index.js'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 
 export const dynamic = 'force-dynamic'
 
@@ -2944,15 +2944,15 @@ export async function PATCH(request) {
 ```
 
 ## 📄 src/app/api/sources/[sourceId]/route.js
-*Lines: 28, Size: 1.02 KB*
+*Lines: 28, Size: 1.05 KB*
 
 ```javascript
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 // apps/admin/src/app/api/sources/[sourceId]/route.js (version 3.0.1)
 import { NextResponse } from 'next/server'
-import { updateSource } from '@headlines/data-access'
+import { updateSource } from '@headlines/data-access/src/index.js'
 import mongoose from 'mongoose'
-import { verifyAdmin } from '@headlines/auth'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 
 export async function PATCH(request, { params }) {
   await initializeSharedLogic();
@@ -2978,14 +2978,14 @@ export async function PATCH(request, { params }) {
 ```
 
 ## 📄 src/app/api/sources/route.js
-*Lines: 40, Size: 1.35 KB*
+*Lines: 40, Size: 1.38 KB*
 
 ```javascript
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 // apps/admin/src/app/api/sources/route.js (version 3.0.1)
 import { NextResponse } from 'next/server'
-import { getAllSources, createSource } from '@headlines/data-access'
-import { verifyAdmin } from '@headlines/auth'
+import { getAllSources, createSource } from '@headlines/data-access/src/index.js'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 
 export const dynamic = 'force-dynamic'
 
@@ -3024,14 +3024,14 @@ export async function POST(request) {
 ```
 
 ## 📄 src/app/api/subscribers/[subscriberId]/route.js
-*Lines: 47, Size: 1.77 KB*
+*Lines: 47, Size: 1.8 KB*
 
 ```javascript
 // apps/admin/src/app/api/subscribers/[subscriberId]/route.js (version 3.0.1)
 import { NextResponse } from 'next/server'
-import { updateSubscriber, deleteSubscriber } from '@headlines/data-access'
+import { updateSubscriber, deleteSubscriber } from '@headlines/data-access/src/index.js'
 import mongoose from 'mongoose'
-import { verifyAdmin } from '@headlines/auth'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 
 export async function PATCH(request, { params }) {
@@ -3077,13 +3077,13 @@ export async function DELETE(request, { params }) {
 ```
 
 ## 📄 src/app/api/subscribers/route.js
-*Lines: 40, Size: 1.39 KB*
+*Lines: 40, Size: 1.42 KB*
 
 ```javascript
 // apps/admin/src/app/api/subscribers/route.js (version 3.0.2)
 import { NextResponse } from 'next/server'
-import { getAllSubscribers, createSubscriber } from '@headlines/data-access'
-import { verifyAdmin } from '@headlines/auth'
+import { getAllSubscribers, createSubscriber } from '@headlines/data-access/src/index.js'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 
 export const dynamic = 'force-dynamic'
@@ -3123,15 +3123,15 @@ export async function POST(request) {
 ```
 
 ## 📄 src/app/api/suggestions/route.jsx
-*Lines: 51, Size: 1.91 KB*
+*Lines: 51, Size: 1.93 KB*
 
 ```jsx
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 // apps/admin/src/app/api/suggestions/route.jsx (version 2.0.1)
 import { NextResponse } from 'next/server'
-import { getSuggestions, processWatchlistSuggestion, processSourceSuggestion } from '@headlines/data-access'
+import { getSuggestions, processWatchlistSuggestion, processSourceSuggestion } from '@headlines/data-access/src/index.js'
 import mongoose from 'mongoose'
-import { verifyAdmin } from '@headlines/auth'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 
 export const dynamic = 'force-dynamic'
 
@@ -3180,14 +3180,14 @@ export async function POST(request) {
 ```
 
 ## 📄 src/app/api/watchlist/[entityId]/route.js
-*Lines: 47, Size: 1.75 KB*
+*Lines: 47, Size: 1.77 KB*
 
 ```javascript
 // apps/admin/src/app/api/watchlist/[entityId]/route.js (version 3.0.1)
 import { NextResponse } from 'next/server'
-import { updateWatchlistEntity, deleteWatchlistEntity } from '@headlines/data-access'
+import { updateWatchlistEntity, deleteWatchlistEntity } from '@headlines/data-access/src/index.js'
 import mongoose from 'mongoose'
-import { verifyAdmin } from '@headlines/auth'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 
 export async function PATCH(request, { params }) {
@@ -3233,13 +3233,13 @@ export async function DELETE(request, { params }) {
 ```
 
 ## 📄 src/app/api/watchlist/route.js
-*Lines: 39, Size: 1.35 KB*
+*Lines: 39, Size: 1.37 KB*
 
 ```javascript
 // apps/admin/src/app/api/watchlist/route.js (version 3.0.1)
 import { NextResponse } from 'next/server'
-import { getAllWatchlistEntities, createWatchlistEntity } from '@headlines/data-access'
-import { verifyAdmin } from '@headlines/auth'
+import { getAllWatchlistEntities, createWatchlistEntity } from '@headlines/data-access/src/index.js'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 
 export const dynamic = 'force-dynamic'
@@ -3278,15 +3278,15 @@ export async function POST(request) {
 ```
 
 ## 📄 src/app/api/watchlist/suggestions/[suggestionId]/route.js
-*Lines: 28, Size: 1.01 KB*
+*Lines: 28, Size: 1.04 KB*
 
 ```javascript
 // apps/admin/src/app/api/watchlist/suggestions/[suggestionId]/route.js (version 1.0.0)
 'use server'
 
 import { NextResponse } from 'next/server';
-import { updateWatchlistSuggestion } from '@headlines/data-access';
-import { verifyAdmin } from '@headlines/auth';
+import { updateWatchlistSuggestion } from '@headlines/data-access/src/index.js';
+import { verifyAdmin } from '@headlines/auth/src/index.js';
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 import mongoose from 'mongoose';
 
@@ -3312,14 +3312,14 @@ export async function PATCH(request, { params }) {
 ```
 
 ## 📄 src/app/api/watchlist/suggestions/route.js
-*Lines: 23, Size: 814 Bytes*
+*Lines: 23, Size: 840 Bytes*
 
 ```javascript
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 // apps/admin/src/app/api/watchlist/suggestions/route.js (version 3.0.1)
 import { NextResponse } from 'next/server'
-import { getSuggestions } from '@headlines/data-access'
-import { verifyAdmin } from '@headlines/auth'
+import { getSuggestions } from '@headlines/data-access/src/index.js'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 
 export const dynamic = 'force-dynamic'
 
@@ -3341,14 +3341,14 @@ export async function GET(request) {
 ```
 
 ## 📄 src/app/articles/columns.jsx
-*Lines: 83, Size: 2.63 KB*
+*Lines: 83, Size: 2.64 KB*
 
 ```jsx
 // apps/admin/src/app/articles/columns.jsx (version 1.2.0)
 'use client'
 
 import React from 'react'
-import { Button, Badge, EditableCell, DataTableColumnHeader } from '@headlines/ui'
+import { Button, Badge, EditableCell, DataTableColumnHeader } from '@headlines/ui/src/index.js'
 import { Trash2, ExternalLink } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -3430,13 +3430,13 @@ export const columns = (onUpdate, onDelete) => [
 ```
 
 ## 📄 src/app/articles/page.jsx
-*Lines: 97, Size: 3.01 KB*
+*Lines: 97, Size: 3.03 KB*
 
 ```jsx
 // apps/admin/src/app/articles/page.jsx (version 1.2.0)
 'use client'
 
-import { PageHeader, DataTable, ExportButton } from '@headlines/ui'
+import { PageHeader, DataTable, ExportButton } from '@headlines/ui/src/index.js'
 import { columns } from './columns'
 import { useAdminManager } from '@/hooks/use-admin-manager'
 import {
@@ -3444,7 +3444,7 @@ import {
   updateAdminArticle,
   exportArticlesToCSV,
   exportArticlesToXLSX,
-} from '@headlines/data-access'
+} from '@headlines/data-access/src/index.js'
 import { toast } from 'sonner'
 import { useCallback, useState } from 'react'
 
@@ -3533,7 +3533,7 @@ export default function ArticlesPage() {
 ```
 
 ## 📄 src/app/countries/[countryName]/page.js
-*Lines: 196, Size: 6.16 KB*
+*Lines: 196, Size: 6.21 KB*
 
 ```javascript
 // src/app/countries/[countryName]/page.js (version 1.3)
@@ -3544,16 +3544,16 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Loader2, ServerCrash, Wand2, PlusCircle, Edit } from 'lucide-react'
-import { Button } from '@headlines/ui'
+import { Button } from '@headlines/ui/src/index.js'
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
-} from '@headlines/ui'
-import { Badge } from '@headlines/ui'
-import { Separator } from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
+import { Badge } from '@headlines/ui/src/index.js'
+import { Separator } from '@headlines/ui/src/index.js'
 import { toast } from 'sonner'
 import { useEntityManager } from '@/hooks/use-entity-manager'
 
@@ -3735,21 +3735,21 @@ export default function CountryDetailPage({ params }) {
 ```
 
 ## 📄 src/app/countries/columns.jsx
-*Lines: 99, Size: 2.88 KB*
+*Lines: 99, Size: 2.92 KB*
 
 ```jsx
 // src/app/countries/columns.jsx (version 1.2.0)
 'use client'
 
-import { Button } from '@headlines/ui'
-import { Badge } from '@headlines/ui'
+import { Button } from '@headlines/ui/src/index.js'
+import { Badge } from '@headlines/ui/src/index.js'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 import { ArrowUpDown, MoreHorizontal } from 'lucide-react'
 
 export const columns = (handleEdit) => [
@@ -3840,7 +3840,7 @@ export const columns = (handleEdit) => [
 ```
 
 ## 📄 src/app/countries/country-editor.jsx
-*Lines: 131, Size: 4.03 KB*
+*Lines: 131, Size: 4.1 KB*
 
 ```jsx
 // src/app/countries/country-editor.jsx (version 1.0)
@@ -3848,17 +3848,17 @@ export const columns = (handleEdit) => [
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Button } from '@headlines/ui'
-import { CardFooter } from '@headlines/ui'
-import { Input } from '@headlines/ui'
-import { Label } from '@headlines/ui'
+import { Button } from '@headlines/ui/src/index.js'
+import { CardFooter } from '@headlines/ui/src/index.js'
+import { Input } from '@headlines/ui/src/index.js'
+import { Label } from '@headlines/ui/src/index.js'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 import { toast } from 'sonner'
 import { Save, Loader2, PlusCircle, X } from 'lucide-react'
 
@@ -3977,7 +3977,7 @@ export default function CountryEditor({ country, onSave, onCancel }) {
 ```
 
 ## 📄 src/app/countries/page.js
-*Lines: 110, Size: 3.38 KB*
+*Lines: 110, Size: 3.43 KB*
 
 ```javascript
 // src/app/countries/page.js (version 1.4.1)
@@ -3986,12 +3986,12 @@ export default function CountryEditor({ country, onSave, onCancel }) {
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { ServerCrash, PlusCircle, ChevronsRight } from 'lucide-react'
-import { PageHeader, SheetHeader, SheetTitle, SheetDescription } from '@headlines/ui'
+import { PageHeader, SheetHeader, SheetTitle, SheetDescription } from '@headlines/ui/src/index.js'
 import { useEntityManager } from '@/hooks/use-entity-manager'
-import { Button } from '@headlines/ui'
-import { Sheet, SheetContent } from '@headlines/ui'
+import { Button } from '@headlines/ui/src/index.js'
+import { Sheet, SheetContent } from '@headlines/ui/src/index.js'
 import { columns } from './columns'
-import { DataTable } from '@headlines/ui'
+import { DataTable } from '@headlines/ui/src/index.js'
 import CountryEditor from './country-editor'
 
 export default function CountriesPage() {
@@ -4093,7 +4093,7 @@ export default function CountriesPage() {
 ```
 
 ## 📄 src/app/dashboard/page.jsx
-*Lines: 311, Size: 10.2 KB*
+*Lines: 311, Size: 10.21 KB*
 
 ```jsx
 // apps/admin/src/app/dashboard/page.jsx (version 2.3.0)
@@ -4131,7 +4131,7 @@ import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 
 const StatCard = ({ title, value, icon, children, href }) => (
   <Link href={href}>
@@ -4410,7 +4410,7 @@ export default function DashboardPage() {
 ```
 
 ## 📄 src/app/events/columns.jsx
-*Lines: 129, Size: 6.66 KB*
+*Lines: 129, Size: 6.67 KB*
 
 ```jsx
 // apps/admin/src/app/events/columns.jsx (version 3.4.1 - Unabridged)
@@ -4422,7 +4422,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
   DataTableColumnHeader, Card, CardHeader, CardTitle, CardDescription,
   CardContent, CardFooter, Label, Textarea,
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 import { Trash2, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { RelationshipManager } from '../_components/relationships/RelationshipManager'
@@ -4545,7 +4545,7 @@ export const ListHeader = ({ sorting, setSorting, columnFilters, setColumnFilter
 ```
 
 ## 📄 src/app/events/columns.jsx.bak
-*Lines: 178, Size: 7.33 KB*
+*Lines: 178, Size: 7.35 KB*
 
 ```
 // apps/admin/src/app/events/columns.jsx (version 3.3.1 - Final Lazy-Loading)
@@ -4572,7 +4572,7 @@ import {
   CardFooter,
   Label,
   Textarea,
-} from '@headlines/ui'
+} from '../../../../../packages/ui/src/index.js'
 import { Trash2, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { RelationshipManager } from '../_components/relationships/RelationshipManager'
@@ -4729,7 +4729,7 @@ export const ListHeader = ({ sorting, setSorting, columnFilters, setColumnFilter
 ```
 
 ## 📄 src/app/events/page.jsx
-*Lines: 102, Size: 4.15 KB*
+*Lines: 102, Size: 4.18 KB*
 
 ```jsx
 // apps/admin/src/app/events/page.jsx (version 2.2.0 - State Management Fix)
@@ -4737,12 +4737,12 @@ export const ListHeader = ({ sorting, setSorting, columnFilters, setColumnFilter
 
 import {
   PageHeader, Accordion, LoadingOverlay, Button, ExportButton,
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 import { EventListItem, ListHeader } from './columns'
 import { useAdminManager } from '@/hooks/use-admin-manager'
 import {
   deleteAdminEvent, updateAdminEvent, exportEventsToCSV, exportEventsToXLSX,
-} from '@headlines/data-access'
+} from '@headlines/data-access/src/index.js'
 import { toast } from 'sonner'
 import { useCallback, useState } from 'react'
 
@@ -4837,7 +4837,7 @@ export default function EventsPage() {
 ```
 
 ## 📄 src/app/events/page.jsx.bak
-*Lines: 133, Size: 4.08 KB*
+*Lines: 133, Size: 4.13 KB*
 
 ```
 // apps/admin/src/app/events/page.jsx (version 2.1.0 - Simplified)
@@ -4849,7 +4849,7 @@ import {
   LoadingOverlay,
   Button,
   ExportButton,
-} from '@headlines/ui'
+} from '../../../../../packages/ui/src/index.js'
 import { EventListItem, ListHeader } from './columns'
 import { useAdminManager } from '@/hooks/use-admin-manager'
 import {
@@ -4857,7 +4857,7 @@ import {
   updateAdminEvent,
   exportEventsToCSV,
   exportEventsToXLSX,
-} from '@headlines/data-access'
+} from '../../../../../packages/data-access/src/index.js'
 import { toast } from 'sonner'
 import { useCallback, useState } from 'react'
 
@@ -5051,14 +5051,14 @@ export default function EventsPage() {
 ```
 
 ## 📄 src/app/layout.js
-*Lines: 57, Size: 1.65 KB*
+*Lines: 57, Size: 1.68 KB*
 
 ```javascript
 // apps/admin/src/app/layout.js (version 5.0.0 - With AuthProvider)
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { Toaster } from '@headlines/ui'
-import { cn } from '@headlines/utils'
+import { Toaster } from '@headlines/ui/src/index.js'
+import { cn } from '@headlines/utils/src/index.js'
 import MainNav from './_components/main-nav'
 import { ThemeProvider } from './_components/theme-provider'
 // DEFINITIVE FIX: Import the AuthProvider
@@ -5114,18 +5114,18 @@ export default function RootLayout({ children }) {
 ```
 
 ## 📄 src/app/layout.js.bak
-*Lines: 57, Size: 1.64 KB*
+*Lines: 57, Size: 1.69 KB*
 
 ```
 // apps/admin/src/app/layout.js (version 5.0.0 - With AuthProvider)
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { Toaster } from '@headlines/ui'
-import { cn } from '@headlines/utils'
+import { Toaster } from '../../../../packages/ui/src/index.js'
+import { cn } from '../../../../packages/utils/src/index.js'
 import MainNav from './_components/main-nav'
 import { ThemeProvider } from './_components/theme-provider'
 // DEFINITIVE FIX: Import the AuthProvider
-import { AuthProvider } from '@headlines/auth/src/AuthProvider.js'
+import { AuthProvider } from '../../../../packages/auth/src/AuthProvider.js'
 
 const fontSans = Inter({
   subsets: ['latin'],
@@ -5177,14 +5177,14 @@ export default function RootLayout({ children }) {
 ```
 
 ## 📄 src/app/opportunities/columns.jsx
-*Lines: 210, Size: 5.68 KB*
+*Lines: 210, Size: 5.7 KB*
 
 ```jsx
 // apps/admin/src/app/opportunities/columns.jsx (version 2.5.0 - Responsive Layout)
 'use client'
 
 import React from 'react'
-import { Button, EditableCell } from '@headlines/ui'
+import { Button, EditableCell } from '@headlines/ui/src/index.js'
 import { ArrowUpDown, Trash2, Edit } from 'lucide-react'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
@@ -5393,14 +5393,14 @@ export const columns = (onUpdate, onDelete, onEdit) => [
 ```
 
 ## 📄 src/app/opportunities/columns.jsx.bak
-*Lines: 101, Size: 4.54 KB*
+*Lines: 101, Size: 4.56 KB*
 
 ```
 // apps/admin/src/app/opportunities/columns.jsx (version 2.4.0 - Final Layout)
 'use client'
 
 import React from 'react';
-import { Button, EditableCell } from '@headlines/ui';
+import { Button, EditableCell } from '../../../../../packages/ui/src/index.js';
 import { ArrowUpDown, Trash2, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -5500,14 +5500,14 @@ export const columns = (onUpdate, onDelete, onEdit) => [
 ```
 
 ## 📄 src/app/opportunities/page.jsx
-*Lines: 150, Size: 4.85 KB*
+*Lines: 150, Size: 4.88 KB*
 
 ```jsx
 // apps/admin/src/app/opportunities/page.jsx (version 3.1.0 - Responsive Table Fix)
 'use client'
 
 import { useMemo, useState, useCallback } from 'react'
-import { PageHeader, DataTable, ExportButton, ConfirmationDialog } from '@headlines/ui'
+import { PageHeader, DataTable, ExportButton, ConfirmationDialog } from '@headlines/ui/src/index.js'
 import { columns } from './columns'
 import { useAdminManager } from '@/hooks/use-admin-manager'
 import {
@@ -5515,7 +5515,7 @@ import {
   updateAdminOpportunity,
   exportOpportunitiesToCSV,
   exportOpportunitiesToXLSX,
-} from '@headlines/data-access'
+} from '@headlines/data-access/src/index.js'
 import { toast } from 'sonner'
 
 export default function OpportunitiesPage() {
@@ -5656,14 +5656,14 @@ export default function OpportunitiesPage() {
 ```
 
 ## 📄 src/app/opportunities/page.jsx.bak
-*Lines: 115, Size: 4.13 KB*
+*Lines: 115, Size: 4.18 KB*
 
 ```
 // apps/admin/src/app/opportunities/page.jsx (version 2.0.0 - Corrected Data Handling)
 'use client'
 
 import { useMemo, useState, useCallback } from 'react'
-import { PageHeader, DataTable, ExportButton, ConfirmationDialog } from '@headlines/ui'
+import { PageHeader, DataTable, ExportButton, ConfirmationDialog } from '../../../../../packages/ui/src/index.js'
 import { columns } from './columns'
 import { useEntityManager } from '@/hooks/use-entity-manager' // CORRECTED: Use the right hook
 import {
@@ -5671,7 +5671,7 @@ import {
   updateAdminOpportunity,
   exportOpportunitiesToCSV,
   exportOpportunitiesToXLSX,
-} from '@headlines/data-access'
+} from '../../../../../packages/data-access/src/index.js'
 import { toast } from 'sonner'
 
 export default function OpportunitiesPage() {
@@ -5790,7 +5790,7 @@ export default function Home() {
 ```
 
 ## 📄 src/app/runs/[runId]/page.js
-*Lines: 260, Size: 8.42 KB*
+*Lines: 260, Size: 8.47 KB*
 
 ```javascript
 // apps/admin/src/app/runs/[runId]/page.js (version 1.0)
@@ -5819,15 +5819,15 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-} from '@headlines/ui'
-import { Badge } from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
+import { Badge } from '@headlines/ui/src/index.js'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@headlines/ui'
-import { Button } from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
+import { Button } from '@headlines/ui/src/index.js'
 
 const StatCard = ({ title, value, icon }) => (
   <Card className="bg-black/20 border-white/10">
@@ -6056,16 +6056,16 @@ export default function RunDetailsPage({ params }) {
 ```
 
 ## 📄 src/app/scraper-ide/_components/AnalysisPanel.jsx
-*Lines: 78, Size: 4.37 KB*
+*Lines: 78, Size: 4.39 KB*
 
 ```jsx
 // apps/admin/src/app/scraper-ide/_components/AnalysisPanel.jsx (version 2.3 - Prop Fix)
 'use client';
 
 import { useState } from 'react';
-import { Button, Card, CardContent, CardHeader, CardTitle, Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@headlines/ui';
+import { Button, Card, CardContent, CardHeader, CardTitle, Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@headlines/ui/src/index.js';
 import { Link as LinkIcon, CheckCircle2 } from 'lucide-react';
-import { cn } from '@headlines/utils';
+import { cn } from '@headlines/utils/src/index.js';
 
 export default function AnalysisPanel({ analysis, onSetSelector, onDrillDown, activeHeadlineSelector }) {
   const [openAccordion, setOpenAccordion] = useState(activeHeadlineSelector ? `item-${analysis?.suggestions.findIndex(s => s.selector === activeHeadlineSelector)}` : null);
@@ -6140,14 +6140,14 @@ export default function AnalysisPanel({ analysis, onSetSelector, onDrillDown, ac
 ```
 
 ## 📄 src/app/scraper-ide/_components/ArticleExtractorView.jsx
-*Lines: 107, Size: 4.57 KB*
+*Lines: 107, Size: 4.58 KB*
 
 ```jsx
 // apps/admin/src/app/scraper-ide/_components/ArticleExtractorView.jsx (version 3.1 - Prop Fix)
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Button, Textarea, Label, Accordion, AccordionItem, AccordionTrigger, AccordionContent, Badge } from '@headlines/ui';
+import { Button, Textarea, Label, Accordion, AccordionItem, AccordionTrigger, AccordionContent, Badge } from '@headlines/ui/src/index.js';
 import { toast } from 'sonner';
 import { heuristicallyFindSelectors } from '@headlines/scraper-logic/src/scraper/selectorOptimizer.js';
 import * as cheerio from 'cheerio';
@@ -6253,13 +6253,13 @@ export default function ArticleExtractorView({ articleHtml, onSetSelector, value
 ```
 
 ## 📄 src/app/scraper-ide/_components/ConfirmationModal.jsx
-*Lines: 92, Size: 4.36 KB*
+*Lines: 92, Size: 4.37 KB*
 
 ```jsx
 // apps/admin/src/app/scraper-ide/_components/ConfirmationModal.jsx (version 2.1 - Wider & Interactive)
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, ScrollArea, LoadingOverlay, Textarea } from '@headlines/ui';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, ScrollArea, LoadingOverlay, Textarea } from '@headlines/ui/src/index.js';
 import { ExternalLink, Save } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -6351,14 +6351,14 @@ export default function ConfirmationModal({ open, onOpenChange, onConfirm, testR
 ```
 
 ## 📄 src/app/scraper-ide/_components/SourceDefinitionPanel.jsx
-*Lines: 105, Size: 5.28 KB*
+*Lines: 105, Size: 5.29 KB*
 
 ```jsx
 // apps/admin/src/app/scraper-ide/_components/SourceDefinitionPanel.jsx (version 3.8 - Relative Selectors)
 'use client';
-import { Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Separator, Textarea } from '@headlines/ui';
+import { Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Separator, Textarea } from '@headlines/ui/src/index.js';
 import { Save, Loader2, TestTube2 } from 'lucide-react';
-import { SOURCE_STATUSES, SOURCE_FREQUENCIES } from '@headlines/models/src/constants.js';
+import { SOURCE_STATUSES, SOURCE_FREQUENCIES } from '@headlines/models/constants.js';
 
 const FormField = ({ id, label, children, description }) => (
   <div className="space-y-1">
@@ -6462,15 +6462,15 @@ export default function SourceDefinitionPanel({ sourceData, onDataChange, onTest
 ```
 
 ## 📄 src/app/scraper-ide/_components/SourceSelectorInput.jsx
-*Lines: 53, Size: 2.22 KB*
+*Lines: 53, Size: 2.24 KB*
 
 ```jsx
 // apps/admin/src/app/scraper-ide/_components/SourceSelectorInput.jsx (version 2.3 - UX Improvement)
 'use client';
 import * as React from 'react';
-import { Button, Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, Popover, PopoverContent, PopoverTrigger } from '@headlines/ui';
+import { Button, Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, Popover, PopoverContent, PopoverTrigger } from '@headlines/ui/src/index.js';
 import { Check, ChevronsUpDown } from 'lucide-react';
-import { cn } from '@headlines/utils';
+import { cn } from '@headlines/utils/src/index.js';
 
 export default function SourceSelectorInput({ sources, selectedSource, onSelectSource, disabled }) {
   const [open, setOpen] = React.useState(false);
@@ -6521,13 +6521,13 @@ export default function SourceSelectorInput({ sources, selectedSource, onSelectS
 ```
 
 ## 📄 src/app/scraper-ide/_components/TabsBar.jsx
-*Lines: 57, Size: 1.94 KB*
+*Lines: 57, Size: 1.95 KB*
 
 ```jsx
 // apps/admin/src/app/scraper-ide/_components/TabsBar.jsx (version 1.1)
 'use client';
 
-import { cn } from '@headlines/utils';
+import { cn } from '@headlines/utils/src/index.js';
 import { LayoutList, FileText, X } from 'lucide-react';
 
 export default function TabsBar({ tabs, activeTabId, onSelectTab, onCloseTab }) {
@@ -6584,7 +6584,7 @@ export default function TabsBar({ tabs, activeTabId, onSelectTab, onCloseTab }) 
 ```
 
 ## 📄 src/app/scraper-ide/page.jsx
-*Lines: 633, Size: 20.24 KB*
+*Lines: 633, Size: 20.38 KB*
 
 ```jsx
 // apps/admin/src/app/sources/source-ide-modal.jsx (version 2.2.0)
@@ -6599,23 +6599,23 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@headlines/ui'
-import { Button } from '@headlines/ui'
-import { Input } from '@headlines/ui'
-import { Label } from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
+import { Button } from '@headlines/ui/src/index.js'
+import { Input } from '@headlines/ui/src/index.js'
+import { Label } from '@headlines/ui/src/index.js'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@headlines/ui'
-import { ScrollArea } from '@headlines/ui'
-import { Card, CardContent, CardHeader, CardTitle } from '@headlines/ui'
-import { Badge } from '@headlines/ui'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@headlines/ui'
-import { Alert, AlertDescription } from '@headlines/ui'
-import { Separator } from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
+import { ScrollArea } from '@headlines/ui/src/index.js'
+import { Card, CardContent, CardHeader, CardTitle } from '@headlines/ui/src/index.js'
+import { Badge } from '@headlines/ui/src/index.js'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@headlines/ui/src/index.js'
+import { Alert, AlertDescription } from '@headlines/ui/src/index.js'
+import { Separator } from '@headlines/ui/src/index.js'
 import { toast } from 'sonner'
 import {
   Save,
@@ -7223,7 +7223,7 @@ export default function SourceIdeModal({
 ```
 
 ## 📄 src/app/settings/page.jsx
-*Lines: 65, Size: 1.83 KB*
+*Lines: 65, Size: 1.86 KB*
 
 ```jsx
 // apps/admin/src/app/settings/page.jsx (version 1.2.1)
@@ -7231,11 +7231,11 @@ export default function SourceIdeModal({
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { PageHeader } from '@headlines/ui'
+import { PageHeader } from '@headlines/ui/src/index.js'
 import SettingsForm from './settings-form'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { getSettings, updateSettings } from '@headlines/data-access'
+import { getSettings, updateSettings } from '@headlines/data-access/src/index.js'
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState([]) // ROBUSTNESS FIX: Initialize with empty array instead of null.
@@ -7294,7 +7294,7 @@ export default function SettingsPage() {
 ```
 
 ## 📄 src/app/settings/settings-form.jsx
-*Lines: 121, Size: 4.24 KB*
+*Lines: 121, Size: 4.31 KB*
 
 ```jsx
 // apps/admin/src/app/settings/settings-form.jsx (version 1.3.0)
@@ -7302,11 +7302,11 @@ export default function SettingsPage() {
 
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Card, CardContent, CardFooter, Tabs, TabsContent, TabsList, TabsTrigger } from '@headlines/ui'
-import { Label } from '@headlines/ui'
-import { Input } from '@headlines/ui'
-import { Switch } from '@headlines/ui'
-import { Button } from '@headlines/ui'
+import { Card, CardContent, CardFooter, Tabs, TabsContent, TabsList, TabsTrigger } from '@headlines/ui/src/index.js'
+import { Label } from '@headlines/ui/src/index.js'
+import { Input } from '@headlines/ui/src/index.js'
+import { Switch } from '@headlines/ui/src/index.js'
+import { Button } from '@headlines/ui/src/index.js'
 import { Save, Loader2 } from 'lucide-react'
 
 const SettingInput = ({ setting, onChange }) => {
@@ -7421,7 +7421,7 @@ export default function SettingsForm({ initialSettings = [], onSave }) {
 ```
 
 ## 📄 src/app/sources/add-source-modal.jsx
-*Lines: 84, Size: 2.55 KB*
+*Lines: 84, Size: 2.6 KB*
 
 ```jsx
 // apps/admin/src/app/sources/add-source-modal.jsx (version 2.0.0)
@@ -7435,10 +7435,10 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@headlines/ui'
-import { Input } from '@headlines/ui'
-import { Label } from '@headlines/ui'
-import { Button } from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
+import { Input } from '@headlines/ui/src/index.js'
+import { Label } from '@headlines/ui/src/index.js'
+import { Button } from '@headlines/ui/src/index.js'
 import { Wand2, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -7511,29 +7511,29 @@ export default function AddSourceModal({ open, onOpenChange, onAnalysisComplete 
 ```
 
 ## 📄 src/app/sources/columns.jsx
-*Lines: 189, Size: 6.41 KB*
+*Lines: 189, Size: 6.47 KB*
 
 ```jsx
 // apps/admin/src/app/sources/columns.jsx (version 1.9.2)
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { Button } from '@headlines/ui'
-import { Badge } from '@headlines/ui'
-import { Input } from '@headlines/ui'
+import { Button } from '@headlines/ui/src/index.js'
+import { Badge } from '@headlines/ui/src/index.js'
+import { Input } from '@headlines/ui/src/index.js'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 import {
   ArrowUpDown,
   MoreHorizontal,
@@ -7706,7 +7706,7 @@ export const columns = (handleEdit, handleTest, handleStatusToggle, onUpdate) =>
 ```
 
 ## 📄 src/app/sources/page.jsx
-*Lines: 149, Size: 5.85 KB*
+*Lines: 149, Size: 5.88 KB*
 
 ```jsx
 // apps/admin/src/app/sources/page.jsx (version 5.0.0)
@@ -7725,7 +7725,7 @@ import {
   TabsTrigger,
   ConfirmationDialog,
   LoadingOverlay, 
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 import { useEntityManager } from '@/hooks/use-entity-manager'
 import { columns } from './columns'
 import { suggestionColumns } from './suggestion-columns'
@@ -7739,7 +7739,7 @@ import {
   updateSource,
   deleteSource,
   testSourceConfig,
-} from '@headlines/data-access'
+} from '@headlines/data-access/src/index.js'
 import SourceList from '../_components/source-list' // Import the SourceList
 import { useSourceHealthChecker } from './use-source-health-checker'
 
@@ -7861,19 +7861,19 @@ export default function SourcesPage() {
 ```
 
 ## 📄 src/app/sources/suggestion-columns.jsx
-*Lines: 97, Size: 2.66 KB*
+*Lines: 97, Size: 2.68 KB*
 
 ```jsx
 // apps/admin/src/app/sources/suggestion-columns.jsx (version 1.0)
 'use client'
 
-import { Button } from '@headlines/ui'
+import { Button } from '@headlines/ui/src/index.js'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 import { ArrowUpDown, Check, X, Code } from 'lucide-react'
 
 export const suggestionColumns = (onAction) => [
@@ -7964,7 +7964,7 @@ export const suggestionColumns = (onAction) => [
 ```
 
 ## 📄 src/app/sources/test-results-modal.jsx
-*Lines: 165, Size: 5.13 KB*
+*Lines: 165, Size: 5.18 KB*
 
 ```jsx
 // src/app/sources/test-results-modal.jsx (version 1.0)
@@ -7977,10 +7977,10 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@headlines/ui'
-import { Button } from '@headlines/ui'
-import { Alert, AlertDescription, AlertTitle } from '@headlines/ui'
-import { Separator } from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
+import { Button } from '@headlines/ui/src/index.js'
+import { Alert, AlertDescription, AlertTitle } from '@headlines/ui/src/index.js'
+import { Separator } from '@headlines/ui/src/index.js'
 import {
   CheckCircle2,
   XCircle,
@@ -8236,15 +8236,15 @@ export function useSourceHealthChecker(onSourceUpdate) {
 ```
 
 ## 📄 src/app/users/columns.jsx
-*Lines: 275, Size: 7.86 KB*
+*Lines: 275, Size: 7.91 KB*
 
 ```jsx
 // apps/admin/src/app/users/columns.jsx (version 2.1.0)
 'use client'
 
 import React from 'react'
-import { Button } from '@headlines/ui'
-import { Popover, PopoverTrigger, PopoverContent } from '@headlines/ui'
+import { Button } from '@headlines/ui/src/index.js'
+import { Popover, PopoverTrigger, PopoverContent } from '@headlines/ui/src/index.js'
 import { MultiSelect } from '../_components/multi-select'
 import {
   Select,
@@ -8252,7 +8252,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8260,7 +8260,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 import {
   ArrowUpDown,
   MoreHorizontal,
@@ -8279,7 +8279,7 @@ import {
   Newspaper,
   Languages,
 } from 'lucide-react'
-import { SUBSCRIPTION_TIERS, SUBSCRIBER_ROLES } from '@headlines/models/src/constants'
+import { SUBSCRIPTION_TIERS, SUBSCRIBER_ROLES } from '@headlines/models/constants'
 
 const InlineCountryEditor = ({ user, allCountries, onAction }) => {
   const subscribedCountryNames = (user.countries || []).map((c) => c.name)
@@ -8517,14 +8517,14 @@ export const columns = (
 ```
 
 ## 📄 src/app/users/country-subscription-manager.jsx
-*Lines: 116, Size: 3.79 KB*
+*Lines: 116, Size: 3.85 KB*
 
 ```jsx
 // apps/admin/src/app/users/country-subscription-manager.jsx (version 1.0)
 'use client'
 
 import { useState } from 'react'
-import { Popover, PopoverContent, PopoverTrigger } from '@headlines/ui'
+import { Popover, PopoverContent, PopoverTrigger } from '@headlines/ui/src/index.js'
 import {
   Command,
   CommandEmpty,
@@ -8532,11 +8532,11 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@headlines/ui'
-import { Button } from '@headlines/ui'
-import { Switch } from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
+import { Button } from '@headlines/ui/src/index.js'
+import { Switch } from '@headlines/ui/src/index.js'
 import { Check, ChevronsUpDown, X } from 'lucide-react'
-import { cn } from '@headlines/utils'
+import { cn } from '@headlines/utils/src/index.js'
 
 export default function CountrySubscriptionManager({
   availableCountries,
@@ -8639,20 +8639,20 @@ export default function CountrySubscriptionManager({
 ```
 
 ## 📄 src/app/users/page.jsx
-*Lines: 107, Size: 5.62 KB*
+*Lines: 107, Size: 5.64 KB*
 
 ```jsx
 // apps/admin/src/app/users/page.jsx (version 5.2.0 - Definitive Sheet Fix)
 'use client'
 
 import { ServerCrash, PlusCircle, UserCheck, UserX, Trash2 } from 'lucide-react'
-import { PageHeader, Button, ConfirmationDialog, Sheet, SheetContent, DataTable } from '@headlines/ui'
+import { PageHeader, Button, ConfirmationDialog, Sheet, SheetContent, DataTable } from '@headlines/ui/src/index.js'
 import { useEntityManager } from '@/hooks/use-entity-manager'
 import { columns } from './columns'
 import UserEditor from './user-editor'
 import { toast } from 'sonner'
 import { useMemo, useState, useCallback } from 'react'
-import { languageList } from '@headlines/utils'
+import { languageList } from '@headlines/utils/src/index.js'
 
 // API call functions are defined locally to avoid complex imports
 async function deleteSubscriber(userId) {
@@ -8752,7 +8752,7 @@ export default function UsersPage() {
 ```
 
 ## 📄 src/app/users/user-editor.jsx
-*Lines: 270, Size: 9.28 KB*
+*Lines: 270, Size: 9.29 KB*
 
 ```jsx
 // apps/admin/src/app/users/user-editor.jsx (version 3.0.0 - API Route Refactor)
@@ -8760,7 +8760,7 @@ export default function UsersPage() {
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Button, CardFooter, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Switch, Separator, Textarea } from '@headlines/ui'
+import { Button, CardFooter, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Switch, Separator, Textarea } from '@headlines/ui/src/index.js'
 import { toast } from 'sonner'
 import { Save, Loader2, UserPlus, X } from 'lucide-react'
 import CountrySubscriptionManager from './country-subscription-manager'
@@ -9028,7 +9028,7 @@ export default function UserEditor({
 ```
 
 ## 📄 src/app/watchlist/columns.jsx
-*Lines: 409, Size: 11.61 KB*
+*Lines: 409, Size: 11.62 KB*
 
 ```jsx
 // apps/admin/src/app/watchlist/columns.jsx (version 3.5.0 - Final Slot Fix)
@@ -9059,7 +9059,7 @@ import {
   TooltipTrigger,
   TooltipContent,
   DataTableColumnHeader,
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 import {
   ArrowUpDown,
   MoreHorizontal,
@@ -9443,7 +9443,7 @@ export const suggestionColumns = (onAction, onUpdate) => [
 ```
 
 ## 📄 src/app/watchlist/page.jsx
-*Lines: 131, Size: 7.26 KB*
+*Lines: 131, Size: 7.3 KB*
 
 ```jsx
 // apps/admin/src/app/watchlist/page.jsx (version 3.3.0 - Sheet Fix)
@@ -9451,13 +9451,13 @@ export const suggestionColumns = (onAction, onUpdate) => [
 
 import { useMemo, useState, useCallback } from 'react'
 import { ServerCrash, PlusCircle } from 'lucide-react'
-import { PageHeader, Button, Sheet, SheetContent, Tabs, TabsContent, TabsList, TabsTrigger, ConfirmationDialog } from '@headlines/ui'
+import { PageHeader, Button, Sheet, SheetContent, Tabs, TabsContent, TabsList, TabsTrigger, ConfirmationDialog } from '@headlines/ui/src/index.js'
 import { useEntityManager } from '@/hooks/use-entity-manager'
 import { watchlistColumns, suggestionColumns } from './columns'
-import { DataTable } from '@headlines/ui'
+import { DataTable } from '@headlines/ui/src/index.js'
 import WatchlistEditor from './watchlist-editor'
 import { toast } from 'sonner'
-import { processWatchlistSuggestion, updateWatchlistEntity, deleteWatchlistEntity } from '@headlines/data-access'
+import { processWatchlistSuggestion, updateWatchlistEntity, deleteWatchlistEntity } from '@headlines/data-access/src/index.js'
 
 async function updateWatchlistSuggestion_local(suggestionId, updateData) {
     const res = await fetch(`/api/watchlist/suggestions/${suggestionId}`, {
@@ -9580,14 +9580,14 @@ export default function WatchlistPage() {
 ```
 
 ## 📄 src/app/watchlist/suggestion-search-term-manager.jsx
-*Lines: 86, Size: 3.42 KB*
+*Lines: 86, Size: 3.43 KB*
 
 ```jsx
 // apps/admin/src/app/watchlist/suggestion-search-term-manager.jsx (version 1.0.0)
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { Button, Badge, Input, Popover, PopoverContent, PopoverTrigger } from '@headlines/ui'
+import { Button, Badge, Input, Popover, PopoverContent, PopoverTrigger } from '@headlines/ui/src/index.js'
 import { PlusCircle, X } from 'lucide-react'
 
 const EditableTermBadge = ({ term, onUpdate, onRemove }) => {
@@ -9672,7 +9672,7 @@ export const SuggestionSearchTermManager = ({ suggestion, onUpdate }) => {
 ```
 
 ## 📄 src/app/watchlist/watchlist-editor.jsx
-*Lines: 93, Size: 5.97 KB*
+*Lines: 93, Size: 5.99 KB*
 
 ```jsx
 // apps/admin/src/app/watchlist/watchlist-editor.jsx (version 2.2.0 - Final)
@@ -9680,7 +9680,7 @@ export const SuggestionSearchTermManager = ({ suggestion, onUpdate }) => {
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Button, CardFooter, Input, Textarea, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@headlines/ui'
+import { Button, CardFooter, Input, Textarea, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@headlines/ui/src/index.js'
 import { toast } from 'sonner'
 import { Save, Loader2, PlusCircle, X, Sparkles } from 'lucide-react'
 
@@ -9771,16 +9771,16 @@ export default function WatchlistEditor({ entity, onSave, onCancel, countries = 
 ```
 
 ## 📄 src/hooks/use-admin-manager.js
-*Lines: 75, Size: 1.98 KB*
+*Lines: 75, Size: 1.99 KB*
 
 ```javascript
 // apps/admin/src/hooks/use-admin-manager.js (version 3.3.0 - Correct Serialization)
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useDebounce } from '@headlines/utils'
+import { useDebounce } from '@headlines/utils/src/index.js'
 import { toast } from 'sonner'
-import { useAuth } from '@headlines/auth/src/useAuth'
+import { useAuth } from '@headlines/auth/useAuth'
 
 export function useAdminManager(
   apiPath,
@@ -9967,14 +9967,14 @@ export function useEntityManager(apiPath, entityName, defaultSortKey, options = 
 ```
 
 ## 📄 src/lib/init-shared-logic.js
-*Lines: 25, Size: 861 Bytes*
+*Lines: 25, Size: 875 Bytes*
 
 ```javascript
 // apps/admin/src/lib/init-shared-logic.js (version 8.0.0)
 import { configure as configureScraperLogic } from '@headlines/scraper-logic/src/config.js';
 import * as appConfig from '@/../app.config.js';
-import { settings, initializeSettings } from '@headlines/config/server';
-import { logger } from '@headlines/utils/server';
+import { settings, initializeSettings } from '@headlines/config/src/server.js';
+import { logger } from '@headlines/utils/src/server.js';
 import dbConnect from '@headlines/data-access/src/dbConnect.js'; // Import dbConnect
 
 let isInitialized = false;
@@ -10033,23 +10033,17 @@ export const config = {
 ```
 
 ## 📄 tailwind.config.js
-*Lines: 16, Size: 679 Bytes*
+*Lines: 10, Size: 297 Bytes*
 
 ```javascript
 // apps/admin/tailwind.config.js (version 6.0.0 - Monorepo Root Relative)
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  // Use the shared preset from the UI package for a consistent theme.
   presets: [require('../../packages/ui/tailwind.preset.cjs')],
-
-  // The 'content' paths must be relative to the MONOREPO ROOT,
-  // not the current file. This ensures that when the Tailwind
-  // compiler runs from the root, it can correctly locate all
-  // source files that contain Tailwind classes. This is the
-  // definitive fix for CSS not loading in a monorepo setup.
   content: [
     './apps/admin/src/**/*.{js,jsx}',
     './packages/ui/src/**/*.{js,jsx}',
   ],
 }
+
 ```

@@ -2,7 +2,7 @@
 'use client'
 
 import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from 'lucide-react'
-import { cn } from '@headlines/utils'
+import { cn } from '../../utils/src/index.js'
 import { Button } from './components/button'
 import {
   DropdownMenu,

@@ -2,10 +2,10 @@ import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 // apps/admin/src/app/api/ai/full-source-analysis/route.js (version 2.0.1)
 import { NextResponse } from 'next/server'
 import { initializeSharedLogic } from '@/lib/init-shared-logic'
-import {  smartStripHtml  } from '@headlines/utils/server';
+import {  smartStripHtml  } from '@headlines/utils/src/server.js';
 import { fetchPageWithPlaywright, testHeadlineExtraction } from '@headlines/scraper-logic/src/scraper/index.js'
-import { callLanguageModel } from '@headlines/ai-services'
-import { verifyAdmin } from '@headlines/auth'
+import { callLanguageModel } from '@headlines/ai-services/src/index.js'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 
 const getSourceAnalysisPrompt = () => `
 You are an expert web scraping engineer. Your task is to devise a complete, robust "Extraction Recipe" for scraping headlines from the provided HTML.

@@ -2,10 +2,10 @@
 'use server'
 
 import dbConnect from '../dbConnect.js'
-import { Opportunity, Subscriber } from '@headlines/models'
+import { Opportunity, Subscriber } from '../../../models/src/index.js'
 import { revalidatePath } from '../revalidate.js'
 import { buildQuery } from '../queryBuilder.js'
-import { getUserIdFromSession } from '@headlines/auth'
+import { getUserIdFromSession } from '../../../auth/src/index.js'
 import mongoose from 'mongoose'
 
 const OPPORTUNITIES_PER_PAGE = 10

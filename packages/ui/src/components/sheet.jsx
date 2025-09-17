@@ -4,7 +4,7 @@ import * as React from 'react'
 import * as SheetPrimitive from '@radix-ui/react-dialog'
 import { cva } from 'class-variance-authority'
 import { X } from 'lucide-react'
-import { cn } from '@headlines/utils'
+import { cn } from '../../../utils/src/index.js'
 
 // Base components from Radix
 const Sheet = SheetPrimitive.Root

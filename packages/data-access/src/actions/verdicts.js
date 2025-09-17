@@ -1,8 +1,8 @@
 // packages/data-access/src/actions/verdicts.js (version 1.1.0)
 'use server'
 
-import { RunVerdict, SynthesizedEvent, Opportunity } from '@headlines/models'
-import { verifyAdmin } from '@headlines/auth'
+import { RunVerdict, SynthesizedEvent, Opportunity } from '../../../models/src/index.js'
+import { verifyAdmin } from '../../../auth/src/index.js'
 import dbConnect from '../dbConnect.js'
 
 export async function getRecentRunVerdicts() {

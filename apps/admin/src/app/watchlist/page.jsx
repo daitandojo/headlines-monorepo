@@ -3,13 +3,13 @@
 
 import { useMemo, useState, useCallback } from 'react'
 import { ServerCrash, PlusCircle } from 'lucide-react'
-import { PageHeader, Button, Sheet, SheetContent, Tabs, TabsContent, TabsList, TabsTrigger, ConfirmationDialog } from '@headlines/ui'
+import { PageHeader, Button, Sheet, SheetContent, Tabs, TabsContent, TabsList, TabsTrigger, ConfirmationDialog } from '@headlines/ui/src/index.js'
 import { useEntityManager } from '@/hooks/use-entity-manager'
 import { watchlistColumns, suggestionColumns } from './columns'
-import { DataTable } from '@headlines/ui'
+import { DataTable } from '@headlines/ui/src/index.js'
 import WatchlistEditor from './watchlist-editor'
 import { toast } from 'sonner'
-import { processWatchlistSuggestion, updateWatchlistEntity, deleteWatchlistEntity } from '@headlines/data-access'
+import { processWatchlistSuggestion, updateWatchlistEntity, deleteWatchlistEntity } from '@headlines/data-access/src/index.js'
 
 async function updateWatchlistSuggestion_local(suggestionId, updateData) {
     const res = await fetch(`/api/watchlist/suggestions/${suggestionId}`, {

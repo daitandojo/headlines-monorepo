@@ -3,11 +3,11 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { PageHeader } from '@headlines/ui'
+import { PageHeader } from '@headlines/ui/src/index.js'
 import SettingsForm from './settings-form'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { getSettings, updateSettings } from '@headlines/data-access'
+import { getSettings, updateSettings } from '@headlines/data-access/src/index.js'
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState([]) // ROBUSTNESS FIX: Initialize with empty array instead of null.

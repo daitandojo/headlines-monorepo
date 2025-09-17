@@ -1,8 +1,13 @@
-// apps/admin/src/app/opportunities/page.jsx (version 3.1.0 - Responsive Table Fix)
+// apps/admin/src/app/opportunities/page.jsx (version 3.2.0 - Simplified Layout)
 'use client'
 
 import { useMemo, useState, useCallback } from 'react'
-import { PageHeader, DataTable, ExportButton, ConfirmationDialog } from '@headlines/ui'
+import {
+  PageHeader,
+  DataTable,
+  ExportButton,
+  ConfirmationDialog,
+} from '@headlines/ui/src/index.js'
 import { columns } from './columns'
 import { useAdminManager } from '@/hooks/use-admin-manager'
 import {
@@ -10,7 +15,7 @@ import {
   updateAdminOpportunity,
   exportOpportunitiesToCSV,
   exportOpportunitiesToXLSX,
-} from '@headlines/data-access'
+} from '@headlines/data-access/src/index.js'
 import { toast } from 'sonner'
 
 export default function OpportunitiesPage() {
@@ -30,12 +35,6 @@ export default function OpportunitiesPage() {
     oppId: null,
     oppName: '',
   })
-
-  const availableCountries = useMemo(() => {
-    if (!data) return []
-    const countrySet = new Set(data.map((item) => item.basedIn).filter(Boolean))
-    return Array.from(countrySet).sort()
-  }, [data])
 
   const handleUpdate = useCallback(
     async (opp, updateData) => {
@@ -75,9 +74,6 @@ export default function OpportunitiesPage() {
 
   const handleEdit = useCallback((oppId) => {
     toast.info('Full editor for this view is coming soon.')
-    // In the future, this would open a Sheet or Modal:
-    // setSelectedId(oppId);
-    // setIsEditorOpen(true);
   }, [])
 
   const tableColumns = useMemo(
@@ -111,29 +107,23 @@ export default function OpportunitiesPage() {
           />
         </PageHeader>
         <div className="mt-8 flex-grow min-h-0">
-          <div className="w-full overflow-auto">
-            <div className="min-w-[740px]">
-              <DataTable
-                columns={tableColumns}
-                data={data}
-                isLoading={isLoading}
-                page={page}
-                setPage={setPage}
-                total={total}
-                sorting={sorting}
-                setSorting={setSorting}
-                columnFilters={columnFilters}
-                setColumnFilters={setColumnFilters}
-                enableColumnResizing={false}
-                tableProps={{
-                  style: {
-                    tableLayout: 'fixed',
-                    width: '100%',
-                  },
-                }}
-              />
-            </div>
-          </div>
+          {/* DEFINITIVE FIX: The manual wrappers are gone. The DataTable is now fully controlled and self-contained. */}
+          <DataTable
+            columns={tableColumns}
+            data={data}
+            isLoading={isLoading}
+            page={page}
+            setPage={setPage}
+            total={total}
+            sorting={sorting}
+            setSorting={setSorting}
+            columnFilters={columnFilters}
+            setColumnFilters={setColumnFilters}
+            enableColumnResizing={false}
+            filterColumn="reachOutTo"
+            filterPlaceholder="Filter by name..."
+            tableProps={{ style: { tableLayout: 'fixed', minWidth: '850px' } }}
+          />
         </div>
       </div>
       <ConfirmationDialog

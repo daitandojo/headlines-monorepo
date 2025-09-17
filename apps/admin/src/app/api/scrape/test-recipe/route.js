@@ -6,7 +6,7 @@ import {
   testHeadlineExtraction,
   scrapeArticleContentForTest,
 } from '@headlines/scraper-logic/src/scraper/index.js'
-import { verifyAdmin } from '@headlines/auth'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 
 export async function POST(request) {
   await initializeSharedLogic();

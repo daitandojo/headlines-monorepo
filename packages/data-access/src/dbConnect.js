@@ -1,6 +1,6 @@
 // packages/data-access/src/dbConnect.js (version 3.0.0 - Connection Only)
 import mongoose from 'mongoose';
-import { env } from '@headlines/config/server';
+import { env } from '../../config/src/server.js';
 
 const MONGO_URI = env.MONGO_URI;
 

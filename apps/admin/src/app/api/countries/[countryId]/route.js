@@ -1,9 +1,9 @@
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 // apps/admin/src/app/api/countries/[countryId]/route.js (version 3.0.1)
 import { NextResponse } from 'next/server'
-import { updateCountry } from '@headlines/data-access'
+import { updateCountry } from '@headlines/data-access/src/index.js'
 import mongoose from 'mongoose'
-import { verifyAdmin } from '@headlines/auth'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 
 export async function PATCH(request, { params }) {
   await initializeSharedLogic();

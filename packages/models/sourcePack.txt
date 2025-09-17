@@ -24,7 +24,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-17T10:46:26.446Z
+**Generated**: 2025-09-17T18:58:29.071Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/models
 **Total Files**: 15
 **Package**: @headlines/models@1.0.0
@@ -36,7 +36,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 13, Size: 267 Bytes*
+*Lines: 12, Size: 266 Bytes*
 
 ```json
 {
@@ -51,7 +51,6 @@ headlines/
     "mongoose": "^8.4.1"
   }
 }
-
 ```
 
 ## 📄 src/Article.js

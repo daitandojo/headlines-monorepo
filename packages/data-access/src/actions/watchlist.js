@@ -2,8 +2,8 @@
 'use server'
 
 import { revalidatePath } from '../revalidate.js'
-import { WatchlistEntity, Article } from '@headlines/models'
-import { verifyAdmin } from '@headlines/auth'
+import { WatchlistEntity, Article } from '../../../models/src/index.js'
+import { verifyAdmin } from '../../../auth/src/index.js'
 import dbConnect from '../dbConnect.js'
 
 export async function getAllWatchlistEntities() {

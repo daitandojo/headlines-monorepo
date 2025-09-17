@@ -6,16 +6,16 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Loader2, ServerCrash, Wand2, PlusCircle, Edit } from 'lucide-react'
-import { Button } from '@headlines/ui'
+import { Button } from '@headlines/ui/src/index.js'
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
-} from '@headlines/ui'
-import { Badge } from '@headlines/ui'
-import { Separator } from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
+import { Badge } from '@headlines/ui/src/index.js'
+import { Separator } from '@headlines/ui/src/index.js'
 import { toast } from 'sonner'
 import { useEntityManager } from '@/hooks/use-entity-manager'
 

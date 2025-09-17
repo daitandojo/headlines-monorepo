@@ -1,8 +1,8 @@
 // packages/data-access/src/actions/suggestions.js (version 3.0.0 - With Update)
 'use server'
 
-import { WatchlistSuggestion, WatchlistEntity, SourceSuggestion, Source } from '@headlines/models'
-import { verifyAdmin } from '@headlines/auth'
+import { WatchlistSuggestion, WatchlistEntity, SourceSuggestion, Source } from '../../../models/src/index.js'
+import { verifyAdmin } from '../../../auth/src/index.js'
 import { revalidatePath } from '../revalidate.js'
 import dbConnect from '../dbConnect.js'
 

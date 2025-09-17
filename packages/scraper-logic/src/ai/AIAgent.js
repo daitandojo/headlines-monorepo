@@ -1,5 +1,5 @@
 // packages/scraper-logic/src/ai/AIAgent.js (version 3.2.0)
-import { callLanguageModel } from '@headlines/ai-services'
+import { callLanguageModel } from '../../../ai-services/src/index.js'
 import { getConfig } from '../config.js';
 
 export class AIAgent {

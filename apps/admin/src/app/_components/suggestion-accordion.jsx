@@ -1,7 +1,7 @@
 // src/app/_components/suggestion-accordion.jsx (version 1.3)
 'use client'
 
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, Button } from '@headlines/ui'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, Button } from '@headlines/ui/src/index.js'
 import { ExternalLink, Wand2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 

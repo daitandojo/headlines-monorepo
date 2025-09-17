@@ -1,7 +1,7 @@
 // packages/scraper-logic/src/push/client.js (version 2.0.0)
 import webpush from 'web-push'
 import { getConfig } from '../config.js';
-import { env } from '@headlines/config'
+import { env } from '../../../config/src/index.js'
 
 let isPushConfigured = false
 

@@ -2,7 +2,7 @@
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionEmailSubject } from '@headlines/prompts'
+import { instructionEmailSubject } from '../../../prompts/src/index.js'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { emailSubjectSchema } from '../schemas/index.js'

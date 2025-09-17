@@ -1,8 +1,8 @@
 // packages/scraper-logic/src/scraper/newsApiScraper.js (version 2.3.0)
 import NewsAPI from 'newsapi'
 import { getConfig } from '../config.js';
-import { Source, WatchlistEntity } from '@headlines/models'
-import { env } from '@headlines/config'
+import { Source, WatchlistEntity } from '../../../models/src/index.js'
+import { env } from '../../../config/src/index.js'
 import colors from 'ansi-colors';
 
 async function getWatchlist() {

@@ -1,10 +1,10 @@
 // packages/scraper-logic/src/ai/agents/selectorRepairAgent.js (version 3.0.0)
-import { truncateString } from '@headlines/utils';
+import { truncateString } from '../../../../utils/src/index.js';
 import { getConfig } from '../../config.js';
 import { AIAgent } from '../AIAgent.js'
 import { selectorRepairSchema } from '../schemas/selectorRepairSchema.js'
-import { env } from '@headlines/config'
-import { instructionSelectorRepair } from '@headlines/prompts'
+import { env } from '../../../../config/src/index.js'
+import { instructionSelectorRepair } from '../../../../prompts/src/index.js'
 
 const getAgent = () =>
   new AIAgent({

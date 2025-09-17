@@ -1,0 +1,16 @@
+#!/bin/bash
+# This script executes the pipeline directly from the monorepo root.
+
+# Get the directory of this script to reliably find the monorepo root.
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+MONOREPO_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Change to the monorepo root directory.
+cd "$MONOREPO_ROOT"
+
+echo "Executing pipeline from: $(pwd)"
+echo "---"
+
+# Execute the pipeline's main script using paths relative to the monorepo root.
+# "$@" passes all arguments from this script to the node script (e.g., ./run.sh --country Denmark).
+node --env-file=./.env apps/pipeline/src/app.js "$@"

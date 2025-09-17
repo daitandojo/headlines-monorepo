@@ -3,11 +3,11 @@
 
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Card, CardContent, CardFooter, Tabs, TabsContent, TabsList, TabsTrigger } from '@headlines/ui'
-import { Label } from '@headlines/ui'
-import { Input } from '@headlines/ui'
-import { Switch } from '@headlines/ui'
-import { Button } from '@headlines/ui'
+import { Card, CardContent, CardFooter, Tabs, TabsContent, TabsList, TabsTrigger } from '@headlines/ui/src/index.js'
+import { Label } from '@headlines/ui/src/index.js'
+import { Input } from '@headlines/ui/src/index.js'
+import { Switch } from '@headlines/ui/src/index.js'
+import { Button } from '@headlines/ui/src/index.js'
 import { Save, Loader2 } from 'lucide-react'
 
 const SettingInput = ({ setting, onChange }) => {

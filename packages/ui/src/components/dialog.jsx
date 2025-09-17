@@ -5,7 +5,7 @@ import * as React from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
 
-import { cn } from '@headlines/utils'
+import { cn } from '../../../utils/src/index.js'
 
 const Dialog = DialogPrimitive.Root
 const DialogTrigger = DialogPrimitive.Trigger

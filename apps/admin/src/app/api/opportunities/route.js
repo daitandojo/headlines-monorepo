@@ -1,7 +1,7 @@
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 // apps/admin/src/app/api/opportunities/route.js (version 1.0.0)
 import { NextResponse } from 'next/server';
-import { getAdminOpportunities, updateAdminOpportunity, deleteAdminOpportunity } from '@headlines/data-access';
+import { getAdminOpportunities, updateAdminOpportunity, deleteAdminOpportunity } from '@headlines/data-access/src/index.js';
 
 export const dynamic = 'force-dynamic';
 

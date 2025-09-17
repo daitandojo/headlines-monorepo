@@ -2,9 +2,9 @@
 'use server'
 
 import dbConnect from '../dbConnect.js'
-import { Subscriber } from '@headlines/models'
+import { Subscriber } from '../../../models/src/index.js'
 import { revalidatePath } from '../revalidate.js'
-import { verifySession, getUserIdFromSession } from '@headlines/auth'
+import { verifySession, getUserIdFromSession } from '../../../auth/src/index.js'
 
 export async function updateUserProfile({ userId, updateData }) {
   const { user: sessionUser, error } = await verifySession();

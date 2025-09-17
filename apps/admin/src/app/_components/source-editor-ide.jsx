@@ -2,7 +2,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Separator } from '@headlines/ui'
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Separator } from '@headlines/ui/src/index.js'
 import { toast } from 'sonner'
 import { Wand2, Loader2, ExternalLink, ShieldAlert } from 'lucide-react'
 import SuggestionAccordion from './suggestion-accordion'

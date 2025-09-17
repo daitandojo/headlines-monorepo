@@ -24,15 +24,15 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-} from '@headlines/ui'
-import { Badge } from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
+import { Badge } from '@headlines/ui/src/index.js'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@headlines/ui'
-import { Button } from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
+import { Button } from '@headlines/ui/src/index.js'
 
 const StatCard = ({ title, value, icon }) => (
   <Card className="bg-black/20 border-white/10">

@@ -43,7 +43,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-17T10:46:26.444Z
+**Generated**: 2025-09-17T18:58:29.068Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/data-access
 **Total Files**: 32
 **Package**: @headlines/data-access@1.0.0
@@ -55,7 +55,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 18, Size: 430 Bytes*
+*Lines: 17, Size: 429 Bytes*
 
 ```json
 {
@@ -75,18 +75,17 @@ headlines/
     "@headlines/utils": "1.2.0"
   }
 }
-
 ```
 
 ## 📄 src/actions/admin.js
-*Lines: 123, Size: 4.11 KB*
+*Lines: 123, Size: 4.13 KB*
 
 ```javascript
 // packages/data-access/src/actions/admin.js (version 2.2.0)
 'use server'
 
-import { Subscriber } from '@headlines/models'
-import { verifyAdmin } from '@headlines/auth'
+import { Subscriber } from '../../../models/src/index.js'
+import { verifyAdmin } from '../../../auth/src/index.js'
 import { revalidatePath } from '../revalidate.js'
 import dbConnect from '../dbConnect.js' // Internal helper
 
@@ -208,16 +207,16 @@ export async function deleteSubscribers(userIds) {
 ```
 
 ## 📄 src/actions/adminArticles.js
-*Lines: 54, Size: 2.13 KB*
+*Lines: 54, Size: 2.15 KB*
 
 ```javascript
 // packages/data-access/src/actions/adminArticles.js (version 1.0.0)
 'use server'
 
 import dbConnect from '../dbConnect.js';
-import { Article } from '@headlines/models';
+import { Article } from '../../../models/src/index.js';
 import { buildQuery } from '../queryBuilder.js';
-import { verifyAdmin } from '@headlines/auth';
+import { verifyAdmin } from '../../../auth/src/index.js';
 import { revalidatePath } from '../revalidate.js';
 
 // DEFINITIVE FIX: Removed the hardcoded page limit.
@@ -268,16 +267,16 @@ export async function deleteAdminArticle(articleId) {
 ```
 
 ## 📄 src/actions/adminEvents.js
-*Lines: 149, Size: 4.75 KB*
+*Lines: 149, Size: 4.77 KB*
 
 ```javascript
 // packages/data-access/src/actions/adminEvents.js (version 1.0.1 - Resilient)
 'use server'
 
 import dbConnect from '../dbConnect.js';
-import { SynthesizedEvent, Article, Opportunity } from '@headlines/models';
+import { SynthesizedEvent, Article, Opportunity } from '../../../models/src/index.js';
 import { buildQuery } from '../queryBuilder.js';
-import { verifyAdmin } from '@headlines/auth';
+import { verifyAdmin } from '../../../auth/src/index.js';
 import { revalidatePath } from '../revalidate.js';
 import mongoose from 'mongoose';
 
@@ -423,16 +422,16 @@ export async function deleteAdminEvent(eventId) {
 ```
 
 ## 📄 src/actions/adminOpportunities.js
-*Lines: 59, Size: 2.39 KB*
+*Lines: 59, Size: 2.41 KB*
 
 ```javascript
 // packages/data-access/src/actions/adminOpportunities.js (version 1.0.0)
 'use server'
 
 import dbConnect from '../dbConnect.js';
-import { Opportunity } from '@headlines/models';
+import { Opportunity } from '../../../models/src/index.js';
 import { buildQuery } from '../queryBuilder.js';
-import { verifyAdmin } from '@headlines/auth';
+import { verifyAdmin } from '../../../auth/src/index.js';
 import { revalidatePath } from '../revalidate.js';
 
 export async function getAdminOpportunities({ page = 1, filters = {}, sort = 'date_desc' }) {
@@ -488,15 +487,15 @@ export async function deleteAdminOpportunity(oppId) {
 ```
 
 ## 📄 src/actions/adminSources.js
-*Lines: 79, Size: 2.52 KB*
+*Lines: 79, Size: 2.54 KB*
 
 ```javascript
 // packages/data-access/src/actions/adminSources.js (version 2.0)
 'use server'
 
 import { revalidatePath } from '../revalidate.js'
-import { Source } from '@headlines/models'
-import { verifyAdmin } from '@headlines/auth'
+import { Source } from '../../../models/src/index.js'
+import { verifyAdmin } from '../../../auth/src/index.js'
 import dbConnect from '../dbConnect.js' // Internal helper
 
 export async function getAllSources() {
@@ -666,17 +665,17 @@ export async function suggestSelector(url, targetType) {
 ```
 
 ## 📄 src/actions/articles.js
-*Lines: 55, Size: 1.94 KB*
+*Lines: 55, Size: 1.96 KB*
 
 ```javascript
 // packages/data-access/src/actions/articles.js (version 2.1.0)
 'use server'
 
 import dbConnect from '../dbConnect.js'
-import { Article, Subscriber } from '@headlines/models'
+import { Article, Subscriber } from '../../../models/src/index.js'
 import { revalidatePath } from '../revalidate.js'
 import { buildQuery } from '../queryBuilder.js'
-import { getUserIdFromSession } from '@headlines/auth'
+import { getUserIdFromSession } from '../../../auth/src/index.js'
 
 const ARTICLES_PER_PAGE = 10;
 
@@ -794,15 +793,15 @@ export async function generateChatTitle(messages) {
 ```
 
 ## 📄 src/actions/countries.js
-*Lines: 117, Size: 3.47 KB*
+*Lines: 117, Size: 3.49 KB*
 
 ```javascript
 // packages/data-access/src/actions/countries.js (version 2.2.0)
 'use server'
 
 import { revalidatePath } from '../revalidate.js'
-import { Country } from '@headlines/models'
-import { verifyAdmin } from '@headlines/auth'
+import { Country } from '../../../models/src/index.js'
+import { verifyAdmin } from '../../../auth/src/index.js'
 import dbConnect from '../dbConnect.js'
 
 // This function is for the admin panel and requires authentication.
@@ -917,14 +916,14 @@ export async function updateCountry(countryId, updateData) {
 ```
 
 ## 📄 src/actions/dashboard.js
-*Lines: 65, Size: 2.51 KB*
+*Lines: 65, Size: 2.54 KB*
 
 ```javascript
 // packages/data-access/src/actions/dashboard.js (version 2.0.0)
 'use server'
 
-import { Source, Subscriber, WatchlistEntity } from '@headlines/models'
-import { verifyAdmin } from '@headlines/auth'
+import { Source, Subscriber, WatchlistEntity } from '../../../models/src/index.js'
+import { verifyAdmin } from '../../../auth/src/index.js'
 import dbConnect from '../dbConnect.js'
 
 export async function getDashboardStats() {
@@ -988,14 +987,14 @@ export async function getDashboardStats() {
 ```
 
 ## 📄 src/actions/email.js
-*Lines: 53, Size: 1.89 KB*
+*Lines: 53, Size: 1.92 KB*
 
 ```javascript
 // packages/data-access/src/actions/email.js (version 1.0)
 'use server'
 
-import { getUserIdFromSession } from '@headlines/auth';
-import { SynthesizedEvent, Opportunity, Article } from '@headlines/models';
+import { getUserIdFromSession } from '../../../auth/src/index.js';
+import { SynthesizedEvent, Opportunity, Article } from '../../../models/src/index.js';
 import dbConnect from '../dbConnect.js';
 // This import will need a proper mailer service setup, for now we mock it.
 // import { sendSingleItemEmail } from '@/lib/mailer'; 
@@ -1047,7 +1046,7 @@ export { sendItemByEmail };
 ```
 
 ## 📄 src/actions/events.js
-*Lines: 69, Size: 1.92 KB*
+*Lines: 69, Size: 1.94 KB*
 
 ```javascript
 // packages/data-access/src/actions/events.js (version 2.3.0)
@@ -1055,10 +1054,10 @@ export { sendItemByEmail };
 
 import dbConnect from '../dbConnect.js'
 import mongoose from 'mongoose'
-import { SynthesizedEvent, Subscriber } from '@headlines/models'
+import { SynthesizedEvent, Subscriber } from '../../../models/src/index.js'
 import { revalidatePath } from '../revalidate.js'
 import { buildQuery } from '../queryBuilder.js'
-import { getUserIdFromSession } from '@headlines/auth'
+import { getUserIdFromSession } from '../../../auth/src/index.js'
 
 const EVENTS_PER_PAGE = 5
 
@@ -1122,14 +1121,14 @@ export async function getTotalEventCount({
 ```
 
 ## 📄 src/actions/export.js
-*Lines: 163, Size: 7.35 KB*
+*Lines: 163, Size: 7.37 KB*
 
 ```javascript
 // packages/data-access/src/actions/export.js (version 2.0.0)
 'use server'
 
-import { verifyAdmin } from '@headlines/auth';
-import { Opportunity, Subscriber, SynthesizedEvent, Article } from '@headlines/models';
+import { verifyAdmin } from '../../../auth/src/index.js';
+import { Opportunity, Subscriber, SynthesizedEvent, Article } from '../../../models/src/index.js';
 import { buildQuery } from '../queryBuilder.js';
 import dbConnect from '../dbConnect.js';
 
@@ -1539,17 +1538,17 @@ export async function addKnowledge(data) {
 ```
 
 ## 📄 src/actions/opportunities.js
-*Lines: 98, Size: 3.22 KB*
+*Lines: 98, Size: 3.24 KB*
 
 ```javascript
 // packages/data-access/src/actions/opportunities.js (version 2.3.0)
 'use server'
 
 import dbConnect from '../dbConnect.js'
-import { Opportunity, Subscriber } from '@headlines/models'
+import { Opportunity, Subscriber } from '../../../models/src/index.js'
 import { revalidatePath } from '../revalidate.js'
 import { buildQuery } from '../queryBuilder.js'
-import { getUserIdFromSession } from '@headlines/auth'
+import { getUserIdFromSession } from '../../../auth/src/index.js'
 import mongoose from 'mongoose'
 
 const OPPORTUNITIES_PER_PAGE = 10
@@ -1643,13 +1642,13 @@ export async function getUniqueOpportunityCountries() {
 ```
 
 ## 📄 src/actions/pipeline.js
-*Lines: 104, Size: 3.49 KB*
+*Lines: 104, Size: 3.5 KB*
 
 ```javascript
 // packages/data-access/src/actions/pipeline.js (version 1.0.0)
 'use server'
 
-import { Source, Article, SynthesizedEvent, Opportunity, WatchlistEntity, WatchlistSuggestion } from '@headlines/models'
+import { Source, Article, SynthesizedEvent, Opportunity, WatchlistEntity, WatchlistSuggestion } from '../../../models/src/index.js'
 import dbConnect from '../dbConnect.js'
 
 // --- Source Analytics & Status ---
@@ -1753,14 +1752,14 @@ export async function bulkWriteWatchlistSuggestions(bulkOps) {
 ```
 
 ## 📄 src/actions/relationships.js
-*Lines: 55, Size: 2.1 KB*
+*Lines: 55, Size: 2.12 KB*
 
 ```javascript
 // packages/data-access/src/actions/relationships.js (version 1.0)
 'use server'
 
-import { verifyAdmin } from '@headlines/auth';
-import { SynthesizedEvent, Opportunity } from '@headlines/models';
+import { verifyAdmin } from '../../../auth/src/index.js';
+import { SynthesizedEvent, Opportunity } from '../../../models/src/index.js';
 import dbConnect from '../dbConnect.js';
 import { revalidatePath } from '../revalidate.js';
 import mongoose from 'mongoose';
@@ -1814,19 +1813,19 @@ export { linkOpportunityToEvent, unlinkOpportunityFromEvent };
 ```
 
 ## 📄 src/actions/scrape.js
-*Lines: 61, Size: 1.87 KB*
+*Lines: 61, Size: 1.89 KB*
 
 ```javascript
 // packages/data-access/src/actions/scrape.js (version 1.1.0)
 'use server'
 
 // REMOVED: import { NextResponse } from 'next/server'
-import { Source } from '@headlines/models'
+import { Source } from '../../../models/src/index.js'
 import {
   testHeadlineExtraction,
   scrapeArticleContentForTest,
-} from '@headlines/scraper-logic/src/scraper/index.js'
-import { verifyAdmin } from '@headlines/auth'
+} from '../../../scraper-logic/src/scraper/index.js'
+import { verifyAdmin } from '../../../auth/src/index.js'
 
 export async function testSourceConfig(sourceConfig) {
   const { isAdmin, error: authError } = await verifyAdmin()
@@ -1881,14 +1880,14 @@ export async function testSourceConfig(sourceConfig) {
 ```
 
 ## 📄 src/actions/settings.js
-*Lines: 43, Size: 1.53 KB*
+*Lines: 43, Size: 1.55 KB*
 
 ```javascript
 // packages/data-access/src/actions/settings.js (version 1.0.1)
 'use server'
 
-import { Setting } from '@headlines/models'
-import { verifyAdmin } from '@headlines/auth'
+import { Setting } from '../../../models/src/index.js'
+import { verifyAdmin } from '../../../auth/src/index.js'
 import dbConnect from '../dbConnect.js'
 import { revalidatePath } from '../revalidate.js'
 
@@ -1930,16 +1929,16 @@ export async function updateSettings(settingsData) {
 ```
 
 ## 📄 src/actions/subscriber.js
-*Lines: 83, Size: 3.1 KB*
+*Lines: 83, Size: 3.12 KB*
 
 ```javascript
 // packages/data-access/src/actions/subscriber.js (version 1.4.0)
 'use server'
 
 import dbConnect from '../dbConnect.js'
-import { Subscriber } from '@headlines/models'
+import { Subscriber } from '../../../models/src/index.js'
 import { revalidatePath } from '../revalidate.js'
-import { verifySession, getUserIdFromSession } from '@headlines/auth'
+import { verifySession, getUserIdFromSession } from '../../../auth/src/index.js'
 
 export async function updateUserProfile({ userId, updateData }) {
   const { user: sessionUser, error } = await verifySession();
@@ -2019,14 +2018,14 @@ export async function updateUserFilterPreference(filterData) {
 ```
 
 ## 📄 src/actions/suggestions.js
-*Lines: 87, Size: 3.63 KB*
+*Lines: 87, Size: 3.65 KB*
 
 ```javascript
 // packages/data-access/src/actions/suggestions.js (version 3.0.0 - With Update)
 'use server'
 
-import { WatchlistSuggestion, WatchlistEntity, SourceSuggestion, Source } from '@headlines/models'
-import { verifyAdmin } from '@headlines/auth'
+import { WatchlistSuggestion, WatchlistEntity, SourceSuggestion, Source } from '../../../models/src/index.js'
+import { verifyAdmin } from '../../../auth/src/index.js'
 import { revalidatePath } from '../revalidate.js'
 import dbConnect from '../dbConnect.js'
 
@@ -2112,21 +2111,21 @@ export async function processSourceSuggestion({ suggestionId, action }) {
 ```
 
 ## 📄 src/actions/upload.js
-*Lines: 63, Size: 2.27 KB*
+*Lines: 63, Size: 2.29 KB*
 
 ```javascript
 // packages/data-access/src/actions/upload.js (version 1.0)
 'use server'
 
 import { revalidatePath } from '../revalidate.js';
-import { SynthesizedEvent, Opportunity } from '@headlines/models';
-import { verifySession } from '@headlines/auth';
+import { SynthesizedEvent, Opportunity } from '../../../models/src/index.js';
+import { verifySession } from '../../../auth/src/index.js';
 // DEFINITIVE FIX: Corrected the import path to be explicit.
 import {
   assessArticleContent,
   synthesizeEvent,
   generateOpportunitiesFromEvent,
-} from '@headlines/scraper-logic/src/ai/index.js';
+} from '../../../scraper-logic/src/ai/index.js';
 
 // This is a simplified, single-item pipeline for uploaded content.
 export async function processUploadedArticle(item) {
@@ -2181,14 +2180,14 @@ export async function processUploadedArticle(item) {
 ```
 
 ## 📄 src/actions/userSettings.js
-*Lines: 34, Size: 1.15 KB*
+*Lines: 34, Size: 1.18 KB*
 
 ```javascript
 // packages/data-access/src/actions/userSettings.js (version 1.1)
 'use server'
 
-import { verifySession } from '@headlines/auth';
-import { Subscriber } from '@headlines/models';
+import { verifySession } from '../../../auth/src/index.js';
+import { Subscriber } from '../../../models/src/index.js';
 import dbConnect from '../dbConnect.js'
 import { revalidatePath } from '../revalidate.js'
 
@@ -2221,14 +2220,14 @@ export async function clearDiscardedItems() {
 ```
 
 ## 📄 src/actions/verdicts.js
-*Lines: 44, Size: 1.56 KB*
+*Lines: 44, Size: 1.58 KB*
 
 ```javascript
 // packages/data-access/src/actions/verdicts.js (version 1.1.0)
 'use server'
 
-import { RunVerdict, SynthesizedEvent, Opportunity } from '@headlines/models'
-import { verifyAdmin } from '@headlines/auth'
+import { RunVerdict, SynthesizedEvent, Opportunity } from '../../../models/src/index.js'
+import { verifyAdmin } from '../../../auth/src/index.js'
 import dbConnect from '../dbConnect.js'
 
 export async function getRecentRunVerdicts() {
@@ -2271,15 +2270,15 @@ export async function getRunVerdictById(runId) {
 ```
 
 ## 📄 src/actions/watchlist.js
-*Lines: 87, Size: 3.2 KB*
+*Lines: 87, Size: 3.22 KB*
 
 ```javascript
 // packages/data-access/src/actions/watchlist.js (version 1.1.0)
 'use server'
 
 import { revalidatePath } from '../revalidate.js'
-import { WatchlistEntity, Article } from '@headlines/models'
-import { verifyAdmin } from '@headlines/auth'
+import { WatchlistEntity, Article } from '../../../models/src/index.js'
+import { verifyAdmin } from '../../../auth/src/index.js'
 import dbConnect from '../dbConnect.js'
 
 export async function getAllWatchlistEntities() {
@@ -2364,12 +2363,12 @@ export async function deleteWatchlistEntity(entityId) {
 ```
 
 ## 📄 src/dbConnect.js
-*Lines: 36, Size: 955 Bytes*
+*Lines: 36, Size: 957 Bytes*
 
 ```javascript
 // packages/data-access/src/dbConnect.js (version 3.0.0 - Connection Only)
 import mongoose from 'mongoose';
-import { env } from '@headlines/config/server';
+import { env } from '../../config/src/server.js';
 
 const MONGO_URI = env.MONGO_URI;
 
@@ -2527,13 +2526,13 @@ export {
 ```
 
 ## 📄 src/queryBuilder.js
-*Lines: 111, Size: 4.26 KB*
+*Lines: 115, Size: 4.52 KB*
 
 ```javascript
-// packages/data-access/src/queryBuilder.js (version 4.0.0)
+// packages/data-access/src/queryBuilder.js (version 5.0.0)
 'use server'
 
-import { Subscriber } from '@headlines/models'
+import { Subscriber } from '../../models/src/index.js'
 
 export async function buildQuery(
   model,
@@ -2546,47 +2545,51 @@ export async function buildQuery(
 
   // --- DEFINITIVE HIERARCHICAL FILTERING LOGIC ---
   if (user) {
-    let allowedCountries;
+    // LAYER 1: The "Universe" of allowed countries. Admins have no limit.
+    const allowedCountries = (user.role === 'admin') 
+        ? null 
+        : new Set((user.countries || []).filter(c => c.active).map(c => c.name));
 
-    // 1. Determine the user's absolute "universe" of accessible countries.
-    if (user.role === 'admin') {
-      // Admins can see everything by default.
-      allowedCountries = null; // null means no restriction
-    } else {
-      // Regular users are strictly limited to their active subscriptions.
-      allowedCountries = new Set((user.countries || []).filter(c => c.active).map(c => c.name));
+    let desiredCountries = null;
+
+    // LAYER 3: Temporary View Filter takes highest precedence.
+    // The client sends a single country name for this.
+    if (filters.country && !filters.country.includes(',')) {
+        desiredCountries = new Set([filters.country]);
+    } 
+    // LAYER 2: Persistent Global Filter from DB is next.
+    else if (user.filterPreferences?.globalCountryFilter?.length > 0) {
+        desiredCountries = new Set(user.filterPreferences.globalCountryFilter);
     }
+    // No filter is set, so we will fall back to all subscribed countries (Layer 1).
 
-    // 2. Determine the user's desired filter set, prioritizing saved preferences.
-    const hasPersistentFilter = user.filterPreferences?.globalCountryFilter?.length > 0;
-    let desiredFilter = null;
-    
-    if (hasPersistentFilter) {
-      // The user's saved preference is the absolute source of truth.
-      desiredFilter = new Set(user.filterPreferences.globalCountryFilter);
-    } else if (filters.country) {
-      // Only if no persistent filter exists, use the temporary one from the UI.
-      desiredFilter = new Set(filters.country.split(','));
-    }
-
-    // 3. Apply the final filter logic.
     let finalCountriesToQuery = [];
-    if (desiredFilter) {
-      if (allowedCountries) {
-        // User has subscriptions AND a filter: find the intersection.
-        finalCountriesToQuery = [...allowedCountries].filter(c => desiredFilter.has(c));
-      } else {
-        // Admin has a filter: use the filter directly.
-        finalCountriesToQuery = [...desiredFilter];
-      }
-      andConditions.push({ [countryField]: { $in: finalCountriesToQuery } });
-    } else if (allowedCountries) {
-      // User has subscriptions but NO filter: show all subscribed countries.
-      finalCountriesToQuery = [...allowedCountries];
-      andConditions.push({ [countryField]: { $in: finalCountriesToQuery } });
-    }
-    // If user is admin and has no filter, no country condition is added, showing all.
 
+    if (allowedCountries) { // For regular users
+        if (desiredCountries) {
+            // Intersect desired filter (Layer 2 or 3) with allowed subscriptions (Layer 1).
+            finalCountriesToQuery = [...allowedCountries].filter(c => desiredCountries.has(c));
+        } else {
+            // No filter specified, show all their subscribed countries.
+            finalCountriesToQuery = [...allowedCountries];
+        }
+    } else { // For admins
+        if (desiredCountries) {
+            // Admin wants a filter, apply it.
+            finalCountriesToQuery = [...desiredCountries];
+        } 
+        // Admin with no filter sees everything, so we add no country condition.
+    }
+    
+    // Add the condition to the main query.
+    if (finalCountriesToQuery.length > 0) {
+        andConditions.push({ [countryField]: { $in: finalCountriesToQuery } });
+    } else if (desiredCountries && finalCountriesToQuery.length === 0) {
+        // A filter was desired, but it resulted in an empty set (e.g., filtered for unsubscribed country).
+        // This query should return no results.
+        andConditions.push({ [countryField]: { $in: [] } });
+    }
+    // If no filter is desired and they are an admin, no country condition is added.
   } else if (filters.country) {
       // Fallback for non-user contexts (e.g., initial pipeline run) that still might use a country filter
       andConditions.push({ [countryField]: { $in: filters.country.split(',') } });
@@ -2676,17 +2679,17 @@ export async function revalidatePath(path, type) {
 ```
 
 ## 📄 src/seed/dev-user.js
-*Lines: 61, Size: 1.91 KB*
+*Lines: 61, Size: 1.92 KB*
 
 ```javascript
 // packages/data-access/src/seed/dev-user.js (version 2.0.0 - Standalone Safe)
 'use server'
 
-import { Subscriber } from '@headlines/models'
+import { Subscriber } from '../../../models/src/index.js'
 import dbConnect from '../dbConnect.js'
 import mongoose from 'mongoose'
 // We cannot use a logger here as this might be called before initialization
-// import { logger } from '@headlines/utils/server';
+// import { logger } from '../../../utils/src/server.js';
 
 const DEV_USER_ID = '662f831abb28052123530a43'
 const DEV_USER_EMAIL = 'dev@headlines.dev'

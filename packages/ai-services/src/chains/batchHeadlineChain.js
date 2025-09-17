@@ -2,7 +2,7 @@
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionBatchHeadlineAssessment } from '@headlines/prompts'
+import { instructionBatchHeadlineAssessment } from '../../../prompts/src/index.js'
 import { getHeadlineModel } from '../lib/langchain.js' // Use the specific model for headlines
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { batchHeadlineAssessmentSchema } from '../schemas/index.js'

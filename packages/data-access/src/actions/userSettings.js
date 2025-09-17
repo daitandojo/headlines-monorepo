@@ -1,8 +1,8 @@
 // packages/data-access/src/actions/userSettings.js (version 1.1)
 'use server'
 
-import { verifySession } from '@headlines/auth';
-import { Subscriber } from '@headlines/models';
+import { verifySession } from '../../../auth/src/index.js';
+import { Subscriber } from '../../../models/src/index.js';
 import dbConnect from '../dbConnect.js'
 import { revalidatePath } from '../revalidate.js'
 

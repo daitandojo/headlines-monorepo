@@ -1,15 +1,15 @@
 // src/app/countries/columns.jsx (version 1.2.0)
 'use client'
 
-import { Button } from '@headlines/ui'
-import { Badge } from '@headlines/ui'
+import { Button } from '@headlines/ui/src/index.js'
+import { Badge } from '@headlines/ui/src/index.js'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 import { ArrowUpDown, MoreHorizontal } from 'lucide-react'
 
 export const columns = (handleEdit) => [

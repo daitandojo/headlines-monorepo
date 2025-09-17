@@ -65,7 +65,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-17T10:46:26.437Z
+**Generated**: 2025-09-17T18:58:29.061Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/ai-services
 **Total Files**: 53
 **Package**: @headlines/ai-services@1.0.0
@@ -77,7 +77,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 27, Size: 670 Bytes*
+*Lines: 26, Size: 669 Bytes*
 
 ```json
 {
@@ -106,11 +106,10 @@ headlines/
     "@headlines/utils": "1.2.0"
   }
 }
-
 ```
 
 ## 📄 src/chains/articleChain.js
-*Lines: 64, Size: 2.17 KB*
+*Lines: 64, Size: 2.19 KB*
 
 ```javascript
 // packages/ai-services/src/chains/articleChain.js (version 2.4 - Confirmed Final)
@@ -122,15 +121,15 @@ import {
 import { AIMessage, HumanMessage } from '@langchain/core/messages'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { settings } from '@headlines/config/server'
+import { settings } from '../../../config/src/server.js'
 import {
   getInstructionArticle,
   shotsInputArticle,
   shotsOutputArticle,
-} from '@headlines/prompts'
+} from '../../../prompts/src/index.js'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
-import { logger } from '@headlines/utils/server';
+import { logger } from '../../../utils/src/server.js';
 import { articleAssessmentSchema } from '../schemas/index.js'
 
 const instructions = getInstructionArticle(settings)
@@ -180,14 +179,14 @@ export const articleChain = { invoke }
 ```
 
 ## 📄 src/chains/articlePreAssessmentChain.js
-*Lines: 29, Size: 1.13 KB*
+*Lines: 29, Size: 1.14 KB*
 
 ```javascript
 // packages/ai-services/src/chains/articlePreAssessmentChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionArticlePreAssessment } from '@headlines/prompts'
+import { instructionArticlePreAssessment } from '../../../prompts/src/index.js'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { articlePreAssessmentSchema } from '../schemas/index.js'
@@ -215,14 +214,14 @@ export const articlePreAssessmentChain = {
 ```
 
 ## 📄 src/chains/batchHeadlineChain.js
-*Lines: 30, Size: 1.23 KB*
+*Lines: 30, Size: 1.24 KB*
 
 ```javascript
 // packages/ai-services/src/chains/batchHeadlineChain.js (version 1.0)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionBatchHeadlineAssessment } from '@headlines/prompts'
+import { instructionBatchHeadlineAssessment } from '../../../prompts/src/index.js'
 import { getHeadlineModel } from '../lib/langchain.js' // Use the specific model for headlines
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { batchHeadlineAssessmentSchema } from '../schemas/index.js'
@@ -251,14 +250,14 @@ export const batchHeadlineChain = {
 ```
 
 ## 📄 src/chains/clusteringChain.js
-*Lines: 28, Size: 1 KB*
+*Lines: 28, Size: 1.01 KB*
 
 ```javascript
 // packages/ai-services/src/chains/clusteringChain.js (version 3.2 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionCluster } from '@headlines/prompts'
+import { instructionCluster } from '../../../prompts/src/index.js'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { clusterSchema } from '../schemas/index.js'
@@ -285,14 +284,14 @@ export const clusteringChain = {
 ```
 
 ## 📄 src/chains/contactFinderChain.js
-*Lines: 28, Size: 1.01 KB*
+*Lines: 28, Size: 1.02 KB*
 
 ```javascript
 // packages/ai-services/src/chains/contactFinderChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionContacts } from '@headlines/prompts'
+import { instructionContacts } from '../../../prompts/src/index.js'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { findContactSchema } from '../schemas/index.js'
@@ -319,14 +318,14 @@ export const contactFinderChain = {
 ```
 
 ## 📄 src/chains/contactResolverChain.js
-*Lines: 28, Size: 1.02 KB*
+*Lines: 28, Size: 1.03 KB*
 
 ```javascript
 // packages/ai-services/src/chains/contactResolverChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionEnrichContact } from '@headlines/prompts'
+import { instructionEnrichContact } from '../../../prompts/src/index.js'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { enrichContactSchema } from '../schemas/index.js'
@@ -399,14 +398,14 @@ export const countryCorrectionChain = {
 ```
 
 ## 📄 src/chains/disambiguationChain.js
-*Lines: 28, Size: 1.02 KB*
+*Lines: 28, Size: 1.03 KB*
 
 ```javascript
 // packages/ai-services/src/chains/disambiguationChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionDisambiguation } from '@headlines/prompts'
+import { instructionDisambiguation } from '../../../prompts/src/index.js'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { disambiguationSchema } from '../schemas/index.js'
@@ -433,14 +432,14 @@ export const disambiguationChain = {
 ```
 
 ## 📄 src/chains/emailIntroChain.js
-*Lines: 28, Size: 1.05 KB*
+*Lines: 28, Size: 1.06 KB*
 
 ```javascript
 // packages/ai-services/src/chains/emailIntroChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionEmailIntro } from '@headlines/prompts'
+import { instructionEmailIntro } from '../../../prompts/src/index.js'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { emailIntroSchema } from '../schemas/index.js'
@@ -467,14 +466,14 @@ export const emailIntroChain = {
 ```
 
 ## 📄 src/chains/emailSubjectChain.js
-*Lines: 28, Size: 1.06 KB*
+*Lines: 28, Size: 1.07 KB*
 
 ```javascript
 // packages/ai-services/src/chains/emailSubjectChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionEmailSubject } from '@headlines/prompts'
+import { instructionEmailSubject } from '../../../prompts/src/index.js'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { emailSubjectSchema } from '../schemas/index.js'
@@ -501,14 +500,14 @@ export const emailSubjectChain = {
 ```
 
 ## 📄 src/chains/entityCanonicalizerChain.js
-*Lines: 28, Size: 1.03 KB*
+*Lines: 28, Size: 1.04 KB*
 
 ```javascript
 // packages/ai-services/src/chains/entityCanonicalizerChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionCanonicalizer } from '@headlines/prompts'
+import { instructionCanonicalizer } from '../../../prompts/src/index.js'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { canonicalizerSchema } from '../schemas/index.js'
@@ -535,14 +534,14 @@ export const entityCanonicalizerChain = {
 ```
 
 ## 📄 src/chains/entityExtractorChain.js
-*Lines: 27, Size: 988 Bytes*
+*Lines: 27, Size: 999 Bytes*
 
 ```javascript
 // packages/ai-services/src/chains/entityExtractorChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionEntity } from '@headlines/prompts'
+import { instructionEntity } from '../../../prompts/src/index.js'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { entitySchema } from '../schemas/index.js'
@@ -568,14 +567,14 @@ export const entityExtractorChain = {
 ```
 
 ## 📄 src/chains/executiveSummaryChain.js
-*Lines: 29, Size: 1.1 KB*
+*Lines: 29, Size: 1.11 KB*
 
 ```javascript
 // packages/ai-services/src/chains/executiveSummaryChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionExecutiveSummary } from '@headlines/prompts'
+import { instructionExecutiveSummary } from '../../../prompts/src/index.js'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { executiveSummarySchema } from '../schemas/index.js'
@@ -603,7 +602,7 @@ export const executiveSummaryChain = {
 ```
 
 ## 📄 src/chains/headlineChain.js
-*Lines: 85, Size: 2.72 KB*
+*Lines: 85, Size: 2.74 KB*
 
 ```javascript
 // packages/ai-services/src/chains/headlineChain.js (version 4.2.1 - Confirmed Final)
@@ -619,11 +618,11 @@ import {
   instructionHeadlines,
   shotsInputHeadlines,
   shotsOutputHeadlines,
-} from '@headlines/prompts'
+} from '../../../prompts/src/index.js'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { headlineAssessmentSchema } from '../schemas/index.js'
-import { settings } from '@headlines/config/server'
+import { settings } from '../../../config/src/server.js'
 
 const systemPrompt = [
   instructionHeadlines.whoYouAre,
@@ -747,14 +746,14 @@ export const countryCorrectionChain = async (input) => ccc.invoke(input)
 ```
 
 ## 📄 src/chains/judgeChain.js
-*Lines: 28, Size: 1011 Bytes*
+*Lines: 28, Size: 1022 Bytes*
 
 ```javascript
 // packages/ai-services/src/chains/judgeChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionJudge } from '@headlines/prompts'
+import { instructionJudge } from '../../../prompts/src/index.js'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { judgeSchema } from '../schemas/index.js'
@@ -781,18 +780,18 @@ export const judgeChain = {
 ```
 
 ## 📄 src/chains/opportunityChain.js
-*Lines: 29, Size: 1.07 KB*
+*Lines: 29, Size: 1.08 KB*
 
 ```javascript
 // packages/ai-services/src/chains/opportunityChain.js (version 2.4 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { getInstructionOpportunities } from '@headlines/prompts'
+import { getInstructionOpportunities } from '../../../prompts/src/index.js'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { opportunitySchema } from '../schemas/index.js'
-import { settings } from '@headlines/config/server'
+import { settings } from '../../../config/src/server.js'
 
 const instructions = getInstructionOpportunities(settings)
 const systemPrompt = [
@@ -856,14 +855,14 @@ export const sectionClassifierChain = {
 ```
 
 ## 📄 src/chains/selectorRepairChain.js
-*Lines: 29, Size: 1.07 KB*
+*Lines: 29, Size: 1.08 KB*
 
 ```javascript
 // packages/ai-services/src/chains/selectorRepairChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionSelectorRepair } from '@headlines/prompts'
+import { instructionSelectorRepair } from '../../../prompts/src/index.js'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { selectorRepairSchema } from '../schemas/index.js'
@@ -891,14 +890,14 @@ export const selectorRepairChain = {
 ```
 
 ## 📄 src/chains/synthesisChain.js
-*Lines: 27, Size: 1007 Bytes*
+*Lines: 27, Size: 1018 Bytes*
 
 ```javascript
 // packages/ai-services/src/chains/synthesisChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionSynthesize } from '@headlines/prompts'
+import { instructionSynthesize } from '../../../prompts/src/index.js'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { synthesisSchema } from '../schemas/index.js'
@@ -924,14 +923,14 @@ export const synthesisChain = {
 ```
 
 ## 📄 src/chains/translateChain.js
-*Lines: 29, Size: 1.06 KB*
+*Lines: 29, Size: 1.07 KB*
 
 ```javascript
 // packages/ai-services/src/chains/translateChain.js (version 1.0.0)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionTranslate } from '@headlines/prompts'
+import { instructionTranslate } from '../../../prompts/src/index.js'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { translateSchema } from '../schemas/index.js'
@@ -959,14 +958,14 @@ export const translateChain = {
 ```
 
 ## 📄 src/chains/watchlistSuggestionChain.js
-*Lines: 29, Size: 1.14 KB*
+*Lines: 29, Size: 1.15 KB*
 
 ```javascript
 // packages/ai-services/src/chains/watchlistSuggestionChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionWatchlistSuggestion } from '@headlines/prompts'
+import { instructionWatchlistSuggestion } from '../../../prompts/src/index.js'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { watchlistSuggestionSchema } from '../schemas/index.js'
@@ -1043,7 +1042,7 @@ import * as search from './search.js'
 import * as wikipedia from './wikipedia.js'
 import * as embeddings from './embeddings.js'
 import * as vectorSearch from './vectorSearch.js'
-import { logger } from '@headlines/utils/server'
+import { logger } from '../../utils/src/server.js'
 
 // This is the primary public API of the package.
 // It only exports async functions, making it compatible with Next.js "use server" modules.
@@ -1121,15 +1120,15 @@ export const { findSimilarArticles } = vectorSearch
 ```
 
 ## 📄 src/lib/langchain.js
-*Lines: 92, Size: 2.69 KB*
+*Lines: 92, Size: 2.71 KB*
 
 ```javascript
 // packages/ai-services/src/lib/langchain.js (version 3.1.0)
 import { ChatOpenAI } from '@langchain/openai'
-import { env, settings } from '@headlines/config/server'
-import { logger } from '@headlines/utils/server';
-import { safeExecute } from '@headlines/utils/server';
-import { tokenTracker } from '@headlines/utils/server';
+import { env, settings } from '../../../config/src/server.js'
+import { logger } from '../../../utils/src/server.js';
+import { safeExecute } from '../../../utils/src/server.js';
+import { tokenTracker } from '../../../utils/src/server.js';
 import OpenAI from 'openai'
 
 // --- Model Instances ---
@@ -1219,11 +1218,11 @@ export async function callLanguageModel({
 ```
 
 ## 📄 src/lib/safeInvoke.js
-*Lines: 102, Size: 3.01 KB*
+*Lines: 102, Size: 3.02 KB*
 
 ```javascript
 // packages/ai-services/src/lib/safeInvoke.js (version 3.2.0)
-import { logger } from '@headlines/utils/server'
+import { logger } from '../../../utils/src/server.js'
 import { createHash } from 'crypto'
 
 // This dynamic import approach allows the package to be used in different contexts
@@ -1750,15 +1749,15 @@ export const watchlistSuggestionSchema = z.object({
 ```
 
 ## 📄 src/search.js
-*Lines: 100, Size: 3.51 KB*
+*Lines: 100, Size: 3.52 KB*
 
 ```javascript
 // packages/ai-services/src/search.js (version 1.3)
 import axios from 'axios'
 import NewsAPI from 'newsapi'
-import { env } from '@headlines/config'
-import { logger } from '@headlines/utils/server'
-import { apiCallTracker } from '@headlines/utils/server'
+import { env } from '../../config/src/index.js'
+import { logger } from '../../utils/src/server.js'
+import { apiCallTracker } from '../../utils/src/server.js'
 // DEFINITIVE FIX: Removed the server-only 'p-limit' dependency.
 // import pLimit from 'p-limit'
 
@@ -1856,14 +1855,14 @@ export async function findNewsApiArticlesForEvent(headline) {
 ```
 
 ## 📄 src/vectorSearch.js
-*Lines: 68, Size: 2.29 KB*
+*Lines: 68, Size: 2.3 KB*
 
 ```javascript
 // packages/ai-services/src/vectorSearch.js (version 1.1.0)
 import { Pinecone } from '@pinecone-database/pinecone'
-import { logger } from '@headlines/utils/server';
+import { logger } from '../../utils/src/server.js';
 import { generateEmbedding } from './embeddings.js'
-import { env } from '@headlines/config'
+import { env } from '../../config/src/index.js'
 
 const { PINECONE_API_KEY, PINECONE_INDEX_NAME } = env
 
@@ -1934,8 +1933,8 @@ export async function findSimilarArticles(queryText) {
 
 ```javascript
 // packages/ai-services/src/wikipedia.js (version 2.4)
-import { logger } from '@headlines/utils/server'
-import { apiCallTracker } from '@headlines/utils/server'
+import { logger } from '../../utils/src/server.js'
+import { apiCallTracker } from '../../utils/src/server.js'
 import { disambiguationChain } from './chains/index.js'
 
 const WIKI_API_ENDPOINT = 'https://en.wikipedia.org/w/api.php'

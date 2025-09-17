@@ -7,7 +7,7 @@ import * as search from './search.js'
 import * as wikipedia from './wikipedia.js'
 import * as embeddings from './embeddings.js'
 import * as vectorSearch from './vectorSearch.js'
-import { logger } from '@headlines/utils/server'
+import { logger } from '../../utils/src/server.js'
 
 // This is the primary public API of the package.
 // It only exports async functions, making it compatible with Next.js "use server" modules.

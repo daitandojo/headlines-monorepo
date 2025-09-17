@@ -2,13 +2,13 @@ import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 // apps/admin/src/app/api/scrape/test-config/route.js (version 2.0.1)
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
-import { Source } from '@headlines/models'
+import { Source } from '@headlines/models/src/index.js'
 import { initializeSharedLogic } from '@/lib/init-shared-logic'
 import {
   testHeadlineExtraction,
   scrapeArticleContentForTest,
 } from '@headlines/scraper-logic/src/scraper/index.js'
-import { verifyAdmin } from '@headlines/auth'
+import { verifyAdmin } from '@headlines/auth/src/index.js'
 
 export async function POST(request) {
   await initializeSharedLogic();

@@ -7,11 +7,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@headlines/ui'
-import { Button } from '@headlines/ui'
-import { Checkbox } from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
+import { Button } from '@headlines/ui/src/index.js'
+import { Checkbox } from '@headlines/ui/src/index.js'
 import { ChevronsUpDown } from 'lucide-react'
-import { ScrollArea } from '@headlines/ui'
+import { ScrollArea } from '@headlines/ui/src/index.js'
 
 export function MultiSelect({ options, selected, onChange, placeholder = 'Select...' }) {
   const handleSelect = (option) => {

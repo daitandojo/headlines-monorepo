@@ -1,11 +1,11 @@
 // packages/data-access/src/seed/dev-user.js (version 2.0.0 - Standalone Safe)
 'use server'
 
-import { Subscriber } from '@headlines/models'
+import { Subscriber } from '../../../models/src/index.js'
 import dbConnect from '../dbConnect.js'
 import mongoose from 'mongoose'
 // We cannot use a logger here as this might be called before initialization
-// import { logger } from '@headlines/utils/server';
+// import { logger } from '../../../utils/src/server.js';
 
 const DEV_USER_ID = '662f831abb28052123530a43'
 const DEV_USER_EMAIL = 'dev@headlines.dev'

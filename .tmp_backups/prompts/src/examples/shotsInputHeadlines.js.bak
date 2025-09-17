@@ -1,0 +1,40 @@
+// packages/prompts/src/examples/shotsInputHeadlines.js (version 4.0)
+export const shotsInputHeadlines = [
+  [
+    'Rockwool står foran massive udvidelser over hele kloden',
+    'Boeing henter 145 mia. kr.',
+    'Boligejere med for stor grundskyldsregning har udsigt til hjælp',
+    'Aarstiderne solgt til gigant',
+    'Scandinavian family sells company for $500M',
+    'Familien Danielsens formue nærmer sig to mia. kroner',
+  ].join('\n- '),
+
+  [
+    'Egeria raises €1.25 billion with new private equity fund',
+    'Egeria enters new partnership with Junge Die Bäckerei.',
+    'FSN Capital VI acquires a majority stake in ilionx',
+    'Egeria divests Dutch Bakery after a period of strong growth',
+    'Axcel closes its seventh fund at EUR 1.3 billion',
+  ].join('\n- '),
+
+  [
+    'A.P. Moller Foundation donates $100 million to charity',
+    'LEGO family (KIRKBI A/S) in acquisition talks for rival toy company for DKK 5 billion',
+    'Danfoss heir (Bitten & Mads Clausen Foundation) announces succession plan for family business leadership',
+    'Widex and Demant plan to merge operations',
+    '3Shape (privately owned) is working on an IPO',
+  ].join('\n- '),
+
+  [
+    'Nå|Spår milliard-smell fra toll', // Stellantis example
+    'Familieejet koncern bestrider millionkrav efter Nordic Waste', // USTC example
+    'Fynske bankers fusionsplaner skydes ned af storaktionær', // Public bank merger
+  ].join('\n- '),
+
+  [
+    'Grundfos owner (Poul Due Jensen Foundation) announces DKK 300 million dividend distribution to family members',
+    'Bestseller owner Anders Holch Povlsen personally acquires Scottish estate for DKK 150 million',
+    "Martin Thorborg's AI Startup Secures Funding",
+    'Martin Thorborg giver et foredrag om iværksætteri',
+  ].join('\n- '),
+]

@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Input } from './components/input';
 import { Textarea } from './components/textarea';
 import { Edit } from 'lucide-react';
-import { cn } from '@headlines/utils';
+import { cn } from '../../utils/src/index.js';
 
 export const EditableCell = ({ initialValue, onSave, placeholder = 'N/A', type = 'text', allowWrap = false, useTextarea = false }) => {
     const [isEditing, setIsEditing] = useState(false);

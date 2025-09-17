@@ -2,12 +2,12 @@
 'use server'
 
 // REMOVED: import { NextResponse } from 'next/server'
-import { Source } from '@headlines/models'
+import { Source } from '../../../models/src/index.js'
 import {
   testHeadlineExtraction,
   scrapeArticleContentForTest,
-} from '@headlines/scraper-logic/src/scraper/index.js'
-import { verifyAdmin } from '@headlines/auth'
+} from '../../../scraper-logic/src/scraper/index.js'
+import { verifyAdmin } from '../../../auth/src/index.js'
 
 export async function testSourceConfig(sourceConfig) {
   const { isAdmin, error: authError } = await verifyAdmin()

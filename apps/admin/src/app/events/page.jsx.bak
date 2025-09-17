@@ -7,7 +7,7 @@ import {
   LoadingOverlay,
   Button,
   ExportButton,
-} from '@headlines/ui'
+} from '../../../../../packages/ui/src/index.js'
 import { EventListItem, ListHeader } from './columns'
 import { useAdminManager } from '@/hooks/use-admin-manager'
 import {
@@ -15,7 +15,7 @@ import {
   updateAdminEvent,
   exportEventsToCSV,
   exportEventsToXLSX,
-} from '@headlines/data-access'
+} from '../../../../../packages/data-access/src/index.js'
 import { toast } from 'sonner'
 import { useCallback, useState } from 'react'
 

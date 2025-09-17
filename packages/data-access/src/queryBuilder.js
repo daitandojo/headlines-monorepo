@@ -1,7 +1,7 @@
 // packages/data-access/src/queryBuilder.js (version 5.0.0)
 'use server'
 
-import { Subscriber } from '@headlines/models'
+import { Subscriber } from '../../models/src/index.js'
 
 export async function buildQuery(
   model,

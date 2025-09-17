@@ -1,8 +1,8 @@
 // apps/admin/src/lib/init-shared-logic.js (version 8.0.0)
 import { configure as configureScraperLogic } from '@headlines/scraper-logic/src/config.js';
 import * as appConfig from '@/../app.config.js';
-import { settings, initializeSettings } from '@headlines/config/server';
-import { logger } from '@headlines/utils/server';
+import { settings, initializeSettings } from '@headlines/config/src/server.js';
+import { logger } from '@headlines/utils/src/server.js';
 import dbConnect from '@headlines/data-access/src/dbConnect.js'; // Import dbConnect
 
 let isInitialized = false;

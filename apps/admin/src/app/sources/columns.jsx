@@ -2,22 +2,22 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { Button } from '@headlines/ui'
-import { Badge } from '@headlines/ui'
-import { Input } from '@headlines/ui'
+import { Button } from '@headlines/ui/src/index.js'
+import { Badge } from '@headlines/ui/src/index.js'
+import { Input } from '@headlines/ui/src/index.js'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from '@headlines/ui'
+} from '@headlines/ui/src/index.js'
 import {
   ArrowUpDown,
   MoreHorizontal,

@@ -1,8 +1,8 @@
 // packages/data-access/src/actions/admin.js (version 2.2.0)
 'use server'
 
-import { Subscriber } from '@headlines/models'
-import { verifyAdmin } from '@headlines/auth'
+import { Subscriber } from '../../../models/src/index.js'
+import { verifyAdmin } from '../../../auth/src/index.js'
 import { revalidatePath } from '../revalidate.js'
 import dbConnect from '../dbConnect.js' // Internal helper
 

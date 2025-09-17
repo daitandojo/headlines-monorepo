@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Button, CardFooter, Input, Textarea, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@headlines/ui'
+import { Button, CardFooter, Input, Textarea, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@headlines/ui/src/index.js'
 import { toast } from 'sonner'
 import { Save, Loader2, PlusCircle, X, Sparkles } from 'lucide-react'
 
