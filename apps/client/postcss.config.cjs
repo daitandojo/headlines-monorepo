@@ -1,11 +1,13 @@
-// apps/client/postcss.config.cjs (version 2.2.0 - Final CJS Naming)
+IGNORE_WHEN_COPYING_START
+IGNORE_WHEN_COPYING_END
+
+// apps/client/postcss.config.cjs
 const path = require('path')
 
-// This configuration explicitly tells PostCSS where to find the Tailwind config.
-// The .cjs extension is critical to ensure it's treated as a CommonJS module.
 module.exports = {
   plugins: {
     tailwindcss: {
+      // It's crucial that this points to the correct file name.
       config: path.join(__dirname, 'tailwind.config.js'),
     },
     autoprefixer: {},
