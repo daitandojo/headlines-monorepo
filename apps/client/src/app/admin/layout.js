@@ -1,10 +1,12 @@
-// apps/client/src/app/admin/layout.js (version 2.0 - Restored & Pathed)
-'use server'
+// apps/client/src/app/admin/layout.js (version 2.1 - Directive Fix)
+
+// DEFINITIVE FIX: The "'use server'" directive is removed.
+// This file is a Server Component, not a module of server actions.
+// This allows the default export to be a regular (non-async) function.
 
 import { Providers } from '../providers'
 import { AdminHeader } from '@/components/admin/AdminHeader'
 import { AdminNavTabs } from '@/components/admin/AdminNavTabs'
-// DEFINITIVE FIX: Import AuthProvider from the shared package
 import { AuthProvider } from '@headlines/auth/src/AuthProvider.js'
 
 export const metadata = {
