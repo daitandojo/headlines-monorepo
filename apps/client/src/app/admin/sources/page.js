@@ -1,14 +1,16 @@
-// src/app/admin/sources/page.js (version 1.0)
-import { getAllSources } from '@/actions/adminSources'
+// apps/client/src/app/admin/sources/page.js (version 2.0 - Restored & Pathed)
+'use server'
+
+// DEFINITIVE FIX: Imports now point to the correct monorepo packages
+import { getAllSources, getGlobalCountries } from '@headlines/data-access'
 import { SourceManagementClient } from '@/components/admin/sources/SourceManagementClient'
-import { getGlobalCountries } from '@/actions/countries'
 
 export const metadata = {
   title: 'Source Management | Admin',
 }
 
 export default async function SourceManagementPage() {
-  const [sourcesResult, countries] = await Promise.all([
+  const [sourcesResult, countriesResult] = await Promise.all([
     getAllSources(),
     getGlobalCountries(),
   ])
@@ -27,7 +29,7 @@ export default async function SourceManagementPage() {
   return (
     <SourceManagementClient
       initialSources={sourcesResult.data}
-      allCountries={countries.map((c) => c.name)}
+      allCountries={(countriesResult.data || []).map((c) => c.name)}
     />
   )
 }

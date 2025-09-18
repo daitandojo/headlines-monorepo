@@ -1,8 +1,11 @@
-// src/app/admin/layout.js (version 1.0)
+// apps/client/src/app/admin/layout.js (version 2.0 - Restored & Pathed)
+'use server'
+
 import { Providers } from '../providers'
 import { AdminHeader } from '@/components/admin/AdminHeader'
 import { AdminNavTabs } from '@/components/admin/AdminNavTabs'
-import { AuthProvider } from '@/context/AuthContext'
+// DEFINITIVE FIX: Import AuthProvider from the shared package
+import { AuthProvider } from '@headlines/auth/src/AuthProvider.js'
 
 export const metadata = {
   title: 'Admin Command Center',
@@ -11,7 +14,7 @@ export const metadata = {
 
 export default function AdminLayout({ children }) {
   return (
-    <AuthProvider>
+    <AuthProvider appType="admin">
       <Providers>
         <div className="min-h-screen flex flex-col">
           <AdminHeader />
