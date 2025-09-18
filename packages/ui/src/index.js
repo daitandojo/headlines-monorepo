@@ -126,7 +126,7 @@ import { DataTableColumnHeader } from './DataTableColumnHeader.jsx'
 import { LoadingOverlay } from './LoadingOverlay.jsx'
 import PageHeader from './page-header.jsx'
 import { PremiumSpinner } from './PremiumSpinner.jsx'
-import { SkeletonCard } from './SkeletonCard.jsx'
+import { Skeleton } from './Skeleton.jsx'
 import { EditableCell } from './EditableCell.jsx'
 import { ExportButton } from './ExportButton.jsx'
 import { ViewHeader } from './ViewHeader.jsx'
@@ -245,7 +245,7 @@ export {
   LoadingOverlay,
   PageHeader,
   PremiumSpinner,
-  SkeletonCard,
+  Skeleton,
   EditableCell,
   ExportButton,
   ViewHeader,

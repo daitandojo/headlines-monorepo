@@ -88,6 +88,8 @@ import {
   getActiveWatchlistEntityNames,
   bulkWriteWatchlistSuggestions,
 } from './actions/pipeline.js'
+import { generateChatTitle } from './actions/chat.js';
+import { suggestSections, suggestSelector } from './actions/aiSourceDiscovery.js';
 
 export {
   getAdminArticles, updateAdminArticle, deleteAdminArticle,
@@ -111,4 +113,7 @@ export {
   getSettings, updateSettings,
   testSourceConfig,
   updateSourceAnalyticsBatch, findSourcesForScraping, performHousekeeping, bulkWriteEvents, bulkWriteArticles, findEventsByKeys, findArticlesByLinks, getActiveWatchlistEntityNames, bulkWriteWatchlistSuggestions,
+  generateChatTitle,
+  suggestSections,
+  suggestSelector
 }
