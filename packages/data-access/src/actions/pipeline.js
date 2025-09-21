@@ -1,6 +1,4 @@
 // packages/data-access/src/actions/pipeline.js (version 1.0.0)
-'use server'
-
 import { Source, Article, SynthesizedEvent, Opportunity, WatchlistEntity, WatchlistSuggestion } from '../../../models/src/index.js'
 import dbConnect from '../dbConnect.js'
 

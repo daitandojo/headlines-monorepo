@@ -1,6 +1,6 @@
 // packages/scraper-logic/src/scraper/orchestrator.js (version 5.0.0)
 import pLimit from 'p-limit'
-import { sleep } from '../../../utils/src/index.js'
+import { sleep } from '@headlines/utils'
 import { getConfig } from '../config.js'
 import { scrapeSiteForHeadlines } from './headlineScraper.js'
 // NEWSAPI REWORK: The direct import of scrapeNewsAPI is removed as it's no longer used for proactive scraping.

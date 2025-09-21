@@ -1,14 +1,14 @@
-import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
-// apps/admin/src/app/api/run-verdicts/[runId]/route.js (version 3.0.1)
+import { initializeSharedLogic } from '@/lib/init-shared-logic.js'
+// apps/admin/src/app/api/run-verdicts/[runId]/route.js (version 3.0.2)
 import { NextResponse } from 'next/server'
-import { getRunVerdictById } from '@headlines/data-access/src/index.js'
+import { getRunVerdictById } from '@headlines/actions'
 import mongoose from 'mongoose'
-import { verifyAdmin } from '@headlines/auth/src/index.js'
+import { verifyAdmin } from '@headlines/auth'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request, { params }) {
-  await initializeSharedLogic();
+  await initializeSharedLogic()
 
   const { isAdmin, error: authError } = await verifyAdmin()
   if (!isAdmin) {
@@ -21,8 +21,8 @@ export async function GET(request, { params }) {
   }
   const result = await getRunVerdictById(runId)
   if (!result.success) {
-    const status = result.error.includes('not found') ? 404 : 500;
-    return NextResponse.json({ error: result.error, details: result.error }, { status });
+    const status = result.error.includes('not found') ? 404 : 500
+    return NextResponse.json({ error: result.error, details: result.error }, { status })
   }
-  return NextResponse.json({ verdict: result.data });
+  return NextResponse.json({ verdict: result.data })
 }

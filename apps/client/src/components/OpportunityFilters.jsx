@@ -2,15 +2,16 @@
 'use client'
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { Card, CardContent } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
 import {
+  Card,
+  CardContent,
+  Label,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@headlines/ui'
 
 export function OpportunityFilters({ uniqueCountries }) {
   const router = useRouter()

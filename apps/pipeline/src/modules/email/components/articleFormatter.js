@@ -1,6 +1,6 @@
 // apps/pipeline/src/modules/email/components/articleFormatter.js (version 2.0.0)
-import { logger } from '@headlines/utils/src/server.js';
-import { truncateString } from '@headlines/utils/src/server.js'
+import { logger } from '@headlines/utils-server'
+import { truncateString } from '@headlines/utils-server'
 
 function createArticleCard(article) {
   const {

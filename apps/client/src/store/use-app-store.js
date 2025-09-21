@@ -1,11 +1,12 @@
-// src/store/use-app-store.js (version 7.0)
+// apps/client/src/store/use-app-store.js (version 8.0.1)
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { useHasHydrated as useZustandHasHydrated } from '@headlines/utils-shared' // Alias for clarity
 
 const useAppStore = create(
   persist(
     (set, get) => ({
-      // --- Chat State (Client-Side) ---
+      // --- Chat State ---
       chats: [],
       activeChatId: null,
       allMessages: {},
@@ -16,8 +17,6 @@ const useAppStore = create(
         skipArticleConfirmation: false,
         skipOpportunityConfirmation: false,
       },
-
-      // REMOVED: The globalCountryFilter is now managed by AuthContext to prevent state desync.
 
       // --- Actions ---
       setChatContextPrompt: (prompt) => set({ chatContextPrompt: prompt }),
@@ -53,27 +52,22 @@ const useAppStore = create(
         })),
       getMessagesForChat: (id) => get().allMessages[id] || [],
       setMessagesForChat: (id, messages) =>
-        set((state) => ({
-          allMessages: { ...state.allMessages, [id]: messages },
-        })),
+        set((state) => ({ allMessages: { ...state.allMessages, [id]: messages } })),
       init: () => {
         const { chats, activeChatId, createChat, selectChat } = get()
-        if (chats.length === 0) {
-          createChat()
-        } else if (!activeChatId || !chats.find((c) => c.id === activeChatId)) {
-          selectChat(chats[0].id)
+        if (useAppStore.persist.hasHydrated()) {
+          if (chats.length === 0) {
+            createChat()
+          } else if (!activeChatId || !chats.find((c) => c.id === activeChatId)) {
+            selectChat(chats[0].id)
+          }
         }
       },
       setDeletePreference: (key, value) => {
         set((state) => ({
-          deletePreferences: {
-            ...state.deletePreferences,
-            [key]: value,
-          },
+          deletePreferences: { ...state.deletePreferences, [key]: value },
         }))
-        console.log(`[Store] Set delete preference: ${key} = ${value}`)
       },
-      // REMOVED: The action for globalCountryFilter is no longer needed.
     }),
     {
       name: 'headlines-app-storage',
@@ -83,10 +77,16 @@ const useAppStore = create(
         activeChatId: state.activeChatId,
         allMessages: state.allMessages,
         deletePreferences: state.deletePreferences,
-        // REMOVED: globalCountryFilter is no longer persisted here.
       }),
     }
   )
 )
+
+// Custom hook to ensure Zustand is hydrated before use
+export const useHydratedAppStore = (selector, equals) => {
+  const store = useAppStore(selector, equals)
+  const hasHydrated = useZustandHasHydrated()
+  return hasHydrated ? store : selector(useAppStore.getState())
+}
 
 export default useAppStore

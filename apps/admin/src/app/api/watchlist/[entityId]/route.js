@@ -1,17 +1,14 @@
-// apps/admin/src/app/api/watchlist/[entityId]/route.js (version 3.0.1)
+// apps/admin/src/app/api/watchlist/[entityId]/route.js (version 1.0.1)
 import { NextResponse } from 'next/server'
-import { updateWatchlistEntity, deleteWatchlistEntity } from '@headlines/data-access/src/index.js'
+import { updateWatchlistEntity, deleteWatchlistEntity } from '@headlines/data-access'
 import mongoose from 'mongoose'
-import { verifyAdmin } from '@headlines/auth/src/index.js'
-import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
+import { verifyAdmin } from '@headlines/auth'
+import { initializeSharedLogic } from '@/lib/init-shared-logic.js'
 
 export async function PATCH(request, { params }) {
-  await initializeSharedLogic();
-
-  const { isAdmin, error: authError } = await verifyAdmin()
-  if (!isAdmin) {
-    return NextResponse.json({ error: authError }, { status: 401 })
-  }
+  await initializeSharedLogic()
+  const { isAdmin, error } = await verifyAdmin()
+  if (!isAdmin) return NextResponse.json({ error }, { status: 401 })
 
   const { entityId } = params
   if (!mongoose.Types.ObjectId.isValid(entityId)) {
@@ -20,18 +17,16 @@ export async function PATCH(request, { params }) {
   const body = await request.json()
   const result = await updateWatchlistEntity(entityId, body)
   if (!result.success) {
-    const status = result.error.includes('not found') ? 404 : 500;
-    return NextResponse.json({ error: result.error }, { status });
+    const status = result.error.includes('not found') ? 404 : 500
+    return NextResponse.json({ error: result.error }, { status })
   }
-  return NextResponse.json({ message: 'Watchlist entity updated', entity: result.data });
+  return NextResponse.json({ message: 'Watchlist entity updated', entity: result.data })
 }
 
 export async function DELETE(request, { params }) {
-  await initializeSharedLogic();
-  const { isAdmin, error: authError } = await verifyAdmin()
-  if (!isAdmin) {
-    return NextResponse.json({ error: authError }, { status: 401 })
-  }
+  await initializeSharedLogic()
+  const { isAdmin, error } = await verifyAdmin()
+  if (!isAdmin) return NextResponse.json({ error }, { status: 401 })
 
   const { entityId } = params
   if (!mongoose.Types.ObjectId.isValid(entityId)) {
@@ -39,8 +34,8 @@ export async function DELETE(request, { params }) {
   }
   const result = await deleteWatchlistEntity(entityId)
   if (!result.success) {
-    const status = result.error.includes('not found') ? 404 : 500;
-    return NextResponse.json({ error: result.error }, { status });
+    const status = result.error.includes('not found') ? 404 : 500
+    return NextResponse.json({ error: result.error }, { status })
   }
-  return NextResponse.json({ message: 'Watchlist entity deleted' });
+  return NextResponse.json({ message: 'Watchlist entity deleted' })
 }

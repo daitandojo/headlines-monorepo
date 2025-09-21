@@ -2,7 +2,7 @@
 'use client'
 
 import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from 'lucide-react'
-import { cn } from '../../utils/src/index.js'
+import { cn } from '@headlines/utils-client'
 import { Button } from './components/button'
 import {
   DropdownMenu,
@@ -55,7 +55,7 @@ export function DataTableColumnHeader({ column, title, className }) {
             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
               <Input
                 placeholder={`Filter ${title}...`}
-                value={(column.getFilterValue() || '')}
+                value={column.getFilterValue() || ''}
                 onChange={(event) => column.setFilterValue(event.target.value)}
                 className="h-8"
               />

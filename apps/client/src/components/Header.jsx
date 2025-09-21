@@ -1,11 +1,9 @@
-// src/components/Header.jsx (version 5.0)
 'use client'
-
 import { Briefcase, LogOut, Settings, User } from 'lucide-react'
 import { InstallPwaButton } from '@/components/InstallPwaButton'
 import { GlobalCountrySelector } from './GlobalCountrySelector'
-import { useAuth } from '@/hooks/useAuth'
-import { Button } from './ui/button'
+import { useAuth } from '@headlines/auth/useAuth'
+import { Button } from '@headlines/ui'
 import { NotificationToggles } from './NotificationToggles'
 import {
   DropdownMenu,
@@ -14,7 +12,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@headlines/ui'
 import Link from 'next/link'
 
 export const Header = ({
@@ -61,14 +59,12 @@ export const Header = ({
         )}
         <InstallPwaButton />
       </div>
-
       <div className="flex flex-row items-center justify-center gap-x-3 sm:gap-x-4 mb-3 pt-8 sm:pt-0">
         <Briefcase size={28} className="text-blue-400 sm:size-10" />
         <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-100 text-center sm:text-left">
           Headlines<span className="hidden sm:inline"> Intelligence</span>
         </h1>
       </div>
-
       <p className="text-center text-sm sm:text-base text-slate-400 max-w-3xl mx-auto">
         Analyze
         <span className="font-bold text-slate-300"> {eventCount?.toLocaleString()} </span>

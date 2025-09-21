@@ -1,6 +1,4 @@
 // packages/data-access/src/actions/email.js (version 1.0)
-'use server'
-
 import { getUserIdFromSession } from '../../../auth/src/index.js';
 import { SynthesizedEvent, Opportunity, Article } from '../../../models/src/index.js';
 import dbConnect from '../dbConnect.js';

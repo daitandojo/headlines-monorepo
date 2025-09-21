@@ -1,13 +1,13 @@
 // apps/pipeline/src/pipeline/3_assessAndEnrich.js (version 9.2.0 - Retry & Fallback Logic)
-import { truncateString, sleep } from '@headlines/utils/src/server.js'
-import { logger } from '@headlines/utils/src/logger.js'
-import { settings } from '@headlines/config/src/server.js'
-import { Article } from '@headlines/models/src/index.js'
-import { batchHeadlineChain } from '@headlines/ai-services/src/index.js'
+import { truncateString, sleep } from '@headlines/utils-server'
+import { logger } from '@headlines/utils-server'
+import { settings } from '@headlines/config/server.js'
+import { Article } from '@headlines/models'
+import { batchHeadlineChain } from '@headlines/ai-services'
 import { processSingleArticle } from './submodules/processSingleArticle.js'
 import pLimit from 'p-limit'
-import { env } from '@headlines/config/src/server.js'
-import { getConfig } from '@headlines/scraper-logic/src/config.js'
+import { env } from '@headlines/config/server.js'
+import { getConfig } from '@headlines/scraper-logic/config.js'
 
 const BATCH_SIZE = 8 // Reduced batch size
 const MAX_RETRIES = 1

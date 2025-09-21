@@ -1,6 +1,6 @@
 // apps/pipeline/src/modules/email/components/eventFormatter.js (version 5.1.0)
-import { logger } from '@headlines/utils/src/server.js'
-import { Opportunity } from '@headlines/models/src/index.js'
+import { logger } from '@headlines/utils-server'
+import { Opportunity } from '@headlines/models'
 
 const sourceIcons = {
   rag_db: '🗄️',

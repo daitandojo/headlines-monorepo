@@ -2,12 +2,8 @@
 'use client'
 
 import { useContext } from 'react'
-import AuthContext from './AuthProvider'
+import { AuthContext } from './AuthProvider.js'
 
-/**
- * Provides access to the authentication context (user, login, logout, etc.).
- * This hook can only be used by components wrapped in an AuthProvider.
- */
 export const useAuth = () => {
   const context = useContext(AuthContext)
   if (!context) {

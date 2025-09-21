@@ -1,17 +1,15 @@
-// apps/client/src/components/SynthesizedEventCard.jsx (version 13.1.0 - Import Fix)
 'use client'
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { AccordionContent, AccordionItem } from '@headlines/ui'
+import { AccordionContent, AccordionItem, ConfirmationDialog } from '@headlines/ui'
 import useAppStore from '@/store/use-app-store'
 import { SwipeToDelete } from './swipe/SwipeToDelete'
 import { EventCardDesktop } from './events/EventCardDesktop'
 import { EventCardMobile } from './events/EventCardMobile'
 import { EventCardDetails } from './events/EventCardDetails'
-import { useAuth } from '@headlines/auth/src/useAuth.js'
-// DEFINITIVE FIX: The component is named ConfirmationDialog, not EmailConfirmationDialog.
-import { ConfirmationDialog } from '@headlines/ui'
+// DEFINITIVE FIX: Import useAuth from its dedicated client entry point
+import { useAuth } from '@headlines/auth/useAuth'
 import { toast } from 'sonner'
 
 export const SynthesizedEventCard = ({
@@ -91,9 +89,13 @@ export const SynthesizedEventCard = ({
       <ConfirmationDialog
         open={isEmailDialogOpen}
         onOpenChange={setIsEmailDialogOpen}
-        itemId={event._id}
-        itemType="event"
-        itemDescription={event.synthesized_headline}
+        title="Confirm Action"
+        description={`This will send a detailed brief of the event "${event.synthesized_headline}" to your registered email address. Do you want to continue?`}
+        confirmText="Send Email"
+        onConfirm={() => {
+          toast.info('Email functionality is not yet implemented.')
+          setIsEmailDialogOpen(false)
+        }}
       />
     </>
   )

@@ -1,4 +1,3 @@
-// src/components/ArticleCard.jsx (version 8.1)
 'use client'
 
 import { useState, useTransition } from 'react'
@@ -6,21 +5,19 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@/components/ui/accordion'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import {
+  Badge,
+  Button,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip'
+} from '@headlines/ui'
 import { Trash2, ExternalLink, Users, Mail, Building, Briefcase } from 'lucide-react'
-import { getCountryFlag } from '@/lib/countries'
+import { getCountryFlag } from '@headlines/utils'
 import { SwipeToDelete } from './swipe/SwipeToDelete'
 import { DeletionConfirmationDialog } from './DeletionConfirmationDialog'
 import useAppStore from '@/store/use-app-store'
-import { cn } from '@/lib/utils'
+import { cn } from '@headlines/utils'
 
 const getRelevanceBadgeClass = (score) => {
   if (score >= 90)

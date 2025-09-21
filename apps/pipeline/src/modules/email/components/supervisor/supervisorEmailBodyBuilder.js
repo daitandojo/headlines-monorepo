@@ -9,9 +9,9 @@ import { createEnrichmentFunnelHtml } from './enrichmentFunnel.js'
 import { createEventsTableHtml, createArticlesTableHtml } from './databaseTables.js'
 import { createJudgeVerdictHtml } from './judgeVerdict.js'
 import { createCostSummaryHtml } from './costSummary.js'
-import { SynthesizedEvent, Opportunity } from '@headlines/models/src/index.js'
-import { executiveSummaryChain } from '@headlines/ai-services/src/index.js'
-import { logger } from '@headlines/utils/src/logger.js';
+import { SynthesizedEvent, Opportunity } from '@headlines/models'
+import { executiveSummaryChain } from '@headlines/ai-services'
+import { logger } from '@headlines/utils-server'
 
 function createPerformanceDashboardHtml(runStats, newEventCount, newOpportunityCount) {
   const funnel = `${runStats.headlinesScraped} Scraped ➔ ${runStats.relevantHeadlines} Relevant ➔ ${runStats.eventsSynthesized} Events ➔ ${newOpportunityCount} Opps`

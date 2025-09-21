@@ -1,18 +1,27 @@
 // apps/pipeline/src/modules/dataStore/index.js (version 6.1.0)
 import { Pinecone } from '@pinecone-database/pinecone'
-import { logger } from '@headlines/utils/src/server.js';
-import { generateEmbedding } from '@headlines/ai-services/src/index.js'
-import { env } from '@headlines/config/src/server.js'
-import { Opportunity } from '@headlines/models/src/index.js';
-import { bulkWriteEvents, bulkWriteArticles, findEventsByKeys, findArticlesByLinks } from '@headlines/data-access/src/index.js'
+import { logger } from '@headlines/utils-server'
+import { generateEmbedding } from '@headlines/ai-services'
+import { env } from '@headlines/config/server.js'
+import { Opportunity } from '@headlines/models'
+import {
+  bulkWriteEvents,
+  bulkWriteArticles,
+  findEventsByKeys,
+  findArticlesByLinks,
+} from '@headlines/actions'
 
-const { PINECONE_API_KEY, PINECONE_INDEX_NAME } = env;
+const { PINECONE_API_KEY, PINECONE_INDEX_NAME } = env
 
 if (!PINECONE_API_KEY) throw new Error('Pinecone API Key is missing!')
 const pc = new Pinecone({ apiKey: PINECONE_API_KEY })
 const pineconeIndex = pc.index(PINECONE_INDEX_NAME)
 
-export async function savePipelineResults(articlesToSave, eventsToSave, savedOpportunities) {
+export async function savePipelineResults(
+  articlesToSave,
+  eventsToSave,
+  savedOpportunities
+) {
   logger.info(`Committing pipeline results to databases (MongoDB & Pinecone)...`)
 
   let savedEvents = []
@@ -31,22 +40,32 @@ export async function savePipelineResults(articlesToSave, eventsToSave, savedOpp
           },
         }
       })
-      const eventResult = await bulkWriteEvents(eventOps);
-      if (!eventResult.success) throw new Error(eventResult.error);
-      logger.info(`MongoDB Event commit complete. Upserted: ${eventResult.upsertedCount}, Modified: ${eventResult.modifiedCount}.`)
+      const eventResult = await bulkWriteEvents(eventOps)
+      if (!eventResult.success) throw new Error(eventResult.error)
+      logger.info(
+        `MongoDB Event commit complete. Upserted: ${eventResult.upsertedCount}, Modified: ${eventResult.modifiedCount}.`
+      )
 
       const eventKeys = eventsToSave.map((e) => e.event_key)
-      const findResult = await findEventsByKeys(eventKeys);
-      if (!findResult.success) throw new Error(findResult.error);
-      savedEvents = findResult.data;
+      const findResult = await findEventsByKeys(eventKeys)
+      if (!findResult.success) throw new Error(findResult.error)
+      savedEvents = findResult.data
 
       for (const event of savedEvents) {
         const textToEmbed = `${event.synthesized_headline}\n${event.synthesized_summary}`
         const embedding = await generateEmbedding(textToEmbed)
-        const eventDate = event.event_date ? new Date(event.event_date) : new Date(); // Robust date handling
+        const eventDate = event.event_date ? new Date(event.event_date) : new Date() // Robust date handling
         pineconeVectors.push({
-          id: `event_${event._id.toString()}`, values: embedding,
-          metadata: { type: 'event', headline: event.synthesized_headline, summary: event.synthesized_summary, country: event.country, event_date: eventDate.toISOString(), key_individuals: (event.key_individuals || []).map((p) => p.name).join(', ') },
+          id: `event_${event._id.toString()}`,
+          values: embedding,
+          metadata: {
+            type: 'event',
+            headline: event.synthesized_headline,
+            summary: event.synthesized_summary,
+            country: event.country,
+            event_date: eventDate.toISOString(),
+            key_individuals: (event.key_individuals || []).map((p) => p.name).join(', '),
+          },
         })
       }
     }
@@ -71,8 +90,15 @@ export async function savePipelineResults(articlesToSave, eventsToSave, savedOpp
         const articleIdStr = article._id.toString()
         if (article.embedding) {
           pineconeVectors.push({
-            id: `article_${articleIdStr}`, values: article.embedding,
-            metadata: { type: 'article', headline: article.headline, summary: article.assessment_article || 'No summary.', newspaper: article.newspaper, country: article.country },
+            id: `article_${articleIdStr}`,
+            values: article.embedding,
+            metadata: {
+              type: 'article',
+              headline: article.headline,
+              summary: article.assessment_article || 'No summary.',
+              newspaper: article.newspaper,
+              country: article.country,
+            },
           })
         }
 
@@ -81,25 +107,44 @@ export async function savePipelineResults(articlesToSave, eventsToSave, savedOpp
 
         const { _id, ...dataToSet } = article
         // Delete articleContent before saving
-        delete dataToSet.articleContent;
-        Object.keys(dataToSet).forEach((key) => dataToSet[key] === undefined && delete dataToSet[key])
-        if ((dataToSet.relevance_headline <= 25 && dataToSet.relevance_article <= 25)) delete dataToSet.articleContent
+        delete dataToSet.articleContent
+        Object.keys(dataToSet).forEach(
+          (key) => dataToSet[key] === undefined && delete dataToSet[key]
+        )
+        if (dataToSet.relevance_headline <= 25 && dataToSet.relevance_article <= 25)
+          delete dataToSet.articleContent
         delete dataToSet.embedding
-        articleOps.push({ updateOne: { filter: { link: article.link }, update: { $set: dataToSet }, upsert: true } })
+        articleOps.push({
+          updateOne: {
+            filter: { link: article.link },
+            update: { $set: dataToSet },
+            upsert: true,
+          },
+        })
       }
-      await bulkWriteArticles(articleOps);
-      logger.info(`MongoDB Article commit complete. Upserted/Modified: ${articleOps.length}.`)
+      await bulkWriteArticles(articleOps)
+      logger.info(
+        `MongoDB Article commit complete. Upserted/Modified: ${articleOps.length}.`
+      )
     }
 
-    const opportunityDocs = (await Opportunity.find({ _id: { $in: (savedOpportunities || []).map(o => o._id) } }).lean()) || [];
+    const opportunityDocs =
+      (await Opportunity.find({
+        _id: { $in: (savedOpportunities || []).map((o) => o._id) },
+      }).lean()) || []
     for (const opp of opportunityDocs) {
-        if (opp.embedding && opp.embedding.length > 0) {
-            pineconeVectors.push({
-                id: `opportunity_${opp._id.toString()}`,
-                values: opp.embedding,
-                metadata: { type: 'opportunity', headline: opp.reachOutTo, summary: opp.whyContact.join(' '), country: opp.basedIn },
-            });
-        }
+      if (opp.embedding && opp.embedding.length > 0) {
+        pineconeVectors.push({
+          id: `opportunity_${opp._id.toString()}`,
+          values: opp.embedding,
+          metadata: {
+            type: 'opportunity',
+            headline: opp.reachOutTo,
+            summary: opp.whyContact.join(' '),
+            country: opp.basedIn,
+          },
+        })
+      }
     }
     if (pineconeVectors.length > 0) {
       await pineconeIndex.upsert(pineconeVectors)
@@ -108,7 +153,10 @@ export async function savePipelineResults(articlesToSave, eventsToSave, savedOpp
 
     return { success: true, savedEvents }
   } catch (error) {
-    logger.fatal({ err: error }, 'CRITICAL: Failed to commit pipeline results to the databases.')
+    logger.fatal(
+      { err: error },
+      'CRITICAL: Failed to commit pipeline results to the databases.'
+    )
     return { success: false, savedEvents: [] }
   }
 }
@@ -118,18 +166,22 @@ export async function filterFreshArticles(articles, isRefreshMode = false) {
   const scrapedLinks = articles.map((a) => a.link)
   if (isRefreshMode) {
     logger.warn('REFRESH MODE: All scraped articles will be processed.')
-    const result = await findArticlesByLinks(scrapedLinks);
-    if (!result.success) throw new Error(result.error);
+    const result = await findArticlesByLinks(scrapedLinks)
+    if (!result.success) throw new Error(result.error)
     const existingArticlesMap = new Map(result.data.map((a) => [a.link, a._id]))
     const articlesForReprocessing = articles.map((scrapedArticle) =>
-      existingArticlesMap.get(scrapedArticle.link) ? { ...scrapedArticle, _id: existingArticlesMap.get(scrapedArticle.link) } : scrapedArticle
+      existingArticlesMap.get(scrapedArticle.link)
+        ? { ...scrapedArticle, _id: existingArticlesMap.get(scrapedArticle.link) }
+        : scrapedArticle
     )
     return articlesForReprocessing
   }
-  const result = await findArticlesByLinks(scrapedLinks);
-  if (!result.success) throw new Error(result.error);
+  const result = await findArticlesByLinks(scrapedLinks)
+  if (!result.success) throw new Error(result.error)
   const existingLinks = new Set(result.data.map((a) => a.link))
   const freshArticles = articles.filter((a) => !existingLinks.has(a.link))
-  logger.info(`Filtering complete. Found ${existingLinks.size} existing articles, ${freshArticles.length} are fresh.`)
+  logger.info(
+    `Filtering complete. Found ${existingLinks.size} existing articles, ${freshArticles.length} are fresh.`
+  )
   return freshArticles
 }

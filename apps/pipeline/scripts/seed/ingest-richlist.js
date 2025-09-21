@@ -1,7 +1,7 @@
 // apps/pipeline/scripts/seed/ingest-richlist.js
 import mongoose from 'mongoose'
 import path from 'path'
-import { reinitializeLogger, logger } from '../../../../packages/utils/src/server.js'
+import { reinitializeLogger, logger } from '../../../../packages/utils-server'
 import { initializeScriptEnv } from './lib/script-init.js'
 import { loadAndPrepareRichlist } from './lib/richlist-data-loader.js'
 import { createSyntheticArticle } from './lib/synthetic-article-builder.js'

@@ -2,7 +2,6 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { cn } from '../../utils/src/index.js' // CORRECTED: Package import instead of alias
 
 /**
  * A visually rich, multi-layered, animated spinner component.
@@ -55,8 +54,7 @@ export function PremiumSpinner({ size = 80 }) {
         style={{
           background:
             'conic-gradient(from 90deg, transparent 0%, #06b6d4 50%, transparent 100%)',
-          maskImage:
-            'radial-gradient(circle at center, transparent 75%, black 76%)',
+          maskImage: 'radial-gradient(circle at center, transparent 75%, black 76%)',
         }}
         animate={{ rotate: 360 }}
         transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
@@ -68,8 +66,7 @@ export function PremiumSpinner({ size = 80 }) {
         style={{
           background:
             'conic-gradient(from -90deg, transparent 0%, #a855f7 50%, transparent 100%)',
-          maskImage:
-            'radial-gradient(circle at center, transparent 75%, black 76%)',
+          maskImage: 'radial-gradient(circle at center, transparent 75%, black 76%)',
         }}
         animate={{ rotate: -360 }}
         transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}

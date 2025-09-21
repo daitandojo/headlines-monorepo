@@ -14,11 +14,11 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-17T18:58:29.066Z
+**Generated**: 2025-09-21T14:17:28.669Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/config
 **Total Files**: 5
 **Package**: @headlines/config@3.0.0
-**Description**: Shared environment schema validation for the Headlines monorepo.
+
 
 
 
@@ -26,29 +26,33 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 13, Size: 288 Bytes*
+*Lines: 18, Size: 317 Bytes*
 
 ```json
 {
   "name": "@headlines/config",
   "version": "3.0.0",
-  "description": "Shared environment schema validation for the Headlines monorepo.",
+  "main": "src/index.js",
   "type": "module",
   "license": "ISC",
+  "exports": {
+    ".": "./src/index.js",
+    "./server": "./src/server.js"
+  },
   "dependencies": {
     "zod": "^3.23.8"
   },
   "peerDependencies": {
-    "@headlines/models": "1.0.0"
+    "@headlines/models": "workspace:*"
   }
 }
+
 ```
 
 ## 📄 src/envSchema.js
-*Lines: 63, Size: 2.24 KB*
+*Lines: 60, Size: 2.09 KB*
 
 ```javascript
-// packages/config/src/envSchema.js (version 8.0.0)
 import { z } from 'zod'
 
 const stringToBoolean = z
@@ -66,7 +70,6 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().startsWith('sk-'),
   PINECONE_API_KEY: z.string().min(1),
   PINECONE_INDEX_NAME: z.string().min(1).default('headlines'),
-  // Upstash Redis credentials
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
   SMTP_HOST: z.string().min(1),
@@ -78,7 +81,6 @@ const envSchema = z.object({
   SMTP_FROM_NAME: z.string().min(1).default('Headlines AI'),
   NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().min(1),
   VAPID_PRIVATE_KEY: z.string().min(1),
-  // THIS IS THE CORRECTED LINE: It no longer looks for quotes.
   VAPID_SUBJECT: z.string().startsWith('mailto:'),
   NEXT_PUBLIC_PUSHER_KEY: z.string().min(1),
   NEXT_PUBLIC_PUSHER_CLUSTER: z.string().min(1),
@@ -114,39 +116,114 @@ export const env = validateAndExportEnv()
 ```
 
 ## 📄 src/index.js
-*Lines: 8, Size: 343 Bytes*
+*Lines: 48, Size: 1.45 KB*
 
 ```javascript
-// packages/config/src/index.js (version 9.0.0 - Client Safe)
-// This is the CLIENT-SAFE entrypoint. It only exports the validated env object.
-// It deliberately does NOT export 'settings' or 'initializeSettings' to avoid
-// pulling in server-side model dependencies into client bundles.
-import { env } from './envSchema.js';
-
-export { env };
-
-```
-
-## 📄 src/server.js
-*Lines: 7, Size: 263 Bytes*
-
-```javascript
-// packages/config/src/server.js (version 1.0.0)
-// This file is the server-only entrypoint for the config package.
+// packages/config/src/index.js
 import { env } from './envSchema.js';
 import { settings, initializeSettings } from './settings.js';
 
-export { env, settings, initializeSettings };
+// --- App-Specific Static Constants (Not dynamically configurable) ---
+export const IS_REFRESH_MODE = process.env.REFRESH_MODE === 'true';
+export const MAX_ARTICLE_CHARS = 30000;
+export const LLM_CONTEXT_MAX_CHARS = 25000;
+export const MIN_HEADLINE_CHARS = 5;
+export const MAX_HEADLINE_CHARS = 500;
+export const AI_BATCH_SIZE = 6;
+
+// --- Re-export SMTP and Email configs from env for convenience ---
+export const SMTP_CONFIG = {
+  host: env.SMTP_HOST,
+  port: env.SMTP_PORT,
+  secure: env.SMTP_SECURE,
+  auth: {
+    user: env.SMTP_USER,
+    pass: env.SMTP_PASS,
+  },
+  fromAddress: env.SMTP_FROM_ADDRESS || env.SMTP_USER,
+  fromName: env.SMTP_FROM_NAME,
+  pool: true,
+  maxConnections: 5,
+  maxMessages: 100,
+  rateLimit: 10,
+};
+
+export const EMAIL_CONFIG = {
+  templateName: 'wealthEvents',
+  subject: 'New Nordic Banking Opportunities Detected',
+  language: 'en',
+  brandName: 'Your Wealth Watch',
+  companyAddress: 'Wealth Watch Inc., Paris, France',
+  unsubscribeUrl: '#',
+};
+
+export const SUPERVISOR_EMAIL_CONFIG = {
+  templateName: 'supervisorReport',
+  subject: '⚙️ Hourly Headlines Processing Run Summary',
+  language: 'en',
+  brandName: 'Headlines Processing Bot',
+};
+
+// This is the CLIENT-SAFE entrypoint. It only exports the validated env object.
+// It deliberately does NOT export 'settings' or 'initializeSettings'.
+export { env };
+```
+
+## 📄 src/server.js
+*Lines: 41, Size: 1.24 KB*
+
+```javascript
+// packages/config/src/server.js
+// This file is a server-only entrypoint. It does NOT contain 'use server'.
+import { env } from './envSchema.js'
+import { settings, initializeSettings } from './settings.js'
+
+export const IS_REFRESH_MODE = process.env.REFRESH_MODE === 'true'
+export const MAX_ARTICLE_CHARS = 30000
+export const LLM_CONTEXT_MAX_CHARS = 25000
+export const MIN_HEADLINE_CHARS = 5
+export const MAX_HEADLINE_CHARS = 500
+export const AI_BATCH_SIZE = 6
+
+export const SMTP_CONFIG = {
+  host: env.SMTP_HOST,
+  port: env.SMTP_PORT,
+  secure: env.SMTP_SECURE,
+  auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
+  fromAddress: env.SMTP_FROM_ADDRESS || env.SMTP_USER,
+  fromName: env.SMTP_FROM_NAME,
+  pool: true,
+  maxConnections: 5,
+  maxMessages: 100,
+  rateLimit: 10,
+}
+export const EMAIL_CONFIG = {
+  templateName: 'wealthEvents',
+  subject: 'New Nordic Banking Opportunities Detected',
+  language: 'en',
+  brandName: 'Your Wealth Watch',
+  companyAddress: 'Wealth Watch Inc., Paris, France',
+  unsubscribeUrl: '#',
+}
+export const SUPERVISOR_EMAIL_CONFIG = {
+  templateName: 'supervisorReport',
+  subject: '⚙️ Hourly Headlines Processing Run Summary',
+  language: 'en',
+  brandName: 'Headlines Processing Bot',
+}
+
+export { env, settings, initializeSettings }
 
 ```
 
 ## 📄 src/settings.js
-*Lines: 55, Size: 1.61 KB*
+*Lines: 51, Size: 1.55 KB*
 
 ```javascript
-// packages/config/src/settings.js (version 2.2.0)
-import { Setting } from '../../models/src/index.js'
-import { logger } from '../../utils/src/server.js';
+// packages/config/src/settings.js
+
+import { Setting } from '@headlines/models'
+import { logger } from '@headlines/utils-server'
 
 // These defaults are used ONLY if the values are not found in the database.
 const DEFAULTS = {
@@ -174,7 +251,7 @@ let isInitialized = false
 
 export async function initializeSettings() {
   if (isInitialized) return
-  logger.info('Loading pipeline settings from database...');
+  logger.info('Loading pipeline settings from database...')
   try {
     const dbSettings = await Setting.find({}).lean()
     if (dbSettings.length === 0) {
@@ -185,16 +262,11 @@ export async function initializeSettings() {
       dbSettings.forEach((setting) => {
         settings[setting.key] = setting.value
       })
-      logger.info(
-        `Successfully loaded ${dbSettings.length} settings from the database.`
-      )
+      logger.info(`Successfully loaded ${dbSettings.length} settings from the database.`)
     }
     isInitialized = true
   } catch (error) {
-    logger.error(
-      'CRITICAL: Failed to load settings from database. Halting.',
-      error
-    )
+    logger.error('CRITICAL: Failed to load settings from database. Halting.', error)
     throw error
   }
 }

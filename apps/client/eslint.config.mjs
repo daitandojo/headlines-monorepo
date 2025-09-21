@@ -1,14 +1,10 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+import eslintConfigNext from 'eslint-config-next'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
-const eslintConfig = [...compat.extends("next/core-web-vitals")];
-
-export default eslintConfig;
+// This is the modern, correct way to configure ESLint with Next.js
+// in a flat config file (`eslint.config.mjs`). The older `.eslintrc.json`
+// format can cause build "renderer confusion", leading to the exact error
+// you are seeing, even when layouts are correct.
+export default [
+  eslintConfigNext,
+  // You can add custom rules here if needed.
+]

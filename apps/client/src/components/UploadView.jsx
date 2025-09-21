@@ -1,4 +1,4 @@
-// apps/client/src/components/UploadView.jsx (version 1.2.0 - Import Fix)
+// apps/client/src/components/UploadView.jsx (version 2.0.0)
 'use client'
 
 import { useState, useRef } from 'react'
@@ -11,58 +11,35 @@ import {
   CardDescription,
   CardFooter,
 } from '@headlines/ui'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@headlines/ui'
 import { Label } from '@headlines/ui'
 import { Input } from '@headlines/ui'
 import { Button } from '@headlines/ui'
-import { Loader2, Wand2, UploadCloud, FileJson } from 'lucide-react'
-// DEFINITIVE FIX: Import server actions from the correct data-access package.
-import { scrapeAndExtractWithAI, addKnowledge } from '@headlines/data-access'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
+import { Loader2, UploadCloud, FileJson } from 'lucide-react'
+import { processUploadedArticle } from '@/lib/api-client'
 
 export function UploadView() {
-  const [url, setUrl] = useState('')
   const [file, setFile] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const fileInputRef = useRef(null)
-
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [extractedData, setExtractedData] = useState(null)
 
   const handleFileChange = (event) => {
     const uploadedFile = event.target.files[0]
     if (uploadedFile && uploadedFile.type === 'application/json') {
       setFile(uploadedFile)
-      setUrl('') // Clear URL input if a file is selected
     } else {
       toast.error('Please select a valid JSON file.')
       setFile(null)
     }
   }
 
-  const handleSubmit = async () => {
-    if (file) {
-      await handleProcessFile()
-    } else {
-      toast.error('File upload not yet implemented.')
-    }
-  }
-
   const handleProcessFile = async () => {
+    if (!file) return
     setIsLoading(true)
     const reader = new FileReader()
     reader.onload = async (e) => {
       try {
         const content = JSON.parse(e.target.result)
-        if (!Array.isArray(content)) throw new Error('JSON must be an array.')
+        if (!Array.isArray(content)) throw new Error('JSON must be an array of objects.')
 
         const totalItems = content.length
         const toastId = toast.loading(
@@ -76,21 +53,21 @@ export function UploadView() {
             continue
           }
           const result = await processUploadedArticle(item)
-          if (!result.success) {
+          if (result.error) {
             toast.error(
               `Failed to process item ${i + 1}: ${item.headline.substring(0, 30)}...`,
               { description: result.error }
             )
           }
-          toast.loading(
-            `Processing ${totalItems} items from file... (${i + 1}/${totalItems})`,
-            { id: toastId }
-          )
+          toast.loading(`Processing ${totalItems} items... (${i + 1}/${totalItems})`, {
+            id: toastId,
+          })
         }
 
-        toast.success(`Successfully processed ${totalItems} items from the file.`, {
-          id: toastId,
-        })
+        toast.success(
+          `Successfully processed file. ${totalItems} items were sent to the pipeline.`,
+          { id: toastId }
+        )
         setFile(null)
         if (fileInputRef.current) fileInputRef.current.value = ''
       } catch (error) {
@@ -138,7 +115,7 @@ export function UploadView() {
         </CardContent>
         <CardFooter className="p-8 pt-0">
           <Button
-            onClick={handleSubmit}
+            onClick={handleProcessFile}
             disabled={isLoading || !file}
             size="lg"
             className="h-12 w-full"

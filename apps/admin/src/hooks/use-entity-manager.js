@@ -1,108 +1,84 @@
-// apps/admin/src/hooks/use-entity-manager.js (version 2.1.0)
+// apps/admin/src/hooks/use-entity-manager.js (version 4.0.1 - Complete)
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useDebounce } from '@headlines/utils-shared'
+import { toast } from 'sonner'
 
-export function useEntityManager(apiPath, entityName, defaultSortKey, options = {}) {
-  const { dataKey } = options
-  const [entities, setEntities] = useState(null)
+export function useEntityManager(apiPath, queryKey, initialSort = []) {
+  const [data, setData] = useState([])
+  const [total, setTotal] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  // State for server-side operations
+  const [page, setPage] = useState(1)
+  const [sorting, setSorting] = useState(initialSort)
+  const [columnFilters, setColumnFilters] = useState([])
+  const debouncedFilters = useDebounce(columnFilters, 500)
 
   const fetchEntities = useCallback(async () => {
     setIsLoading(true)
     setError(null)
-    return fetch(apiPath)
-      .then(async (res) => {
-        if (!res.ok) {
-          const errorData = await res.json()
-          throw new Error(errorData.details || `Failed to fetch from ${apiPath}.`)
-        }
-        return res.json()
-      })
-      .then((data) => {
-        // DEFINITIVE FIX: Check if the API response has a 'data' property that is an array.
-        // This handles server-paginated endpoints that return an object like { data: [...], total: ... }.
-        if (data && Array.isArray(data.data)) {
-          setEntities(data.data)
-          return
-        }
+    try {
+      const sortParam = sorting[0]
+        ? `${sorting[0].id}_${sorting[0].desc ? 'desc' : 'asc'}`
+        : null
+      const params = new URLSearchParams()
+      params.set('page', page.toString())
+      if (sortParam) params.set('sort', sortParam)
+      if (debouncedFilters && debouncedFilters.length > 0) {
+        params.set('columnFilters', JSON.stringify(debouncedFilters))
+      }
 
-        if (dataKey && data[dataKey] && Array.isArray(data[dataKey])) {
-          setEntities(data[dataKey])
-          return
-        }
+      const res = await fetch(`${apiPath}?${params.toString()}`)
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.details || `Failed to fetch from ${apiPath}.`)
+      }
+      const result = await res.json()
 
-        const lowerEntityName = entityName.toLowerCase()
-        const keyMappings = {
-          country: 'countries',
-          watchlistentity: 'entities',
-          subscriber: 'subscribers',
-        }
-        const key = keyMappings[lowerEntityName] || `${lowerEntityName.toLowerCase()}s`
-
-        if (data[key] && Array.isArray(data[key])) {
-          // Perform default sort on the client after fetching
-          const sortedData = [...data[key]].sort((a, b) => {
-            // Handle nested keys like 'analytics.totalRelevant'
-            const getDeepValue = (obj, path) =>
-              path.split('.').reduce((o, i) => (o ? o[i] : 0), obj)
-            const valA = getDeepValue(a, defaultSortKey)
-            const valB = getDeepValue(b, defaultSortKey)
-            if (typeof valA === 'number' && typeof valB === 'number') {
-              return valB - valA // Default to descending for numbers
-            }
-            if (typeof valA === 'string' && typeof valB === 'string') {
-              return valA.localeCompare(valB) // Default to ascending for strings
-            }
-            return 0
-          })
-          setEntities(sortedData)
-        } else {
-          if (
-            typeof data === 'object' &&
-            data !== null &&
-            !Array.isArray(data) &&
-            Object.keys(data).length > 0
-          ) {
-            setEntities(data)
-          } else {
-            throw new Error(
-              `API response from '${apiPath}' did not contain the expected key: '${key}' or '${dataKey}'.`
-            )
-          }
-        }
-      })
-      .catch((err) => {
-        console.error(err)
-        setError(err.message)
-      })
-      .finally(() => setIsLoading(false))
-  }, [apiPath, entityName, dataKey, defaultSortKey])
+      setData(result.data || [])
+      setTotal(result.total || 0)
+    } catch (err) {
+      setError(err.message)
+      toast.error(`Failed to load data for ${queryKey}`, { description: err.message })
+    } finally {
+      setIsLoading(false)
+    }
+  }, [apiPath, queryKey, page, sorting, debouncedFilters])
 
   useEffect(() => {
     fetchEntities()
   }, [fetchEntities])
 
-  const handleSave = useCallback((savedEntity) => {
-    setEntities((prev) => {
-      if (!prev || !Array.isArray(prev)) return [savedEntity]
-
-      const exists = prev.some((e) => e._id === savedEntity._id)
-      if (exists) {
-        return prev.map((e) => (e._id === savedEntity._id ? savedEntity : e))
-      } else {
+  const handleSave = useCallback(
+    (savedEntity) => {
+      setData((prev) => {
+        const exists = prev.some((e) => e._id === savedEntity._id)
+        if (exists) {
+          return prev.map((e) => (e._id === savedEntity._id ? savedEntity : e))
+        }
         return [savedEntity, ...prev]
-      }
-    })
-  }, [])
+      })
+      fetchEntities()
+    },
+    [fetchEntities]
+  )
 
   return {
-    entities,
-    setEntities,
+    data,
+    setData,
+    total,
     isLoading,
     error,
     handleSave,
     refetch: fetchEntities,
+    page,
+    setPage,
+    sorting,
+    setSorting,
+    columnFilters,
+    setColumnFilters,
   }
 }

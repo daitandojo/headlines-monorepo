@@ -1,7 +1,7 @@
 // apps/pipeline/src/modules/email/index.js (version 3.0.0)
-import { logger } from '@headlines/utils/src/server.js';
+import { logger } from '@headlines/utils-server'
 import { performActualSupervisorEmailSend } from './mailer.js'
-import { Subscriber } from '@headlines/models/src/index.js'
+import { Subscriber } from '@headlines/models'
 
 /**
  * Coordinates sending the supervisor report email.

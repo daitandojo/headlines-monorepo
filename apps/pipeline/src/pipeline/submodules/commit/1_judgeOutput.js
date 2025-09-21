@@ -1,6 +1,6 @@
 // apps/pipeline/src/pipeline/submodules/commit/1_judgeOutput.js (version 2.4.1)
-import { logger } from '@headlines/utils/src/logger.js';
-import { judgeChain } from '@headlines/ai-services/src/index.js'
+import { logger } from '@headlines/utils-server'
+import { judgeChain } from '@headlines/ai-services'
 
 export async function judgeAndFilterOutput(pipelinePayload, fatalQualities) {
   const {

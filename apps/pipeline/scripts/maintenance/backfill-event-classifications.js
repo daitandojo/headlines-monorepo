@@ -4,7 +4,7 @@
 import mongoose from 'mongoose'
 import { SynthesizedEvent } from '../../../../packages/models/src/index.js'
 import { initializeScriptEnv } from '../seed/lib/script-init.js'
-import { logger } from '../../../../packages/utils/src/server.js'
+import { logger } from '../../../../packages/utils-server'
 import { callLanguageModel } from '../../../../packages/ai-services/src/index.js'
 import colors from 'ansi-colors'
 import cliProgress from 'cli-progress'

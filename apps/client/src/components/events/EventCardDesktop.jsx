@@ -1,16 +1,17 @@
 // src/components/events/EventCardDesktop.jsx (version 1.2)
 'use client'
 
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import {
+  Badge,
+  Button,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip'
+} from '@headlines/ui'
 import { Trash2, MessageSquarePlus, Users } from 'lucide-react'
-import { getCountryFlag } from '@/lib/countries'
+// DEFINITIVE FIX: Corrected the typo from '@headlines/utils-client' to '@headlines/utils'
+import { getCountryFlag } from '@headlines/utils-client'
 import Image from 'next/image'
 
 const getRelevanceBadgeClass = (score) => {

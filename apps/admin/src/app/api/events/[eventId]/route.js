@@ -1,16 +1,44 @@
-import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
-// apps/admin/src/app/api/events/[eventId]/route.js (version 1.0.0)
-import { NextResponse } from 'next/server';
-import { getAdminEventDetails } from '@headlines/data-access/src/index.js';
+// apps/admin/src/app/api/events/[eventId]/route.js (version 2.0.2)
+import { NextResponse } from 'next/server'
+import { getEventDetails, updateEvent, deleteEvent } from '@headlines/data-access'
+import { createApiHandler } from '@/lib/api-handler'
+import mongoose from 'mongoose'
 
-export const dynamic = 'force-dynamic';
-
-export async function GET(request, { params }) {
-  await initializeSharedLogic();
-    const { eventId } = params;
-    const result = await getAdminEventDetails(eventId);
-    if (!result.success) {
-        return NextResponse.json({ error: result.error }, { status: result.error.includes('not found') ? 404 : 500 });
-    }
-    return NextResponse.json(result.data);
+const handleGet = async (request, { params }) => {
+  const { eventId } = params
+  const result = await getEventDetails(eventId)
+  if (!result.success) {
+    throw new Error(result.error)
+  }
+  return NextResponse.json(result.data)
 }
+
+const handlePatch = async (request, { params }) => {
+  const { eventId } = params
+  if (!mongoose.Types.ObjectId.isValid(eventId)) {
+    return NextResponse.json({ error: 'Invalid event ID' }, { status: 400 })
+  }
+  const updateData = await request.json()
+  const result = await updateEvent(eventId, updateData)
+  if (!result.success) {
+    throw new Error(result.error)
+  }
+  return NextResponse.json(result)
+}
+
+const handleDelete = async (request, { params }) => {
+  const { eventId } = params
+  if (!mongoose.Types.ObjectId.isValid(eventId)) {
+    return NextResponse.json({ error: 'Invalid event ID' }, { status: 400 })
+  }
+  const result = await deleteEvent(eventId)
+  if (!result.success) {
+    throw new Error(result.error)
+  }
+  return NextResponse.json({ success: true })
+}
+
+export const GET = createApiHandler(handleGet)
+export const PATCH = createApiHandler(handlePatch)
+export const DELETE = createApiHandler(handleDelete)
+export const dynamic = 'force-dynamic'

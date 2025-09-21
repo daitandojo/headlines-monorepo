@@ -1,58 +1,31 @@
-// src/app/api/auth/login/route.js (version 2.3)
+// apps/client/src/app/api/auth/login/route.js
 import { NextResponse } from 'next/server'
+import { loginUser } from '@headlines/actions'
 import * as jose from 'jose'
-import bcrypt from 'bcryptjs'
-import { env } from '@/lib/env.mjs'
-import dbConnect from '@/lib/mongodb'
-import Subscriber from '@/models/Subscriber'
+import { env } from '@headlines/config/server'
 
 const JWT_COOKIE_NAME = 'headlines-jwt'
 
 export async function POST(request) {
   try {
-    await dbConnect()
     const { email, password } = await request.json()
-    console.log(`[API Login] Attempting login for: ${email}`)
 
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email and password are required.' },
-        { status: 400 }
-      )
+    // 1. Call the centralized business logic
+    const result = await loginUser({ email, password })
+
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 401 })
     }
 
-    const user = await Subscriber.findOne({
-      email: email.toLowerCase().trim(),
-      isActive: true,
-    }).select('+password')
+    const user = result.user
 
-    if (!user) {
-      console.warn(`[API Login] Auth failed: No active user found for ${email}`)
-      return NextResponse.json(
-        { error: 'Access is restricted to existing users only.' },
-        { status: 401 }
-      )
-    }
-
-    const isPasswordMatch = await bcrypt.compare(password, user.password)
-
-    if (!isPasswordMatch) {
-      console.warn(`[API Login] Auth failed: Incorrect password for ${email}`)
-      return NextResponse.json({ error: 'Invalid credentials.' }, { status: 401 })
-    }
-
-    console.log(`[API Login] Authentication successful for ${email}. Generating JWT.`)
+    // 2. Handle HTTP-specific tasks (JWT creation and cookie setting)
     const secret = new TextEncoder().encode(env.JWT_SECRET)
-
-    // START: CRITICAL FIX FOR JWT PAYLOAD
-    // Ensure the userId is a plain string before signing. Mongoose ObjectIds
-    // can otherwise be serialized into complex objects.
     const token = await new jose.SignJWT({
       userId: user._id.toString(),
       email: user.email,
       role: user.role,
     })
-      // END: CRITICAL FIX
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
       .setExpirationTime('30d')
@@ -78,7 +51,7 @@ export async function POST(request) {
 
     return response
   } catch (error) {
-    console.error('[API Login Error]', error)
+    console.error('[API Login Route Error]', error)
     return NextResponse.json(
       { error: 'An internal server error occurred.' },
       { status: 500 }

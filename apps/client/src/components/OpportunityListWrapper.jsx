@@ -4,7 +4,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { AnimatedList, itemVariants } from '@/components/AnimatedList'
 import { OpportunityCard } from '@/components/OpportunityCard'
-import { cn } from '@/lib/utils'
+import { cn } from '@headlines/utils-client'
 
 export function OpportunityListWrapper({ items, onDelete }) {
   return (

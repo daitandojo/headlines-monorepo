@@ -1,4 +1,3 @@
-// packages/ai-services/src/chains/articleChain.js (version 2.4 - Confirmed Final)
 import {
   ChatPromptTemplate,
   HumanMessagePromptTemplate,
@@ -7,15 +6,15 @@ import {
 import { AIMessage, HumanMessage } from '@langchain/core/messages'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { settings } from '../../../config/src/server.js'
+import { settings } from '@headlines/config/server'
 import {
   getInstructionArticle,
   shotsInputArticle,
   shotsOutputArticle,
-} from '../../../prompts/src/index.js'
+} from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
-import { logger } from '../../../utils/src/server.js';
+import { logger } from '@headlines/utils-server/logger'
 import { articleAssessmentSchema } from '../schemas/index.js'
 
 const instructions = getInstructionArticle(settings)

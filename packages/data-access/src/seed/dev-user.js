@@ -1,6 +1,4 @@
 // packages/data-access/src/seed/dev-user.js (version 2.0.0 - Standalone Safe)
-'use server'
-
 import { Subscriber } from '../../../models/src/index.js'
 import dbConnect from '../dbConnect.js'
 import mongoose from 'mongoose'

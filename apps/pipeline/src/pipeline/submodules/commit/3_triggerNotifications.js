@@ -1,8 +1,8 @@
 // apps/pipeline/src/pipeline/submodules/commit/3_triggerNotifications.js (version 2.2.3)
-import { logger } from '@headlines/utils/src/logger.js';
-import { streamNewEvent, streamNewArticle } from '../../../modules/realtime/index.js'
-import { SynthesizedEvent, Article } from '@headlines/models/src/index.js'
-import { settings } from '@headlines/config/src/server.js'
+import { logger } from '@headlines/utils-server'
+import { triggerRealtimeEvent } from '../../../modules/realtime/index.js'
+import { SynthesizedEvent, Article } from '@headlines/models'
+import { settings } from '@headlines/config/server.js'
 import { sendNotifications } from '../../../modules/notifications/index.js'
 
 export async function triggerNotifications(
@@ -25,7 +25,7 @@ export async function triggerNotifications(
           link: { $in: relevantArticleLinks },
         })
         for (const articleDoc of relevantArticleDocs) {
-          await streamNewArticle(articleDoc)
+          await triggerRealtimeEvent('articles-channel', 'new-article', articleDoc.toRealtimePayload())
         }
       }
     }
@@ -35,7 +35,7 @@ export async function triggerNotifications(
         _id: { $in: eventIds },
       })
       for (const eventDoc of eventDocsForStreaming) {
-        await streamNewEvent(eventDoc)
+        await triggerRealtimeEvent('events-channel', 'new-event', eventDoc.toRealtimePayload())
       }
     }
   }

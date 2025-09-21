@@ -16,11 +16,9 @@ import {
 } from 'lucide-react'
 import { Badge } from '@headlines/ui'
 import { SwipeToDelete } from './swipe/SwipeToDelete'
-import { cn } from '@headlines/utils'
+import { cn, getCountryFlag } from '@headlines/utils-client'
 import { EventContextDialog } from './EventContextDialog'
 import Link from 'next/link'
-// DEFINITIVE FIX: Import the getCountryFlag utility
-import { getCountryFlag } from '@headlines/utils'
 
 export function OpportunityCard({ opportunity, onSwipeLeft, isDeleting }) {
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false)

@@ -3,7 +3,11 @@ import { runAssessAndEnrich } from '../../../src/pipeline/3_assessAndEnrich.js'
 import { runClusterAndSynthesize } from '../../../src/pipeline/4_clusterAndSynthesize.js'
 import { judgeAndFilterOutput } from '../../../src/pipeline/submodules/commit/1_judgeOutput.js'
 import { saveResultsToDb } from '../../../src/pipeline/submodules/commit/2_saveResults.js'
-import { tokenTracker, apiCallTracker, logger } from '../../../../../packages/utils/src/server.js'
+import {
+  tokenTracker,
+  apiCallTracker,
+  logger,
+} from '../../../../../packages/utils-server'
 import { settings } from '../../../../../packages/config/src/server.js'
 
 const FATAL_JUDGEMENT_QUALITIES = ['Irrelevant', 'Poor']

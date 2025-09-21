@@ -1,6 +1,6 @@
 // apps/pipeline/src/orchestrator.js (version 14.2.0)
-import { logger } from '@headlines/utils/src/logger.js'
-import { tokenTracker, apiCallTracker } from '@headlines/utils/src/server.js'
+import { logger } from '@headlines/utils-server'
+import { tokenTracker, apiCallTracker } from '@headlines/utils-server'
 import { logFinalReport } from './utils/pipelineLogger.js'
 import { runPreFlightChecks } from './pipeline/1_preflight.js'
 import { runScrapeAndFilter } from './pipeline/2_scrapeAndFilter.js'
@@ -10,8 +10,8 @@ import { runCommitAndNotify } from './pipeline/5_commitAndNotify.js'
 import { suggestNewWatchlistEntities } from './pipeline/6_suggestNewWatchlistEntities.js'
 import { runSelfHealAndOptimize } from './pipeline/7_selfHealAndOptimize.js'
 import { updateSourceAnalytics } from './pipeline/submodules/commit/4_updateSourceAnalytics.js'
-import { settings } from '@headlines/config/src/server.js'
-import { RunVerdict } from '@headlines/models/src/index.js'
+import { settings } from '@headlines/config/server.js'
+import { RunVerdict } from '@headlines/models'
 
 async function saveRunVerdict(payload, duration) {
   if (payload.dbConnection && !payload.noCommitMode && !payload.useTestPayload) {

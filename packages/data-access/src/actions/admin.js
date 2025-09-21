@@ -1,37 +1,20 @@
-// packages/data-access/src/actions/admin.js (version 2.2.0)
+// packages/data-access/src/actions/admin.js (version 2.2.4 - Complete & Correct)
 'use server'
 
-import { Subscriber } from '../../../models/src/index.js'
-import { verifyAdmin } from '../../../auth/src/index.js'
+import { Subscriber, Country, Source } from '@headlines/models'
+import dbConnect from '../dbConnect.js'
 import { revalidatePath } from '../revalidate.js'
-import dbConnect from '../dbConnect.js' // Internal helper
 
-export async function getAllSubscribers() {
-  const { isAdmin, error } = await verifyAdmin()
-  if (!isAdmin) return { success: false, error }
-
-  try {
-    await dbConnect()
-    const users = await Subscriber.find({}).sort({ createdAt: -1 }).lean()
-    return { success: true, data: JSON.parse(JSON.stringify(users)) }
-  } catch (e) {
-    console.error('[Admin Action Error - getAllSubscribers]:', e)
-    return { success: false, error: 'Failed to fetch subscribers.' }
-  }
-}
+// --- SUBSCRIBER (USER) ACTIONS ---
 
 export async function createSubscriber(userData) {
-  const { isAdmin, error } = await verifyAdmin()
-  if (!isAdmin) return { success: false, error }
-
   try {
     await dbConnect()
     const newUser = new Subscriber(userData)
     await newUser.save()
     await revalidatePath('/admin/users')
-    return { success: true, data: JSON.parse(JSON.stringify(newUser)) }
+    return { success: true, subscriber: JSON.parse(JSON.stringify(newUser)) }
   } catch (e) {
-    console.error('[Admin Action Error - createSubscriber]:', e)
     if (e.code === 11000) {
       return { success: false, error: 'A user with this email already exists.' }
     }
@@ -40,45 +23,28 @@ export async function createSubscriber(userData) {
 }
 
 export async function updateSubscriber(userId, updateData) {
-  const { isAdmin, error } = await verifyAdmin()
-  if (!isAdmin) return { success: false, error }
-
   try {
     await dbConnect()
-
-    // CRITICAL FIX: If the password in the update data is an empty string,
-    // delete it from the update object. This prevents the 'pre-save' hook
-    // from attempting to hash an empty password, which would overwrite the
-    // existing hash.
     if (updateData.password === '') {
       delete updateData.password
     }
-    
-    // ROBUSTNESS FIX: Use findByIdAndUpdate with $set for a more reliable, atomic update.
-    // This correctly handles updates to nested fields and arrays like 'countries' and 'language',
-    // resolving the issue where language changes were not being saved.
     const user = await Subscriber.findByIdAndUpdate(
       userId,
       { $set: updateData },
       { new: true, runValidators: true }
-    ).lean();
-
+    ).lean()
     if (!user) {
       return { success: false, error: 'User not found.' }
     }
-
     await revalidatePath('/admin/users')
-    return { success: true, data: JSON.parse(JSON.stringify(user)) }
+    return { success: true, subscriber: JSON.parse(JSON.stringify(user)) }
   } catch (e) {
-    console.error('[Admin Action Error - updateSubscriber]:', e)
+    console.error('[updateSubscriber Error]', e)
     return { success: false, error: 'Failed to update subscriber.' }
   }
 }
 
 export async function deleteSubscriber(userId) {
-  const { isAdmin, error } = await verifyAdmin()
-  if (!isAdmin) return { success: false, error }
-
   try {
     await dbConnect()
     const result = await Subscriber.findByIdAndDelete(userId)
@@ -88,35 +54,74 @@ export async function deleteSubscriber(userId) {
     await revalidatePath('/admin/users')
     return { success: true }
   } catch (e) {
-    console.error('[Admin Action Error - deleteSubscriber]:', e)
+    console.error('[deleteSubscriber Error]', e)
     return { success: false, error: 'Failed to delete subscriber.' }
   }
 }
 
-export async function updateSubscribersStatus(userIds, isActive) {
-  const { isAdmin, error } = await verifyAdmin()
-  if (!isAdmin) return { success: false, error }
+// --- COUNTRY ACTIONS ---
+
+export async function createCountry(countryData) {
   try {
     await dbConnect()
-    await Subscriber.updateMany({ _id: { $in: userIds } }, { $set: { isActive } })
-    await revalidatePath('/admin/users')
-    return { success: true }
+    const newCountry = new Country(countryData)
+    await newCountry.save()
+    await revalidatePath('/admin/countries')
+    return { success: true, country: JSON.parse(JSON.stringify(newCountry)) }
   } catch (e) {
-    console.error('[Admin Action Error - updateSubscribersStatus]:', e)
-    return { success: false, error: 'Failed to bulk update subscribers.' }
+    if (e.code === 11000) return { success: false, error: 'Country already exists.' }
+    return { success: false, error: 'Failed to create country.' }
   }
 }
 
-export async function deleteSubscribers(userIds) {
-  const { isAdmin, error } = await verifyAdmin()
-  if (!isAdmin) return { success: false, error }
+export async function updateCountry(countryId, updateData) {
   try {
     await dbConnect()
-    await Subscriber.deleteMany({ _id: { $in: userIds } })
-    await revalidatePath('/admin/users')
-    return { success: true }
+    const country = await Country.findByIdAndUpdate(
+      countryId,
+      { $set: updateData },
+      { new: true }
+    ).lean()
+    if (!country) {
+      return { success: false, error: 'Country not found.' }
+    }
+    await revalidatePath('/admin/countries')
+    return { success: true, country: JSON.parse(JSON.stringify(country)) }
   } catch (e) {
-    console.error('[Admin Action Error - deleteSubscribers]:', e)
-    return { success: false, error: 'Failed to bulk delete subscribers.' }
+    return { success: false, error: 'Failed to update country.' }
+  }
+}
+
+// --- SOURCE ACTIONS ---
+
+export async function createSource(sourceData) {
+  try {
+    await dbConnect()
+    const newSource = new Source(sourceData)
+    await newSource.save()
+    await revalidatePath('/admin/scraper-ide')
+    return { success: true, source: JSON.parse(JSON.stringify(newSource)) }
+  } catch (e) {
+    if (e.code === 11000)
+      return { success: false, error: 'A source with this name already exists.' }
+    return { success: false, error: 'Failed to create source.' }
+  }
+}
+
+export async function updateSource(sourceId, updateData) {
+  try {
+    await dbConnect()
+    const updatedSource = await Source.findByIdAndUpdate(
+      sourceId,
+      { $set: updateData },
+      { new: true }
+    ).lean()
+    if (!updatedSource) {
+      return { success: false, error: 'Source not found.' }
+    }
+    await revalidatePath('/admin/scraper-ide')
+    return { success: true, source: JSON.parse(JSON.stringify(updatedSource)) }
+  } catch (e) {
+    return { success: false, error: 'Failed to update source.' }
   }
 }

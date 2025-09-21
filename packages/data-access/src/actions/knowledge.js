@@ -1,6 +1,4 @@
 // src/actions/knowledge.js (version 2.0)
-'use server'
-
 import { revalidatePath } from 'next/cache'
 import { Pinecone } from '@pinecone-database/pinecone'
 import mongoose from 'mongoose'

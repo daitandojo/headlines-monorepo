@@ -1,10 +1,9 @@
-// apps/client/src/components/EventList.jsx (version 6.1.0 - Prop Fix)
+'use client'
 import { Accordion } from '@headlines/ui'
 import { SynthesizedEventCard } from '@/components/SynthesizedEventCard'
 import { AnimatePresence, motion } from 'framer-motion'
 import { AnimatedList, itemVariants } from './AnimatedList'
-import { cn } from '@headlines/utils'
-
+import { cn } from '@headlines/utils-client'
 export const EventList = ({
   items: events = [],
   onSwipeLeft,

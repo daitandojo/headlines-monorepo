@@ -2,12 +2,9 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
+import { Popover, PopoverContent, PopoverTrigger, Button, Badge, Input } from '@headlines/ui'
 import { PlusCircle, X, Search } from 'lucide-react'
-import { getCountryFlag } from '@/lib/countries'
+import { getCountryFlag } from '@headlines/utils-client'
 
 export function CountrySubscriptionEditor({
   allCountries,

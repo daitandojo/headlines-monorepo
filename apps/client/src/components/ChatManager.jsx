@@ -1,39 +1,22 @@
-// src/components/ChatManager.jsx (version 2.0)
+// apps/client/src/components/ChatManager.jsx (version 2.0.0)
 'use client'
 
 import { useEffect } from 'react'
 import { ChatSidebar } from './chat/ChatSidebar'
 import { ChatView } from './ChatView'
-import useAppStore from '@/store/use-app-store'
-import { useHasHydrated } from '@/hooks/use-has-hydrated'
+import useAppStore, { useHydratedAppStore } from '@/store/use-app-store'
 import { Loader2 } from 'lucide-react'
 
 export function ChatManager() {
-  const {
-    chats,
-    activeChatId,
-    createChat,
-    selectChat,
-    updateChatTitle,
-    getMessagesForChat,
-    setMessagesForChat,
-    init,
-  } = useAppStore()
-
-  // Use the new hook to gate rendering until hydration is complete.
-  const hasHydrated = useHasHydrated()
+  const { chats, activeChatId, createChat, selectChat, init } = useAppStore()
+  const hasHydrated = useHydratedAppStore((state) => state.hydrated)
 
   useEffect(() => {
-    // The init logic now safely runs only after hydration is confirmed.
     if (hasHydrated) {
       init()
     }
   }, [hasHydrated, init])
 
-  // The condition is now based on the reliable hydration status.
-  // This ensures server and initial client renders are identical (showing the loader).
-  // The component will re-render and show the chat UI only after the
-  // `useHasHydrated` hook returns true.
   if (!hasHydrated || !activeChatId) {
     return (
       <div className="flex items-center justify-center h-full text-slate-500">
@@ -53,13 +36,7 @@ export function ChatManager() {
           selectChat={selectChat}
         />
       </div>
-      <ChatView
-        key={activeChatId}
-        chatId={activeChatId}
-        updateChatTitle={updateChatTitle}
-        getMessages={getMessagesForChat}
-        setMessages={setMessagesForChat}
-      />
+      <ChatView key={activeChatId} chatId={activeChatId} />
     </div>
   )
 }

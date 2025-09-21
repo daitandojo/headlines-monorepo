@@ -1,8 +1,8 @@
 // apps/admin/src/app/api/ai/enrich-entity/route.js (version 2.0.1)
 import { NextResponse } from 'next/server'
 import { initializeSharedLogic } from '@/lib/init-shared-logic'
-import { callLanguageModel } from '@headlines/ai-services/src/index.js'
-import { verifyAdmin } from '@headlines/auth/src/index.js'
+import { callLanguageModel } from '@headlines/ai-services'
+import { verifyAdmin } from '@headlines/auth'
 
 const getEntityEnrichmentPrompt = () => `
 You are a corporate intelligence analyst. Your task is to provide a brief, factual, one-sentence context for a given person, family, or company name. This context will be used in a financial intelligence watchlist.

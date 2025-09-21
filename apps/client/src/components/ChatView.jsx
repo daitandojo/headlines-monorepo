@@ -1,4 +1,3 @@
-// apps/client/src/components/ChatView.jsx (version 9.2.0 - Import Fix)
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
@@ -9,8 +8,7 @@ import { ChatMessage } from '@/components/chat/ChatMessage'
 import { ChatInput } from '@/components/chat/ChatInput'
 import { ChatScrollAnchor } from '@/components/chat/ChatScrollAnchor'
 import useAppStore from '@/store/use-app-store'
-// DEFINITIVE FIX: Import the server action from the correct data-access package.
-import { generateChatTitle } from '@headlines/data-access'
+import { generateChatTitle } from '@lib/api-client'
 
 async function postChatMessage({ messagesForApi }) {
   const sanitizedMessages = messagesForApi.map(({ role, content }) => ({ role, content }))
@@ -32,6 +30,7 @@ export function ChatView({ chatId }) {
   const scrollAnchorRef = useRef(null)
   const queryClient = useQueryClient()
   const chatQueryKey = ['chat', chatId]
+  const { updateChatTitle } = useAppStore()
 
   const { chatContextPrompt, setChatContextPrompt } = useAppStore((state) => ({
     chatContextPrompt: state.chatContextPrompt,
@@ -40,7 +39,7 @@ export function ChatView({ chatId }) {
 
   const { data: messages = [] } = useQuery({
     queryKey: chatQueryKey,
-    queryFn: () => [],
+    queryFn: () => [], // Handled by Zustand, so no fetch needed here.
     staleTime: Infinity,
     gcTime: 1000 * 60 * 5,
   })
@@ -76,9 +75,7 @@ export function ChatView({ chatId }) {
       if (queryClient.getQueryData(chatQueryKey).length === 2) {
         generateChatTitle(queryClient.getQueryData(chatQueryKey)).then((result) => {
           if (result.success) {
-            // This part needs a way to update the sidebar, which is outside this component's scope.
-            // For now, we'll log it. A global state manager like Zustand would handle this.
-            console.log('New chat title:', result.title)
+            updateChatTitle(chatId, result.title)
           }
         })
       }

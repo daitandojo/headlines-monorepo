@@ -2,7 +2,7 @@
 undefined
 import { initializeSettings } undefined;
 import { truncateString } from '../../../../packages/utils/src/index.js';
-import { logger, reinitializeLogger } from '../../../../packages/utils/src/server.js';
+import { logger, reinitializeLogger } from '../../../../packages/utils-server';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import yargs from 'yargs';

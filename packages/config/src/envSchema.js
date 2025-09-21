@@ -1,4 +1,3 @@
-// packages/config/src/envSchema.js (version 8.0.0)
 import { z } from 'zod'
 
 const stringToBoolean = z
@@ -16,7 +15,6 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().startsWith('sk-'),
   PINECONE_API_KEY: z.string().min(1),
   PINECONE_INDEX_NAME: z.string().min(1).default('headlines'),
-  // Upstash Redis credentials
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
   SMTP_HOST: z.string().min(1),
@@ -28,7 +26,6 @@ const envSchema = z.object({
   SMTP_FROM_NAME: z.string().min(1).default('Headlines AI'),
   NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().min(1),
   VAPID_PRIVATE_KEY: z.string().min(1),
-  // THIS IS THE CORRECTED LINE: It no longer looks for quotes.
   VAPID_SUBJECT: z.string().startsWith('mailto:'),
   NEXT_PUBLIC_PUSHER_KEY: z.string().min(1),
   NEXT_PUBLIC_PUSHER_CLUSTER: z.string().min(1),

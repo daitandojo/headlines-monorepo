@@ -1,5 +1,5 @@
 // apps/pipeline/src/pipeline/5_commitAndNotify.js
-import { logger, auditLogger } from '@headlines/utils/src/server.js'
+import { logger, auditLogger } from '@headlines/utils-server'
 import { sendSupervisorReportEmail } from '../modules/email/index.js'
 import { judgeAndFilterOutput } from './submodules/commit/1_judgeOutput.js'
 import { saveResultsToDb } from './submodules/commit/2_saveResults.js'

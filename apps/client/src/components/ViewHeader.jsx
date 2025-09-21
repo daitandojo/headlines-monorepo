@@ -1,28 +1,39 @@
-// src/components/ViewHeader.jsx (version 2.1)
+// apps/client/src/components/ViewHeader.jsx (version 3.0.0)
 'use client'
 
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useState, useEffect } from 'react'
-import { useDebounce } from '@/hooks/use-debounce'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import { useState, useEffect, useMemo } from 'react'
+import { useDebounce } from '@headlines/utils-client'
 import {
+  Input,
+  Button,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip'
-import { Search, Clock, BarChart, ArrowDownUp } from 'lucide-react'
-import { cn } from '@/lib/utils'
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  ScrollArea,
+} from '@headlines/ui'
+import { Search, Clock, BarChart, ArrowDownUp, Mail, Star, X } from 'lucide-react'
+import { cn } from '@headlines/utils-client'
 
-const iconMap = {
-  clock: Clock,
-  relevance: BarChart,
-  size: ArrowDownUp,
-}
+const iconMap = { clock: Clock, relevance: BarChart, size: ArrowDownUp }
 
-export function ViewHeader({ title, baseSubtitle, count, isCountLoading, sortOptions }) {
+export function ViewHeader({
+  title,
+  sortOptions,
+  allCountries = [],
+  globalCountryFilter = [],
+  onGlobalCountryFilterChange,
+  viewCountry,
+  onViewCountryChange,
+}) {
   const router = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
 
   const currentSort = searchParams.get('sort') || 'date_desc'
@@ -31,49 +42,72 @@ export function ViewHeader({ title, baseSubtitle, count, isCountLoading, sortOpt
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString())
-    if (debouncedSearchTerm) {
-      params.set('q', debouncedSearchTerm)
-    } else {
-      params.delete('q')
-    }
-    // Use replace to avoid polluting browser history on every keystroke.
-    // The dependency array is changed to only run when the debounced term changes, fixing the loop.
+    if (debouncedSearchTerm) params.set('q', debouncedSearchTerm)
+    else params.delete('q')
     router.replace(`?${params.toString()}`, { scroll: false })
-  }, [debouncedSearchTerm, router]) // <-- REMOVED searchParams from dependencies
+  }, [debouncedSearchTerm, router, searchParams])
 
-  const handleSortChange = (newSort) => {
+  const handleUrlParamChange = (key, value) => {
     const params = new URLSearchParams(searchParams.toString())
-    if (newSort === 'date_desc') {
-      params.delete('sort')
-    } else {
-      params.set('sort', newSort)
-    }
-    router.push(`?${params.toString()}`, { scroll: false })
+    if (!value || value === 'all' || value === false) params.delete(key)
+    else params.set(key, value)
+    params.set('page', '1')
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
   }
 
-  const subtitleText = isCountLoading
-    ? 'Calculating...'
-    : `${count?.toLocaleString() ?? '...'} ${baseSubtitle}`
+  const handleClearSearch = () => setSearchTerm('')
+
+  const displayedCountries = useMemo(() => {
+    if (globalCountryFilter.length > 0) {
+      const globalFilterSet = new Set(globalCountryFilter)
+      return allCountries.filter((c) => globalFilterSet.has(c.name))
+    }
+    return allCountries
+  }, [allCountries, globalCountryFilter])
 
   return (
-    <div className="flex flex-col items-center justify-center text-center mb-8 space-y-6 max-w-4xl mx-auto">
+    <div className="flex flex-col items-center justify-center text-center mb-8 space-y-6 max-w-5xl mx-auto">
       <div>
         <h2 className="text-3xl font-bold tracking-tight text-slate-100">{title}</h2>
-        {/* <p className="text-slate-400 mt-1 transition-colors">{subtitleText}</p> */}
       </div>
-
       <div className="w-full flex flex-col sm:flex-row items-center gap-4">
+        <div className="flex w-full sm:w-auto items-center gap-2">
+          <Select value={viewCountry} onValueChange={onViewCountryChange}>
+            <SelectTrigger className="w-full sm:w-[200px] h-12 bg-slate-900/80 border-slate-700">
+              <SelectValue placeholder="View Country..." />
+            </SelectTrigger>
+            <SelectContent>
+              <ScrollArea className="h-[250px]">
+                <SelectItem value="all">All Selected Countries</SelectItem>
+                {displayedCountries.map((country) => (
+                  <SelectItem key={country.name} value={country.name}>
+                    {country.name} ({country.count})
+                  </SelectItem>
+                ))}
+              </ScrollArea>
+            </SelectContent>
+          </Select>
+        </div>
         <div className="relative flex-grow w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
           <Input
             id="search"
-            placeholder="Search by name, company, or keyword..."
+            placeholder="Search by name, company..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="bg-slate-900/80 border-slate-700 h-12 pl-10"
+            className="bg-slate-900/80 border-slate-700 h-12 pl-10 pr-10"
           />
+          {searchTerm && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+              onClick={handleClearSearch}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
-
         <div className="flex items-center gap-2">
           <TooltipProvider>
             {sortOptions.map((option) => {
@@ -84,7 +118,12 @@ export function ViewHeader({ title, baseSubtitle, count, isCountLoading, sortOpt
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => handleSortChange(option.value)}
+                      onClick={() =>
+                        handleUrlParamChange(
+                          'sort',
+                          option.value === 'date_desc' ? null : option.value
+                        )
+                      }
                       className={cn(
                         'h-12 w-12',
                         currentSort === option.value && 'bg-blue-500/20 text-blue-300'

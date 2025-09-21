@@ -1,13 +1,13 @@
 // apps/pipeline/src/modules/notifications/emailDispatcher.js
-import { groupItemsByCountry, getCountryFlag } from '@headlines/utils/src/server.js'
-import { logger, auditLogger } from '@headlines/utils/src/server.js'
+import { groupItemsByCountry, getCountryFlag } from '@headlines/utils-server'
+import { logger, auditLogger } from '@headlines/utils-server'
 import { createPersonalizedEmailBody } from '../email/components/emailBodyBuilder.js'
 import { sendWealthEventsEmail } from '../email/mailer.js'
 import {
   emailSubjectChain,
   emailIntroChain,
   translateChain,
-} from '@headlines/ai-services/src/index.js'
+} from '@headlines/ai-services'
 
 export async function sendBulkEmails(emailQueue) {
   if (emailQueue.length === 0) return 0

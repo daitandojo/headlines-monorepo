@@ -1,7 +1,7 @@
 // apps/pipeline/src/modules/notifications/pushService.js (version 3.0.0)
-import { logger } from '@headlines/utils/src/server.js';
-import { PushSubscription } from '@headlines/models/src/index.js'
-import { webpush, isPushConfigured } from '@headlines/scraper-logic/src/push/client.js'
+import { logger } from '@headlines/utils-server'
+import { PushSubscription } from '@headlines/models'
+import { webpush, isPushConfigured } from '@headlines/scraper-logic/push/client.js'
 
 function createPushPayload(events, opportunities) {
   let title = 'New Intelligence Alert'

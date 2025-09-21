@@ -1,62 +1,74 @@
-// packages/data-access/src/actions/dashboard.js (version 2.0.0)
+// packages/data-access/src/actions/dashboard.js (version 2.0.1)
 'use server'
 
-import { Source, Subscriber, WatchlistEntity } from '../../../models/src/index.js'
-import { verifyAdmin } from '../../../auth/src/index.js'
+import {
+  Source,
+  Subscriber,
+  WatchlistEntity,
+  Article,
+  SynthesizedEvent,
+  Opportunity,
+} from '../../../models/src/index.js'
+import { verifySession } from '../../../auth/src/index.js'
 import dbConnect from '../dbConnect.js'
 
 export async function getDashboardStats() {
-  // This action is called by both the pipeline (no user session) and admin app (admin session).
-  // The admin check ensures security for the API route endpoint.
-  const { isAdmin, error } = await verifyAdmin()
-  if (!isAdmin) {
-    // A simple check to see if this is being called from the pipeline (where there's no user)
-    // This is a pragmatic way to allow dual use.
-    const isPipeline = process.env.IS_PIPELINE_RUN === 'true'
-    if (!isPipeline) {
-       return { success: false, error }
-    }
+  const { user } = await verifySession()
+  const isPipeline = process.env.IS_PIPELINE_RUN === 'true'
+  if (!user && !isPipeline) {
+    return { success: false, error: 'Authentication required.' }
   }
 
   try {
     await dbConnect()
-    const [sourceStats, userStats, watchlistStats] = await Promise.all([
+    const [
+      sourceStats,
+      userStats,
+      watchlistStats,
+      articleStats,
+      eventStats,
+      opportunityStats,
+    ] = await Promise.all([
       Source.aggregate([
         {
           $group: {
             _id: null,
             total: { $sum: 1 },
             active: { $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] } },
-            paused: { $sum: { $cond: [{ $eq: ['$status', 'paused'] }, 1, 0] } },
-            failing: { $sum: { $cond: [{ $and: [{ $eq: ['$status', 'active'] }, { $eq: ['$analytics.lastRunHeadlineCount', 0] }, { $gt: ['$analytics.totalRuns', 0] }] }, 1, 0] } },
           },
         },
       ]),
       Subscriber.aggregate([
-        { $group: { _id: null, total: { $sum: 1 }, active: { $sum: { $cond: ['$isActive', 1, 0] } }, admin: { $sum: { $cond: [{ $eq: ['$role', 'admin'] }, 1, 0] } } } },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            active: { $sum: { $cond: ['$isActive', 1, 0] } },
+          },
+        },
       ]),
-      WatchlistEntity.aggregate([
-        { $match: { status: 'active' } }, // Only count active entities
-        { $group: { _id: '$type', count: { $sum: 1 } } },
-      ]),
+      WatchlistEntity.aggregate([{ $group: { _id: null, total: { $sum: 1 } } }]),
+      Article.aggregate([{ $group: { _id: null, total: { $sum: 1 } } }]),
+      SynthesizedEvent.aggregate([{ $group: { _id: null, total: { $sum: 1 } } }]),
+      Opportunity.aggregate([{ $group: { _id: null, total: { $sum: 1 } } }]),
     ])
 
-    const totalWatchlist = watchlistStats.reduce((acc, item) => acc + item.count, 0)
-
     const stats = {
-      sources: sourceStats[0] || { total: 0, active: 0, paused: 0, failing: 0 },
-      users: userStats[0] || { total: 0, active: 0, admin: 0 },
-      watchlist: {
-        total: totalWatchlist,
-        company: watchlistStats.find((s) => s._id === 'company')?.count || 0,
-        person: watchlistStats.find((s) => s._id === 'person')?.count || 0,
-        family: watchlistStats.find((s) => s._id === 'family')?.count || 0,
-      },
+      sources: sourceStats[0] || { total: 0, active: 0 },
+      users: userStats[0] || { total: 0, active: 0 },
+      watchlist: watchlistStats[0] || { total: 0 },
+      articles: articleStats[0] || { total: 0 },
+      events: eventStats[0] || { total: 0 },
+      opportunities: opportunityStats[0] || { total: 0 },
     }
-    // Remove the internal _id field from aggregations
-    delete stats.sources._id;
-    delete stats.users._id;
-    
+
+    delete stats.sources._id
+    delete stats.users._id
+    delete stats.watchlist._id
+    delete stats.articles._id
+    delete stats.events._id
+    delete stats.opportunities._id
+
     return { success: true, data: stats }
   } catch (e) {
     return { success: false, error: 'Failed to fetch dashboard stats.' }

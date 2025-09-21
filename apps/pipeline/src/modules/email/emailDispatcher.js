@@ -1,13 +1,13 @@
 // apps/pipeline/src/modules/notifications/emailDispatcher.js (version 4.0.1)
-import { groupItemsByCountry, getCountryFlag } from '@headlines/utils/src/server.js'
-import { logger } from '@headlines/utils/src/server.js'
+import { groupItemsByCountry, getCountryFlag } from '@headlines/utils-server'
+import { logger } from '@headlines/utils-server'
 import { createPersonalizedEmailBody } from '../email/components/emailBodyBuilder.js'
-import { sendWealthEventsEmail } from '../email/mailer.js'
+import { sendWealthEventsEmail } from '@headlines/utils-server'
 import {
   emailSubjectChain,
   emailIntroChain,
   translateChain,
-} from '@headlines/ai-services/src/index.js'
+} from '@headlines/ai-services'
 
 export async function sendBulkEmails(emailQueue) {
   if (emailQueue.length === 0) return 0
@@ -51,7 +51,7 @@ export async function sendBulkEmails(emailQueue) {
         summary: e.synthesized_summary,
       }))
 
-      // DEFINITIVE FIX: Use direct await calls instead of .invoke
+      // DEFINITIVE FIX: Use direct await calls instead of  
       const [subjectResult, introResult] = await Promise.all([
         emailSubjectChain({
           events_json_string: JSON.stringify(eventPayloadForAI),
@@ -99,7 +99,7 @@ export async function sendBulkEmails(emailQueue) {
 
       if (targetLanguage !== 'English') {
         logger.info(`Translating email for ${user.email} into ${targetLanguage}...`)
-        // DEFINITIVE FIX: Use direct await calls instead of .invoke
+        // DEFINITIVE FIX: Use direct await calls instead of  
         const translationResult = await translateChain({
           language: targetLanguage,
           html_content: htmlBody,

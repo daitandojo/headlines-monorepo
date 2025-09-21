@@ -1,7 +1,7 @@
 // apps/pipeline/src/utils/pipelineLogger.js (version 4.1.0)
-import { logger } from '@headlines/utils/src/logger.js';
-import moment from 'moment';
-import 'moment-duration-format';
+import { logger } from '@headlines/utils-server'
+import moment from 'moment'
+import 'moment-duration-format'
 import {
   formatRunFunnel,
   formatTopEvents,
@@ -23,7 +23,9 @@ const colors = {
  * @param {number} duration - The duration of the pipeline run in seconds.
  */
 export async function logFinalReport(runStats, duration) {
-  const formattedDuration = moment.duration(Math.round(duration), 'seconds').format("h [hrs], m [min], s [sec]");
+  const formattedDuration = moment
+    .duration(Math.round(duration), 'seconds')
+    .format('h [hrs], m [min], s [sec]')
 
   let report = `\n\n${colors.cyan}=============================================================${colors.reset}\n`
   report += `${colors.cyan} 🚀 PIPELINE RUN SUMMARY${colors.reset}\n`

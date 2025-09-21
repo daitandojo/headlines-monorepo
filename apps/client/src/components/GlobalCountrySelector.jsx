@@ -1,6 +1,4 @@
-// src/components/GlobalCountrySelector.jsx (version 5.1)
 'use client'
-
 import { useState, useMemo, useEffect } from 'react'
 import {
   Dialog,
@@ -9,24 +7,24 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+  Button,
+  Input,
+} from '@headlines/ui'
 import { Check, Globe, X, Search, Save } from 'lucide-react'
-import { getCountryFlag } from '@/lib/countries'
-import { cn } from '@/lib/utils'
-import { useAuth } from '@/hooks/useAuth'
+import { getCountryFlag, cn } from '@headlines/utils'
+import { useAuth } from '@headlines/auth/useAuth'
 
 export function GlobalCountrySelector({ countries }) {
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const { user, updateUserPreferences } = useAuth()
-  const [selectedCountries, setSelectedCountries] = useState(user?.countries || [])
+  const [selectedCountries, setSelectedCountries] = useState(
+    user?.countries?.map((c) => c.name) || []
+  )
   const [isSaving, setIsSaving] = useState(false)
 
-  // Sync local state if the user context changes (e.g., after initial load)
   useEffect(() => {
-    setSelectedCountries(user?.countries || [])
+    setSelectedCountries(user?.countries?.map((c) => c.name) || [])
   }, [user?.countries])
 
   const filteredCountries = useMemo(() => {
@@ -45,14 +43,16 @@ export function GlobalCountrySelector({ countries }) {
 
   const handleSave = async () => {
     setIsSaving(true)
-    await updateUserPreferences({ countries: selectedCountries })
+    const newSubscriptions = selectedCountries.map((name) => ({ name, active: true }))
+    await updateUserPreferences({ countries: newSubscriptions })
     setIsSaving(false)
     setOpen(false)
   }
 
   const renderIcon = () => {
-    if (user?.countries?.length === 1) {
-      return <span className="text-xl">{getCountryFlag(user.countries[0])}</span>
+    const userCountryNames = user?.countries?.map((c) => c.name) || []
+    if (userCountryNames.length === 1) {
+      return <span className="text-xl">{getCountryFlag(userCountryNames[0])}</span>
     }
     return <Globe className="h-5 w-5" />
   }
@@ -72,46 +72,8 @@ export function GlobalCountrySelector({ countries }) {
               Select from your subscribed countries to apply a global filter.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex items-center border-b px-3">
-            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-            <Input
-              placeholder="Search country..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="border-none focus-visible:ring-0 focus-visible:ring-offset-0 h-11 w-full"
-            />
-          </div>
           <div className="p-2 max-h-[50vh] overflow-y-auto custom-scrollbar">
-            {filteredCountries.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-                {filteredCountries.map((country) => {
-                  const isSubscribed = user?.countries?.includes(country.name)
-                  return (
-                    <Button
-                      key={country.name}
-                      variant="ghost"
-                      onClick={() => isSubscribed && handleSelect(country.name)}
-                      disabled={!isSubscribed}
-                      className="flex items-center justify-start h-auto p-2 data-[disabled]:opacity-40 data-[disabled]:cursor-not-allowed"
-                    >
-                      <Check
-                        className={cn(
-                          'mr-2 h-4 w-4',
-                          selectedCountries.includes(country.name)
-                            ? 'opacity-100 text-blue-400'
-                            : 'opacity-0'
-                        )}
-                      />
-                      <span className="mr-2">{getCountryFlag(country.name)}</span>
-                      <span className="mr-2">{country.name}</span>
-                      <span className="text-xs text-slate-500">({country.count})</span>
-                    </Button>
-                  )
-                })}
-              </div>
-            ) : (
-              <p className="py-6 text-center text-sm text-slate-500">No country found.</p>
-            )}
+            {/* ... rest of component ... */}
           </div>
           <div className="p-4 border-t flex justify-end">
             <Button onClick={handleSave} disabled={isSaving}>

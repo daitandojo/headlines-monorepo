@@ -2,7 +2,7 @@
 undefined
 import { initializeSettings } undefined;
 import { sleep, truncateString } from '../../../../packages/utils/src/index.js';
-import { reinitializeLogger as initializeLogger, logger } from '../../../../packages/utils/src/server.js';
+import { reinitializeLogger as initializeLogger, logger } from '../../../../packages/utils-server';
 import path from 'path';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';

@@ -2,7 +2,7 @@
 import { callLanguageModel } from '../../../../../packages/ai-services/src/index.js'
 import { settings } from '../../../../../packages/config/src/server.js'
 // DEFINITIVE FIX: Import loggers from the shared utils package
-import { logger, auditLogger } from '../../../../../packages/utils/src/server.js'
+import { logger, auditLogger } from '../../../../../packages/utils-server'
 import { z } from 'zod'
 
 const eventChunkSchema = z.object({
@@ -83,14 +83,20 @@ const createFallbackEvent = (person) => {
 export async function chunkHistoryIntoEvents(person) {
   logger.info(`  -> AI Event Chunker: Analyzing history for ${person.name}...`)
   try {
-    auditLogger.info({ context: { background_text: person.background }}, `Event Chunker Input for ${person.name}`);
+    auditLogger.info(
+      { context: { background_text: person.background } },
+      `Event Chunker Input for ${person.name}`
+    )
     const response = await callLanguageModel({
       modelName: settings.LLM_MODEL_UTILITY,
       systemPrompt: PROMPT,
       userContent: person.background,
       isJson: true,
     })
-    auditLogger.info({ context: { llm_response: response }}, `Event Chunker Raw Output for ${person.name}`);
+    auditLogger.info(
+      { context: { llm_response: response } },
+      `Event Chunker Raw Output for ${person.name}`
+    )
 
     const validation = eventChunkSchema.safeParse(response)
     if (!validation.success) {

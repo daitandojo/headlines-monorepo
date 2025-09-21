@@ -1,8 +1,8 @@
 // apps/pipeline/src/utils/reportSections.js (version 5.1.0)
-import { truncateString } from '@headlines/utils/src/server.js';
-import { logger } from '@headlines/utils/src/logger.js';
-import moment from 'moment';
-import 'moment-duration-format';
+import { truncateString } from '@headlines/utils-server'
+import { logger } from '@headlines/utils-server'
+import moment from 'moment'
+import 'moment-duration-format'
 
 const colors = {
   reset: '\x1b[0m',
@@ -186,12 +186,15 @@ export function formatContentScrapingFailures(runStats) {
 }
 
 export async function formatStrugglingSources(runStats, dbStats) {
-  const headlineFailures = (runStats.scraperHealth || []).filter(h => !h.success);
-  const strugglingSources = new Map();
+  const headlineFailures = (runStats.scraperHealth || []).filter((h) => !h.success)
+  const strugglingSources = new Map()
 
-  headlineFailures.forEach(failure => {
-    strugglingSources.set(failure.source, 'Scraped 0 headlines (Immediate Action Required)');
-  });
+  headlineFailures.forEach((failure) => {
+    strugglingSources.set(
+      failure.source,
+      'Scraped 0 headlines (Immediate Action Required)'
+    )
+  })
 
   let section = `  ${colors.magenta}Actionable Source Health Alerts:${colors.reset}\n`
   if (strugglingSources.size > 0) {
@@ -206,4 +209,6 @@ export async function formatStrugglingSources(runStats, dbStats) {
   return section + '\n'
 }
 
-export function formatTopSources(dbStats) { return '' }
+export function formatTopSources(dbStats) {
+  return ''
+}

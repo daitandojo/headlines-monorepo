@@ -10,9 +10,9 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogCancel,
-} from '@/components/ui/alert-dialog'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
+  Button,
+  Label
+} from '@headlines/ui'
 import { AlertTriangle, Loader2 } from 'lucide-react'
 import useAppStore from '@/store/use-app-store'
 

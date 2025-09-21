@@ -1,8 +1,21 @@
 'use client'
 import { useTheme } from 'next-themes'
 import { Toaster as Sonner } from 'sonner'
+import { useEffect, useState } from 'react'
+
 const Toaster = ({ ...props }) => {
   const { theme = 'system' } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Don't render on server or until mounted to avoid hydration mismatch
+  if (!mounted) {
+    return null
+  }
+
   return (
     <Sonner
       theme={theme}
@@ -21,4 +34,5 @@ const Toaster = ({ ...props }) => {
     />
   )
 }
+
 export { Toaster }

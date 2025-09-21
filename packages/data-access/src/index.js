@@ -1,119 +1,92 @@
-// packages/data-access/src/index.js (version 5.2.0)
-'use server'
+// packages/data-access/src/index.js (version 2.4.2 - Complete)
+// This is the single, server-only entry point for the data-access package.
+export * from './actions/articles.js'
+export * from './actions/events.js'
+export * from './actions/opportunities.js'
+export * from './actions/auth.js'
+export * from './actions/chat.js'
+export * from './actions/dashboard.js'
+export * from './actions/email.js'
+export * from './actions/export.js'
+export * from './actions/extract.js'
+export * from './actions/knowledge.js'
+export * from './actions/pipeline.js'
+export * from './actions/relationships.js'
+export * from './actions/scrape.js'
+export * from './actions/upload.js'
+export * from './actions/userSettings.js'
+export * from './actions/verdicts.js'
+export * from './actions/admin.js'
+export * from './actions/watchlist.js'
+export * from './actions/settings.js'
+export * from './actions/subscriber.js'
 
 import {
-  getAdminArticles,
-  updateAdminArticle,
-  deleteAdminArticle,
-} from './actions/adminArticles.js'
-import {
-  getAdminEvents,
-  getAdminEventDetails,
-  updateAdminEvent,
-  deleteAdminEvent,
-} from './actions/adminEvents.js'
-import {
-  getAdminOpportunities,
-  updateAdminOpportunity,
-  deleteAdminOpportunity,
-} from './actions/adminOpportunities.js'
-import { deleteArticle, getArticles, getTotalArticleCount } from './actions/articles.js'
-import { deleteEvent, getEvents, getTotalEventCount } from './actions/events.js'
-import {
-  getOpportunities,
-  getTotalOpportunitiesCount,
-  deleteOpportunity,
-  getOpportunityDetails,
-  getUniqueOpportunityCountries,
-} from './actions/opportunities.js'
+  Country,
+  Subscriber,
+  Source,
+  WatchlistEntity,
+  WatchlistSuggestion,
+  SourceSuggestion,
+} from '@headlines/models'
 
-import { sendItemByEmail } from './actions/email.js';
-import { 
-  exportOpportunitiesToCSV, 
-  exportOpportunitiesToXLSX, 
-  exportUsersToCSV, 
-  exportUsersToXLSX, 
-  exportEventsToCSV, 
-  exportEventsToXLSX, 
-  exportArticlesToCSV, 
-  exportArticlesToXLSX 
-} from './actions/export.js';
-import { linkOpportunityToEvent, unlinkOpportunityFromEvent } from './actions/relationships.js';
-import { clearDiscardedItems } from './actions/userSettings.js';
-import { updateUserProfile, updateUserInteraction, updateUserFilterPreference } from './actions/subscriber.js'
-import {
-  getAllCountries,
-  createCountry,
-  updateCountry,
-  getGlobalCountries,
-} from './actions/countries.js'
-import {
-  getAllSubscribers,
-  createSubscriber,
-  updateSubscriber,
-  deleteSubscriber,
-  updateSubscribersStatus,
-  deleteSubscribers,
-} from './actions/admin.js'
-import {
-  getAllSources,
-  createSource,
-  updateSource,
-  deleteSource,
-} from './actions/adminSources.js'
-import { getDashboardStats } from './actions/dashboard.js'
-import { getRecentRunVerdicts, getRunVerdictById } from './actions/verdicts.js'
-import {
-  getSuggestions,
-  processWatchlistSuggestion,
-  processSourceSuggestion,
-  updateWatchlistSuggestion,
-} from './actions/suggestions.js'
-import {
-  getAllWatchlistEntities,
-  createWatchlistEntity,
-  updateWatchlistEntity,
-  deleteWatchlistEntity,
-} from './actions/watchlist.js'
-import { getSettings, updateSettings } from './actions/settings.js'
-import { testSourceConfig } from './actions/scrape.js'
-import {
-  updateSourceAnalyticsBatch,
-  findSourcesForScraping,
-  performHousekeeping,
-  bulkWriteEvents,
-  bulkWriteArticles,
-  findEventsByKeys,
-  findArticlesByLinks,
-  getActiveWatchlistEntityNames,
-  bulkWriteWatchlistSuggestions,
-} from './actions/pipeline.js'
-import { generateChatTitle } from './actions/chat.js';
-import { suggestSections, suggestSelector } from './actions/aiSourceDiscovery.js';
+export const getAllCountries = async () => {
+  const countries = await Country.aggregate([
+    { $match: {} },
+    {
+      $lookup: {
+        from: 'synthesized_events',
+        localField: 'name',
+        foreignField: 'country',
+        as: 'events',
+      },
+    },
+    {
+      $lookup: {
+        from: 'sources',
+        localField: 'name',
+        foreignField: 'country',
+        as: 'sources',
+      },
+    },
+    {
+      $project: {
+        name: 1,
+        isoCode: 1,
+        status: 1,
+        eventCount: { $size: '$events' },
+        sourceCount: { $size: '$sources' },
+        activeSourceCount: {
+          $size: {
+            $filter: {
+              input: '$sources',
+              as: 'source',
+              cond: { $eq: ['$$source.status', 'active'] },
+            },
+          },
+        },
+      },
+    },
+  ])
+  return { success: true, data: JSON.parse(JSON.stringify(countries)) }
+}
 
-export {
-  getAdminArticles, updateAdminArticle, deleteAdminArticle,
-  getAdminEvents, getAdminEventDetails, updateAdminEvent, deleteAdminEvent,
-  getAdminOpportunities, updateAdminOpportunity, deleteAdminOpportunity,
-  deleteArticle, getArticles, getTotalArticleCount,
-  deleteEvent, getEvents, getTotalEventCount,
-  getOpportunities, getTotalOpportunitiesCount, deleteOpportunity, getOpportunityDetails, getUniqueOpportunityCountries,
-  sendItemByEmail,
-  exportOpportunitiesToCSV, exportOpportunitiesToXLSX, exportUsersToCSV, exportUsersToXLSX, exportEventsToCSV, exportEventsToXLSX, exportArticlesToCSV, exportArticlesToXLSX,
-  linkOpportunityToEvent, unlinkOpportunityFromEvent,
-  clearDiscardedItems,
-  updateUserProfile, updateUserInteraction, updateUserFilterPreference,
-  getAllCountries, createCountry, updateCountry, getGlobalCountries,
-  getAllSubscribers, createSubscriber, updateSubscriber, deleteSubscriber, updateSubscribersStatus, deleteSubscribers,
-  getAllSources, createSource, updateSource, deleteSource,
-  getDashboardStats,
-  getRecentRunVerdicts, getRunVerdictById,
-  getSuggestions, processWatchlistSuggestion, processSourceSuggestion, updateWatchlistSuggestion,
-  getAllWatchlistEntities, createWatchlistEntity, updateWatchlistEntity, deleteWatchlistEntity,
-  getSettings, updateSettings,
-  testSourceConfig,
-  updateSourceAnalyticsBatch, findSourcesForScraping, performHousekeeping, bulkWriteEvents, bulkWriteArticles, findEventsByKeys, findArticlesByLinks, getActiveWatchlistEntityNames, bulkWriteWatchlistSuggestions,
-  generateChatTitle,
-  suggestSections,
-  suggestSelector
+export const getAllSubscribers = async () => ({
+  success: true,
+  data: await Subscriber.find({}).sort({ createdAt: -1 }).lean(),
+})
+export const getAllSources = async () => ({
+  success: true,
+  data: await Source.find({}).sort({ country: 1, name: 1 }).lean(),
+})
+export const getAllWatchlistEntities = async () => ({
+  success: true,
+  data: await WatchlistEntity.find({}).sort({ name: 1 }).lean(),
+})
+export const getSuggestions = async () => {
+  const [watchlistSuggestions, sourceSuggestions] = await Promise.all([
+    WatchlistSuggestion.find({ status: 'candidate' }).sort({ createdAt: -1 }).lean(),
+    SourceSuggestion.find({ status: 'pending' }).sort({ createdAt: -1 }).lean(),
+  ])
+  return { success: true, data: { watchlistSuggestions, sourceSuggestions } }
 }

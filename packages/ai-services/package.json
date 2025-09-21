@@ -6,6 +6,10 @@
   "type": "module",
   "license": "ISC",
   "dependencies": {
+    "@headlines/config": "workspace:*",
+    "@headlines/utils-server": "workspace:*",
+    "@headlines/models": "workspace:*",
+    "@headlines/prompts": "workspace:*",
     "@langchain/community": "*",
     "@langchain/core": "*",
     "@langchain/openai": "*",
@@ -15,12 +19,8 @@
     "langchain": "*",
     "newsapi": "^2.4.1",
     "p-limit": "^5.0.0",
+    "serpapi": "^2.1.0",
+    "sharp": "^0.34.4",
     "zod": "*"
-  },
-  "peerDependencies": {
-    "@headlines/config": "3.0.0",
-    "@headlines/models": "1.0.0",
-    "@headlines/prompts": "1.0.0",
-    "@headlines/utils": "1.2.0"
   }
 }

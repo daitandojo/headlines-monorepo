@@ -1,18 +1,15 @@
-// packages/data-access/src/actions/scrape.js (version 1.1.0)
+// packages/data-access/src/actions/scrape.js (version 2.0.0)
 'use server'
 
-// REMOVED: import { NextResponse } from 'next/server'
 import { Source } from '../../../models/src/index.js'
 import {
   testHeadlineExtraction,
   scrapeArticleContentForTest,
 } from '../../../scraper-logic/src/scraper/index.js'
-import { verifyAdmin } from '../../../auth/src/index.js'
 
+// This is a pure server-side function. It is NOT a Server Action and is not
+// directly callable from the client. It is called by an API route.
 export async function testSourceConfig(sourceConfig) {
-  const { isAdmin, error: authError } = await verifyAdmin()
-  if (!isAdmin) return { success: false, error: authError }
-
   try {
     const headlines = await testHeadlineExtraction(sourceConfig)
     const success = headlines.length > 0
@@ -32,7 +29,7 @@ export async function testSourceConfig(sourceConfig) {
           lastScrapedAt: new Date(),
           lastSuccessAt: success ? new Date() : undefined,
           'analytics.lastRunHeadlineCount': headlines.length,
-          'analytics.lastRunRelevantCount': 0, // Reset on manual test
+          'analytics.lastRunRelevantCount': 0,
         },
         $inc: {
           'analytics.totalRuns': 1,
@@ -54,7 +51,10 @@ export async function testSourceConfig(sourceConfig) {
     }
   } catch (error) {
     console.error(`[Action Test Config Error for ${sourceConfig?._id}]`, error)
-    // In a server action context, we should return a plain object for the client to handle.
-    return { success: false, error: 'Failed to perform test scrape.', details: error.message }
+    return {
+      success: false,
+      error: 'Failed to perform test scrape.',
+      details: error.message,
+    }
   }
 }

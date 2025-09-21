@@ -24,7 +24,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-17T18:58:29.071Z
+**Generated**: 2025-09-21T14:17:28.675Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/models
 **Total Files**: 15
 **Package**: @headlines/models@1.0.0
@@ -36,7 +36,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 12, Size: 266 Bytes*
+*Lines: 17, Size: 355 Bytes*
 
 ```json
 {
@@ -46,23 +46,27 @@ headlines/
   "main": "src/index.js",
   "type": "module",
   "license": "ISC",
+  "exports": {
+    ".": "./src/index.js",
+    "./src/index.js": "./src/index.js"
+  },
   "dependencies": {
-    "bcrypt": "^5.1.1",
+    "bcryptjs": "^3.0.2",
     "mongoose": "^8.4.1"
   }
 }
+
 ```
 
 ## 📄 src/Article.js
-*Lines: 13, Size: 2.69 KB*
+*Lines: 12, Size: 2.71 KB*
 
 ```javascript
-// packages/models/src/Article.js (version 5.0.0 - Self-Contained)
 import mongoose from 'mongoose';
 import { ARTICLE_STATUSES } from './constants.js';
 const { Schema, model, models } = mongoose;
 const LifecycleEventSchema = new Schema({ stage: { type: String, required: true }, status: { type: String, required: true }, reason: { type: String }, timestamp: { type: Date, default: Date.now }, }, { _id: false });
-const ArticleSchema = new Schema({ headline: { type: String, required: true, trim: true, minlength: 5, maxlength: 500 }, headline_en: { type: String, trim: true }, link: { type: String, required: true, unique: true, trim: true }, newspaper: { type: String, required: true, trim: true }, source: { type: String, required: true, trim: true }, country: { type: String, trim: true, index: true }, imageUrl: { type: String, trim: true }, headline_selector: { type: String, trim: true }, relevance_headline: { type: Number, required: true, min: 0, max: 100 }, assessment_headline: { type: String, required: true, trim: true }, classification: { type: String, trim: true }, topic: { type: String, trim: true }, relevance_article: { type: Number, min: 0, max: 100 }, assessment_article: { type: String, trim: true }, amount: { type: Number }, key_individuals: [{ _id: false, name: { type: String, trim: true }, role_in_event: { type: String, trim: true }, company: { type: String, trim: true }, email_suggestion: { type: String, trim: true }, }], enrichment_error: { type: String, trim: true }, emailed: { type: Boolean, default: false }, embedding: { type: [Number] }, synthesizedEventId: { type: Schema.Types.ObjectId, ref: 'SynthesizedEvent', index: true, required: false, }, status: { type: String, enum: ARTICLE_STATUSES, default: 'scraped', index: true }, pipeline_lifecycle: { type: [LifecycleEventSchema], default: [] }, }, { timestamps: true, collection: 'articles', methods: { toRealtimePayload() { return { _id: this._id, headline: this.headline, headline_en: this.headline_en, link: this.link, newspaper: this.newspaper, country: this.country, topic: this.topic, relevance_article: this.relevance_article, assessment_article: this.assessment_article, key_individuals: (this.key_individuals || []).map((p) => ({ name: p.name, role_in_event: p.role_in_event, company: p.company, })), createdAt: this.createdAt, updatedAt: this.updatedAt, }; }, }, });
+const ArticleSchema = new Schema({ headline: { type: String, required: true, trim: true, minlength: 5, maxlength: 500 }, headline_en: { type: String, trim: true }, link: { type: String, required: true, unique: true, trim: true }, newspaper: { type: String, required: true, trim: true }, source: { type: String, required: true, trim: true }, country: { type: String, trim: true, index: true }, imageUrl: { type: String, trim: true }, headline_selector: { type: String, trim: true }, relevance_headline: { type: Number, required: true, min: 0, max: 100 }, assessment_headline: { type: String, required: true, trim: true }, articleContent: { type: { contents: { type: [String], default: [] } }, required: false }, classification: { type: String, trim: true }, topic: { type: String, trim: true }, relevance_article: { type: Number, min: 0, max: 100 }, assessment_article: { type: String, trim: true }, amount: { type: Number }, key_individuals: [{ _id: false, name: { type: String, trim: true }, role_in_event: { type: String, trim: true }, company: { type: String, trim: true }, email_suggestion: { type: String, trim: true }, }], enrichment_error: { type: String, trim: true }, emailed: { type: Boolean, default: false }, embedding: { type: [Number] }, synthesizedEventId: { type: Schema.Types.ObjectId, ref: 'SynthesizedEvent', index: true, required: false, }, status: { type: String, enum: ARTICLE_STATUSES, default: 'scraped', index: true }, pipeline_lifecycle: { type: [LifecycleEventSchema], default: [] }, }, { timestamps: true, collection: 'articles', methods: { toRealtimePayload() { return { _id: this._id, headline: this.headline, headline_en: this.headline_en, link: this.link, newspaper: this.newspaper, country: this.country, topic: this.topic, relevance_article: this.relevance_article, assessment_article: this.assessment_article, key_individuals: (this.key_individuals || []).map((p) => ({ name: p.name, role_in_event: p.role_in_event, company: p.company, })), createdAt: this.createdAt, updatedAt: this.updatedAt, }; }, }, });
 ArticleSchema.index({ headline: 'text', headline_en: 'text', assessment_article: 'text' });
 ArticleSchema.index({ newspaper: 1, createdAt: -1 });
 ArticleSchema.index({ relevance_article: -1, createdAt: -1 });
@@ -164,21 +168,17 @@ export default models.SourceSuggestion || model('SourceSuggestion', SourceSugges
 ```
 
 ## 📄 src/Subscriber.js
-*Lines: 54, Size: 2.77 KB*
+*Lines: 46, Size: 2.59 KB*
 
 ```javascript
-// packages/models/src/Subscriber.js (version 12.0.0)
 import mongoose from 'mongoose';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { SUBSCRIBER_ROLES, SUBSCRIPTION_TIERS } from './constants.js';
 const { Schema, model, models } = mongoose;
 const SALT_WORK_FACTOR = 10;
-
 const CountrySubscriptionSchema = new Schema({ name: { type: String, required: true }, active: { type: Boolean, default: true, required: true }, }, { _id: false });
 const InteractionSchema = new Schema({ articles: { type: [String], default: [] }, events: { type: [String], default: [] }, opportunities: { type: [String], default: [] }, }, { _id: false });
-// DEFINITIVE FIX: Add a schema to store user's filter preferences.
 const FilterPreferencesSchema = new Schema({ globalCountryFilter: { type: [String], default: [] } }, { _id: false });
-
 const SubscriberSchema = new Schema({
     email: { type: String, required: true, unique: true, trim: true, lowercase: true, index: true },
     password: { type: String, required: true, select: false },
@@ -196,12 +196,10 @@ const SubscriberSchema = new Schema({
     lastLoginAt: { type: Date, default: null },
     discardedItems: { type: InteractionSchema, default: () => ({}) },
     favoritedItems: { type: InteractionSchema, default: () => ({}) },
-    // DEFINITIVE FIX: Add the new field to the main schema.
     filterPreferences: { type: FilterPreferencesSchema, default: () => ({ globalCountryFilter: [] }) },
     emailSentCount: { type: Number, default: 0 },
     eventsReceivedCount: { type: Number, default: 0 },
 }, { timestamps: true, collection: 'subscribers' });
-
 SubscriberSchema.pre('save', function (next) {
   const user = this;
   if (!user.isModified('password')) return next();
@@ -214,11 +212,9 @@ SubscriberSchema.pre('save', function (next) {
     });
   });
 });
-
 SubscriberSchema.methods.comparePassword = function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
-
 export default models.Subscriber || model('Subscriber', SubscriberSchema);
 
 ```
@@ -314,58 +310,47 @@ export default models.WatchlistSuggestion || model('WatchlistSuggestion', Watchl
 ```
 
 ## 📄 src/constants.js
-*Lines: 16, Size: 732 Bytes*
+*Lines: 11, Size: 688 Bytes*
 
 ```javascript
-// packages/models/src/constants.js (version 1.0)
-export const ENTITY_TYPES = ['person', 'family', 'company']
-export const ENTITY_STATUSES = ['active', 'inactive', 'candidate']
-
-export const SOURCE_STATUSES = ['active', 'paused', 'under_review']
-export const SOURCE_FREQUENCIES = ['high', 'low']
-export const EXTRACTION_METHODS = ['custom', 'declarative', 'json-ld']
-
-export const ARTICLE_STATUSES = ['scraped', 'assessed', 'enriched', 'failed_enrichment']
-
-export const SUGGESTION_STATUSES = ['pending', 'approved', 'rejected']
-export const WATCHLIST_SUGGESTION_STATUSES = ['candidate', 'approved', 'dismissed']
-
-export const SUBSCRIBER_ROLES = ['user', 'admin']
-export const SUBSCRIPTION_TIERS = ['free', 'premium', 'enterprise']
+export const ENTITY_TYPES = ['person', 'family', 'company'];
+export const ENTITY_STATUSES = ['active', 'inactive', 'candidate'];
+export const SOURCE_STATUSES = ['active', 'paused', 'under_review'];
+export const SOURCE_FREQUENCIES = ['high', 'low'];
+export const EXTRACTION_METHODS = ['custom', 'declarative', 'json-ld'];
+export const ARTICLE_STATUSES = ['scraped', 'assessed', 'enriched', 'failed_enrichment'];
+export const SUGGESTION_STATUSES = ['pending', 'approved', 'rejected'];
+export const WATCHLIST_SUGGESTION_STATUSES = ['candidate', 'approved', 'dismissed'];
+export const SUBSCRIBER_ROLES = ['user', 'admin'];
+export const SUBSCRIPTION_TIERS = ['free', 'premium', 'enterprise'];
 
 ```
 
 ## 📄 src/index.js
-*Lines: 29, Size: 778 Bytes*
+*Lines: 23, Size: 999 Bytes*
 
 ```javascript
-// packages/models/src/index.js (version 1.0)
-import Article from './Article.js'
-import Country from './Country.js'
-import Opportunity from './Opportunity.js'
-import PushSubscription from './PushSubscription.js'
-import RunVerdict from './RunVerdict.js'
-import Setting from './Setting.js'
-import Source from './Source.js'
-import SourceSuggestion from './SourceSuggestion.js'
-import Subscriber from './Subscriber.js'
-import SynthesizedEvent from './SynthesizedEvent.js'
-import WatchlistEntity from './WatchlistEntity.js'
-import WatchlistSuggestion from './WatchlistSuggestion.js'
-
+import Article from './Article.js';
+import Country from './Country.js';
+import Opportunity from './Opportunity.js';
+import PushSubscription from './PushSubscription.js';
+import RunVerdict from './RunVerdict.js';
+import Setting from './Setting.js';
+import Source from './Source.js';
+import SourceSuggestion from './SourceSuggestion.js';
+import Subscriber from './Subscriber.js';
+import SynthesizedEvent from './SynthesizedEvent.js';
+import WatchlistEntity from './WatchlistEntity.js';
+import WatchlistSuggestion from './WatchlistSuggestion.js';
+import * as constants from './constants.js';
 export {
-  Article,
-  Country,
-  Opportunity,
-  PushSubscription,
-  RunVerdict,
-  Setting,
-  Source,
-  SourceSuggestion,
-  Subscriber,
-  SynthesizedEvent,
-  WatchlistEntity,
-  WatchlistSuggestion,
-}
+  Article, Country, Opportunity, PushSubscription, RunVerdict, Setting, Source,
+  SourceSuggestion, Subscriber, SynthesizedEvent, WatchlistEntity, WatchlistSuggestion
+};
+export const {
+  ENTITY_TYPES, ENTITY_STATUSES, SOURCE_STATUSES, SOURCE_FREQUENCIES,
+  EXTRACTION_METHODS, ARTICLE_STATUSES, SUGGESTION_STATUSES,
+  WATCHLIST_SUGGESTION_STATUSES, SUBSCRIBER_ROLES, SUBSCRIPTION_TIERS
+} = constants;
 
 ```

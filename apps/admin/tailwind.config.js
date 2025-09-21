@@ -1,11 +1,10 @@
-// apps/admin/tailwind.config.js (version 6.1.0 - Consistent Relative Paths)
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  // Use the shared preset from the UI package for a consistent theme foundation.
   presets: [require('../../packages/ui/tailwind.preset.cjs')],
-  // DEFINITIVE FIX: The content paths are now relative to this config file's
-  // location, matching the corrected client app config for consistency.
-  content: [
-    './src/**/*.{js,jsx}', // Scans the admin app's own source files.
-    '../../packages/ui/src/**/*.{js,jsx}', // Scans the shared UI package.
-  ],
+
+  // The 'content' paths are relative to the MONOREPO ROOT. This ensures that
+  // when the Tailwind compiler runs, it can correctly locate all source files
+  // that contain Tailwind classes from both this app and the shared UI package.
+  content: ['./src/**/*.{js,jsx}', '../../packages/ui/src/**/*.{js,jsx}'],
 }

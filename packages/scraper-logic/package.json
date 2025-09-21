@@ -1,17 +1,24 @@
 {
   "name": "@headlines/scraper-logic",
   "version": "1.0.0",
-  "description": "Shared scraping, AI, and notification logic for the Headlines monorepo.",
   "main": "src/index.js",
   "type": "module",
   "license": "ISC",
+  "exports": {
+    ".": "./src/index.js",
+    "./config.js": "./src/config.js",
+    "./browser.js": "./src/browser.js",
+    "./scraper/index.js": "./src/scraper/index.js",
+    "./scraper/selectorOptimizer.js": "./src/scraper/selectorOptimizer.js",
+    "./push/client.js": "./src/push/client.js",
+    "./ai/index.js": "./src/ai/index.js"
+  },
   "dependencies": {
-    "@headlines/ai-services": "1.0.0",
-    "@headlines/config": "3.0.0",
-    "@headlines/models": "1.0.0",
-    "@headlines/prompts": "1.0.0",
-    "@headlines/utils": "1.2.0",
-    "@mozilla/readability": "^0.5.0",
+    "@headlines/ai-services": "workspace:*",
+    "@headlines/config": "workspace:*",
+    "@headlines/models": "workspace:*",
+    "@headlines/prompts": "workspace:*",
+    "@mozilla/readability": "^0.6.0",
     "axios": "^1.7.2",
     "cheerio": "^1.0.0-rc.12",
     "date-fns": "*",
@@ -24,6 +31,5 @@
     "rss-parser": "^3.13.0",
     "web-push": "^3.6.7",
     "zod": "^3.23.8"
-  },
-  "peerDependencies": {}
+  }
 }

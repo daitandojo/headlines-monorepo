@@ -7,8 +7,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
+  Badge
+} from '@headlines/ui'
 import { ExternalLink } from 'lucide-react'
 
 const getRelevanceBadgeClass = (score) => {

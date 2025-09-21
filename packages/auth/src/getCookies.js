@@ -1,21 +1,35 @@
-// packages/auth/src/getCookies.js (version 3.0.0)
 'use server'
 
 /**
  * An environment-aware cookie accessor.
- * In a Next.js environment, it dynamically imports and returns the real `cookies()` function.
- * In other environments (like the pipeline), it returns a mock object that
- * safely returns `undefined` to simulate the absence of a request context.
  */
 export async function getCookies() {
-  if (process.env.IS_PIPELINE_RUN === 'true') {
-    // Pipeline environment: return a mock.
+  if (
+    process.env.IS_PIPELINE_RUN === 'true' ||
+    typeof window !== 'undefined' ||
+    !process.env.NEXT_RUNTIME
+  ) {
+    // Return a mock for non-Next.js server environments or client-side
     return {
       get: () => undefined,
-    };
-  } else {
-    // Next.js environment: dynamically import and use the real thing.
-    const { cookies } = await import('next/headers');
-    return cookies();
+      getAll: () => [],
+      has: () => false,
+      set: () => {},
+      delete: () => {},
+    }
+  }
+  try {
+    const { cookies } = await import('next/headers')
+    return cookies()
+  } catch (error) {
+    console.error('Failed to import cookies from next/headers:', error.message)
+    // Fallback mock
+    return {
+      get: () => undefined,
+      getAll: () => [],
+      has: () => false,
+      set: () => {},
+      delete: () => {},
+    }
   }
 }

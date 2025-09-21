@@ -1,4 +1,7 @@
-// packages/scraper-logic/src/index.js (version 1.0)
-// This file will serve as the public API for our shared scraper logic package.
-// For now, we will leave it empty as direct imports from subdirectories are clear enough.
-// In the future, we can export key functions from here for a cleaner interface.
+// packages/scraper-logic/src/index.js (version 2.0.1)
+import 'server-only'
+
+// This file serves as the public API for our shared scraper logic package.
+// By adding 'server-only', we ensure this package and its dependencies (like Playwright)
+// can never be accidentally bundled into client-side code. This is the poison pill
+// that enforces our architectural separation.

@@ -1,82 +1,63 @@
-// packages/data-access/src/actions/subscriber.js (version 1.4.0)
-'use server'
+IGNORE_WHEN_COPYING_START
+IGNORE_WHEN_COPYING_END
 
+// packages/data-access/src/actions/subscriber.js (version 3.0.2)
+;('use server')
+
+import { Subscriber, PushSubscription } from '@headlines/models'
 import dbConnect from '../dbConnect.js'
-import { Subscriber } from '../../../models/src/index.js'
 import { revalidatePath } from '../revalidate.js'
-import { verifySession, getUserIdFromSession } from '../../../auth/src/index.js'
+
+export async function getCurrentSubscriber(userId) {
+  if (!userId) return { success: false, error: 'User ID is required' }
+  try {
+    await dbConnect()
+    const user = await Subscriber.findById(userId).lean()
+    if (!user) return { success: false, error: 'User not found' }
+    return { success: true, data: JSON.parse(JSON.stringify(user)) }
+  } catch (e) {
+    return { success: false, error: 'Database error.' }
+  }
+}
+
+export async function savePushSubscription(subscription, userId) {
+  if (!userId) return { success: false, error: 'Authentication required' }
+  if (!subscription || !subscription.endpoint)
+    return { success: false, error: 'Invalid subscription object.' }
+  try {
+    await dbConnect()
+    await PushSubscription.updateOne(
+      { endpoint: subscription.endpoint },
+      { $set: { ...subscription, subscriberId: userId } },
+      { upsert: true }
+    )
+    return { success: true, message: 'Subscription saved.' }
+  } catch (e) {
+    return { success: false, error: 'Failed to save subscription.' }
+  }
+}
 
 export async function updateUserProfile({ userId, updateData }) {
-  const { user: sessionUser, error } = await verifySession();
-  if (!sessionUser || sessionUser.userId !== userId) {
-      return { success: false, error: error || 'Unauthorized' };
-  }
-
   if (!userId) return { success: false, error: 'User ID is required.' }
   if (!updateData) return { success: false, error: 'No update data provided.' }
 
   try {
     await dbConnect()
-    const updatedUser = await Subscriber.findByIdAndUpdate(userId, { $set: updateData }, { new: true })
+    const updatedUser = await Subscriber.findByIdAndUpdate(
+      userId,
+      { $set: updateData },
+      { new: true }
+    )
       .select('-password')
       .lean()
     if (!updatedUser) return { success: false, error: 'User not found.' }
-    await revalidatePath('/')
+
+    await revalidatePath('/events', 'layout')
+    await revalidatePath('/articles', 'layout')
+    await revalidatePath('/opportunities', 'layout')
+
     return { success: true, user: JSON.parse(JSON.stringify(updatedUser)) }
   } catch (error) {
     return { success: false, error: 'Failed to update profile.' }
   }
-}
-
-export async function updateUserInteraction({ userId, itemId, itemType, action }) {
-    if (!userId || !itemId || !itemType || !action) return { success: false, error: 'Missing parameters.' };
-    
-    const fieldMap = { event: 'events', article: 'articles', opportunity: 'opportunities' };
-    const field = fieldMap[itemType];
-    if (!field) return { success: false, error: 'Invalid item type.' };
-
-    let updateOperation = {};
-    switch (action) {
-        case 'discard':
-            updateOperation = { $addToSet: { [`discardedItems.${field}`]: itemId } };
-            break;
-        case 'favorite':
-            updateOperation = { $addToSet: { [`favoritedItems.${field}`]: itemId } };
-            break;
-        case 'unfavorite':
-            updateOperation = { $pull: { [`favoritedItems.${field}`]: itemId } };
-            break;
-        default:
-            return { success: false, error: 'Invalid action.' };
-    }
-
-    try {
-        await dbConnect();
-        await Subscriber.updateOne({ _id: userId }, updateOperation);
-        await revalidatePath('/');
-        return { success: true };
-    } catch (error) {
-        return { success: false, error: 'Failed to update user interaction.' };
-    }
-}
-
-export async function updateUserFilterPreference(filterData) {
-    const userId = await getUserIdFromSession();
-    if (!userId) return { success: false, error: 'Authentication required.' };
-
-    try {
-        await dbConnect();
-        const updatedUser = await Subscriber.findByIdAndUpdate(
-            userId,
-            { $set: { filterPreferences: filterData } },
-            { new: true } // Return the full updated document
-        ).lean();
-
-        if (!updatedUser) return { success: false, error: 'User not found.' };
-
-        revalidatePath('/', 'layout'); // Revalidate all pages as this affects layout data
-        return { success: true, user: JSON.parse(JSON.stringify(updatedUser)) };
-    } catch (error) {
-        return { success: false, error: 'Failed to update filter preferences.' };
-    }
 }

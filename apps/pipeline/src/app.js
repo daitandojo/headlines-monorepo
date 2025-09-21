@@ -1,8 +1,8 @@
 // apps/pipeline/src/app.js
 process.env.IS_PIPELINE_RUN = 'true'
 
-import { env } from '@headlines/config/src/server.js'
-import { reinitializeLogger } from '@headlines/utils/src/server.js'
+import { env } from '@headlines/config/server.js'
+import { reinitializeLogger } from '@headlines/utils-server'
 import { initializeAuditLogger } from './utils/auditLogger.js'
 import path from 'path'
 import yargs from 'yargs'

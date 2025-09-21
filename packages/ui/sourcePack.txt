@@ -1,6 +1,6 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 37 files, 3 directories
+Total: 38 files, 2 directories
 
 ```
 headlines/
@@ -15,6 +15,7 @@ headlines/
 │   │   ├── 📄 command.jsx
 │   │   ├── 📄 dialog.jsx
 │   │   ├── 📄 dropdown-menu.jsx
+│   │   ├── 📄 index.js
 │   │   ├── 📄 input.jsx
 │   │   ├── 📄 label.jsx
 │   │   ├── 📄 popover.jsx
@@ -28,10 +29,8 @@ headlines/
 │   │   ├── 📄 tabs.jsx
 │   │   ├── 📄 textarea.jsx
 │   │   └── 📄 tooltip.jsx
-│   ├── 📁 lib/
 │   ├── 📄 ConfirmationDialog.jsx
 │   ├── 📄 data-table.jsx
-│   ├── 📄 data-table.jsx.bak
 │   ├── 📄 DataTableColumnHeader.jsx
 │   ├── 📄 EditableCell.jsx
 │   ├── 📄 ExportButton.jsx
@@ -39,6 +38,7 @@ headlines/
 │   ├── 📄 LoadingOverlay.jsx
 │   ├── 📄 page-header.jsx
 │   ├── 📄 PremiumSpinner.jsx
+│   ├── 📄 Skeleton.jsx
 │   ├── 📄 SkeletonCard.jsx
 │   └── 📄 ViewHeader.jsx
 ├── 📄 package.json
@@ -48,9 +48,9 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-17T18:58:29.082Z
+**Generated**: 2025-09-21T14:17:28.687Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/ui
-**Total Files**: 37
+**Total Files**: 38
 **Package**: @headlines/ui@1.0.0
 **Description**: Shared UI components for the Headlines monorepo.
 
@@ -60,7 +60,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 37, Size: 1.13 KB*
+*Lines: 23, Size: 1.12 KB*
 
 ```json
 {
@@ -71,35 +71,21 @@ headlines/
   "type": "module",
   "license": "ISC",
   "dependencies": {
-    "@radix-ui/react-accordion": "^1.2.12",
-    "@radix-ui/react-alert-dialog": "^1.1.1",
-    "@radix-ui/react-checkbox": "^1.3.3",
-    "@radix-ui/react-dialog": "^1.1.1",
-    "@radix-ui/react-dropdown-menu": "^2.1.1",
-    "@radix-ui/react-label": "^2.1.7",
-    "@radix-ui/react-popover": "^1.1.15",
-    "@radix-ui/react-scroll-area": "^1.1.0",
-    "@radix-ui/react-select": "^2.1.1",
-    "@radix-ui/react-separator": "^1.1.0",
-    "@radix-ui/react-slot": "^1.2.3",
-    "@radix-ui/react-switch": "^1.1.0",
-    "@radix-ui/react-tabs": "^1.1.0",
-    "@radix-ui/react-tooltip": "^1.2.8",
-    "@tanstack/react-table": "^8.21.3",
-    "class-variance-authority": "^0.7.0",
-    "clsx": "^2.1.1",
-    "cmdk": "^1.1.1",
-    "framer-motion": "^11.18.2",
-    "lucide-react": "^0.395.0",
-    "next-themes": "^0.3.0",
-    "react": "18.3.1",
-    "sonner": "^1.5.0",
-    "tailwind-merge": "^2.3.0"
+    "@headlines/utils-client": "workspace:*",
+    "@radix-ui/react-accordion": "^1.2.12", "@radix-ui/react-alert-dialog": "^1.1.1", "@radix-ui/react-checkbox": "^1.3.3",
+    "@radix-ui/react-dialog": "^1.1.1", "@radix-ui/react-dropdown-menu": "^2.1.1", "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-popover": "^1.1.15", "@radix-ui/react-scroll-area": "^1.1.0", "@radix-ui/react-select": "^2.1.1",
+    "@radix-ui/react-separator": "^1.1.0", "@radix-ui/react-slot": "^1.2.3", "@radix-ui/react-switch": "^1.1.0",
+    "@radix-ui/react-tabs": "^1.1.0", "@radix-ui/react-tooltip": "^1.2.8", "@tanstack/react-table": "^8.21.3",
+    "class-variance-authority": "^0.7.0", "clsx": "^2.1.1", "cmdk": "^1.1.1", "framer-motion": "^11.18.2",
+    "lucide-react": "^0.395.0", "next-themes": "^0.3.0", "sonner": "^1.5.0", "tailwind-merge": "^2.3.0"
   },
-  "peerDependencies": {
-    "@headlines/utils": "1.2.0"
+  "peerDependencies": { 
+    "react": "18.3.1",
+    "@headlines/auth": "workspace:*"
   }
 }
+
 ```
 
 ## 📄 src/ConfirmationDialog.jsx
@@ -158,14 +144,14 @@ export function ConfirmationDialog({
 ```
 
 ## 📄 src/DataTableColumnHeader.jsx
-*Lines: 69, Size: 2.34 KB*
+*Lines: 69, Size: 2.33 KB*
 
 ```jsx
 // packages/ui/src/DataTableColumnHeader.jsx (version 2.0.0 - With Filtering)
 'use client'
 
 import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from 'lucide-react'
-import { cn } from '../../utils/src/index.js'
+import { cn } from '@headlines/utils-client'
 import { Button } from './components/button'
 import {
   DropdownMenu,
@@ -218,7 +204,7 @@ export function DataTableColumnHeader({ column, title, className }) {
             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
               <Input
                 placeholder={`Filter ${title}...`}
-                value={(column.getFilterValue() || '')}
+                value={column.getFilterValue() || ''}
                 onChange={(event) => column.setFilterValue(event.target.value)}
                 className="h-8"
               />
@@ -233,87 +219,111 @@ export function DataTableColumnHeader({ column, title, className }) {
 ```
 
 ## 📄 src/EditableCell.jsx
-*Lines: 80, Size: 3.4 KB*
+*Lines: 104, Size: 3.21 KB*
 
 ```jsx
 // packages/ui/src/EditableCell.jsx (version 1.0.0)
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Input } from './components/input';
-import { Textarea } from './components/textarea';
-import { Edit } from 'lucide-react';
-import { cn } from '../../utils/src/index.js';
+import React, { useState, useEffect, useRef } from 'react'
+import { Input } from './components/input'
+import { Textarea } from './components/textarea'
+import { Edit } from 'lucide-react'
+import { cn } from '@headlines/utils-client'
 
-export const EditableCell = ({ initialValue, onSave, placeholder = 'N/A', type = 'text', allowWrap = false, useTextarea = false }) => {
-    const [isEditing, setIsEditing] = useState(false);
-    // DEFINITIVE FIX: Handle both array and primitive initial values.
-    const [value, setValue] = useState(Array.isArray(initialValue) ? initialValue.join('\n') : initialValue || '');
-    const inputRef = useRef(null);
-    const wrapperRef = useRef(null);
+export const EditableCell = ({
+  initialValue,
+  onSave,
+  placeholder = 'N/A',
+  type = 'text',
+  allowWrap = false,
+  useTextarea = false,
+}) => {
+  const [isEditing, setIsEditing] = useState(false)
+  // DEFINITIVE FIX: Handle both array and primitive initial values.
+  const [value, setValue] = useState(
+    Array.isArray(initialValue) ? initialValue.join('\n') : initialValue || ''
+  )
+  const inputRef = useRef(null)
+  const wrapperRef = useRef(null)
 
-    const handleSave = () => {
-        // DEFINITIVE FIX: Correctly format the final value based on the initial data type.
-        const finalValue = Array.isArray(initialValue) 
-            ? value.split('\n').map(s => s.trim()).filter(Boolean)
-            : (type === 'number' ? (value ? Number(value) : null) : value.trim());
+  const handleSave = () => {
+    // DEFINITIVE FIX: Correctly format the final value based on the initial data type.
+    const finalValue = Array.isArray(initialValue)
+      ? value
+          .split('\n')
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : type === 'number'
+        ? value
+          ? Number(value)
+          : null
+        : value.trim()
 
-        const originalValue = initialValue || (Array.isArray(initialValue) ? [] : (type === 'number' ? null : ''));
-        
-        // A more robust change check for arrays and strings/numbers
-        if (JSON.stringify(finalValue) !== JSON.stringify(originalValue)) {
-            onSave(finalValue);
-        }
-        setIsEditing(false);
-    };
-    
-    useEffect(() => {
-        function handleClickOutside(event) {
-            if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-                if (isEditing) {
-                    handleSave();
-                }
-            }
-        }
-        
+    const originalValue =
+      initialValue || (Array.isArray(initialValue) ? [] : type === 'number' ? null : '')
+
+    // A more robust change check for arrays and strings/numbers
+    if (JSON.stringify(finalValue) !== JSON.stringify(originalValue)) {
+      onSave(finalValue)
+    }
+    setIsEditing(false)
+  }
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
         if (isEditing) {
-            inputRef.current?.focus();
-            document.addEventListener("mousedown", handleClickOutside);
-            return () => {
-                document.removeEventListener("mousedown", handleClickOutside);
-            };
+          handleSave()
         }
-    }, [isEditing, value]); // value is needed to ensure handleSave has the latest state
+      }
+    }
 
     if (isEditing) {
-        const Component = useTextarea ? Textarea : Input;
-        return (
-            <div ref={wrapperRef}>
-                <Component 
-                    ref={inputRef} 
-                    value={value} 
-                    onChange={(e) => setValue(e.target.value)} 
-                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !useTextarea) handleSave() }} 
-                    className="h-auto bg-secondary"
-                    rows={useTextarea ? 3 : 1}
-                />
-            </div>
-        );
+      inputRef.current?.focus()
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside)
+      }
     }
-    
-    // DEFINITIVE FIX: Correctly generate the display value from an array or primitive.
-    let displayValue = Array.isArray(initialValue) ? initialValue.join(' ') : initialValue;
-    if (type === 'number' && initialValue) displayValue = `$${initialValue}M`;
-    if (!displayValue || (Array.isArray(initialValue) && initialValue.length === 0)) {
-        displayValue = <span className="text-muted-foreground italic">{placeholder}</span>;
-    }
+  }, [isEditing, value]) // value is needed to ensure handleSave has the latest state
 
+  if (isEditing) {
+    const Component = useTextarea ? Textarea : Input
     return (
-        <div className="group flex items-center cursor-pointer p-2 -m-2 rounded-md hover:bg-secondary/50" onClick={() => setIsEditing(true)}>
-            <span className={cn(!allowWrap && "truncate", allowWrap && "whitespace-normal")}>{displayValue}</span>
-            <Edit className="h-3 w-3 ml-auto text-muted-foreground opacity-0 group-hover:opacity-100 flex-shrink-0"/>
-        </div>
-    );
+      <div ref={wrapperRef}>
+        <Component
+          ref={inputRef}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey && !useTextarea) handleSave()
+          }}
+          className="h-auto bg-secondary"
+          rows={useTextarea ? 3 : 1}
+        />
+      </div>
+    )
+  }
+
+  // DEFINITIVE FIX: Correctly generate the display value from an array or primitive.
+  let displayValue = Array.isArray(initialValue) ? initialValue.join(' ') : initialValue
+  if (type === 'number' && initialValue) displayValue = `$${initialValue}M`
+  if (!displayValue || (Array.isArray(initialValue) && initialValue.length === 0)) {
+    displayValue = <span className="text-muted-foreground italic">{placeholder}</span>
+  }
+
+  return (
+    <div
+      className="group flex items-center cursor-pointer p-2 -m-2 rounded-md hover:bg-secondary/50"
+      onClick={() => setIsEditing(true)}
+    >
+      <span className={cn(!allowWrap && 'truncate', allowWrap && 'whitespace-normal')}>
+        {displayValue}
+      </span>
+      <Edit className="h-3 w-3 ml-auto text-muted-foreground opacity-0 group-hover:opacity-100 flex-shrink-0" />
+    </div>
+  )
 }
 
 ```
@@ -435,14 +445,13 @@ export function LoadingOverlay({ isLoading, text }) {
 ```
 
 ## 📄 src/PremiumSpinner.jsx
-*Lines: 86, Size: 2.47 KB*
+*Lines: 83, Size: 2.35 KB*
 
 ```jsx
 // packages/ui/src/PremiumSpinner.jsx (version 1.1.0)
 'use client'
 
 import { motion } from 'framer-motion'
-import { cn } from '../../utils/src/index.js' // CORRECTED: Package import instead of alias
 
 /**
  * A visually rich, multi-layered, animated spinner component.
@@ -495,8 +504,7 @@ export function PremiumSpinner({ size = 80 }) {
         style={{
           background:
             'conic-gradient(from 90deg, transparent 0%, #06b6d4 50%, transparent 100%)',
-          maskImage:
-            'radial-gradient(circle at center, transparent 75%, black 76%)',
+          maskImage: 'radial-gradient(circle at center, transparent 75%, black 76%)',
         }}
         animate={{ rotate: 360 }}
         transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
@@ -508,8 +516,7 @@ export function PremiumSpinner({ size = 80 }) {
         style={{
           background:
             'conic-gradient(from -90deg, transparent 0%, #a855f7 50%, transparent 100%)',
-          maskImage:
-            'radial-gradient(circle at center, transparent 75%, black 76%)',
+          maskImage: 'radial-gradient(circle at center, transparent 75%, black 76%)',
         }}
         animate={{ rotate: -360 }}
         transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
@@ -523,6 +530,19 @@ export function PremiumSpinner({ size = 80 }) {
     </div>
   )
 }
+
+```
+
+## 📄 src/Skeleton.jsx
+*Lines: 7, Size: 216 Bytes*
+
+```jsx
+'use client'
+import { cn } from '@headlines/utils-client'
+function Skeleton({ className, ...props }) {
+  return <div className={cn('animate-pulse rounded-md bg-muted', className)} {...props} />
+}
+export { Skeleton }
 
 ```
 
@@ -562,45 +582,50 @@ export const SkeletonCard = ({ className }) => {
 ```
 
 ## 📄 src/ViewHeader.jsx
-*Lines: 95, Size: 4.64 KB*
+*Lines: 137, Size: 5.1 KB*
 
 ```jsx
-// packages/ui/src/ViewHeader.jsx (version 5.2.0)
 'use client'
-
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useState, useEffect, useMemo } from 'react'
-import { useDebounce } from '../../utils/src/index.js'
-import { Input, Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, ScrollArea } from './index'
+import { useDebounce } from '@headlines/utils-client'
+import {
+  Input,
+  Button,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  ScrollArea,
+} from './index'
 import { Search, Clock, BarChart, ArrowDownUp, Mail, Star, X } from 'lucide-react'
-import { cn } from '../../utils/src/index.js'
-
-const iconMap = { clock: Clock, relevance: BarChart, size: ArrowDownUp };
-
+import { cn } from '@headlines/utils-client'
+const iconMap = { clock: Clock, relevance: BarChart, size: ArrowDownUp }
 export function ViewHeader({
   title,
   sortOptions,
   allCountries = [],
   globalCountryFilter = [],
-  // DEFINITIVE FIX: Accept viewCountry state and its setter as props.
   viewCountry,
   onViewCountryChange,
 }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-
   const currentSort = searchParams.get('sort') || 'date_desc'
   const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '')
   const debouncedSearchTerm = useDebounce(searchTerm, 500)
-
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString())
     if (debouncedSearchTerm) params.set('q', debouncedSearchTerm)
     else params.delete('q')
     router.replace(`?${params.toString()}`, { scroll: false })
   }, [debouncedSearchTerm, router, searchParams])
-
   const handleUrlParamChange = (key, value) => {
     const params = new URLSearchParams(searchParams.toString())
     if (!value || value === 'all' || value === false) params.delete(key)
@@ -608,21 +633,16 @@ export function ViewHeader({
     params.set('page', '1')
     router.push(`${pathname}?${params.toString()}`, { scroll: false })
   }
-  
   const handleClearSearch = () => setSearchTerm('')
-
   const withEmailOnly = searchParams.get('withEmail') === 'true'
   const favoritesOnly = searchParams.get('favorites') === 'true'
-  
-  // The dropdown is populated by the countries in the global filter.
   const displayedCountries = useMemo(() => {
     if (globalCountryFilter.length > 0) {
-      const globalFilterSet = new Set(globalCountryFilter);
-      return allCountries.filter(c => globalFilterSet.has(c.name));
+      const globalFilterSet = new Set(globalCountryFilter)
+      return allCountries.filter((c) => globalFilterSet.has(c.name))
     }
-    return allCountries;
-  }, [allCountries, globalCountryFilter]);
-
+    return allCountries
+  }, [allCountries, globalCountryFilter])
   return (
     <div className="flex flex-col items-center justify-center text-center mb-8 space-y-6 max-w-5xl mx-auto">
       <div>
@@ -630,7 +650,6 @@ export function ViewHeader({
       </div>
       <div className="w-full flex flex-col sm:flex-row items-center gap-4">
         <div className="flex w-full sm:w-auto items-center gap-2">
-          {/* This dropdown now uses the state passed down from DataView */}
           <Select value={viewCountry} onValueChange={onViewCountryChange}>
             <SelectTrigger className="w-full sm:w-[200px] h-12 bg-slate-900/80 border-slate-700">
               <SelectValue placeholder="View Country..." />
@@ -649,11 +668,54 @@ export function ViewHeader({
         </div>
         <div className="relative flex-grow w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
-          <Input id="search" placeholder="Search by name, company..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="bg-slate-900/80 border-slate-700 h-12 pl-10 pr-10"/>
-          {searchTerm && <Button variant="ghost" size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full" onClick={handleClearSearch}><X className="h-4 w-4" /></Button>}
+          <Input
+            id="search"
+            placeholder="Search by name, company..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="bg-slate-900/80 border-slate-700 h-12 pl-10 pr-10"
+          />
+          {searchTerm && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+              onClick={handleClearSearch}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
         <div className="flex items-center gap-2">
-          <TooltipProvider>{sortOptions.map((option) => { const IconComponent = iconMap[option.icon] || Clock; return (<Tooltip key={option.value}><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={() => handleUrlParamChange('sort', option.value === 'date_desc' ? null : option.value)} className={cn('h-12 w-12', currentSort === option.value && 'bg-blue-500/20 text-blue-300')} aria-label={option.tooltip}><IconComponent className="h-5 w-5" /></Button></TooltipTrigger><TooltipContent>{option.tooltip}</TooltipContent></Tooltip>);})}{/* Other buttons... */}</TooltipProvider>
+          <TooltipProvider>
+            {sortOptions.map((option) => {
+              const IconComponent = iconMap[option.icon] || Clock
+              return (
+                <Tooltip key={option.value}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() =>
+                        handleUrlParamChange(
+                          'sort',
+                          option.value === 'date_desc' ? null : option.value
+                        )
+                      }
+                      className={cn(
+                        'h-12 w-12',
+                        currentSort === option.value && 'bg-blue-500/20 text-blue-300'
+                      )}
+                      aria-label={option.tooltip}
+                    >
+                      <IconComponent className="h-5 w-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{option.tooltip}</TooltipContent>
+                </Tooltip>
+              )
+            })}
+          </TooltipProvider>
         </div>
       </div>
     </div>
@@ -663,57 +725,54 @@ export function ViewHeader({
 ```
 
 ## 📄 src/components/accordion.jsx
-*Lines: 44, Size: 1.61 KB*
+*Lines: 41, Size: 1.62 KB*
 
 ```jsx
-"use client"
-
-import * as React from "react"
-import * as AccordionPrimitive from "@radix-ui/react-accordion"
-import { ChevronDown } from "lucide-react"
-
-import { cn } from '../../../utils/src/index.js'
-
+'use client'
+import * as React from 'react'
+import * as AccordionPrimitive from '@radix-ui/react-accordion'
+import { ChevronDown } from 'lucide-react'
+import { cn } from '@headlines/utils-client'
 const Accordion = AccordionPrimitive.Root
-
 const AccordionItem = React.forwardRef(({ className, ...props }, ref) => (
-  <AccordionPrimitive.Item ref={ref} className={cn("border-b", className)} {...props} />
+  <AccordionPrimitive.Item ref={ref} className={cn('border-b', className)} {...props} />
 ))
-AccordionItem.displayName = "AccordionItem"
-
+AccordionItem.displayName = 'AccordionItem'
 const AccordionTrigger = React.forwardRef(({ className, children, ...props }, ref) => (
   <AccordionPrimitive.Header className="flex">
+    {' '}
     <AccordionPrimitive.Trigger
       ref={ref}
       className={cn(
-        "flex flex-1 items-center justify-between py-4 text-sm font-medium transition-all hover:underline text-left [&[data-state=open]>svg]:rotate-180",
+        'flex flex-1 items-center justify-between py-4 font-medium transition-all hover:underline [&[data-state=open]>svg]:rotate-180',
         className
       )}
-      {...props}>
-      {children}
-      <ChevronDown
-        className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200" />
-    </AccordionPrimitive.Trigger>
+      {...props}
+    >
+      {' '}
+      {children}{' '}
+      <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />{' '}
+    </AccordionPrimitive.Trigger>{' '}
   </AccordionPrimitive.Header>
 ))
 AccordionTrigger.displayName = AccordionPrimitive.Trigger.displayName
-
 const AccordionContent = React.forwardRef(({ className, children, ...props }, ref) => (
   <AccordionPrimitive.Content
     ref={ref}
-    className="overflow-hidden text-sm data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
-    {...props}>
-    <div className={cn("pb-4 pt-0", className)}>{children}</div>
+    className="overflow-hidden text-sm transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
+    {...props}
+  >
+    {' '}
+    <div className={cn('pb-4 pt-0', className)}>{children}</div>{' '}
   </AccordionPrimitive.Content>
 ))
 AccordionContent.displayName = AccordionPrimitive.Content.displayName
-
 export { Accordion, AccordionItem, AccordionTrigger, AccordionContent }
 
 ```
 
 ## 📄 src/components/alert-dialog.jsx
-*Lines: 51, Size: 3.36 KB*
+*Lines: 51, Size: 3.35 KB*
 
 ```jsx
 // packages/ui/src/components/alert-dialog.jsx (version 1.3.0 - Definitive Slot Fix)
@@ -721,7 +780,7 @@ export { Accordion, AccordionItem, AccordionTrigger, AccordionContent }
 
 import * as React from "react"
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
-import { cn } from '../../../utils/src/index.js'
+import { cn } from '../../../utils-client'
 import { buttonVariants } from "./button"
 
 const AlertDialog = AlertDialogPrimitive.Root
@@ -770,40 +829,36 @@ export { AlertDialog, AlertDialogPortal, AlertDialogOverlay, AlertDialogTrigger,
 ```
 
 ## 📄 src/components/badge.jsx
-*Lines: 35, Size: 1006 Bytes*
+*Lines: 31, Size: 985 Bytes*
 
 ```jsx
-import * as React from "react"
-import { cva } from "class-variance-authority";
+import * as React from 'react'
+import { cva } from 'class-variance-authority'
 
-import { cn } from '../../../utils/src/index.js'
+import { cn } from '@headlines/utils'
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  'inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
   {
     variants: {
       variant: {
         default:
-          "border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80",
+          'border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80',
         secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
         destructive:
-          "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
-        outline: "text-foreground",
+          'border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80',
+        outline: 'text-foreground',
       },
     },
     defaultVariants: {
-      variant: "default",
+      variant: 'default',
     },
   }
 )
 
-function Badge({
-  className,
-  variant,
-  ...props
-}) {
-  return (<div className={cn(badgeVariants({ variant }), className)} {...props} />);
+function Badge({ className, variant, ...props }) {
+  return <div className={cn(badgeVariants({ variant }), className)} {...props} />
 }
 
 export { Badge, badgeVariants }
@@ -811,7 +866,7 @@ export { Badge, badgeVariants }
 ```
 
 ## 📄 src/components/button.jsx
-*Lines: 50, Size: 1.64 KB*
+*Lines: 50, Size: 1.63 KB*
 
 ```jsx
 // src/components/ui/button.jsx (version 1.1)
@@ -819,7 +874,7 @@ import * as React from 'react'
 import { Slot } from '@radix-ui/react-slot'
 import { cva } from 'class-variance-authority'
 
-import { cn } from '../../../utils/src/index.js'
+import { cn } from '@headlines/utils'
 
 const buttonVariants = cva(
   'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
@@ -867,13 +922,13 @@ export { Button, buttonVariants }
 ```
 
 ## 📄 src/components/card.jsx
-*Lines: 45, Size: 1.44 KB*
+*Lines: 45, Size: 1.43 KB*
 
 ```jsx
 // src/components/ui/card.jsx (version 1.1)
 import * as React from 'react'
 
-import { cn } from '../../../utils/src/index.js'
+import { cn } from '@headlines/utils'
 
 const Card = React.forwardRef(({ className, ...props }, ref) => (
   <div
@@ -918,7 +973,7 @@ export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
 ```
 
 ## 📄 src/components/checkbox.jsx
-*Lines: 26, Size: 1013 Bytes*
+*Lines: 26, Size: 1009 Bytes*
 
 ```jsx
 // src/components/ui/checkbox.jsx (version 1.0)
@@ -927,7 +982,7 @@ import * as React from 'react'
 import * as CheckboxPrimitive from '@radix-ui/react-checkbox'
 import { Check } from 'lucide-react'
 
-import { cn } from '../../../utils/src/index.js'
+import { cn } from '@headlines/utils-client'
 const Checkbox = React.forwardRef(({ className, ...props }, ref) => (
   <CheckboxPrimitive.Root
     ref={ref}
@@ -950,7 +1005,7 @@ export { Checkbox }
 ```
 
 ## 📄 src/components/command.jsx
-*Lines: 122, Size: 3.84 KB*
+*Lines: 122, Size: 3.83 KB*
 
 ```jsx
 // packages/ui/src/components/command.jsx (version 1.2.0 - Definitive Slot Fix)
@@ -960,7 +1015,7 @@ import * as React from 'react'
 import { Dialog, DialogContent } from './dialog'
 import { Search } from 'lucide-react'
 import { Command as CommandPrimitive } from 'cmdk'
-import { cn } from '../../../utils/src/index.js'
+import { cn } from '@headlines/utils-client'
 
 const Command = React.forwardRef(({ className, ...props }, ref) => (
   <CommandPrimitive
@@ -1078,7 +1133,7 @@ export {
 ```
 
 ## 📄 src/components/dialog.jsx
-*Lines: 55, Size: 3.1 KB*
+*Lines: 97, Size: 3.22 KB*
 
 ```jsx
 // packages/ui/src/components/dialog.jsx (version 2.0.0 - Definitive Slot Fix)
@@ -1088,7 +1143,7 @@ import * as React from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
 
-import { cn } from '../../../utils/src/index.js'
+import { cn } from '@headlines/utils-client'
 
 const Dialog = DialogPrimitive.Root
 const DialogTrigger = DialogPrimitive.Trigger
@@ -1098,7 +1153,10 @@ const DialogClose = DialogPrimitive.Close
 const DialogOverlay = React.forwardRef(({ className, ...props }, ref) => (
   <DialogPrimitive.Overlay
     ref={ref}
-    className={cn( 'fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0', className )}
+    className={cn(
+      'fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+      className
+    )}
     {...props}
   />
 ))
@@ -1109,7 +1167,10 @@ const DialogContent = React.forwardRef(({ className, children, ...props }, ref) 
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
-      className={cn( 'fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg', className )}
+      className={cn(
+        'fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg',
+        className
+      )}
       {...props}
     >
       {children}
@@ -1122,24 +1183,60 @@ const DialogContent = React.forwardRef(({ className, children, ...props }, ref) 
 ))
 DialogContent.displayName = DialogPrimitive.Content.displayName
 
-const DialogHeader = ({ className, ...props }) => ( <div className={cn( "flex flex-col space-y-1.5 text-center sm:text-left", className )} {...props} /> )
-DialogHeader.displayName = "DialogHeader"
+const DialogHeader = ({ className, ...props }) => (
+  <div
+    className={cn('flex flex-col space-y-1.5 text-center sm:text-left', className)}
+    {...props}
+  />
+)
+DialogHeader.displayName = 'DialogHeader'
 
-const DialogFooter = ({ className, ...props }) => ( <div className={cn( "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2", className )} {...props} /> )
-DialogFooter.displayName = "DialogFooter"
+const DialogFooter = ({ className, ...props }) => (
+  <div
+    className={cn(
+      'flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2',
+      className
+    )}
+    {...props}
+  />
+)
+DialogFooter.displayName = 'DialogFooter'
 
-const DialogTitle = React.forwardRef(({ className, ...props }, ref) => ( <DialogPrimitive.Title ref={ref} className={cn("text-lg font-semibold leading-none tracking-tight", className)} {...props} /> ))
+const DialogTitle = React.forwardRef(({ className, ...props }, ref) => (
+  <DialogPrimitive.Title
+    ref={ref}
+    className={cn('text-lg font-semibold leading-none tracking-tight', className)}
+    {...props}
+  />
+))
 DialogTitle.displayName = DialogPrimitive.Title.displayName
 
-const DialogDescription = React.forwardRef(({ className, ...props }, ref) => ( <DialogPrimitive.Description ref={ref} className={cn("text-sm text-muted-foreground", className)} {...props} /> ))
+const DialogDescription = React.forwardRef(({ className, ...props }, ref) => (
+  <DialogPrimitive.Description
+    ref={ref}
+    className={cn('text-sm text-muted-foreground', className)}
+    {...props}
+  />
+))
 DialogDescription.displayName = DialogPrimitive.Description.displayName
 
-export { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription, DialogPortal, DialogOverlay, DialogClose }
+export {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+  DialogPortal,
+  DialogOverlay,
+  DialogClose,
+}
 
 ```
 
 ## 📄 src/components/dropdown-menu.jsx
-*Lines: 89, Size: 5.81 KB*
+*Lines: 166, Size: 6.21 KB*
 
 ```jsx
 // packages/ui/src/components/dropdown-menu.jsx (version 3.0.0 - Definitive Slot Fix)
@@ -1147,7 +1244,7 @@ export { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter, Dialo
 import * as React from 'react'
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
 import { Check, ChevronRight, Circle } from 'lucide-react'
-import { cn } from '../../../utils/src/index.js'
+import { cn } from '@headlines/utils-client'
 
 const DropdownMenu = DropdownMenuPrimitive.Root
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger
@@ -1158,7 +1255,15 @@ const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup
 
 const DropdownMenuSubTrigger = React.forwardRef(
   ({ className, inset, children, ...props }, ref) => (
-    <DropdownMenuPrimitive.SubTrigger ref={ref} className={cn( 'flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent data-[state=open]:bg-accent', inset && 'pl-8', className )} {...props} >
+    <DropdownMenuPrimitive.SubTrigger
+      ref={ref}
+      className={cn(
+        'flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent data-[state=open]:bg-accent',
+        inset && 'pl-8',
+        className
+      )}
+      {...props}
+    >
       {children}
       <ChevronRight className="ml-auto h-4 w-4" />
     </DropdownMenuPrimitive.SubTrigger>
@@ -1167,7 +1272,14 @@ const DropdownMenuSubTrigger = React.forwardRef(
 DropdownMenuSubTrigger.displayName = DropdownMenuPrimitive.SubTrigger.displayName
 
 const DropdownMenuSubContent = React.forwardRef(({ className, ...props }, ref) => (
-  <DropdownMenuPrimitive.SubContent ref={ref} className={cn( 'z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2', className )} {...props} />
+  <DropdownMenuPrimitive.SubContent
+    ref={ref}
+    className={cn(
+      'z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+      className
+    )}
+    {...props}
+  />
 ))
 DropdownMenuSubContent.displayName = DropdownMenuPrimitive.SubContent.displayName
 
@@ -1177,7 +1289,11 @@ const DropdownMenuContent = React.forwardRef(
       <DropdownMenuPrimitive.Content
         ref={ref}
         sideOffset={sideOffset}
-        className={cn( 'z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md', 'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2', className )}
+        className={cn(
+          'z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md',
+          'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+          className
+        )}
         {...props}
       />
     </DropdownMenuPrimitive.Portal>
@@ -1186,15 +1302,34 @@ const DropdownMenuContent = React.forwardRef(
 DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName
 
 const DropdownMenuItem = React.forwardRef(({ className, inset, ...props }, ref) => (
-  <DropdownMenuPrimitive.Item ref={ref} className={cn( 'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50', inset && 'pl-8', className )} {...props} />
+  <DropdownMenuPrimitive.Item
+    ref={ref}
+    className={cn(
+      'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      inset && 'pl-8',
+      className
+    )}
+    {...props}
+  />
 ))
 DropdownMenuItem.displayName = DropdownMenuPrimitive.Item.displayName
 
 const DropdownMenuCheckboxItem = React.forwardRef(
   ({ className, children, checked, ...props }, ref) => (
-    <DropdownMenuPrimitive.CheckboxItem ref={ref} className={cn( 'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50', className )} checked={checked} {...props} >
+    <DropdownMenuPrimitive.CheckboxItem
+      ref={ref}
+      className={cn(
+        'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+        className
+      )}
+      checked={checked}
+      {...props}
+    >
       <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-        <DropdownMenuPrimitive.ItemIndicator> <Check className="h-4 w-4" /> </DropdownMenuPrimitive.ItemIndicator>
+        <DropdownMenuPrimitive.ItemIndicator>
+          {' '}
+          <Check className="h-4 w-4" />{' '}
+        </DropdownMenuPrimitive.ItemIndicator>
       </span>
       {children}
     </DropdownMenuPrimitive.CheckboxItem>
@@ -1204,9 +1339,19 @@ DropdownMenuCheckboxItem.displayName = DropdownMenuPrimitive.CheckboxItem.displa
 
 const DropdownMenuRadioItem = React.forwardRef(
   ({ className, children, ...props }, ref) => (
-    <DropdownMenuPrimitive.RadioItem ref={ref} className={cn( 'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50', className )} {...props} >
+    <DropdownMenuPrimitive.RadioItem
+      ref={ref}
+      className={cn(
+        'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+        className
+      )}
+      {...props}
+    >
       <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-        <DropdownMenuPrimitive.ItemIndicator> <Circle className="h-2 w-2 fill-current" /> </DropdownMenuPrimitive.ItemIndicator>
+        <DropdownMenuPrimitive.ItemIndicator>
+          {' '}
+          <Circle className="h-2 w-2 fill-current" />{' '}
+        </DropdownMenuPrimitive.ItemIndicator>
       </span>
       {children}
     </DropdownMenuPrimitive.RadioItem>
@@ -1215,49 +1360,103 @@ const DropdownMenuRadioItem = React.forwardRef(
 DropdownMenuRadioItem.displayName = DropdownMenuPrimitive.RadioItem.displayName
 
 const DropdownMenuLabel = React.forwardRef(({ className, inset, ...props }, ref) => (
-  <DropdownMenuPrimitive.Label ref={ref} className={cn('px-2 py-1.5 text-sm font-semibold', inset && 'pl-8', className)} {...props} />
+  <DropdownMenuPrimitive.Label
+    ref={ref}
+    className={cn('px-2 py-1.5 text-sm font-semibold', inset && 'pl-8', className)}
+    {...props}
+  />
 ))
 DropdownMenuLabel.displayName = DropdownMenuPrimitive.Label.displayName
 
 const DropdownMenuSeparator = React.forwardRef(({ className, ...props }, ref) => (
-  <DropdownMenuPrimitive.Separator ref={ref} className={cn('-mx-1 my-1 h-px bg-muted', className)} {...props} />
+  <DropdownMenuPrimitive.Separator
+    ref={ref}
+    className={cn('-mx-1 my-1 h-px bg-muted', className)}
+    {...props}
+  />
 ))
 DropdownMenuSeparator.displayName = DropdownMenuPrimitive.Separator.displayName
 
 const DropdownMenuShortcut = ({ className, ...props }) => {
-  return ( <span className={cn('ml-auto text-xs tracking-widest opacity-60', className)} {...props} /> )
+  return (
+    <span
+      className={cn('ml-auto text-xs tracking-widest opacity-60', className)}
+      {...props}
+    />
+  )
 }
 DropdownMenuShortcut.displayName = 'DropdownMenuShortcut'
 
-export { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuCheckboxItem, DropdownMenuRadioItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuGroup, DropdownMenuPortal, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuRadioGroup, }
+export {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+  DropdownMenuRadioItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuGroup,
+  DropdownMenuPortal,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuRadioGroup,
+}
 
 ```
 
+## 📄 src/components/index.js
+*Lines: 22, Size: 571 Bytes*
+
+```javascript
+export * from './accordion'
+export * from './alert-dialog'
+export * from './badge'
+export * from './button'
+export * from './card'
+export * from './checkbox'
+export * from './command'
+export * from './dialog'
+export * from './dropdown-menu'
+export * from './input'
+export * from './label'
+export * from './popover'
+export * from './scroll-area'
+export * from './select'
+export * from './separator'
+export * from './sheet'
+export * from './sonner'
+export * from './switch'
+export * from './table'
+export * from './tabs'
+export * from './textarea'
+export * from './tooltip'
+```
+
 ## 📄 src/components/input.jsx
-*Lines: 25, Size: 955 Bytes*
+*Lines: 22, Size: 941 Bytes*
 
 ```jsx
-import * as React from "react"
+import * as React from 'react'
 
-import { cn } from '../../../utils/src/index.js'
+import { cn } from '@headlines/utils'
 
-function Input({
-  className,
-  type,
-  ...props
-}) {
+function Input({ className, type, ...props }) {
   return (
     <input
       type={type}
       data-slot="input"
       className={cn(
-        "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
-        "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+        'file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
+        'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
+        'aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
         className
       )}
-      {...props} />
-  );
+      {...props}
+    />
+  )
 }
 
 export { Input }
@@ -1265,7 +1464,7 @@ export { Input }
 ```
 
 ## 📄 src/components/label.jsx
-*Lines: 20, Size: 599 Bytes*
+*Lines: 20, Size: 595 Bytes*
 
 ```jsx
 // src/components/ui/label.jsx (version 1.1)
@@ -1275,7 +1474,7 @@ import * as React from 'react'
 import * as LabelPrimitive from '@radix-ui/react-label'
 import { cva } from 'class-variance-authority'
 
-import { cn } from '../../../utils/src/index.js'
+import { cn } from '@headlines/utils-client'
 
 const labelVariants = cva(
   'text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
@@ -1291,7 +1490,7 @@ export { Label }
 ```
 
 ## 📄 src/components/popover.jsx
-*Lines: 32, Size: 1.22 KB*
+*Lines: 32, Size: 1.21 KB*
 
 ```jsx
 // packages/ui/src/components/popover.jsx (version 2.0.0 - Definitive Slot Fix)
@@ -1300,7 +1499,7 @@ export { Label }
 import * as React from 'react'
 import * as PopoverPrimitive from '@radix-ui/react-popover'
 
-import { cn } from '../../../utils/src/index.js'
+import { cn } from '@headlines/utils-client'
 
 const Popover = PopoverPrimitive.Root
 
@@ -1329,58 +1528,57 @@ export { Popover, PopoverTrigger, PopoverContent }
 ```
 
 ## 📄 src/components/scroll-area.jsx
-*Lines: 53, Size: 1.44 KB*
+*Lines: 52, Size: 1.46 KB*
 
 ```jsx
 // packages/ui/src/components/scroll-area.jsx (version 1.1.0)
-"use client"
+'use client'
 
-import * as React from "react"
-import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
+import * as React from 'react'
+import * as ScrollAreaPrimitive from '@radix-ui/react-scroll-area'
 
-import { cn } from '../../../utils/src/index.js'
+import { cn } from '@headlines/utils-client'
 
-function ScrollArea({
-  className,
-  children,
-  ...props
-}) {
+function ScrollArea({ className, children, ...props }) {
   return (
-    <ScrollAreaPrimitive.Root data-slot="scroll-area" className={cn("relative overflow-hidden", className)} {...props}>
+    <ScrollAreaPrimitive.Root
+      data-slot="scroll-area"
+      className={cn('relative overflow-hidden', className)}
+      {...props}
+    >
       <ScrollAreaPrimitive.Viewport
         data-slot="scroll-area-viewport"
-        className="h-full w-full rounded-[inherit]">
+        className="h-full w-full rounded-[inherit]"
+      >
         {children}
       </ScrollAreaPrimitive.Viewport>
       <ScrollBar />
       <ScrollAreaPrimitive.Corner />
     </ScrollAreaPrimitive.Root>
-  );
+  )
 }
 
-function ScrollBar({
-  className,
-  orientation = "vertical",
-  ...props
-}) {
+function ScrollBar({ className, orientation = 'vertical', ...props }) {
   return (
     <ScrollAreaPrimitive.ScrollAreaScrollbar
       data-slot="scroll-area-scrollbar"
       orientation={orientation}
       className={cn(
-        "flex touch-none select-none transition-colors",
-        orientation === "vertical" &&
-          "h-full w-2.5 border-l border-l-transparent p-[1px]",
-        orientation === "horizontal" &&
-          "h-2.5 flex-col border-t border-t-transparent p-[1px]",
+        'flex touch-none select-none transition-colors',
+        orientation === 'vertical' &&
+          'h-full w-2.5 border-l border-l-transparent p-[1px]',
+        orientation === 'horizontal' &&
+          'h-2.5 flex-col border-t border-t-transparent p-[1px]',
         className
       )}
-      {...props}>
+      {...props}
+    >
       <ScrollAreaPrimitive.ScrollAreaThumb
         data-slot="scroll-area-thumb"
-        className="relative flex-1 rounded-full bg-border" />
+        className="relative flex-1 rounded-full bg-border"
+      />
     </ScrollAreaPrimitive.ScrollAreaScrollbar>
-  );
+  )
 }
 
 export { ScrollArea, ScrollBar }
@@ -1388,41 +1586,30 @@ export { ScrollArea, ScrollBar }
 ```
 
 ## 📄 src/components/select.jsx
-*Lines: 167, Size: 5.44 KB*
+*Lines: 146, Size: 5.46 KB*
 
 ```jsx
-"use client"
+'use client'
 
-import * as React from "react"
-import * as SelectPrimitive from "@radix-ui/react-select"
-import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
+import * as React from 'react'
+import * as SelectPrimitive from '@radix-ui/react-select'
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
 
-import { cn } from '../../../utils/src/index.js'
+import { cn } from '@headlines/utils-client'
 
-function Select({
-  ...props
-}) {
-  return <SelectPrimitive.Root data-slot="select" {...props} />;
+function Select({ ...props }) {
+  return <SelectPrimitive.Root data-slot="select" {...props} />
 }
 
-function SelectGroup({
-  ...props
-}) {
-  return <SelectPrimitive.Group data-slot="select-group" {...props} />;
+function SelectGroup({ ...props }) {
+  return <SelectPrimitive.Group data-slot="select-group" {...props} />
 }
 
-function SelectValue({
-  ...props
-}) {
-  return <SelectPrimitive.Value data-slot="select-value" {...props} />;
+function SelectValue({ ...props }) {
+  return <SelectPrimitive.Value data-slot="select-value" {...props} />
 }
 
-function SelectTrigger({
-  className,
-  size = "default",
-  children,
-  ...props
-}) {
+function SelectTrigger({ className, size = 'default', children, ...props }) {
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
@@ -1431,62 +1618,57 @@ function SelectTrigger({
         "border-input data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-fit items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}
-      {...props}>
+      {...props}
+    >
       {children}
       <SelectPrimitive.Icon asChild>
         <ChevronDownIcon className="size-4 opacity-50" />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
-  );
+  )
 }
 
-function SelectContent({
-  className,
-  children,
-  position = "popper",
-  ...props
-}) {
+function SelectContent({ className, children, position = 'popper', ...props }) {
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         data-slot="select-content"
         className={cn(
-          "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border shadow-md",
-          position === "popper" &&
-            "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+          'bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border shadow-md',
+          position === 'popper' &&
+            'data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',
           className
         )}
         position={position}
-        {...props}>
+        {...props}
+      >
         <SelectScrollUpButton />
         <SelectPrimitive.Viewport
-          className={cn("p-1", position === "popper" &&
-            "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1")}>
+          className={cn(
+            'p-1',
+            position === 'popper' &&
+              'h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1'
+          )}
+        >
           {children}
         </SelectPrimitive.Viewport>
         <SelectScrollDownButton />
       </SelectPrimitive.Content>
     </SelectPrimitive.Portal>
-  );
+  )
 }
 
-function SelectLabel({
-  className,
-  ...props
-}) {
+function SelectLabel({ className, ...props }) {
   return (
     <SelectPrimitive.Label
       data-slot="select-label"
-      className={cn("text-muted-foreground px-2 py-1.5 text-xs", className)}
-      {...props} />
-  );
+      className={cn('text-muted-foreground px-2 py-1.5 text-xs', className)}
+      {...props}
+    />
+  )
 }
 
-function SelectItem({
-  className,
-  children,
-  ...props
-}) {
+function SelectItem({ className, children, ...props }) {
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
@@ -1494,7 +1676,8 @@ function SelectItem({
         "focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className
       )}
-      {...props}>
+      {...props}
+    >
       <span className="absolute right-2 flex size-3.5 items-center justify-center">
         <SelectPrimitive.ItemIndicator>
           <CheckIcon className="size-4" />
@@ -1502,47 +1685,41 @@ function SelectItem({
       </span>
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
     </SelectPrimitive.Item>
-  );
+  )
 }
 
-function SelectSeparator({
-  className,
-  ...props
-}) {
+function SelectSeparator({ className, ...props }) {
   return (
     <SelectPrimitive.Separator
       data-slot="select-separator"
-      className={cn("bg-border pointer-events-none -mx-1 my-1 h-px", className)}
-      {...props} />
-  );
+      className={cn('bg-border pointer-events-none -mx-1 my-1 h-px', className)}
+      {...props}
+    />
+  )
 }
 
-function SelectScrollUpButton({
-  className,
-  ...props
-}) {
+function SelectScrollUpButton({ className, ...props }) {
   return (
     <SelectPrimitive.ScrollUpButton
       data-slot="select-scroll-up-button"
-      className={cn("flex cursor-default items-center justify-center py-1", className)}
-      {...props}>
+      className={cn('flex cursor-default items-center justify-center py-1', className)}
+      {...props}
+    >
       <ChevronUpIcon className="size-4" />
     </SelectPrimitive.ScrollUpButton>
-  );
+  )
 }
 
-function SelectScrollDownButton({
-  className,
-  ...props
-}) {
+function SelectScrollDownButton({ className, ...props }) {
   return (
     <SelectPrimitive.ScrollDownButton
       data-slot="select-scroll-down-button"
-      className={cn("flex cursor-default items-center justify-center py-1", className)}
-      {...props}>
+      className={cn('flex cursor-default items-center justify-center py-1', className)}
+      {...props}
+    >
       <ChevronDownIcon className="size-4" />
     </SelectPrimitive.ScrollDownButton>
-  );
+  )
 }
 
 export {
@@ -1561,19 +1738,19 @@ export {
 ```
 
 ## 📄 src/components/separator.jsx
-*Lines: 28, Size: 658 Bytes*
+*Lines: 29, Size: 657 Bytes*
 
 ```jsx
-"use client"
+'use client'
 
-import * as React from "react"
-import * as SeparatorPrimitive from "@radix-ui/react-separator"
+import * as React from 'react'
+import * as SeparatorPrimitive from '@radix-ui/react-separator'
 
-import { cn } from '../../../utils/src/index.js'
+import { cn } from '@headlines/utils-client'
 
 function Separator({
   className,
-  orientation = "horizontal",
+  orientation = 'horizontal',
   decorative = true,
   ...props
 }) {
@@ -1583,11 +1760,12 @@ function Separator({
       decorative={decorative}
       orientation={orientation}
       className={cn(
-        "bg-border shrink-0 data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px",
+        'bg-border shrink-0 data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px',
         className
       )}
-      {...props} />
-  );
+      {...props}
+    />
+  )
 }
 
 export { Separator }
@@ -1604,7 +1782,7 @@ import * as React from 'react'
 import * as SheetPrimitive from '@radix-ui/react-dialog'
 import { cva } from 'class-variance-authority'
 import { X } from 'lucide-react'
-import { cn } from '../../../utils/src/index.js'
+import { cn } from '@headlines/utils-client'
 
 // Base components from Radix
 const Sheet = SheetPrimitive.Root
@@ -1757,14 +1935,27 @@ export {
 ```
 
 ## 📄 src/components/sonner.jsx
-*Lines: 25, Size: 782 Bytes*
+*Lines: 39, Size: 1.02 KB*
 
 ```jsx
 'use client'
 import { useTheme } from 'next-themes'
 import { Toaster as Sonner } from 'sonner'
+import { useEffect, useState } from 'react'
+
 const Toaster = ({ ...props }) => {
   const { theme = 'system' } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Don't render on server or until mounted to avoid hydration mismatch
+  if (!mounted) {
+    return null
+  }
+
   return (
     <Sonner
       theme={theme}
@@ -1783,6 +1974,7 @@ const Toaster = ({ ...props }) => {
     />
   )
 }
+
 export { Toaster }
 
 ```
@@ -1796,7 +1988,7 @@ export { Toaster }
 import * as React from 'react'
 import * as SwitchPrimitives from '@radix-ui/react-switch'
 
-import { cn } from '../../../utils/src/index.js'
+import { cn } from '@headlines/utils-client'
 const Switch = React.forwardRef(({ className, ...props }, ref) => (
   <SwitchPrimitives.Root
     className={cn(
@@ -1819,13 +2011,13 @@ export { Switch }
 ```
 
 ## 📄 src/components/table.jsx
-*Lines: 88, Size: 2.2 KB*
+*Lines: 88, Size: 2.19 KB*
 
 ```jsx
 // src/components/ui/table.jsx (version 1.1)
 import * as React from 'react'
 
-import { cn } from '../../../utils/src/index.js'
+import { cn } from '@headlines/utils'
 
 const Table = React.forwardRef(({ className, ...props }, ref) => (
   // CORRECTIVE ACTION: Removed the wrapping div with `overflow-auto`.
@@ -1913,15 +2105,15 @@ export {
 ```
 
 ## 📄 src/components/tabs.jsx
-*Lines: 44, Size: 1.52 KB*
+*Lines: 47, Size: 1.52 KB*
 
 ```jsx
-"use client"
+'use client'
 
-import * as React from "react"
-import * as TabsPrimitive from "@radix-ui/react-tabs"
+import * as React from 'react'
+import * as TabsPrimitive from '@radix-ui/react-tabs'
 
-import { cn } from '../../../utils/src/index.js'
+import { cn } from '@headlines/utils-client'
 
 const Tabs = TabsPrimitive.Root
 
@@ -1929,10 +2121,11 @@ const TabsList = React.forwardRef(({ className, ...props }, ref) => (
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground",
+      'inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground',
       className
     )}
-    {...props} />
+    {...props}
+  />
 ))
 TabsList.displayName = TabsPrimitive.List.displayName
 
@@ -1940,10 +2133,11 @@ const TabsTrigger = React.forwardRef(({ className, ...props }, ref) => (
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow",
+      'inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow',
       className
     )}
-    {...props} />
+    {...props}
+  />
 ))
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
 
@@ -1951,10 +2145,11 @@ const TabsContent = React.forwardRef(({ className, ...props }, ref) => (
   <TabsPrimitive.Content
     ref={ref}
     className={cn(
-      "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+      'mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
       className
     )}
-    {...props} />
+    {...props}
+  />
 ))
 TabsContent.displayName = TabsPrimitive.Content.displayName
 
@@ -1963,25 +2158,26 @@ export { Tabs, TabsList, TabsTrigger, TabsContent }
 ```
 
 ## 📄 src/components/textarea.jsx
-*Lines: 19, Size: 601 Bytes*
+*Lines: 20, Size: 593 Bytes*
 
 ```jsx
-import * as React from "react"
+import * as React from 'react'
 
-import { cn } from '../../../utils/src/index.js'
+import { cn } from '@headlines/utils'
 
 const Textarea = React.forwardRef(({ className, ...props }, ref) => {
   return (
     <textarea
       className={cn(
-        "flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        'flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
         className
       )}
       ref={ref}
-      {...props} />
-  );
+      {...props}
+    />
+  )
 })
-Textarea.displayName = "Textarea"
+Textarea.displayName = 'Textarea'
 
 export { Textarea }
 
@@ -1997,7 +2193,7 @@ export { Textarea }
 import * as React from 'react'
 import * as TooltipPrimitive from '@radix-ui/react-tooltip'
 
-import { cn } from '../../../utils/src/index.js'
+import { cn } from '@headlines/utils-client'
 
 const TooltipProvider = TooltipPrimitive.Provider
 
@@ -2025,10 +2221,10 @@ export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
 ```
 
 ## 📄 src/data-table.jsx
-*Lines: 189, Size: 5.57 KB*
+*Lines: 195, Size: 5.55 KB*
 
 ```jsx
-// packages/ui/src/data-table.jsx (version 3.0.0 - Horizontal Scroll Fix)
+// packages/ui/src/data-table.jsx (version 3.1.0 - Fully Controlled & Responsive)
 'use client'
 
 import React, { useState, useEffect } from 'react'
@@ -2045,7 +2241,6 @@ import { Input } from './components/input'
 import { Button } from './components/button'
 import { Checkbox } from './components/checkbox'
 import { LoadingOverlay } from './LoadingOverlay'
-import { ScrollArea } from './components/scroll-area'
 
 const addSelectionColumn = (columns) => [
   {
@@ -2069,7 +2264,7 @@ const addSelectionColumn = (columns) => [
     ),
     enableSorting: false,
     enableHiding: false,
-    size: 40, // Give selection a small fixed size
+    size: 40,
   },
   ...columns,
 ]
@@ -2087,6 +2282,10 @@ export function DataTable({
   setColumnFilters = () => {},
   enableRowSelection = false,
   onRowSelectionChange,
+  filterColumn,
+  filterPlaceholder,
+  enableColumnResizing,
+  tableProps,
 }) {
   const [rowSelection, setRowSelection] = useState({})
 
@@ -2117,6 +2316,7 @@ export function DataTable({
     manualPagination: true,
     manualSorting: true,
     manualFiltering: true,
+    enableColumnResizing,
   })
 
   useEffect(() => {
@@ -2127,30 +2327,33 @@ export function DataTable({
     }
   }, [rowSelection, onRowSelectionChange, table])
 
-  const handleGlobalFilterChange = (value) => {
-    const currentGlobalFilter = columnFilters.find((f) => f.id === 'headline')
-    let newFilters = columnFilters.filter((f) => f.id !== 'headline')
+  const handleFilterChange = (value) => {
+    if (!filterColumn) return
+    const currentFilter = columnFilters.find((f) => f.id === filterColumn)
+    let newFilters = columnFilters.filter((f) => f.id !== filterColumn)
     if (value) {
-      newFilters.push({ id: 'headline', value })
+      newFilters.push({ id: filterColumn, value })
     }
     setColumnFilters(newFilters)
   }
 
-  const globalFilterValue = columnFilters.find((f) => f.id === 'headline')?.value || ''
+  const filterValue = columnFilters.find((f) => f.id === filterColumn)?.value || ''
 
   return (
     <div className="relative isolate flex flex-col h-full">
       <LoadingOverlay isLoading={isLoading && !(data?.length > 0)} />
       <div className="flex-shrink-0 flex items-center justify-between py-4">
-        <Input
-          placeholder="Filter by headline, source..."
-          value={globalFilterValue}
-          onChange={(event) => handleGlobalFilterChange(event.target.value)}
-          className="max-w-sm"
-        />
+        {filterColumn && (
+          <Input
+            placeholder={filterPlaceholder}
+            value={filterValue}
+            onChange={(event) => handleFilterChange(event.target.value)}
+            className="max-w-sm"
+          />
+        )}
         <div className="flex items-center justify-end space-x-2">
           <span className="text-sm text-muted-foreground">
-            Page {page} of {pageCount}
+            Page {page} of {pageCount || 1}
           </span>
           <Button
             variant="outline"
@@ -2170,9 +2373,8 @@ export function DataTable({
           </Button>
         </div>
       </div>
-      {/* DEFINITIVE FIX: Add a wrapping div with overflow-auto to handle horizontal scrolling */}
-      <div className="flex-grow overflow-auto rounded-md border">
-        <Table>
+      <div className="flex-grow rounded-md border overflow-auto">
+        <Table {...tableProps}>
           <TableHeader className="sticky top-0 bg-background z-10">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -2219,208 +2421,10 @@ export function DataTable({
 
 ```
 
-## 📄 src/data-table.jsx.bak
-*Lines: 191, Size: 5.71 KB*
-
-```
-// packages/ui/src/data-table.jsx (version 2.9.4)
-'use client'
-
-import React, { useState, useEffect } from 'react'
-import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from './components/table'
-import { Input } from './components/input'
-import { Button } from './components/button'
-import { Checkbox } from './components/checkbox'
-import { LoadingOverlay } from './LoadingOverlay'
-import { ScrollArea } from './components/scroll-area'
-
-const addSelectionColumn = (columns) => [
-  {
-    id: 'select',
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && 'indeterminate')
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  ...columns,
-]
-
-// DEFINITIVE FIX: The DataTable is now a fully controlled component for server-side operations.
-export function DataTable({
-  columns,
-  data,
-  isLoading,
-  page,
-  setPage,
-  total,
-  sorting,
-  setSorting,
-  columnFilters = [],
-  setColumnFilters = () => {},
-  enableRowSelection = false,
-  onRowSelectionChange,
-}) {
-  const [rowSelection, setRowSelection] = useState({})
-
-  const tableColumns = React.useMemo(
-    () => (enableRowSelection ? addSelectionColumn(columns) : columns),
-    [enableRowSelection, columns]
-  )
-
-  const pageCount = total ? Math.ceil(total / 50) : 0
-
-  const table = useReactTable({
-    data: data || [],
-    columns: tableColumns,
-    pageCount,
-    state: {
-      sorting,
-      columnFilters,
-      rowSelection,
-      pagination: {
-        pageIndex: page - 1,
-        pageSize: 50,
-      },
-    },
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onRowSelectionChange: setRowSelection,
-    getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
-    manualSorting: true,
-    manualFiltering: true,
-  })
-
-  useEffect(() => {
-    if (onRowSelectionChange) {
-      onRowSelectionChange(
-        table.getSelectedRowModel().flatRows.map((row) => row.original)
-      )
-    }
-  }, [rowSelection, onRowSelectionChange, table])
-
-  // Helper to manage the primary text filter, which is a common pattern.
-  const handleGlobalFilterChange = (value) => {
-    const currentGlobalFilter = columnFilters.find((f) => f.id === 'headline')
-    let newFilters = columnFilters.filter((f) => f.id !== 'headline')
-    if (value) {
-      newFilters.push({ id: 'headline', value })
-    }
-    setColumnFilters(newFilters)
-  }
-
-  const globalFilterValue = columnFilters.find((f) => f.id === 'headline')?.value || ''
-
-  return (
-    <div className="relative isolate flex flex-col h-full">
-      <LoadingOverlay isLoading={isLoading && !(data?.length > 0)} />
-      <div className="flex-shrink-0 flex items-center justify-between py-4">
-        <Input
-          placeholder="Filter by headline, source..."
-          value={globalFilterValue}
-          onChange={(event) => handleGlobalFilterChange(event.target.value)}
-          className="max-w-sm"
-        />
-        <div className="flex items-center justify-end space-x-2">
-          <span className="text-sm text-muted-foreground">
-            Page {page} of {pageCount}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => p - 1)}
-            disabled={page <= 1}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => p + 1)}
-            disabled={page >= pageCount}
-          >
-            Next
-          </Button>
-        </div>
-      </div>
-      <div className="flex-grow rounded-md border overflow-hidden">
-        <ScrollArea className="h-full">
-          <Table>
-            <TableHeader className="sticky top-0 bg-background z-10">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead
-                      key={header.id}
-                      style={{
-                        width:
-                          header.getSize() !== 150 ? `${header.getSize()}px` : undefined,
-                      }}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={tableColumns.length} className="h-24 text-center">
-                    {isLoading ? 'Loading...' : 'No results.'}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </ScrollArea>
-      </div>
-    </div>
-  )
-}
-
-```
-
 ## 📄 src/index.js
-*Lines: 253, Size: 5.02 KB*
+*Lines: 256, Size: 5.14 KB*
 
 ```javascript
-// packages/ui/src/index.js (version 3.2.0)
 'use client'
 
 import {
@@ -2548,10 +2552,12 @@ import { DataTableColumnHeader } from './DataTableColumnHeader.jsx'
 import { LoadingOverlay } from './LoadingOverlay.jsx'
 import PageHeader from './page-header.jsx'
 import { PremiumSpinner } from './PremiumSpinner.jsx'
-import { SkeletonCard } from './SkeletonCard.jsx'
+import { Skeleton } from './Skeleton.jsx'
 import { EditableCell } from './EditableCell.jsx'
 import { ExportButton } from './ExportButton.jsx'
 import { ViewHeader } from './ViewHeader.jsx'
+// DEFINITIVE FIX: Import the missing component
+import { SkeletonCard } from './SkeletonCard.jsx'
 
 export {
   Accordion,
@@ -2667,10 +2673,12 @@ export {
   LoadingOverlay,
   PageHeader,
   PremiumSpinner,
-  SkeletonCard,
+  Skeleton,
   EditableCell,
   ExportButton,
   ViewHeader,
+  // DEFINITIVE FIX: Add the missing component to the export list
+  SkeletonCard,
 }
 
 ```

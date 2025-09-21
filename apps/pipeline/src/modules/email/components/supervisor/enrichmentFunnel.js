@@ -1,6 +1,6 @@
 // apps/pipeline/src/modules/email/components/supervisor/enrichmentFunnel.js (version 2.1.0)
-import { settings } from '@headlines/config/src/server.js'
-import { escapeHtml, truncateString } from '@headlines/utils/src/server.js'
+import { settings } from '@headlines/config/server.js'
+import { escapeHtml, truncateString } from '@headlines/utils-server'
 
 export function createEnrichmentFunnelHtml(runStats) {
   const enrichmentOutcomes = runStats.enrichmentOutcomes || []
@@ -26,9 +26,11 @@ export function createEnrichmentFunnelHtml(runStats) {
       }
 
       // DEFINITIVE FIX: Use the actual assessment text and content snippets
-      const headlineAssessment = item.assessment_headline || 'N/A';
-      const articleAssessment = item.assessment_article || 'N/A';
-      const contentSnippet = item.content_snippet ? `${escapeHtml(item.content_snippet)}...` : 'N/A';
+      const headlineAssessment = item.assessment_headline || 'N/A'
+      const articleAssessment = item.assessment_article || 'N/A'
+      const contentSnippet = item.content_snippet
+        ? `${escapeHtml(item.content_snippet)}...`
+        : 'N/A'
 
       return `
         <div class="card">

@@ -1,0 +1,31 @@
+{
+  "name": "@headlines/utils-server",
+  "version": "3.0.0",
+  "description": "Server-only utilities for the Headlines monorepo.",
+  "main": "src/index.js",
+  "type": "module",
+  "license": "ISC",
+  "exports": {
+    ".": "./src/index.js",
+    "./logger": "./src/logger.js",
+    "./helpers": "./src/helpers.js",
+    "./tokenTracker": "./src/tokenTracker.js",
+    "./apiCallTracker": "./src/apiCallTracker.js",
+    "./auditLogger": "./src/auditLogger.js",
+    "./redisClient": "./src/redisClient.js",
+    "./mailer": "./src/mailer.js",
+    "./pusher": "./src/pusher.js"
+  },
+  "dependencies": {
+    "@headlines/config": "workspace:*",
+    "moment": "^2.30.1",
+    "pino": "^9.2.0",
+    "pino-pretty": "^11.2.1",
+    "redis": "^4.6.15",
+    "cheerio": "^1.0.0-rc.12",
+    "nodemailer": "^6.9.14",
+    "pusher": "^5.2.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^2.3.0"
+  }
+}

@@ -1,8 +1,18 @@
-// src/app/_components/source-list.jsx (version 2.4)
+// apps/admin/src/app/_components/source-list.jsx (version 3.0.0)
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Button, Input, ScrollArea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge } from '@headlines/ui/src/index.js'
+import {
+  Button,
+  Input,
+  ScrollArea,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Badge,
+} from '@headlines/ui'
 import {
   PlusCircle,
   DatabaseZap,
@@ -13,7 +23,7 @@ import {
   Ban,
   ExternalLink,
 } from 'lucide-react'
-import { cn } from '@headlines/utils/src/index.js'
+import { cn } from '@headlines/utils-shared'
 
 function DynamicStatus({ source, status }) {
   if (status?.checking) {
@@ -45,9 +55,12 @@ function SourceStatusIndicator({ source }) {
   } else if (source.status === 'under_review') {
     status = 'under_review'
     title = 'Under Review'
-  } else if (source.lastScrapedAt && !source.lastRunSuccess) {
+  } else if (
+    source.analytics?.totalRuns > 0 &&
+    source.analytics?.lastRunHeadlineCount === 0
+  ) {
     status = 'failed'
-    title = `Failed: ${source.lastErrorMessage || 'Scrape failed'}`
+    title = 'Failing: Last run found 0 headlines.'
   }
 
   const color = {
@@ -93,7 +106,7 @@ export default function SourceList({
         <div className="flex items-center gap-3">
           <Newspaper className="w-8 h-8 gemini-text flex-shrink-0" />
           <div>
-            <h1 className="text-xl font-bold tracking-tighter">Source Config</h1>
+            <h1 className="text-xl font-bold tracking-tighter">Source IDE</h1>
             <p className="text-sm text-muted-foreground">
               {sources ? `${sources.length} sources` : 'Loading...'}
             </p>
@@ -146,7 +159,7 @@ export default function SourceList({
           <div className="p-2 space-y-1">
             {isLoading ? (
               <div className="text-center text-sm text-muted-foreground py-10 animate-pulse">
-                Loading...
+                Loading Sources...
               </div>
             ) : !sources ? (
               <div className="p-4 flex flex-col items-center justify-center h-full text-muted-foreground">

@@ -3,7 +3,7 @@
 
 import dbConnect from '../../../../packages/data-access/src/dbConnect.js'
 import { Source } from '../../../../packages/models/src/index.js'
-import { logger, reinitializeLogger } from '../../../../packages/utils/src/server.js'
+import { logger, reinitializeLogger } from '../../../../packages/utils-server'
 import path from 'path'
 import mongoose from 'mongoose'
 

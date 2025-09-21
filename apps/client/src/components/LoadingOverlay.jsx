@@ -2,7 +2,7 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
-import { PremiumSpinner } from './ui/PremiumSpinner'
+import { PremiumSpinner } from '@headlines/ui'
 
 /**
  * A full-screen overlay component that displays a premium spinner.

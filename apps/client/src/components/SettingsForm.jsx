@@ -1,136 +1,123 @@
-// src/components/SettingsForm.jsx (version 1.0)
-'use client';
-
+// apps/client/src/components/SettingsForm.jsx (version 2.0.0)
+'use client'
 import { useState, useEffect } from 'react'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth } from '@headlines/auth'
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
-} from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
+  CardFooter,
+  Button,
+  Label,
+} from '@headlines/ui'
 import { CountrySubscriptionEditor } from './CountrySubscriptionEditor'
-import { Save, Loader2 } from 'lucide-react'
+import { Save, Loader2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { clearDiscardedItems } from '@/lib/api-client'
 
 export function SettingsForm({ allCountries }) {
   const { user, updateUserPreferences } = useAuth()
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    countries: [],
-  })
+  const [formData, setFormData] = useState({ countries: [] })
   const [isSaving, setIsSaving] = useState(false)
+  const [isClearing, setIsClearing] = useState(false)
 
   useEffect(() => {
     if (user) {
       setFormData({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        email: user.email || '',
-        countries: user.countries || [],
+        countries: (user.countries || []).map((c) => c.name).filter(Boolean),
       })
     }
   }, [user])
 
-  const handleInputChange = (e) => {
-    const { id, value } = e.target
-    setFormData((prev) => ({ ...prev, [id]: value }))
-  }
-
-  const handleCountryChange = (newCountries) => {
-    setFormData((prev) => ({ ...prev, countries: newCountries }))
+  const handleCountryChange = (newCountryNames) => {
+    setFormData((prev) => ({ ...prev, countries: newCountryNames }))
   }
 
   const handleSaveChanges = async (e) => {
     e.preventDefault()
     setIsSaving(true)
-
-    if (formData.email !== user.email) {
-      if (!confirm('Are you sure you want to change your login email address?')) {
-        setIsSaving(false)
-        return
-      }
-    }
-
-    try {
-      await updateUserPreferences(formData)
-    } catch (error) {
-      toast.error('An unexpected error occurred.')
-    } finally {
-      setIsSaving(false)
-    }
+    const newSubscriptions = formData.countries.map((name) => ({ name, active: true }))
+    await updateUserPreferences({ countries: newSubscriptions })
+    setIsSaving(false)
   }
 
-  if (!user) {
-    return null // or a loading skeleton
+  const handleClearDiscarded = async () => {
+    toast.info('Clearing discarded items...')
+    setIsClearing(true)
+    const result = await clearDiscardedItems()
+    if (result.success) {
+      toast.success('Discarded items cleared. Your feeds will be refreshed.')
+    } else {
+      toast.error('Failed to clear items', { description: result.error })
+    }
+    setIsClearing(false)
   }
+
+  if (!user) return null
 
   return (
-    <form onSubmit={handleSaveChanges}>
-      <Card className="bg-slate-900/50 border-slate-700/80">
-        <CardHeader>
-          <CardTitle>User Profile</CardTitle>
-          <CardDescription>
-            Update your personal details and country subscriptions.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
-              <Input
-                id="firstName"
-                value={formData.firstName}
-                onChange={handleInputChange}
-                className="bg-slate-900/80"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input
-                id="lastName"
-                value={formData.lastName}
-                onChange={handleInputChange}
-                className="bg-slate-900/80"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email Address</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              className="bg-slate-900/80"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Country Subscriptions</Label>
+    <>
+      <form onSubmit={handleSaveChanges}>
+        <Card className="bg-slate-900/50 border-slate-700/80">
+          <CardHeader>
+            <CardTitle>Country Subscriptions</CardTitle>
+            <CardDescription>
+              Select the countries you want to receive intelligence from.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Label>Subscribed Countries</Label>
             <CountrySubscriptionEditor
               allCountries={allCountries}
               selectedCountries={formData.countries}
               onSelectionChange={handleCountryChange}
             />
-          </div>
-          <div className="flex justify-end pt-4 border-t border-slate-700/50">
+          </CardContent>
+          <CardFooter>
             <Button type="submit" disabled={isSaving}>
               {isSaving ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <Save className="mr-2 h-4 w-4" />
               )}
-              Save Changes
+              Save Preferences
+            </Button>
+          </CardFooter>
+        </Card>
+      </form>
+      <Card className="mt-8 bg-slate-900/50 border-red-500/30">
+        <CardHeader>
+          <CardTitle>Danger Zone</CardTitle>
+          <CardDescription>
+            These actions are irreversible. Proceed with caution.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="font-semibold">Reset Discarded Items</p>
+              <p className="text-sm text-slate-400">
+                If you've dismissed items by swiping, this will make them visible again in
+                your feeds.
+              </p>
+            </div>
+            <Button
+              variant="destructive"
+              onClick={handleClearDiscarded}
+              disabled={isClearing}
+            >
+              {isClearing ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 h-4 w-4" />
+              )}
+              Clear Discarded
             </Button>
           </div>
         </CardContent>
       </Card>
-    </form>
+    </>
   )
 }

@@ -2,7 +2,7 @@
 import 'dotenv/config'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
-import { logger } from '@headlines/utils/src/logger.js'
+import { logger } from '@headlines/utils-server'
 import { connectDatabase, disconnectDatabase } from '../../src/database.js'
 import { scrapeSiteForHeadlines } from '../../src/modules/scraper/headlineScraper.js'
 import { suggestNewSelector } from '../../src/modules/ai/agents/selectorRepairAgent.js'
@@ -40,7 +40,9 @@ async function main() {
     const initialScrape = await scrapeSiteForHeadlines(source)
 
     if (initialScrape.success && initialScrape.resultCount > 0) {
-      console.log(`✅ This source appears to be healthy. Found ${initialScrape.resultCount} headlines.`)
+      console.log(
+        `✅ This source appears to be healthy. Found ${initialScrape.resultCount} headlines.`
+      )
       return
     }
 
@@ -68,20 +70,29 @@ async function main() {
 
     if (argv.fix) {
       console.log('\n🔧 --fix flag enabled. Verifying and applying the fix...')
-      const tempSource = { ...source.toObject(), headlineSelector: suggestion.suggested_selector }
+      const tempSource = {
+        ...source.toObject(),
+        headlineSelector: suggestion.suggested_selector,
+      }
       const verificationScrape = await scrapeSiteForHeadlines(tempSource)
 
       if (verificationScrape.success && verificationScrape.resultCount > 0) {
-        console.log(`   - ✅ Verification successful! Found ${verificationScrape.resultCount} headlines with the new selector.`)
+        console.log(
+          `   - ✅ Verification successful! Found ${verificationScrape.resultCount} headlines with the new selector.`
+        )
         source.headlineSelector = suggestion.suggested_selector
         await source.save()
         console.log('   - 💾 New selector has been saved to the database.')
       } else {
-        console.log(`   - ❌ Verification failed. The suggested selector did not return any headlines.`)
+        console.log(
+          `   - ❌ Verification failed. The suggested selector did not return any headlines.`
+        )
         console.log(`   - Reason: ${verificationScrape.error}`)
       }
     } else {
-      console.log('\nRun with the --fix flag to automatically apply and save the new selector.')
+      console.log(
+        '\nRun with the --fix flag to automatically apply and save the new selector.'
+      )
     }
   } catch (error) {
     console.error(`💥 A critical error occurred: ${error.message}`)

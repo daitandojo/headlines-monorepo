@@ -5,8 +5,7 @@ import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Button } from '@/components/ui/button'
+import { Button, Tabs, TabsList, TabsTrigger } from '@headlines/ui'
 import { Zap, Newspaper, UploadCloud, MessageSquare, Target, ArrowUp } from 'lucide-react'
 
 const TABS = [

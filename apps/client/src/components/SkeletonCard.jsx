@@ -1,4 +1,4 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from '@headlines/ui'
 
 export const SkeletonCard = () => {
   return (
@@ -20,5 +20,5 @@ export const SkeletonCard = () => {
         </div>
       </CardContent>
     </Card>
-  );
-};
+  )
+}

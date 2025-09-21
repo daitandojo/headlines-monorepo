@@ -1,8 +1,12 @@
 // apps/pipeline/src/pipeline/submodules/opportunityUpserter.js (version 7.1.0)
-import { Opportunity, SynthesizedEvent, WatchlistEntity } from '@headlines/models/src/index.js'
-import { logger } from '@headlines/utils/src/server.js';
-import { contactFinderChain, entityCanonicalizerChain, generateEmbedding } from '@headlines/ai-services/src/index.js'
-import { getConfig } from '@headlines/scraper-logic/src/config.js'
+import { Opportunity, SynthesizedEvent, WatchlistEntity } from '@headlines/models'
+import { logger } from '@headlines/utils-server'
+import {
+  contactFinderChain,
+  entityCanonicalizerChain,
+  generateEmbedding,
+} from '@headlines/ai-services'
+import { getConfig } from '@headlines/scraper-logic/config.js'
 
 async function selfCorrectWatchlist(opportunityName, canonicalName) {
   if (opportunityName.toLowerCase() === canonicalName.toLowerCase()) return
@@ -99,35 +103,38 @@ export async function enrichAndLinkOpportunities(potentialOpportunities, savedEv
         opp.reachOutTo,
         ...(Array.isArray(opp.whyContact) ? opp.whyContact : [opp.whyContact]),
         opp.contactDetails?.company,
-      ].filter(Boolean).join('; ');
-      
-      const embedding = await generateEmbedding(textToEmbed);
-      return { ...opp, embedding };
+      ]
+        .filter(Boolean)
+        .join('; ')
+
+      const embedding = await generateEmbedding(textToEmbed)
+      return { ...opp, embedding }
     })
-  );
+  )
 
   const findOrCreateOps = enrichedOpportunitiesWithEmbeddings.map((opp) => {
-      const whyContactArray = Array.isArray(opp.whyContact) ? opp.whyContact : [opp.whyContact];
-      return {
-          updateOne: {
-              filter: { reachOutTo: opp.reachOutTo },
-              update: {
-                  $setOnInsert: {
-                      reachOutTo: opp.reachOutTo,
-                      basedIn: opp.basedIn,
-                      likelyMMDollarWealth: opp.likelyMMDollarWealth,
-                      contactDetails: opp.contactDetails,
-                  },
-                  $set: {
-                      embedding: opp.embedding,
-                  },
-                  $addToSet: { whyContact: { $each: whyContactArray } }
-              },
-              upsert: true,
+    const whyContactArray = Array.isArray(opp.whyContact)
+      ? opp.whyContact
+      : [opp.whyContact]
+    return {
+      updateOne: {
+        filter: { reachOutTo: opp.reachOutTo },
+        update: {
+          $setOnInsert: {
+            reachOutTo: opp.reachOutTo,
+            basedIn: opp.basedIn,
+            likelyMMDollarWealth: opp.likelyMMDollarWealth,
+            contactDetails: opp.contactDetails,
           },
-      };
-  });
-
+          $set: {
+            embedding: opp.embedding,
+          },
+          $addToSet: { whyContact: { $each: whyContactArray } },
+        },
+        upsert: true,
+      },
+    }
+  })
 
   if (findOrCreateOps.length > 0) {
     await Opportunity.bulkWrite(findOrCreateOps, { ordered: false })

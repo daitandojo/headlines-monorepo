@@ -1,15 +1,15 @@
 // apps/pipeline/src/pipeline/4_clusterAndSynthesize.js
-import { truncateString } from '@headlines/utils/src/server.js'
-import { logger, auditLogger } from '@headlines/utils/src/server.js'
+import { truncateString } from '@headlines/utils-server'
+import { logger, auditLogger } from '@headlines/utils-server'
 import {
   clusteringChain,
   synthesisChain,
   entityExtractorChain,
   opportunityChain,
   findSimilarArticles,
-} from '@headlines/ai-services/src/index.js'
-import { settings } from '@headlines/config/src/server.js'
-import { getConfig } from '@headlines/scraper-logic/src/config.js'
+} from '@headlines/ai-services'
+import { settings } from '@headlines/config/server.js'
+import { getConfig } from '@headlines/scraper-logic/config.js'
 
 async function synthesizeEventsFromCluster(articlesInCluster, clusterKey, runStats) {
   const config = getConfig()

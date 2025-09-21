@@ -1,5 +1,5 @@
 // apps/pipeline/scripts/seed/seed-settings.js (version 1.8.0)
-import { reinitializeLogger, logger } from '../../../../packages/utils/src/server.js'
+import { reinitializeLogger, logger } from '../../../../packages/utils-server'
 import path from 'path'
 import { Setting } from '../../../../packages/models/src/index.js'
 import dbConnect from '../../../../packages/data-access/src/dbConnect.js'

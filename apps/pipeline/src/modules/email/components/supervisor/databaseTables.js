@@ -1,17 +1,17 @@
 // apps/pipeline/src/modules/email/components/supervisor/databaseTables.js (version 2.2.0)
-import { SynthesizedEvent } from '@headlines/models/src/index.js'
-import { settings } from '@headlines/config/src/server.js'
-import { truncateString, escapeHtml } from '@headlines/utils/src/server.js'
+import { SynthesizedEvent } from '@headlines/models'
+import { settings } from '@headlines/config/server.js'
+import { truncateString, escapeHtml } from '@headlines/utils-server'
 
 const sourceIcons = {
-    rag_db: '🗄️',
-    wikipedia: '🌐',
-    news_api: '📰',
-};
+  rag_db: '🗄️',
+  wikipedia: '🌐',
+  news_api: '📰',
+}
 
 function formatEnrichmentSources(sources = []) {
-    if (sources.length === 0) return 'N/A';
-    return sources.map(s => sourceIcons[s] || '❓').join(' ');
+  if (sources.length === 0) return 'N/A'
+  return sources.map((s) => sourceIcons[s] || '❓').join(' ')
 }
 
 export async function createEventsTableHtml(runStartDate) {
@@ -42,8 +42,8 @@ export async function createEventsTableHtml(runStartDate) {
 
 export async function createArticlesTableHtml(runStats) {
   // DEFINITIVE FIX: Use enrichmentOutcomes as the source of truth
-  const allArticles = runStats.enrichmentOutcomes || [];
-  
+  const allArticles = runStats.enrichmentOutcomes || []
+
   if (allArticles.length === 0)
     return `<h2>All Fresh Articles Processed</h2><p>No new raw articles were processed in the enrichment stage.</p>`
 
@@ -56,7 +56,9 @@ export async function createArticlesTableHtml(runStats) {
     return `<h2>All Fresh Articles Processed (${runStats.freshHeadlinesFound})</h2><p>No headlines were deemed relevant (all scored < ${settings.HEADLINES_RELEVANCE_THRESHOLD}).</p>`
   }
 
-  relevantArticles.sort((a, b) => (b.finalScore || b.headlineScore) - (a.finalScore || a.headlineScore));
+  relevantArticles.sort(
+    (a, b) => (b.finalScore || b.headlineScore) - (a.finalScore || a.headlineScore)
+  )
 
   let tableRows = relevantArticles
     .map((article) => {

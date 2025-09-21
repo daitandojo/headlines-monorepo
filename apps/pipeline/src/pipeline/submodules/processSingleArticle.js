@@ -1,10 +1,10 @@
 // apps/pipeline/src/pipeline/submodules/processSingleArticle.js
-import { logger } from '@headlines/utils/src/logger.js'
-import { articleChain, articlePreAssessmentChain } from '@headlines/ai-services/src/index.js'
-import { getConfig } from '@headlines/scraper-logic/src/config.js'
-import { scrapeArticleContent } from '@headlines/scraper-logic/src/scraper/contentScraper.js'
-import { settings } from '@headlines/config/src/server.js'
-import { Source } from '@headlines/models/src/index.js'
+import { logger } from '@headlines/utils-server'
+import { articleChain, articlePreAssessmentChain } from '@headlines/ai-services'
+import { getConfig } from '@headlines/scraper-logic/config.js'
+import { scrapeArticleContent } from '@headlines/scraper-logic/scraper/contentScraper.js'
+import { settings } from '@headlines/config/server.js'
+import { Source } from '@headlines/models'
 
 function createLifecycleEvent(stage, status, reason) {
   return { stage, status, reason, timestamp: new Date() }

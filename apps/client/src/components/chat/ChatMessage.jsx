@@ -3,14 +3,14 @@ import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
-import { cn } from '@/lib/utils'
+import { cn } from '@headlines/utils'
 import { User, Bot, ChevronsUpDown } from 'lucide-react'
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@/components/ui/accordion'
+} from '@headlines/ui'
 import { ChatLoadingIndicator } from './ChatLoadingIndicator'
 
 export function ChatMessage({ message, onAccordionToggle }) {

@@ -1,9 +1,12 @@
 // apps/pipeline/scripts/lib/script-init.js
-import { logger } from '../../../../../packages/utils/src/server.js'
+import { logger } from '../@headlines/utils'
 import { configure as configureScraperLogic } from '@headlines/scraper-logic/config.js'
 import * as appConfig from '../../../../../packages/config/src/server.js'
 import { refreshConfig, configStore } from '../../../src/config/dynamicConfig.js'
-import { initializeSettings, settings } from '../../../../../packages/config/src/server.js'
+import {
+  initializeSettings,
+  settings,
+} from '../../../../../packages/config/src/server.js'
 import dbConnect from '../../../../../packages/data-access/src/dbConnect.js'
 import * as aiServices from '../../../../../packages/ai-services/src/index.js'
 

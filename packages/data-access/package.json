@@ -1,17 +1,18 @@
 {
   "name": "@headlines/data-access",
   "version": "1.0.0",
-  "description": "Shared server actions and data access logic for the Headlines monorepo.",
+  "description": "Shared, server-only data access logic for the Headlines monorepo.",
   "main": "src/index.js",
   "type": "module",
   "license": "ISC",
-  "dependencies": {
-    "mongoose": "^8.4.1"
+  "exports": {
+    ".": "./src/index.js",
+    "./dbConnect.js": "./src/dbConnect.js",
+    "./seed/dev-user.js": "./src/seed/dev-user.js"
   },
-  "peerDependencies": {
-    "@headlines/auth": "1.0.0",
-    "@headlines/config": "3.0.0",
-    "@headlines/models": "1.0.0",
-    "@headlines/utils": "1.2.0"
+  "dependencies": {
+    "@headlines/auth": "workspace:*",
+    "@headlines/config": "workspace:*",
+    "@headlines/models": "workspace:*"
   }
 }

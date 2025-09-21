@@ -1,5 +1,5 @@
 // apps/pipeline/src/modules/email/components/supervisor/judgeVerdict.js (version 2.0.0)
-import { escapeHtml } from '@headlines/utils/src/server.js'
+import { escapeHtml } from '@headlines/utils-server'
 
 function getVerdictClass(quality) {
   if (!quality) return 'verdict-neutral'

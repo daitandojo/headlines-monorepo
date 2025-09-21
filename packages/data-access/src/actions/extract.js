@@ -1,10 +1,8 @@
 // src/actions/extract.js
-'use server';
-
 import OpenAI from 'openai';
 import { JSDOM } from 'jsdom';
 import { Readability } from '@mozilla/readability';
-import { COMMON_COUNTRIES } from '@/lib/countries';
+import { COMMON_COUNTRIES } from '@headlines/utils-server';
 import { fetchWikipediaSummary } from '@/lib/wikipedia';
 import { env } from '@/lib/env.mjs'; // <-- Import the validated env object
 

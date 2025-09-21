@@ -1,9 +1,9 @@
 // src/components/ArticleList.jsx (version 4.2)
-import { Accordion } from '@/components/ui/accordion'
+import { Accordion } from '@headlines/ui'
 import { ArticleCard } from '@/components/ArticleCard'
 import { AnimatePresence, motion } from 'framer-motion'
 import { AnimatedList, itemVariants } from './AnimatedList'
-import { cn } from '@/lib/utils'
+import { cn } from '@headlines/utils'
 
 export const ArticleList = ({ articles, onDelete }) => {
   return (

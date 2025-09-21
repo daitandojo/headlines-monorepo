@@ -1,6 +1,6 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 53 files, 4 directories
+Total: 60 files, 7 directories
 
 ```
 headlines/
@@ -28,9 +28,19 @@ headlines/
 │   │   ├── 📄 synthesisChain.js
 │   │   ├── 📄 translateChain.js
 │   │   └── 📄 watchlistSuggestionChain.js
+│   ├── 📁 embeddings/
+│   │   ├── 📄 embeddings.js
+│   │   └── 📄 vectorSearch.js
 │   ├── 📁 lib/
 │   │   ├── 📄 langchain.js
 │   │   └── 📄 safeInvoke.js
+│   ├── 📁 rag/
+│   │   ├── 📄 generation.js
+│   │   ├── 📄 orchestrator.js
+│   │   ├── 📄 planner.js
+│   │   ├── 📄 prompts.js
+│   │   ├── 📄 retrieval.js
+│   │   └── 📄 validation.js
 │   ├── 📁 schemas/
 │   │   ├── 📄 articleAssessmentSchema.js
 │   │   ├── 📄 articlePreAssessmentSchema.js
@@ -55,19 +65,19 @@ headlines/
 │   │   ├── 📄 synthesisSchema.js
 │   │   ├── 📄 translateSchema.js
 │   │   └── 📄 watchlistSuggestionSchema.js
-│   ├── 📄 embeddings.js
-│   ├── 📄 index.js
-│   ├── 📄 search.js
-│   ├── 📄 vectorSearch.js
-│   └── 📄 wikipedia.js
+│   ├── 📁 search/
+│   │   ├── 📄 search.js
+│   │   ├── 📄 serpapi.js
+│   │   └── 📄 wikipedia.js
+│   └── 📄 index.js
 └── 📄 package.json
 ```
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-17T18:58:29.061Z
+**Generated**: 2025-09-21T14:17:28.663Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/ai-services
-**Total Files**: 53
+**Total Files**: 60
 **Package**: @headlines/ai-services@1.0.0
 **Description**: Centralized, LangChain-powered AI and external service logic.
 
@@ -77,7 +87,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 26, Size: 669 Bytes*
+*Lines: 27, Size: 722 Bytes*
 
 ```json
 {
@@ -88,6 +98,10 @@ headlines/
   "type": "module",
   "license": "ISC",
   "dependencies": {
+    "@headlines/config": "workspace:*",
+    "@headlines/utils-server": "workspace:*",
+    "@headlines/models": "workspace:*",
+    "@headlines/prompts": "workspace:*",
     "@langchain/community": "*",
     "@langchain/core": "*",
     "@langchain/openai": "*",
@@ -97,22 +111,19 @@ headlines/
     "langchain": "*",
     "newsapi": "^2.4.1",
     "p-limit": "^5.0.0",
+    "serpapi": "^2.1.0",
+    "sharp": "^0.34.4",
     "zod": "*"
-  },
-  "peerDependencies": {
-    "@headlines/config": "3.0.0",
-    "@headlines/models": "1.0.0",
-    "@headlines/prompts": "1.0.0",
-    "@headlines/utils": "1.2.0"
   }
 }
+
 ```
 
 ## 📄 src/chains/articleChain.js
-*Lines: 64, Size: 2.19 KB*
+*Lines: 64, Size: 2.1 KB*
 
 ```javascript
-// packages/ai-services/src/chains/articleChain.js (version 2.4 - Confirmed Final)
+'use server'
 import {
   ChatPromptTemplate,
   HumanMessagePromptTemplate,
@@ -121,15 +132,15 @@ import {
 import { AIMessage, HumanMessage } from '@langchain/core/messages'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { settings } from '../../../config/src/server.js'
+import { settings } from '@headlines/config/server'
 import {
   getInstructionArticle,
   shotsInputArticle,
   shotsOutputArticle,
-} from '../../../prompts/src/index.js'
+} from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
-import { logger } from '../../../utils/src/server.js';
+import { logger } from '@headlines/utils-server/logger'
 import { articleAssessmentSchema } from '../schemas/index.js'
 
 const instructions = getInstructionArticle(settings)
@@ -992,66 +1003,340 @@ export const watchlistSuggestionChain = {
 
 ```
 
-## 📄 src/embeddings.js
-*Lines: 31, Size: 1.01 KB*
+## 📄 src/embeddings/embeddings.js
+*Lines: 235, Size: 7.98 KB*
 
 ```javascript
-// packages/ai-services/src/embeddings.js (version 2.0)
-'use server'
+// src/lib/embeddings.js (Enhanced version with query expansion and caching)
+"use server";
+import { pipeline } from '@xenova/transformers';
 
-import { pipeline } from '@xenova/transformers'
+// In-memory cache for embeddings (consider Redis for production)
+const embeddingCache = new Map();
+const MAX_CACHE_SIZE = 1000;
 
-// Use a singleton pattern to ensure we only load the model once per server instance.
+// Singleton pattern to ensure we only load the model once per server instance
 class EmbeddingPipeline {
-  static task = 'feature-extraction'
-  static model = 'Xenova/all-MiniLM-L6-v2' // Correct 384-dimension model
-  static instance = null
-
-  static async getInstance() {
-    if (this.instance === null) {
-      this.instance = await pipeline(this.task, this.model)
+    static task = 'feature-extraction';
+    static model = 'Xenova/all-MiniLM-L6-v2';
+    static instance = null;
+    
+    static async getInstance() {
+        if (this.instance === null) {
+            const { pipeline } = await import('@xenova/transformers');
+            this.instance = await pipeline(this.task, this.model);
+        }
+        return this.instance;
     }
-    return this.instance
-  }
 }
 
 /**
- * Generates an embedding for a given text using the local transformer model.
- * @param {string} text The text to embed.
- * @returns {Promise<Array<number>>} A promise that resolves to the embedding vector.
+ * Creates a cache key from text
+ * @param {string} text 
+ * @returns {string}
+ */
+function createCacheKey(text) {
+    return `embed_${text.toLowerCase().trim().replace(/\s+/g, '_')}`;
+}
+
+/**
+ * Manages cache size to prevent memory bloat
+ */
+function manageCacheSize() {
+    if (embeddingCache.size >= MAX_CACHE_SIZE) {
+        // Remove oldest 20% of entries (FIFO-ish)
+        const keysToRemove = Array.from(embeddingCache.keys()).slice(0, Math.floor(MAX_CACHE_SIZE * 0.2));
+        keysToRemove.forEach(key => embeddingCache.delete(key));
+        console.log(`[Embedding Cache] Cleaned ${keysToRemove.length} entries`);
+    }
+}
+
+/**
+ * Generates an embedding for a given text with caching
+ * @param {string} text The text to embed
+ * @returns {Promise<Array<number>>} A promise that resolves to the embedding vector
  */
 export async function generateEmbedding(text) {
-  const extractor = await EmbeddingPipeline.getInstance()
-  const output = await extractor(text, { pooling: 'mean', normalize: true })
-  // The output tensor needs to be converted to a standard array.
-  return Array.from(output.data)
+    if (!text || text.trim().length === 0) {
+        throw new Error('Text cannot be empty for embedding generation');
+    }
+    
+    const cleanText = text.trim();
+    const cacheKey = createCacheKey(cleanText);
+    
+    // Check cache first
+    if (embeddingCache.has(cacheKey)) {
+        console.log(`[Embedding Cache] Hit for text: "${cleanText.substring(0, 50)}..."`);
+        return embeddingCache.get(cacheKey);
+    }
+    
+    try {
+        const extractor = await EmbeddingPipeline.getInstance();
+        const output = await extractor(cleanText, { pooling: 'mean', normalize: true });
+        const embedding = Array.from(output.data);
+        
+        // Cache the result
+        manageCacheSize();
+        embeddingCache.set(cacheKey, embedding);
+        
+        console.log(`[Embedding] Generated embedding for text: "${cleanText.substring(0, 50)}..." (${embedding.length} dimensions)`);
+        return embedding;
+        
+    } catch (error) {
+        console.error(`[Embedding Error] Failed to generate embedding: ${error.message}`);
+        throw new Error(`Failed to generate embedding: ${error.message}`);
+    }
+}
+
+/**
+ * Generates multiple query variations to improve RAG recall
+ * @param {string} originalQuery 
+ * @returns {Promise<Array<Array<number>>>} Array of embeddings for different query variations
+ */
+export async function generateQueryEmbeddings(originalQuery) {
+    const variations = generateQueryVariations(originalQuery);
+    const embeddingPromises = variations.map(query => generateEmbedding(query));
+    
+    try {
+        const embeddings = await Promise.all(embeddingPromises);
+        console.log(`[Query Expansion] Generated ${embeddings.length} query variations for: "${originalQuery}" ->`, variations);
+        return embeddings;
+    } catch (error) {
+        console.error(`[Query Expansion Error] ${error.message}`);
+        // Fallback to original query only
+        return [await generateEmbedding(originalQuery)];
+    }
+}
+
+/**
+ * Creates query variations to improve semantic search recall
+ * @param {string} query 
+ * @returns {Array<string>}
+ */
+function generateQueryVariations(query) {
+    const originalQuery = query.trim();
+    const variations = new Set([originalQuery]);
+
+    // CORRECTED: Smartly strip disambiguation tags for broader searches
+    const coreEntity = originalQuery.replace(/\s*\((company|person)\)$/, '').trim();
+    if (coreEntity !== originalQuery) {
+        variations.add(coreEntity);
+    }
+
+    // Pattern for "Who founded X?"
+    const हूंFounderMatch = coreEntity.toLowerCase().match(/^(?:who|what)\s+(?:is|was|founded|created)\s+(.+)/);
+    if ( हूंFounderMatch) {
+        let subject = हूंFounderMatch[1].replace(/\?/g, '').replace(/^(the|a|an)\s/,'').trim();
+        variations.add(subject);
+        variations.add(`${subject} founder`);
+        variations.add(`founder of ${subject}`);
+        variations.add(`${subject} history`);
+    } else {
+        // General question pattern
+        const questionMatch = coreEntity.toLowerCase().match(/^(who|what|when|where|why|how)\s(is|are|was|were|did|does|do)\s(.+)/);
+        if (questionMatch) {
+            let subject = questionMatch[3].replace(/\?/g, '').trim();
+            variations.add(subject);
+            
+            const simplified = subject.replace(/^(the|a|an)\s/,'').split(' of ');
+            if (simplified.length > 1) {
+                variations.add(`${simplified[1].trim()} ${simplified[0].trim()}`);
+            }
+        }
+    }
+    
+    // Add generic variations for the core entity
+    if (hasProperNouns(coreEntity)) {
+        variations.add(`${coreEntity} background details`);
+        variations.add(`Information about ${coreEntity}`);
+    }
+    
+    // Return the top 4 most distinct variations
+    return Array.from(variations).slice(0, 4);
+}
+
+
+/**
+ * Simple check for proper nouns (capitalized words not at the start of a sentence)
+ * @param {string} text 
+ * @returns {boolean}
+ */
+function hasProperNouns(text) {
+    // Looks for words starting with an uppercase letter
+    return /\b[A-Z][a-z]+/.test(text);
+}
+
+/**
+ * Batch embedding generation for efficiency
+ * @param {Array<string>} texts 
+ * @returns {Promise<Array<Array<number>>>}
+ */
+export async function generateBatchEmbeddings(texts) {
+    if (!texts || texts.length === 0) {
+        return [];
+    }
+    
+    const embeddings = [];
+    const extractor = await EmbeddingPipeline.getInstance();
+    
+    // Process in batches to avoid memory issues
+    const BATCH_SIZE = 10;
+    for (let i = 0; i < texts.length; i += BATCH_SIZE) {
+        const batch = texts.slice(i, i + BATCH_SIZE);
+        const batchPromises = batch.map(text => {
+            const cacheKey = createCacheKey(text);
+            if (embeddingCache.has(cacheKey)) {
+                return Promise.resolve(embeddingCache.get(cacheKey));
+            }
+            return extractor(text, { pooling: 'mean', normalize: true })
+                .then(output => {
+                    const embedding = Array.from(output.data);
+                    embeddingCache.set(cacheKey, embedding);
+                    return embedding;
+                });
+        });
+        
+        const batchEmbeddings = await Promise.all(batchPromises);
+        embeddings.push(...batchEmbeddings);
+        
+        console.log(`[Batch Embedding] Processed batch ${Math.floor(i/BATCH_SIZE) + 1}/${Math.ceil(texts.length/BATCH_SIZE)}`);
+    }
+    
+    return embeddings;
+}
+
+/**
+ * Calculate cosine similarity between two embeddings
+ * @param {Array<number>} embedding1 
+ * @param {Array<number>} embedding2 
+ * @returns {Promise<number>} Similarity score between 0 and 1
+ */
+export async function calculateSimilarity(embedding1, embedding2) {
+    if (embedding1.length !== embedding2.length) {
+        throw new Error('Embeddings must have the same dimensions');
+    }
+    
+    let dotProduct = 0;
+    let norm1 = 0;
+    let norm2 = 0;
+    
+    for (let i = 0; i < embedding1.length; i++) {
+        dotProduct += embedding1[i] * embedding2[i];
+        norm1 += embedding1[i] * embedding1[i];
+        norm2 += embedding2[i] * embedding2[i];
+    }
+    
+    if (norm1 === 0 || norm2 === 0) return 0;
+    
+    return dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2));
+}
+
+/**
+ * Get cache statistics for monitoring
+ * @returns {Promise<Object>}
+ */
+export async function getCacheStats() {
+    return {
+        size: embeddingCache.size,
+        maxSize: MAX_CACHE_SIZE,
+        utilizationPercent: Math.round((embeddingCache.size / MAX_CACHE_SIZE) * 100)
+    };
+}
+```
+
+## 📄 src/embeddings/vectorSearch.js
+*Lines: 70, Size: 2.3 KB*
+
+```javascript
+// packages/ai-services/src/vectorSearch.js (version 1.1.0)
+'use server'
+import { Pinecone } from '@pinecone-database/pinecone'
+import { logger } from '@headlines/utils-server'
+import { generateEmbedding } from './embeddings.js'
+import { env } from '@headlines/config/server'
+
+const { PINECONE_API_KEY, PINECONE_INDEX_NAME } = env
+
+const SIMILARITY_THRESHOLD = 0.65
+const MAX_CONTEXT_ARTICLES = 3
+
+let pineconeIndex
+if (PINECONE_API_KEY) {
+  const pc = new Pinecone({ apiKey: PINECONE_API_KEY })
+  pineconeIndex = pc.index(PINECONE_INDEX_NAME)
+} else {
+  logger.warn(
+    'Pinecone API Key not found. RAG/vector search functionality will be disabled.'
+  )
+}
+
+/**
+ * Finds historical articles similar to a given query text by querying Pinecone.
+ * @param {string} queryText - The text to search for (e.g., a headline or comma-separated entities).
+ * @returns {Promise<Array<Object>>} A promise that resolves to an array of relevant historical articles.
+ */
+export async function findSimilarArticles(queryText) {
+  if (!pineconeIndex) return []
+  logger.info('RAG: Searching for historical context in Pinecone...')
+  if (!queryText || typeof queryText !== 'string' || queryText.trim().length === 0)
+    return []
+
+  try {
+    const queryEmbedding = await generateEmbedding(queryText)
+
+    const queryResponse = await pineconeIndex.query({
+      topK: MAX_CONTEXT_ARTICLES,
+      vector: queryEmbedding,
+      includeMetadata: true,
+    })
+
+    const relevantMatches = queryResponse.matches.filter(
+      (match) => match.score >= SIMILARITY_THRESHOLD
+    )
+
+    if (relevantMatches.length > 0) {
+      const retrievedArticlesForLogging = relevantMatches
+        .map(
+          (match) => `  - [Score: ${match.score.toFixed(3)}] "${match.metadata.headline}"`
+        )
+        .join('\n')
+      logger.info(
+        `RAG: Found ${relevantMatches.length} relevant historical articles:\n${retrievedArticlesForLogging}`
+      )
+      return relevantMatches.map((match) => ({
+        headline: match.metadata.headline,
+        newspaper: match.metadata.newspaper,
+        assessment_article: match.metadata.summary,
+      }))
+    } else {
+      logger.info('RAG: Found no relevant historical articles in Pinecone.')
+      return []
+    }
+  } catch (error) {
+    logger.error({ err: error }, 'RAG: Pinecone query or embedding generation failed.')
+    return []
+  }
 }
 
 ```
 
 ## 📄 src/index.js
-*Lines: 84, Size: 2.36 KB*
+*Lines: 75, Size: 2.19 KB*
 
 ```javascript
-// packages/ai-services/src/index.js (version 7.2.0)
-'use server'
-
 import { callLanguageModel } from './lib/langchain.js'
 import * as chains from './chains/index.js'
-import * as search from './search.js'
-import * as wikipedia from './wikipedia.js'
-import * as embeddings from './embeddings.js'
-import * as vectorSearch from './vectorSearch.js'
-import { logger } from '../../utils/src/server.js'
-
-// This is the primary public API of the package.
-// It only exports async functions, making it compatible with Next.js "use server" modules.
-
+import * as search from './search/search.js'
+import * as wikipedia from './search/wikipedia.js'
+import * as embeddings from './embeddings/embeddings.js'
+import * as vectorSearch from './embeddings/vectorSearch.js'
+import { logger } from '@headlines/utils-server'
+import { processChatRequest } from './rag/orchestrator.js'
 export async function performAiSanityCheck(settings) {
   try {
     logger.info('🔬 Performing AI service sanity check (OpenAI)...')
     const answer = await callLanguageModel({
-      modelName: settings.LLM_MODEL_UTILITY, // Use the dynamic utility model
+      modelName: settings.LLM_MODEL_UTILITY,
       prompt: 'What is in one word the name of the capital of France',
       isJson: false,
     })
@@ -1081,9 +1366,7 @@ export async function performAiSanityCheck(settings) {
     return false
   }
 }
-
-// Re-export all functions from submodules.
-export { callLanguageModel }
+export { processChatRequest, callLanguageModel }
 export const {
   articleChain,
   articlePreAssessmentChain,
@@ -1107,7 +1390,6 @@ export const {
   translateChain,
   countryCorrectionChain,
 } = chains
-
 export const {
   findAlternativeSources,
   performGoogleSearch,
@@ -1120,42 +1402,30 @@ export const { findSimilarArticles } = vectorSearch
 ```
 
 ## 📄 src/lib/langchain.js
-*Lines: 92, Size: 2.71 KB*
+*Lines: 79, Size: 2.56 KB*
 
 ```javascript
-// packages/ai-services/src/lib/langchain.js (version 3.1.0)
+'use server'
 import { ChatOpenAI } from '@langchain/openai'
-import { env, settings } from '../../../config/src/server.js'
-import { logger } from '../../../utils/src/server.js';
-import { safeExecute } from '../../../utils/src/server.js';
-import { tokenTracker } from '../../../utils/src/server.js';
+import { env, settings } from '@headlines/config/server'
+import { logger } from '@headlines/utils-server/logger'
+import { tokenTracker } from '@headlines/utils-server/tokenTracker'
+import { safeExecute } from '@headlines/utils-server/helpers'
 import OpenAI from 'openai'
 
-// --- Model Instances ---
-const modelConfig = {
-  response_format: { type: 'json_object' },
-}
+const modelConfig = { response_format: { type: 'json_object' } }
+export const getHeadlineModel = () =>
+  new ChatOpenAI({ modelName: settings.LLM_MODEL_HEADLINE_ASSESSMENT }).bind(modelConfig)
+export const getHighPowerModel = () =>
+  new ChatOpenAI({ modelName: settings.LLM_MODEL_ARTICLE_ASSESSMENT }).bind(modelConfig)
+export const getUtilityModel = () =>
+  new ChatOpenAI({ modelName: settings.LLM_MODEL_UTILITY }).bind(modelConfig)
 
-// These are now functions that will be called after settings are initialized.
-export const getHeadlineModel = () => new ChatOpenAI({
-  modelName: settings.LLM_MODEL_HEADLINE_ASSESSMENT,
-}).bind(modelConfig)
-
-export const getHighPowerModel = () => new ChatOpenAI({
-  modelName: settings.LLM_MODEL_ARTICLE_ASSESSMENT,
-}).bind(modelConfig)
-
-export const getUtilityModel = () => new ChatOpenAI({
-  modelName: settings.LLM_MODEL_UTILITY,
-}).bind(modelConfig)
-
-
-// --- Central LLM Invocation Function ---
 const baseClient = new OpenAI({
-    apiKey: env.OPENAI_API_KEY,
-    timeout: 120 * 1000,
-    maxRetries: 3,
-});
+  apiKey: env.OPENAI_API_KEY,
+  timeout: 120 * 1000,
+  maxRetries: 3,
+})
 
 export async function callLanguageModel({
   modelName,
@@ -1165,14 +1435,14 @@ export async function callLanguageModel({
   isJson = true,
   fewShotInputs = [],
   fewShotOutputs = [],
+  temperature = 0.0,
 }) {
   const messages = []
-
   if (systemPrompt) {
-    const systemContent = typeof systemPrompt === 'object' ? JSON.stringify(systemPrompt) : systemPrompt
+    const systemContent =
+      typeof systemPrompt === 'object' ? JSON.stringify(systemPrompt) : systemPrompt
     messages.push({ role: 'system', content: systemContent })
   }
-
   fewShotInputs.forEach((input, i) => {
     const shotContent = typeof input === 'string' ? input : JSON.stringify(input)
     if (shotContent) {
@@ -1180,68 +1450,54 @@ export async function callLanguageModel({
       messages.push({ role: 'assistant', content: fewShotOutputs[i] })
     }
   })
-
-  const finalUserContent = userContent || prompt;
+  const finalUserContent = userContent || prompt
   messages.push({ role: 'user', content: finalUserContent })
-  
-  logger.trace({ payload: { model: modelName, messages_count: messages.length } }, 'Sending payload to LLM.')
-
+  logger.trace(
+    { payload: { model: modelName, messages_count: messages.length } },
+    'Sending payload to LLM.'
+  )
   const result = await safeExecute(() =>
     baseClient.chat.completions.create({
-        model: modelName,
-        messages: messages,
-        response_format: isJson ? { type: 'json_object' } : undefined,
+      model: modelName,
+      messages: messages,
+      temperature,
+      response_format: isJson ? { type: 'json_object' } : undefined,
     })
-  );
-
-  if (!result) return { error: 'API call failed' };
-
+  )
+  if (!result) return { error: 'API call failed' }
   if (result.usage) {
-    tokenTracker.recordUsage(modelName, result.usage);
+    tokenTracker.recordUsage(modelName, result.usage)
   }
-
-  const responseContent = result.choices[0].message.content;
-  logger.trace({ chars: responseContent.length }, 'Received LLM response.');
-
+  const responseContent = result.choices[0].message.content
+  logger.trace({ chars: responseContent.length }, 'Received LLM response.')
   if (isJson) {
     try {
-      return JSON.parse(responseContent);
+      return JSON.parse(responseContent)
     } catch (parseError) {
-      logger.error({ err: parseError, details: responseContent }, `LLM response JSON Parse Error for model ${modelName}`);
-      return { error: 'JSON Parsing Error' };
+      logger.error(
+        { err: parseError, details: responseContent },
+        `LLM response JSON Parse Error for model ${modelName}`
+      )
+      return { error: 'JSON Parsing Error' }
     }
   }
-
-  return responseContent;
+  return responseContent
 }
 
 ```
 
 ## 📄 src/lib/safeInvoke.js
-*Lines: 102, Size: 3.02 KB*
+*Lines: 82, Size: 2.53 KB*
 
 ```javascript
-// packages/ai-services/src/lib/safeInvoke.js (version 3.2.0)
-import { logger } from '../../../utils/src/server.js'
+'use server'
+import { logger } from '@headlines/utils-server/logger'
+import { getRedisClient } from '@headlines/utils-server/redisClient'
 import { createHash } from 'crypto'
 
-// This dynamic import approach allows the package to be used in different contexts
-// without a hard dependency on the pipeline's internal structure.
-let getRedisClient
-try {
-  ;({ getRedisClient } = await import(
-    '../../../../apps/pipeline/src/utils/redisClient.js'
-  ))
-} catch (e) {
-  logger.warn('Could not import Redis client. In-memory caching will be used.')
-  getRedisClient = async () => null
-}
-
 const MAX_RETRIES = 1
-const CACHE_TTL_SECONDS = 60 * 60 * 24 // 24 hours
-
-// --- In-Memory Cache Fallback ---
-const inMemoryCache = new Map();
+const CACHE_TTL_SECONDS = 60 * 60 * 24
+const inMemoryCache = new Map()
 
 function createCacheKey(agentName, input) {
   const hash = createHash('sha256')
@@ -1252,8 +1508,6 @@ function createCacheKey(agentName, input) {
 export async function safeInvoke(chain, input, agentName, zodSchema) {
   const redis = await getRedisClient()
   const cacheKey = createCacheKey(agentName, input)
-
-  // --- Cache GET ---
   if (redis) {
     try {
       const cachedResult = await redis.get(cacheKey)
@@ -1266,9 +1520,8 @@ export async function safeInvoke(chain, input, agentName, zodSchema) {
     }
   } else if (inMemoryCache.has(cacheKey)) {
     logger.trace({ agent: agentName }, `[In-Memory Cache HIT] for ${agentName}.`)
-    return inMemoryCache.get(cacheKey);
+    return inMemoryCache.get(cacheKey)
   }
-
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       const result = await chain.invoke(input)
@@ -1285,10 +1538,7 @@ export async function safeInvoke(chain, input, agentName, zodSchema) {
         )
         throw new Error('Zod validation failed')
       }
-
       const dataToCache = validation.data
-      
-      // --- Cache SET ---
       if (redis) {
         try {
           await redis.set(cacheKey, JSON.stringify(dataToCache), {
@@ -1298,9 +1548,8 @@ export async function safeInvoke(chain, input, agentName, zodSchema) {
           logger.error({ err, agent: agentName }, `Redis SET failed for ${agentName}.`)
         }
       } else {
-        inMemoryCache.set(cacheKey, dataToCache);
+        inMemoryCache.set(cacheKey, dataToCache)
       }
-
       return dataToCache
     } catch (error) {
       if (
@@ -1320,6 +1569,747 @@ export async function safeInvoke(chain, input, agentName, zodSchema) {
       )
       return { error: `Agent ${agentName} failed: ${error.message}` }
     }
+  }
+}
+
+```
+
+## 📄 src/rag/generation.js
+*Lines: 128, Size: 4.31 KB*
+
+```javascript
+// packages/ai-services/src/lib/rag/generation.js (Corrected for OpenAI)
+import { getSynthesizerPrompt } from './prompts'
+import { checkGroundedness } from './validation'
+// CORRECTED IMPORT: Use the generic callLanguageModel instead of the Groq-specific one.
+import { callLanguageModel } from '../lib/langchain.js'
+
+// CORRECTED MODEL: Switched from a Groq-specific model to a powerful OpenAI model.
+const SYNTHESIZER_MODEL = 'gpt-4o'
+
+function assembleContext(ragResults, wikiResults, searchResults) {
+  const dbContext =
+    ragResults.length > 0
+      ? ragResults
+          .map(
+            (match) =>
+              `- [Similarity: ${match.score.toFixed(3)}] ${match.metadata.headline}: ${match.metadata.summary}`
+          )
+          .join('\n')
+      : 'None'
+
+  const wikiContext =
+    wikiResults.length > 0
+      ? wikiResults
+          .map(
+            (res) => `- [Quality: ${res.validation.quality}] ${res.title}: ${res.summary}`
+          )
+          .join('\n')
+      : 'None'
+
+  const searchContext =
+    searchResults.length > 0
+      ? searchResults
+          .map((res) => `- [${res.title}](${res.link}): ${res.snippet}`)
+          .join('\n')
+      : 'None'
+
+  return `---
+Internal Database Context:
+${dbContext}
+---
+Wikipedia Context:
+${wikiContext}
+---
+Search Results Context:
+${searchContext}
+---`
+}
+
+function formatThoughts(plan, context, groundednessResult) {
+  const thoughts = `
+**THOUGHT PROCESS: THE PLAN**
+${plan.plan.map((step) => `- ${step}`).join('\n')}
+
+**REASONING:**
+${plan.reasoning}
+
+**RETRIEVED CONTEXT:**
+- **Internal RAG Search:** ${context.ragResults.length} item(s) found.
+${context.ragResults.map((r) => `  - [Score: ${r.score.toFixed(2)}] ${r.metadata.headline}`).join('\n')}
+
+- **Wikipedia Search:** ${context.wikiResults.length} article(s) found.
+${context.wikiResults.map((w) => `  - **Query:** "${w.query}"\n    - **Result:** ${w.title}: ${w.summary.substring(0, 100)}...`).join('\n')}
+
+- **Web Search:** ${context.searchResults.length} result(s) found.
+${context.searchResults.map((s) => `  - **Query:** "${plan.user_query}"\n    - **Result:** ${s.title}: ${s.snippet.substring(0, 100)}...`).join('\n')}
+
+**FINAL CHECK:**
+- **Groundedness Passed:** CONFIRMED
+`
+  return thoughts.trim().replace(/\n\n+/g, '\n\n')
+}
+
+export async function generateFinalResponse({ plan, context }) {
+  const fullContextString = assembleContext(
+    context.ragResults,
+    context.wikiResults,
+    context.searchResults
+  )
+
+  console.log('[RAG Generation] Calling Synthesizer Agent with OpenAI...')
+  // CORRECTED CALL: Replaced callGroqWithRetry with the standard callLanguageModel.
+  const synthesizerResponse = await callLanguageModel({
+    modelName: SYNTHESIZER_MODEL,
+    systemPrompt: getSynthesizerPrompt(),
+    userContent: `CONTEXT:\n${fullContextString}\n\nPLAN:\n${JSON.stringify(
+      plan.plan,
+      null,
+      2
+    )}\n\nUSER'S QUESTION: "${plan.user_query}"`,
+    isJson: false, // CRITICAL: The synthesizer prompt returns Markdown, not JSON.
+    temperature: 0.1,
+  })
+
+  const rawResponse = synthesizerResponse
+  if (typeof rawResponse !== 'string') {
+    console.error(
+      '[RAG Generation] Synthesizer Agent failed to return a valid string response.',
+      rawResponse
+    )
+    return {
+      answer: 'The AI synthesizer failed to generate a response.',
+      thoughts: 'An error occurred during the final synthesis step.',
+    }
+  }
+
+  const groundednessResult = await checkGroundedness(rawResponse, fullContextString)
+  const thoughts = formatThoughts(plan, context, groundednessResult)
+
+  let finalAnswer
+  if (groundednessResult.is_grounded) {
+    let responseWithSpans = rawResponse.replace(/<rag>/g, '<span class="rag-source">')
+    responseWithSpans = responseWithSpans.replace(/<\/rag>/g, '</span>')
+    responseWithSpans = responseWithSpans.replace(/<wiki>/g, '<span class="wiki-source">')
+    responseWithSpans = responseWithSpans.replace(/<\/wiki>/g, '</span>')
+    responseWithSpans = responseWithSpans.replace(
+      /<search>/g,
+      '<span class="llm-source">'
+    )
+    finalAnswer = responseWithSpans.replace(/<\/search>/g, '</span>')
+  } else {
+    console.warn('[RAG Pipeline] Groundedness check failed. Returning safe response.')
+    finalAnswer =
+      'I was unable to construct a reliable answer from the available sources. The context may be insufficient or conflicting.'
+  }
+
+  return { answer: finalAnswer, thoughts }
+}
+
+```
+
+## 📄 src/rag/orchestrator.js
+*Lines: 49, Size: 1.78 KB*
+
+```javascript
+'use server';
+
+// src/lib/rag/orchestrator.js (version 4.2)
+import { retrieveContextForQuery } from './retrieval'
+import { assessContextQuality } from './validation'
+import { generateFinalResponse } from './generation'
+import { runPlannerAgent } from './planner'
+
+/**
+ * Main orchestrator for the Agentic RAG chat pipeline.
+ * @param {Array<object>} messages - The chat messages from the client.
+ * @returns {Promise<string>} The final, validated text response.
+ */
+export async function processChatRequest(messages) {
+  console.log('--- [RAG Pipeline Start] ---')
+
+  // 1. Planning Phase
+  console.log('[RAG Pipeline] Step 1: Planning Phase Started...')
+  const plan = await runPlannerAgent(messages)
+  console.log('[RAG Pipeline] Step 1: Planning Phase Completed.')
+
+  // 2. Retrieval & Validation Phase
+  console.log('[RAG Pipeline] Step 2: Retrieval Phase Started...')
+  const initialContext = await retrieveContextForQuery(plan, messages, 'ragOnly')
+  const initialQuality = assessContextQuality(initialContext.ragResults, [], [])
+
+  let finalContext = initialContext
+
+  if (initialQuality.hasHighConfidenceRAG) {
+    console.log('[RAG Pipeline] High confidence RAG hit. Short-circuiting retrieval.')
+  } else {
+    console.log('[RAG Pipeline] RAG context insufficient. Proceeding to full retrieval.')
+    // Perform the remaining retrieval steps
+    finalContext = await retrieveContextForQuery(plan, messages, 'full')
+  }
+  console.log('[RAG Pipeline] Step 2: Retrieval Phase Completed.')
+
+  // 3. Synthesis Phase
+  console.log('[RAG Pipeline] Step 3: Synthesis Phase Started...')
+  const finalResponse = await generateFinalResponse({
+    plan,
+    context: finalContext,
+  })
+  console.log('[RAG Pipeline] Step 3: Synthesis Phase Completed.')
+
+  console.log('--- [RAG Pipeline End] ---')
+  return finalResponse
+}
+
+```
+
+## 📄 src/rag/planner.js
+*Lines: 92, Size: 3.27 KB*
+
+```javascript
+// packages/ai-services/src/lib/rag/planner.js (Corrected for OpenAI)
+'use server'
+
+// CORRECTED IMPORT: Use the generic callLanguageModel instead of the Groq-specific one.
+import { callLanguageModel } from '../lib/langchain.js'
+import { PLANNER_PROMPT } from './prompts'
+
+// CORRECTED MODEL: Switched from a Groq-specific model to a powerful OpenAI model.
+const PLANNER_MODEL = 'gpt-4o'
+
+/**
+ * A resilient parser that attempts to fix common LLM-induced JSON errors.
+ * @param {string} jsonString - The potentially malformed JSON string from the LLM.
+ * @returns {object} A valid JavaScript object.
+ * @throws {Error} If the JSON is irreparable.
+ */
+function resilientJSONParse(jsonString) {
+  try {
+    return JSON.parse(jsonString)
+  } catch (e) {
+    console.warn(
+      '[Planner Agent] Initial JSON.parse failed. Attempting cleanup.',
+      e.message
+    )
+    // Attempt to fix common errors, like unescaped quotes in search queries
+    let cleanedString = jsonString.replace(/""/g, '"\\"')
+
+    // Find the start and end of the JSON object
+    const startIndex = cleanedString.indexOf('{')
+    const endIndex = cleanedString.lastIndexOf('}')
+    if (startIndex === -1 || endIndex === -1) {
+      throw new Error('Could not find a valid JSON object in the string.')
+    }
+    cleanedString = cleanedString.substring(startIndex, endIndex + 1)
+
+    try {
+      return JSON.parse(cleanedString)
+    } catch (finalError) {
+      console.error('[Planner Agent] Resilient JSON parsing failed.', finalError.message)
+      throw new Error('Failed to parse LLM JSON response after cleanup.')
+    }
+  }
+}
+
+/**
+ * Runs the Planner Agent to decompose the user's query into a logical plan
+ * and a set of optimized search queries.
+ * @param {Array<object>} messages - The conversation history.
+ * @returns {Promise<object>} An object containing the plan and search queries.
+ */
+export async function runPlannerAgent(messages) {
+  const userQuery = messages[messages.length - 1].content
+  const conversationHistory =
+    messages.length > 1
+      ? messages
+          .slice(-5, -1)
+          .map((m) => `${m.role}: ${m.content}`)
+          .join('\n')
+      : 'No history.'
+
+  const prompt = PLANNER_PROMPT.replace(
+    '{CONVERSATION_HISTORY}',
+    conversationHistory
+  ).replace('{USER_QUERY}', userQuery)
+
+  console.log('[Planner Agent] Generating plan with OpenAI...')
+  // CORRECTED CALL: Replaced callGroqWithRetry with the standard callLanguageModel.
+  const response = await callLanguageModel({
+    modelName: PLANNER_MODEL,
+    systemPrompt: prompt, // The full prompt is now treated as a system prompt for this agent
+    userContent: 'Generate the plan based on the instructions.', // A simple user message to trigger the system prompt
+    isJson: true,
+    temperature: 0.0,
+  })
+
+  // The response from callLanguageModel is already a parsed JSON object or an error object.
+  if (response.error) {
+    throw new Error(`Planner Agent failed: ${response.error}`)
+  }
+
+  const planObject = response // No need for resilientJSONParse
+
+  console.groupCollapsed('[Planner Agent] Plan Generated')
+  console.log('User Query:', planObject.user_query)
+  console.log('Reasoning:', planObject.reasoning)
+  console.log('Plan Steps:', planObject.plan)
+  console.log('Search Queries:', planObject.search_queries)
+  console.groupEnd()
+
+  return planObject
+}
+
+```
+
+## 📄 src/rag/prompts.js
+*Lines: 102, Size: 5.82 KB*
+
+```javascript
+// src/lib/rag/prompts.js (version 5.5)
+
+export const PLANNER_PROMPT = `You are an expert AI Planner. Your job is to analyze the user's query and conversation history to create a step-by-step plan for an AI Synthesizer Agent to follow. You also create a list of optimized search queries for a Retrieval Agent.
+
+**Conversation History:**
+{CONVERSATION_HISTORY}
+
+**Latest User Query:**
+"{USER_QUERY}"
+
+**Your Task:**
+1.  **Analyze the User's Intent:** Understand what the user is truly asking for.
+2.  **Formulate a Plan:** Create a clear, step-by-step plan for the Synthesizer Agent.
+3.  **Generate Search Queries:** Create an array of 1-3 optimized, self-contained search queries. **CRITICAL JSON RULE:** If a query within the 'search_queries' array requires double quotes, you MUST escape them with a backslash. For example: ["\\"Troels Holch Povlsen\\" sons", "Bestseller founder"].
+
+**Example 1:**
+User Query: "Which Danish Rich List person is involved in Technology?"
+History: (empty)
+Your JSON Output:
+{
+  "user_query": "Which Danish Rich List person is involved in Technology?",
+  "reasoning": "The user wants a list of wealthy Danes involved in technology. I need to identify these individuals from the context and then filter them based on their tech involvement.",
+  "plan": [
+    "Scan all context to identify every unique individual mentioned who is on the Danish Rich List.",
+    "For each person, look for evidence of direct involvement in the technology sector.",
+    "Filter out individuals with no clear connection to technology.",
+    "Synthesize the findings into a helpful list of names, citing their connection to technology.",
+    "If no one is found, state that clearly."
+  ],
+  "search_queries": ["Danish Rich List technology involvement", "Wealthy Danish tech investors", "Danish tech company founders"]
+}
+
+**Example 2:**
+User Query: "Does Troels Holch Povlsen have sons?"
+History: (assistant previously mentioned Bestseller's founder)
+Your JSON Output:
+{
+  "user_query": "Does Troels Holch Povlsen have sons?",
+  "reasoning": "The user is asking a direct factual question about a specific person's family. The search queries must be precise.",
+  "plan": [
+      "Scan context for any mention of 'Troels Holch Povlsen' and his family, specifically children or sons.",
+      "Extract the names of his sons if mentioned.",
+      "Synthesize a complete and helpful answer, stating the names of the sons and any additional relevant context provided."
+  ],
+  "search_queries": ["\\"Troels Holch Povlsen\\" sons", "\\"Troels Holch Povlsen\\" children", "\\"Bestseller\\" founder family"]
+}
+
+Respond ONLY with a valid JSON object with the specified structure.
+`
+
+export const getSynthesizerPrompt =
+  () => `You are an elite, fact-based intelligence analyst. Your SOLE task is to execute the provided "PLAN" using only the "CONTEXT" to answer the "USER'S QUESTION". You operate under a strict "ZERO HALLUCINATION" protocol. Your response must be confident, direct, and sound like a human expert.
+
+**PRIMARY DIRECTIVE:**
+Synthesize information from all sources in the "CONTEXT" into a single, cohesive, and well-written answer. Directly address the user's question and enrich it with relevant surrounding details found in the context.
+
+**EXAMPLE TONE:**
+-   **Bad:** "According to the context, Bestseller was founded by Troels Holch Povlsen."
+-   **Good:** "Bestseller was founded in 1975 by Troels Holch Povlsen and his wife, Merete Bech Povlsen. The company is now run by their son, Anders Holch Povlsen."
+
+**CRITICAL RULES OF ENGAGEMENT:**
+1.  **NO OUTSIDE KNOWLEDGE:** You are forbidden from using any information not present in the provided "CONTEXT".
+2.  **DIRECT ATTRIBUTION:** You MUST still cite your sources inline for the UI. Wrap facts from the Internal DB with <rag>tags</rag>, from Wikipedia with <wiki>tags</wiki>, and from Search Results with <search>tags</search>. The user will not see these tags, but they are essential for the system.
+3.  **BE CONFIDENT AND DIRECT:** Present the synthesized facts as a definitive answer.
+4.  **INSUFFICIENT DATA:** If the context is insufficient to answer the question at all, respond with EXACTLY: "I do not have sufficient information in my sources to answer that question."
+
+**DO NOT:**
+-   Use phrases like "According to the context provided...", "The sources state...", or "Based on the information...".
+-   Apologize for not knowing or mention your limitations.
+-   Talk about your process in the final answer.
+-   Speculate or infer beyond what is explicitly stated in the context.
+
+Answer the question directly and authoritatively, as if you are a world-class analyst presenting your verified findings.`
+
+export const GROUNDEDNESS_CHECK_PROMPT = `You are a meticulous fact-checker AI. Your task is to determine if the "Proposed Response" is strictly grounded in the "Provided Context". A response is grounded if and only if ALL of its claims can be directly verified from the context.
+
+**Provided Context:**
+---
+{CONTEXT}
+---
+
+**Proposed Response:**
+---
+{RESPONSE}
+---
+
+Analyze the "Proposed Response" sentence by sentence.
+
+**Respond ONLY with a valid JSON object with the following structure:**
+{
+  "is_grounded": boolean, // true if ALL claims in the response are supported by the context, otherwise false.
+  "unsupported_claims": [
+    // List any specific claims from the response that are NOT supported by the context.
+    "Claim 1 that is not supported.",
+    "Claim 2 that is not supported."
+  ]
+}
+
+If the response is fully supported, "unsupported_claims" should be an empty array. If the "Proposed Response" states that it cannot answer the question, consider it grounded.`
+
+export const FAILED_GROUNDEDNESS_PROMPT = `I could not form a reliable answer based on the available information. The initial response I generated may have contained information not supported by the sources. For accuracy, please ask a more specific question or try rephradist se your request.`
+
+```
+
+## 📄 src/rag/retrieval.js
+*Lines: 182, Size: 5.31 KB*
+
+```javascript
+// packages/ai-services/src/rag/retrieval.js
+'use server'
+
+import OpenAI from 'openai'
+import { Pinecone } from '@pinecone-database/pinecone'
+import { generateQueryEmbeddings } from '../embeddings/embeddings.js'
+import {
+  fetchBatchWikipediaSummaries,
+  validateWikipediaContent,
+} from '../search/wikipedia.js'
+import { getGoogleSearchResults } from '../search/serpapi.js'
+import { env } from '@headlines/config/server'
+
+let groq, pineconeIndex
+function initializeClients() {
+  if (!groq) {
+    groq = new OpenAI({
+      apiKey: env.GROQ_API_KEY,
+      baseURL: 'https://api.groq.com/openai/v1',
+    })
+    const pc = new Pinecone({ apiKey: env.PINECONE_API_KEY })
+    pineconeIndex = pc.index(env.PINECONE_INDEX_NAME)
+  }
+}
+
+const ENTITY_EXTRACTOR_MODEL = 'llama3-70b-8192'
+const SIMILARITY_THRESHOLD = 0.38
+const ENTITY_EXTRACTOR_PROMPT_FOR_HISTORY = `You are an entity extractor. Your job is to identify all specific people and companies mentioned in a given text.
+Respond ONLY with a valid JSON object with the following structure:
+{ "entities": ["Entity Name 1", "Entity Name 2"] }
+`
+
+async function extractEntitiesFromHistory(messages) {
+  if (messages.length < 2) {
+    return []
+  }
+  const historyText = messages
+    .slice(-4)
+    .map((m) => m.content)
+    .join('\n')
+
+  initializeClients()
+  try {
+    const entityResponse = await groq.chat.completions.create({
+      model: ENTITY_EXTRACTOR_MODEL,
+      messages: [
+        { role: 'system', content: ENTITY_EXTRACTOR_PROMPT_FOR_HISTORY },
+        {
+          role: 'user',
+          content: `Extract all key people and companies from this text:\n"${historyText}"`,
+        },
+      ],
+      response_format: { type: 'json_object' },
+    })
+
+    const { entities } = JSON.parse(entityResponse.choices[0].message.content)
+    const cleanEntities = entities.map((e) =>
+      e.replace(/\s*\((person|company)\)$/, '').trim()
+    )
+    if (cleanEntities.length > 0) {
+      console.log(
+        `[RAG Retrieval] Entities from history for exclusion: ${cleanEntities.join(', ')}`
+      )
+    }
+    return cleanEntities
+  } catch (error) {
+    console.error('Could not extract entities from history:', error)
+    return []
+  }
+}
+
+async function fetchPineconeContext(queries, exclude_entities = []) {
+  initializeClients()
+  const queryEmbeddings = await Promise.all(
+    queries.map((q) => generateQueryEmbeddings(q))
+  )
+  const allQueryEmbeddings = queryEmbeddings.flat()
+
+  const filter =
+    exclude_entities.length > 0
+      ? { key_individuals: { $nin: exclude_entities } }
+      : undefined
+
+  if (filter) {
+    console.log('[RAG Retrieval] Applying Pinecone filter to exclude:', exclude_entities)
+  }
+
+  const pineconePromises = allQueryEmbeddings.map((embedding) =>
+    pineconeIndex.query({
+      topK: 5,
+      vector: embedding,
+      includeMetadata: true,
+      filter: filter,
+    })
+  )
+  const pineconeResponses = await Promise.all(pineconePromises)
+
+  const uniqueMatches = new Map()
+  pineconeResponses.forEach((response) => {
+    response?.matches?.forEach((match) => {
+      if (
+        !uniqueMatches.has(match.id) ||
+        match.score > uniqueMatches.get(match.id).score
+      ) {
+        uniqueMatches.set(match.id, match)
+      }
+    })
+  })
+
+  const results = Array.from(uniqueMatches.values())
+    .filter((match) => match.score >= SIMILARITY_THRESHOLD)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5)
+
+  console.groupCollapsed(`[RAG Retrieval] Pinecone Results (${results.length})`)
+  results.forEach((match) => {
+    console.log(`- Score: ${match.score.toFixed(4)} | ID: ${match.id}`)
+    console.log(`  Headline: ${match.metadata.headline}`)
+  })
+  console.groupEnd()
+
+  return results
+}
+
+async function fetchValidatedWikipediaContext(entities) {
+  const wikiResults = await fetchBatchWikipediaSummaries(entities)
+  const validWikiResults = []
+  for (const res of wikiResults.filter((r) => r.success)) {
+    const validation = await validateWikipediaContent(res.summary)
+    if (validation.valid) {
+      validWikiResults.push({ ...res, validation })
+    }
+  }
+
+  console.groupCollapsed(`[RAG Retrieval] Wikipedia Results (${validWikiResults.length})`)
+  validWikiResults.forEach((res) => {
+    console.log(`- Title: ${res.title}`)
+    console.log(`  Summary: ${res.summary.substring(0, 200)}...`)
+  })
+  console.groupEnd()
+
+  return validWikiResults
+}
+
+export async function retrieveContextForQuery(plan, messages, mode = 'full') {
+  const { search_queries, user_query } = plan
+  const entitiesToExclude = await extractEntitiesFromHistory(messages)
+
+  const pineconeResults = await fetchPineconeContext(search_queries, entitiesToExclude)
+
+  if (mode === 'ragOnly') {
+    return {
+      ragResults: pineconeResults,
+      wikiResults: [],
+      searchResults: [],
+    }
+  }
+
+  const [wikipediaResults, searchResultsObj] = await Promise.all([
+    fetchValidatedWikipediaContext(search_queries),
+    getGoogleSearchResults(user_query),
+  ])
+
+  const searchResults = searchResultsObj.success ? searchResultsObj.results : []
+
+  console.groupCollapsed(
+    `[RAG Retrieval] SerpAPI Google Search Results (${searchResults.length})`
+  )
+  searchResults.forEach((res) => {
+    console.log(`- Title: ${res.title}`)
+    console.log(`  Link: ${res.link}`)
+    console.log(`  Snippet: ${res.snippet}`)
+  })
+  console.groupEnd()
+
+  return {
+    ragResults: pineconeResults,
+    wikiResults: wikipediaResults,
+    searchResults: searchResults,
+  }
+}
+
+```
+
+## 📄 src/rag/validation.js
+*Lines: 152, Size: 4.92 KB*
+
+```javascript
+// src/lib/rag/validation.js (version 3.0)
+import OpenAI from 'openai'
+import { env } from '@/lib/env.mjs'
+import { GROUNDEDNESS_CHECK_PROMPT } from './prompts'
+
+// --- Constants ---
+const HIGH_CONFIDENCE_THRESHOLD = 0.75
+const SIMILARITY_THRESHOLD = 0.38
+const GROUNDEDNESS_MODEL = 'openai/gpt-oss-120b'
+
+let groq
+function getGroqClient() {
+  if (!groq) {
+    groq = new OpenAI({
+      apiKey: env.GROQ_API_KEY,
+      baseURL: 'https://api.groq.com/openai/v1',
+    })
+  }
+  return groq
+}
+
+// --- Internal Helper Functions ---
+function simpleEntityExtractor(text, sourceIdentifier) {
+  const match = text.match(/([A-Z][a-z]+(?:\s[A-Z][a-z]+)*)/)
+  if (match) return [{ name: match[0], facts: [text] }]
+  return [{ name: sourceIdentifier, facts: [text] }]
+}
+
+function extractEntitiesFromRAG(ragResults) {
+  if (!ragResults) return []
+  return ragResults.flatMap((r) =>
+    simpleEntityExtractor(r.metadata?.summary || '', r.metadata?.headline || 'RAG Source')
+  )
+}
+
+function extractEntitiesFromWiki(wikiResults) {
+  if (!wikiResults) return []
+  return wikiResults.flatMap((w) =>
+    simpleEntityExtractor(w.summary || '', w.title || 'Wiki Source')
+  )
+}
+
+function entitySimilarity(entityA, entityB) {
+  const nameA = entityA.name.toLowerCase()
+  const nameB = entityB.name.toLowerCase()
+  if (nameA.includes(nameB) || nameB.includes(nameA)) return 0.9
+  return 0
+}
+
+function factsConflict(factsA, factsB) {
+  // Placeholder for a future NLI model implementation.
+  return false
+}
+
+// --- Exported Validation Functions ---
+
+export function assessContextQuality(ragResults, wikiResults, searchResults) {
+  const ragScore = ragResults.length > 0 ? Math.max(...ragResults.map((r) => r.score)) : 0
+  const highQualityWiki = wikiResults.filter(
+    (r) => r.validation?.quality === 'high'
+  ).length
+  const mediumQualityWiki = wikiResults.filter(
+    (r) => r.validation?.quality === 'medium'
+  ).length
+  const wikiScore = highQualityWiki > 0 ? 0.7 : mediumQualityWiki > 0 ? 0.5 : 0
+  const searchScore = searchResults.length > 0 ? 0.6 : 0 // Assign a moderate score if search results exist
+
+  const combinedScore = Math.max(ragScore, wikiScore, searchScore)
+
+  return {
+    hasHighConfidenceRAG: ragScore >= HIGH_CONFIDENCE_THRESHOLD,
+    hasSufficientContext: combinedScore >= SIMILARITY_THRESHOLD,
+    ragResultCount: ragResults.length,
+    wikiResultCount: wikiResults.length,
+    searchResultCount: searchResults.length,
+    highQualityWikiCount: highQualityWiki,
+    maxSimilarity: ragScore,
+    combinedConfidence: combinedScore,
+    hasMultipleSources:
+      (ragResults.length > 0 ? 1 : 0) +
+        (wikiResults.length > 0 ? 1 : 0) +
+        (searchResults.length > 0 ? 1 : 0) >
+      1,
+    hasHighQualityContent: ragScore >= HIGH_CONFIDENCE_THRESHOLD || highQualityWiki > 0,
+  }
+}
+
+export function crossValidateSources(ragResults, wikiResults) {
+  // This function is becoming less critical with the strict generation prompt,
+  // but we'll keep its structure.
+  const validation = { conflicts: [], confirmations: [], reliability: 'unknown' }
+
+  if (
+    (!ragResults || ragResults.length === 0) &&
+    (!wikiResults || wikiResults.length === 0)
+  ) {
+    validation.reliability = 'single_source' // or 'no_source'
+    return validation
+  }
+
+  // Simplified logic for now
+  if (ragResults.length > 0 && wikiResults.length > 0) {
+    validation.reliability = 'confirmed' // Assume confirmation if both exist
+  } else {
+    validation.reliability = 'single_source'
+  }
+
+  return validation
+}
+
+export async function checkGroundedness(responseText, contextString) {
+  console.log('[RAG Validation] Performing Groundedness Check...')
+  if (
+    responseText.trim() ===
+    'I do not have sufficient information in my sources to answer that question.'
+  ) {
+    console.log('[RAG Validation] PASSED: Bot correctly stated insufficient info.')
+    return { is_grounded: true, unsupported_claims: [] }
+  }
+
+  try {
+    const client = getGroqClient()
+    const prompt = GROUNDEDNESS_CHECK_PROMPT.replace('{CONTEXT}', contextString).replace(
+      '{RESPONSE}',
+      responseText
+    )
+
+    const response = await client.chat.completions.create({
+      model: GROUNDEDNESS_MODEL,
+      messages: [{ role: 'system', content: prompt }],
+      response_format: { type: 'json_object' },
+      temperature: 0.0,
+    })
+
+    const result = JSON.parse(response.choices[0].message.content)
+
+    if (result.is_grounded) {
+      console.log('[RAG Validation] PASSED: Response is grounded in sources.')
+    } else {
+      console.warn('[RAG Validation] FAILED: Response contains unsupported claims.')
+      console.groupCollapsed('Unsupported Claims Details')
+      result.unsupported_claims.forEach((claim) => console.warn(`- ${claim}`))
+      console.groupEnd()
+    }
+    return result
+  } catch (error) {
+    console.error('[RAG Validation] Error during verification:', error)
+    // Fail safe: if the check fails, assume the response is not grounded.
+    return { is_grounded: false, unsupported_claims: ['Fact-checking system failed.'] }
   }
 }
 
@@ -1748,41 +2738,32 @@ export const watchlistSuggestionSchema = z.object({
 
 ```
 
-## 📄 src/search.js
-*Lines: 100, Size: 3.52 KB*
+## 📄 src/search/search.js
+*Lines: 86, Size: 3.11 KB*
 
 ```javascript
-// packages/ai-services/src/search.js (version 1.3)
+'use server'
 import axios from 'axios'
 import NewsAPI from 'newsapi'
-import { env } from '../../config/src/index.js'
-import { logger } from '../../utils/src/server.js'
-import { apiCallTracker } from '../../utils/src/server.js'
-// DEFINITIVE FIX: Removed the server-only 'p-limit' dependency.
-// import pLimit from 'p-limit'
+import { env } from '@headlines/config/server'
+import { logger, apiCallTracker } from '@headlines/utils-server'
 
-// const searchLimiter = pLimit(3) // REMOVED
 const { SERPER_API_KEY, NEWSAPI_API_KEY } = env
-
 const serperClient = SERPER_API_KEY
   ? axios.create({
       baseURL: 'https://google.serper.dev',
       headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
     })
   : null
-
 const newsapi = NEWSAPI_API_KEY ? new NewsAPI(NEWSAPI_API_KEY) : null
 
-if (!serperClient) {
+if (!serperClient)
   logger.warn(
     'SERPER_API_KEY not found. Google Search dependent functions will be disabled.'
   )
-}
-if (!newsapi) {
+if (!newsapi)
   logger.warn('NEWSAPI_API_KEY not found. NewsAPI dependent functions will be disabled.')
-}
 
-// RESILIENCE FIX: Created a retry wrapper for external API calls.
 async function withRetry(apiCall, serviceName, maxRetries = 2) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
@@ -1796,7 +2777,7 @@ async function withRetry(apiCall, serviceName, maxRetries = 2) {
         )
         return { success: false, error: error.message, results: [] }
       }
-      const delay = 1000 * Math.pow(2, attempt - 1) // Exponential backoff
+      const delay = 1000 * Math.pow(2, attempt - 1)
       logger.warn(`[${serviceName}] Attempt ${attempt} failed. Retrying in ${delay}ms...`)
       await new Promise((res) => setTimeout(res, delay))
     }
@@ -1807,17 +2788,14 @@ export async function findAlternativeSources(headline) {
   if (!serperClient) return { success: false, results: [] }
   return withRetry(async () => {
     apiCallTracker.recordCall('serper_news')
-    // REMOVED p-limit wrapper
     const response = await serperClient.post('/news', { q: headline })
     return { success: true, results: response.data.news || [] }
   }, 'Serper News')
 }
-
 export async function performGoogleSearch(query) {
   if (!serperClient) return { success: false, snippets: 'SERPER_API_KEY not configured.' }
   return withRetry(async () => {
     apiCallTracker.recordCall('serper_search')
-    // REMOVED p-limit wrapper
     const response = await serperClient.post('/search', { q: query })
     const organicResults = response.data.organic || []
     if (organicResults.length > 0) {
@@ -1830,12 +2808,10 @@ export async function performGoogleSearch(query) {
     return { success: false, snippets: 'No search results found.' }
   }, 'Serper Search')
 }
-
 export async function findNewsApiArticlesForEvent(headline) {
   if (!newsapi) return { success: false, snippets: 'NewsAPI key not configured.' }
   return withRetry(async () => {
     apiCallTracker.recordCall('newsapi_search')
-    // REMOVED p-limit wrapper
     const response = await newsapi.v2.everything({
       q: `"${headline}"`,
       pageSize: 5,
@@ -1854,88 +2830,77 @@ export async function findNewsApiArticlesForEvent(headline) {
 
 ```
 
-## 📄 src/vectorSearch.js
-*Lines: 68, Size: 2.3 KB*
+## 📄 src/search/serpapi.js
+*Lines: 57, Size: 1.61 KB*
 
 ```javascript
-// packages/ai-services/src/vectorSearch.js (version 1.1.0)
-import { Pinecone } from '@pinecone-database/pinecone'
-import { logger } from '../../utils/src/server.js';
-import { generateEmbedding } from './embeddings.js'
-import { env } from '../../config/src/index.js'
+// packages/ai-services/src/search/serpapi.js
+'use server'
 
-const { PINECONE_API_KEY, PINECONE_INDEX_NAME } = env
+import { getJson } from 'serpapi'
+import { env } from '@headlines/config/server'
 
-const SIMILARITY_THRESHOLD = 0.65
-const MAX_CONTEXT_ARTICLES = 3
+const searchCache = new Map()
+const CACHE_TTL = 1000 * 60 * 60 // 1 hour
 
-let pineconeIndex
-if (PINECONE_API_KEY) {
-  const pc = new Pinecone({ apiKey: PINECONE_API_KEY })
-  pineconeIndex = pc.index(PINECONE_INDEX_NAME)
-} else {
-  logger.warn(
-    'Pinecone API Key not found. RAG/vector search functionality will be disabled.'
-  )
-}
+export async function getGoogleSearchResults(query) {
+  if (!query) {
+    return { success: false, error: 'Query is required.' }
+  }
 
-/**
- * Finds historical articles similar to a given query text by querying Pinecone.
- * @param {string} queryText - The text to search for (e.g., a headline or comma-separated entities).
- * @returns {Promise<Array<Object>>} A promise that resolves to an array of relevant historical articles.
- */
-export async function findSimilarArticles(queryText) {
-  if (!pineconeIndex) return []
-  logger.info('RAG: Searching for historical context in Pinecone...');
-  if (!queryText || typeof queryText !== 'string' || queryText.trim().length === 0) return [];
+  const cacheKey = `serpapi_${query.toLowerCase().trim()}`
+  if (searchCache.has(cacheKey)) {
+    const cached = searchCache.get(cacheKey)
+    if (Date.now() - cached.timestamp < CACHE_TTL) {
+      console.log(`[SerpAPI Cache] Hit for query: "${query}"`)
+      return cached.data
+    }
+  }
+
+  console.log(`[SerpAPI] Performing live search for: "${query}"`)
 
   try {
-    const queryEmbedding = await generateEmbedding(queryText);
+    const response = await getJson({
+      api_key: env.SERPAPI_API_KEY,
+      engine: 'google',
+      q: query,
+      location: 'United States',
+      gl: 'us',
+      hl: 'en',
+    })
 
-    const queryResponse = await pineconeIndex.query({
-      topK: MAX_CONTEXT_ARTICLES,
-      vector: queryEmbedding,
-      includeMetadata: true,
-    });
+    const organicResults = response.organic_results || []
+    const answerBox = response.answer_box ? [response.answer_box] : []
 
-    const relevantMatches = queryResponse.matches.filter(
-      (match) => match.score >= SIMILARITY_THRESHOLD
-    );
-
-    if (relevantMatches.length > 0) {
-      const retrievedArticlesForLogging = relevantMatches
-        .map(
-          (match) => `  - [Score: ${match.score.toFixed(3)}] "${match.metadata.headline}"`
-        )
-        .join('\n')
-      logger.info(
-        `RAG: Found ${relevantMatches.length} relevant historical articles:\n${retrievedArticlesForLogging}`
-      )
-      return relevantMatches.map((match) => ({
-        headline: match.metadata.headline,
-        newspaper: match.metadata.newspaper,
-        assessment_article: match.metadata.summary,
+    const formattedResults = [...answerBox, ...organicResults]
+      .map((item) => ({
+        title: item.title,
+        link: item.link,
+        snippet: item.snippet || item.answer || item.result,
+        source: 'Google Search',
       }))
-    } else {
-      logger.info('RAG: Found no relevant historical articles in Pinecone.')
-      return []
-    }
+      .filter((item) => item.snippet)
+      .slice(0, 5)
+
+    const result = { success: true, results: formattedResults }
+    searchCache.set(cacheKey, { data: result, timestamp: Date.now() })
+    return result
   } catch (error) {
-    logger.error({ err: error }, 'RAG: Pinecone query or embedding generation failed.')
-    return []
+    console.error('[SerpAPI Error]', error)
+    return { success: false, error: `Failed to fetch search results: ${error.message}` }
   }
 }
 
 ```
 
-## 📄 src/wikipedia.js
-*Lines: 92, Size: 3.13 KB*
+## 📄 src/search/wikipedia.js
+*Lines: 107, Size: 3.62 KB*
 
 ```javascript
-// packages/ai-services/src/wikipedia.js (version 2.4)
-import { logger } from '../../utils/src/server.js'
-import { apiCallTracker } from '../../utils/src/server.js'
-import { disambiguationChain } from './chains/index.js'
+'use server'; 
+// DEFINITIVE FIX: Import the logger directly. It is a server-safe module.
+import { logger, apiCallTracker } from '@headlines/utils-server'
+import { disambiguationChain } from '../chains/index.js'
 
 const WIKI_API_ENDPOINT = 'https://en.wikipedia.org/w/api.php'
 const WIKI_SUMMARY_LENGTH = 750
@@ -1944,14 +2909,10 @@ async function fetchWithRetry(url, options, maxRetries = 2) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const response = await fetch(url, options)
-      if (!response.ok) {
-        throw new Error(`API returned status ${response.status}`)
-      }
+      if (!response.ok) throw new Error(`API returned status ${response.status}`)
       return response
     } catch (error) {
-      if (attempt === maxRetries) {
-        throw error // Rethrow the final error
-      }
+      if (attempt === maxRetries) throw error
       const delay = 1000 * Math.pow(2, attempt - 1)
       logger.warn(
         `[Wikipedia Fetch] Attempt ${attempt} failed for ${url}. Retrying in ${delay}ms...`
@@ -1981,10 +2942,7 @@ export async function fetchWikipediaSummary(query) {
       throw new Error(`No search results for "${query}".`)
 
     const userContent = `Original Query: "${query}"\n\nSearch Results:\n${JSON.stringify(searchResults.map((r) => ({ title: r.title, snippet: r.snippet })))}`
-    // DEFINITIVE FIX: Changed from .invoke to direct await
-    const disambiguationResponse = await disambiguationChain({
-      inputText: userContent,
-    })
+    const disambiguationResponse = await disambiguationChain({ inputText: userContent })
 
     if (disambiguationResponse.error || !disambiguationResponse.best_title) {
       throw new Error(
@@ -1992,7 +2950,6 @@ export async function fetchWikipediaSummary(query) {
           `AI agent could not disambiguate a relevant page for "${query}".`
       )
     }
-
     const { best_title } = disambiguationResponse
 
     const summaryParams = new URLSearchParams({
@@ -2017,10 +2974,33 @@ export async function fetchWikipediaSummary(query) {
       summary.length > WIKI_SUMMARY_LENGTH
         ? summary.substring(0, WIKI_SUMMARY_LENGTH) + '...'
         : summary
-    return { success: true, summary: conciseSummary }
+    return { success: true, summary: conciseSummary, title: best_title, query }
   } catch (error) {
     logger.warn(`Wikipedia lookup for "${query}" failed: ${error.message}`)
-    return { success: false, error: error.message }
+    return { success: false, error: error.message, query }
+  }
+}
+
+export async function fetchBatchWikipediaSummaries(queries) {
+  const promises = queries.map((q) => fetchWikipediaSummary(q))
+  return Promise.all(promises)
+}
+
+export async function validateWikipediaContent(text) {
+  const lowerText = text.toLowerCase()
+  const isDisambiguation =
+    lowerText.includes('may refer to:') || lowerText.includes('is a list of')
+  if (isDisambiguation) {
+    return {
+      valid: false,
+      quality: 'low',
+      reason: 'Disambiguation page content detected.',
+    }
+  }
+  return {
+    valid: true,
+    quality: 'high',
+    reason: 'Content appears to be a valid summary.',
   }
 }
 

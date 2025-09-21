@@ -1,7 +1,7 @@
 // src/app/api/ai/suggest-search-terms/route.js (version 1.0)
 import { NextResponse } from 'next/server'
-import { callLanguageModel } from '@headlines/ai-services/src/index.js'
-import { verifyAdmin } from '@headlines/auth/src/index.js'
+import { callLanguageModel } from '@headlines/ai-services'
+import { verifyAdmin } from '@headlines/auth'
 import { initializeSharedLogic } from '@/lib/init-shared-logic.js';
 
 const getSearchTermPrompt = () => `

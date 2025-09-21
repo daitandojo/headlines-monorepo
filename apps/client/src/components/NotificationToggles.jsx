@@ -1,16 +1,16 @@
-// src/components/NotificationToggles.jsx (version 1.1)
 'use client'
 
-import { Mail, Bell, BellOff, Loader2, MailMinus } from 'lucide-react' // <-- Replaced MailOff with MailMinus
-import { Button } from './ui/button'
+import { Mail, Bell, BellOff, Loader2, MailMinus } from 'lucide-react'
 import {
+  Button,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip'
-import { useAuth } from '@/hooks/useAuth'
-import { usePushManager } from '@/hooks/use-push-manager'
+} from '@headlines/ui'
+import { useAuth } from '@headlines/auth/useAuth'
+// DEFINITIVE FIX: Import the hook from its new, centralized location
+import { usePushManager } from '@headlines/utils-client'
 
 export function NotificationToggles() {
   const { user, updateUserPreferences } = useAuth()
@@ -45,7 +45,7 @@ export function NotificationToggles() {
             {user.emailNotificationsEnabled ? (
               <Mail className="h-4 w-4 text-green-400" />
             ) : (
-              <MailMinus className="h-4 w-4" /> // <-- Use MailMinus icon
+              <MailMinus className="h-4 w-4" />
             )}
           </Button>
         </TooltipTrigger>

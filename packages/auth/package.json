@@ -1,19 +1,24 @@
 {
   "name": "@headlines/auth",
-  "version": "1.0.0",
+  "version": "4.0.0",
   "description": "Shared authentication logic for the Headlines monorepo.",
   "main": "src/index.js",
   "type": "module",
   "license": "ISC",
+  "exports": {
+    ".": "./src/index.js",
+    "./useAuth": "./src/useAuth.js",
+    "./AuthProvider": "./src/AuthProvider.js"
+  },
   "dependencies": {
+    "@headlines/config": "workspace:*",
+    "@headlines/actions": "workspace:*",
+    "@headlines/ui": "workspace:*",
     "jose": "^5.4.1",
-    "react": "18.3.1",
     "sonner": "^1.5.0"
   },
   "peerDependencies": {
-    "@headlines/config": "3.0.0",
-    "@headlines/data-access": "1.0.0",
-    "@headlines/ui": "1.0.0",
-    "@headlines/utils": "1.2.0"
+    "react": "18.3.1",
+    "next": "^14.2.0"
   }
 }

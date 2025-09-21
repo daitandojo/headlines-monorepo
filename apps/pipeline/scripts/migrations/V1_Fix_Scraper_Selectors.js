@@ -2,7 +2,7 @@
 import 'dotenv/config'
 import { connectDatabase, disconnectDatabase } from '../../src/database.js'
 import Source from '../../models/Source.js'
-import { logger } from '@headlines/utils/src/logger.js'
+import { logger } from '@headlines/utils-server'
 
 const MIGRATION_NAME = 'V1_Fix_Scraper_Selectors'
 

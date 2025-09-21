@@ -1,11 +1,11 @@
 // apps/pipeline/src/pipeline/6_suggestNewWatchlistEntities.js (version 4.1)
-import { logger } from '@headlines/utils/src/server.js';
-import { watchlistSuggestionChain } from '@headlines/ai-services/src/index.js'
+import { logger } from '@headlines/utils-server'
+import { watchlistSuggestionChain } from '@headlines/ai-services'
 import {
   getActiveWatchlistEntityNames,
   bulkWriteWatchlistSuggestions,
-} from '@headlines/data-access/src/index.js'
-import { settings } from '@headlines/config/src/server.js'
+} from '@headlines/actions'
+import { settings } from '@headlines/config/server.js'
 
 export async function suggestNewWatchlistEntities(pipelinePayload) {
   logger.info('--- STAGE 6: WATCHLIST SUGGESTION ---')

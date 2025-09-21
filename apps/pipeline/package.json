@@ -1,55 +1,31 @@
 {
-  "name": "headlines-monorepo",
-  "version": "1.2.2",
+  "name": "@headlines/pipeline",
+  "version": "1.0.0",
   "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "type": "module",
   "scripts": {
-    "//--- APP DEVELOPMENT ---//": "---",
-    "admin": "node --env-file=./.env ./node_modules/next/dist/bin/next dev apps/admin -p 3000",
-    "client": "node --env-file=./.env ./node_modules/next/dist/bin/next dev apps/client -p 3001",
-    "//--- PIPELINE EXECUTION ---//": "---",
-    "pipeline:test": "npm run pipeline:test -w @headlines/pipeline",
-    "//--- DATABASE SEEDING ---//": "---",
-    "seed": "npm run db:seed:all -w @headlines/pipeline",
-    "seed:admin": "npm run db:seed:admin -w @headlines/pipeline",
-    "seed:countries": "npm run db:seed:countries -w @headlines/pipeline",
-    "seed:settings": "npm run db:seed:settings -w @headlines/pipeline",
-    "//--- DATA MANAGEMENT ---//": "---",
-    "maintenance:delete-today": "npm run maintenance:delete-today -w @headlines/pipeline --",
-    "results:list-events": "npm run results:list-events -w @headlines/pipeline",
-    "results:send-last-events": "npm run results:send-last-events -w @headlines/pipeline --",
-    "subscribers:list": "npm run subscribers:list -w @headlines/pipeline",
-    "subscribers:update": "npm run subscribers:update -w @headlines/pipeline --",
-    "watchlist:list": "npm run watchlist:list -w @headlines/pipeline --",
-    "watchlist:add-term": "npm run watchlist:add-term -w @headlines/pipeline --",
-    "//--- SOURCE MANAGEMENT ---//": "---",
-    "sources:list": "npm run sources:list -w @headlines/pipeline --",
-    "sources:scrape-one": "npm run sources:scrape-one -w @headlines/pipeline --",
-    "sources:scrape-many": "npm run sources:scrape-many -w @headlines/pipeline --",
-    "sources:discover": "npm run sources:discover -w @headlines/pipeline --",
-    "sources:optimize": "npm run sources:optimize -w @headlines/pipeline --",
-    "sources:maintain": "npm run sources:maintain -w @headlines/pipeline --",
-    "sources:update": "npm run sources:update -w @headlines/pipeline --",
-    "sources:browse": "npm run sources:browse -w @headlines/pipeline --",
-    "//--- MONOREPO UTILITIES ---//": "---",
-    "cli": "npm run cli:help -w @headlines/pipeline",
-    "build": "npm run build -ws --if-present",
-    "lint": "npm run lint -ws --if-present"
+    "pipeline": "pnpm exec node --env-file=../../.env src/app.js",
+    "test": "jest",
+    "cli:help": "pnpm exec node scripts/scripts/list.js"
   },
   "dependencies": {
-    "@upstash/redis": "^1.35.3",
-    "moment": "^2.30.1",
-    "moment-duration-format": "^2.3.2",
-    "nodemailer": "^7.0.6",
+    "@headlines/ai-services": "workspace:*",
+    "@headlines/config": "workspace:*",
+    "@headlines/actions": "workspace:*",
+    "@headlines/models": "workspace:*",
+    "@headlines/prompts": "workspace:*",
+    "@headlines/scraper-logic": "workspace:*",
+    "@headlines/utils-server": "workspace:*",
+    "@headlines/utils-client": "workspace:*",
+    "ansi-colors": "^4.1.3",
+    "cli-progress": "^3.12.0",
+    "mongoose": "^8.4.1",
+    "p-limit": "^5.0.0",
     "pino": "^9.9.5",
-    "puppeteer": "^24.22.0",
     "yargs": "^18.0.0"
   },
   "devDependencies": {
-    "dotenv": "^17.2.2"
-  },
-  "type": "module"
+    "jest": "^29.7.0",
+    "npm-run-all": "^4.1.5"
+  }
 }

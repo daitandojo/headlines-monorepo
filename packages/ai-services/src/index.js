@@ -1,22 +1,20 @@
-// packages/ai-services/src/index.js (version 7.2.0)
-'use server'
+// packages/ai-services/src/index.js (version 2.0.1)
+import 'server-only'
 
 import { callLanguageModel } from './lib/langchain.js'
 import * as chains from './chains/index.js'
-import * as search from './search.js'
-import * as wikipedia from './wikipedia.js'
-import * as embeddings from './embeddings.js'
-import * as vectorSearch from './vectorSearch.js'
-import { logger } from '../../utils/src/server.js'
-
-// This is the primary public API of the package.
-// It only exports async functions, making it compatible with Next.js "use server" modules.
+import * as search from './search/search.js'
+import * as wikipedia from './search/wikipedia.js'
+import * as embeddings from './embeddings/embeddings.js'
+import * as vectorSearch from './embeddings/vectorSearch.js'
+import { logger } from '@headlines/utils-server'
+import { processChatRequest } from './rag/orchestrator.js'
 
 export async function performAiSanityCheck(settings) {
   try {
     logger.info('🔬 Performing AI service sanity check (OpenAI)...')
     const answer = await callLanguageModel({
-      modelName: settings.LLM_MODEL_UTILITY, // Use the dynamic utility model
+      modelName: settings.LLM_MODEL_UTILITY,
       prompt: 'What is in one word the name of the capital of France',
       isJson: false,
     })
@@ -47,8 +45,7 @@ export async function performAiSanityCheck(settings) {
   }
 }
 
-// Re-export all functions from submodules.
-export { callLanguageModel }
+export { processChatRequest, callLanguageModel }
 export const {
   articleChain,
   articlePreAssessmentChain,
@@ -72,7 +69,6 @@ export const {
   translateChain,
   countryCorrectionChain,
 } = chains
-
 export const {
   findAlternativeSources,
   performGoogleSearch,

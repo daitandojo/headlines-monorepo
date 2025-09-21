@@ -1,24 +1,23 @@
-// apps/admin/src/lib/init-shared-logic.js (version 8.0.0)
-import { configure as configureScraperLogic } from '@headlines/scraper-logic/src/config.js';
-import * as appConfig from '@/../app.config.js';
-import { settings, initializeSettings } from '@headlines/config/src/server.js';
-import { logger } from '@headlines/utils/src/server.js';
-import dbConnect from '@headlines/data-access/src/dbConnect.js'; // Import dbConnect
+// apps/admin/src/lib/init-shared-logic.js (Corrected Import Path)
+import { configure as configureScraperLogic } from '@headlines/scraper-logic/config.js'
+import * as appConfig from '@/../app.config.js'
+// DEFINITIVE FIX: Import from the correct server-only entry point.
+import { settings, initializeSettings } from '@headlines/config/server'
+import { logger } from '@headlines/utils'
+import dbConnect from '@headlines/actions/dbConnect.js'
 
-let isInitialized = false;
+let isInitialized = false
 
 export async function initializeSharedLogic() {
   if (isInitialized) {
-    return;
+    return
   }
 
-  // CRITICAL FIX: Establish database connection *before* attempting to load settings.
-  await dbConnect();
-  
-  // Now that a connection is guaranteed, initialize settings from the database.
-  await initializeSettings();
-  
-  configureScraperLogic({ ...appConfig, logger, settings, utilityFunctions: {} });
+  await dbConnect()
 
-  isInitialized = true;
+  await initializeSettings()
+
+  configureScraperLogic({ ...appConfig, logger, settings, utilityFunctions: {} })
+
+  isInitialized = true
 }

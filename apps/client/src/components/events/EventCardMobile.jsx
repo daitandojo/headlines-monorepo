@@ -1,11 +1,10 @@
 // src/components/events/EventCardMobile.jsx (version 1.2)
 'use client'
 
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Badge, Button } from '@headlines/ui'
 import { Trash2, MessageSquarePlus, Users } from 'lucide-react'
-import { getCountryFlag } from '@/lib/countries'
-import { cn } from '@/lib/utils'
+import { getCountryFlag } from '@headlines/utils-client'
+import { cn } from '@headlines/utils-client'
 
 const getRelevanceBadgeClass = (score) => {
   if (score >= 90) return 'bg-red-500/20 text-red-300 border border-red-500/30'

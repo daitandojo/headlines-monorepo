@@ -1,8 +1,8 @@
 // apps/pipeline/src/utils/rag.js (version 2.0.0)
 import { Pinecone } from '@pinecone-database/pinecone'
 import { logger } from './logger.js';
-import { generateEmbedding } from '@headlines/ai-services/src/index.js'
-import { env } from '@headlines/config/src/server.js'
+import { generateEmbedding } from '@headlines/ai-services'
+import { env } from '@headlines/config/server.js'
 
 const { PINECONE_API_KEY, PINECONE_INDEX_NAME } = env;
 

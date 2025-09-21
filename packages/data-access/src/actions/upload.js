@@ -1,62 +1,60 @@
-// packages/data-access/src/actions/upload.js (version 1.0)
+// packages/data-access/src/actions/upload.js (version 2.0.0)
 'use server'
 
-import { revalidatePath } from '../revalidate.js';
-import { SynthesizedEvent, Opportunity } from '../../../models/src/index.js';
-import { verifySession } from '../../../auth/src/index.js';
-// DEFINITIVE FIX: Corrected the import path to be explicit.
+import { revalidatePath } from '../revalidate.js'
+import { SynthesizedEvent, Opportunity } from '../../../models/src/index.js'
 import {
-  assessArticleContent,
   synthesizeEvent,
   generateOpportunitiesFromEvent,
-} from '../../../scraper-logic/src/ai/index.js';
+} from '../../../scraper-logic/src/ai/index.js'
 
-// This is a simplified, single-item pipeline for uploaded content.
-export async function processUploadedArticle(item) {
-  const { user, error } = await verifySession();
-  if (!user) return { success: false, error: error || 'Authentication required' };
+export async function processUploadedArticle(item, userId) {
+  if (!userId) {
+    return { success: false, error: 'Authentication required' }
+  }
 
   try {
-    // 1. Assess & Enrich (Simulated)
-    // We treat the uploaded content as already enriched.
     const enrichedArticle = {
       ...item,
-      relevance_article: 100, // Assume high relevance for manual uploads
+      relevance_article: 100,
       assessment_article: item.article,
       articleContent: { contents: [item.article] },
       newspaper: 'Manual Upload',
-      country: 'Denmark', // Default or could be a param
-      key_individuals: [], // Will be extracted during synthesis
-    };
+      country: 'Denmark',
+      key_individuals: [],
+    }
 
-    // 2. Synthesize Event
-    const synthesizedResult = await synthesizeEvent([enrichedArticle], [], '', '');
+    const synthesizedResult = await synthesizeEvent([enrichedArticle], [], '', '')
     if (!synthesizedResult || !synthesizedResult.headline) {
-      throw new Error('AI failed to synthesize an event from the provided text.');
+      throw new Error('AI failed to synthesize an event from the provided text.')
     }
 
     const eventToSave = new SynthesizedEvent({
       ...synthesizedResult,
       event_key: `manual-${new Date().toISOString()}`,
       highest_relevance_score: 100,
-      source_articles: [{ headline: item.headline, link: '#manual', newspaper: 'Manual Upload' }],
-    });
+      source_articles: [
+        { headline: item.headline, link: '#manual', newspaper: 'Manual Upload' },
+      ],
+    })
 
-    // 3. Generate Opportunities
-    const opportunitiesToSave = await generateOpportunitiesFromEvent(eventToSave, [enrichedArticle]);
+    const opportunitiesToSave = await generateOpportunitiesFromEvent(eventToSave, [
+      enrichedArticle,
+    ])
 
-    // 4. Save to DB
-    await eventToSave.save();
+    await eventToSave.save()
     if (opportunitiesToSave.length > 0) {
-      await Opportunity.insertMany(opportunitiesToSave.map(opp => ({...opp, events: [eventToSave._id]})));
+      await Opportunity.insertMany(
+        opportunitiesToSave.map((opp) => ({ ...opp, events: [eventToSave._id] }))
+      )
     }
-    
-    await revalidatePath('/events');
-    await revalidatePath('/opportunities');
 
-    return { success: true, event: eventToSave.synthesized_headline };
+    await revalidatePath('/events')
+    await revalidatePath('/opportunities')
+
+    return { success: true, event: eventToSave.synthesized_headline }
   } catch (e) {
-    console.error('[Upload Action Error]:', e);
-    return { success: false, error: e.message };
+    console.error('[Upload Action Error]:', e)
+    return { success: false, error: e.message }
   }
 }

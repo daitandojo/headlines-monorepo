@@ -1,18 +1,18 @@
-'use client';
+'use client'
 
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Button } from "@/components/ui/button";
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { Button } from '@headlines/ui'
 
 export const PaginationControls = ({ totalPages, currentPage }) => {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
 
   const handlePageChange = (newPage) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('page', newPage.toString());
-    router.push(`${pathname}?${params.toString()}`);
-  };
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('page', newPage.toString())
+    router.push(`${pathname}?${params.toString()}`)
+  }
 
   return (
     <div className="flex items-center gap-2">
@@ -36,5 +36,5 @@ export const PaginationControls = ({ totalPages, currentPage }) => {
         Next
       </Button>
     </div>
-  );
-};
+  )
+}

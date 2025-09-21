@@ -1,6 +1,7 @@
-// packages/config/src/settings.js (version 2.2.0)
-import { Setting } from '../../models/src/index.js'
-import { logger } from '../../utils/src/server.js';
+// packages/config/src/settings.js
+
+import { Setting } from '@headlines/models'
+import { logger } from '@headlines/utils-server'
 
 // These defaults are used ONLY if the values are not found in the database.
 const DEFAULTS = {
@@ -28,7 +29,7 @@ let isInitialized = false
 
 export async function initializeSettings() {
   if (isInitialized) return
-  logger.info('Loading pipeline settings from database...');
+  logger.info('Loading pipeline settings from database...')
   try {
     const dbSettings = await Setting.find({}).lean()
     if (dbSettings.length === 0) {
@@ -39,16 +40,11 @@ export async function initializeSettings() {
       dbSettings.forEach((setting) => {
         settings[setting.key] = setting.value
       })
-      logger.info(
-        `Successfully loaded ${dbSettings.length} settings from the database.`
-      )
+      logger.info(`Successfully loaded ${dbSettings.length} settings from the database.`)
     }
     isInitialized = true
   } catch (error) {
-    logger.error(
-      'CRITICAL: Failed to load settings from database. Halting.',
-      error
-    )
+    logger.error('CRITICAL: Failed to load settings from database. Halting.', error)
     throw error
   }
 }

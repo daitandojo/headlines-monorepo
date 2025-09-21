@@ -1,12 +1,14 @@
 // apps/pipeline/src/pipeline/submodules/commit/4_updateSourceAnalytics.js (version 3.2.0)
-import { logger } from '@headlines/utils/src/server.js';
-import { settings } from '@headlines/config/src/server.js'
-import { updateSourceAnalyticsBatch } from '@headlines/data-access/src/index.js'
+import { logger } from '@headlines/utils-server'
+import { settings } from '@headlines/config/server.js'
+import { updateSourceAnalyticsBatch } from '@headlines/actions'
 
 export async function updateSourceAnalytics(pipelinePayload) {
   const { runStats, assessedCandidates, articlesForPipeline } = pipelinePayload
   if (!runStats || !runStats.scraperHealth) {
-    logger.warn('[Analytics] Missing scraperHealth data. Skipping source analytics update.')
+    logger.warn(
+      '[Analytics] Missing scraperHealth data. Skipping source analytics update.'
+    )
     return
   }
 
@@ -33,34 +35,34 @@ export async function updateSourceAnalytics(pipelinePayload) {
 
   // Step 2: Calculate FRESH headlines per source to correctly increment totalScraped.
   const freshHeadlinesBySource = (articlesForPipeline || []).reduce((acc, article) => {
-      acc[article.source] = (acc[article.source] || 0) + 1;
-      return acc;
-  }, {});
+    acc[article.source] = (acc[article.source] || 0) + 1
+    return acc
+  }, {})
 
   for (const [sourceName, freshCount] of Object.entries(freshHeadlinesBySource)) {
-      if (analyticsMap.has(sourceName)) {
-          const data = analyticsMap.get(sourceName);
-          data.$inc['analytics.totalScraped'] = freshCount;
-      }
+    if (analyticsMap.has(sourceName)) {
+      const data = analyticsMap.get(sourceName)
+      data.$inc['analytics.totalScraped'] = freshCount
+    }
   }
 
   // Step 3: Calculate RELEVANT headlines per source.
   if (assessedCandidates && assessedCandidates.length > 0) {
-      const relevanceBySource = new Map()
-      for (const article of assessedCandidates) {
-        if (article.relevance_headline >= settings.HEADLINES_RELEVANCE_THRESHOLD) {
-          const currentCount = relevanceBySource.get(article.source) || 0
-          relevanceBySource.set(article.source, currentCount + 1)
-        }
+    const relevanceBySource = new Map()
+    for (const article of assessedCandidates) {
+      if (article.relevance_headline >= settings.HEADLINES_RELEVANCE_THRESHOLD) {
+        const currentCount = relevanceBySource.get(article.source) || 0
+        relevanceBySource.set(article.source, currentCount + 1)
       }
+    }
 
-      for (const [sourceName, relevantCount] of relevanceBySource.entries()) {
-        if (analyticsMap.has(sourceName)) {
-          const data = analyticsMap.get(sourceName)
-          data.$inc['analytics.totalRelevant'] = relevantCount
-          data.$set['analytics.lastRunRelevantCount'] = relevantCount
-        }
+    for (const [sourceName, relevantCount] of relevanceBySource.entries()) {
+      if (analyticsMap.has(sourceName)) {
+        const data = analyticsMap.get(sourceName)
+        data.$inc['analytics.totalRelevant'] = relevantCount
+        data.$set['analytics.lastRunRelevantCount'] = relevantCount
       }
+    }
   }
 
   const bulkOps = []
@@ -71,9 +73,14 @@ export async function updateSourceAnalytics(pipelinePayload) {
   if (bulkOps.length > 0) {
     const result = await updateSourceAnalyticsBatch(bulkOps)
     if (result.success) {
-      logger.info(`[Analytics] Successfully updated analytics for ${result.modifiedCount} sources.`)
+      logger.info(
+        `[Analytics] Successfully updated analytics for ${result.modifiedCount} sources.`
+      )
     } else {
-      logger.error({ err: result.error }, '[Analytics] Failed to bulk update source analytics.')
+      logger.error(
+        { err: result.error },
+        '[Analytics] Failed to bulk update source analytics.'
+      )
     }
   } else {
     logger.info('[Analytics] No sources required analytics updates for this run.')

@@ -1,6 +1,6 @@
-// src/app/page.js (version 4.1)
-import SourcesPage from './sources/page'
+// apps/admin/src/app/page.js (version 2.0.0)
+import { redirect } from 'next/navigation'
 
-export default function Home() {
-  return <SourcesPage />
+export default function AdminRootPage() {
+  redirect('/dashboard')
 }

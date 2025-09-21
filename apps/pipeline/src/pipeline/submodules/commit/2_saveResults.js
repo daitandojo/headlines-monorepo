@@ -2,7 +2,7 @@
 import mongoose from 'mongoose'
 import { savePipelineResults } from '../../../modules/dataStore/index.js'
 import { enrichAndLinkOpportunities } from '../opportunityUpserter.js'
-import { logger } from '@headlines/utils/src/logger.js'
+import { logger } from '@headlines/utils-server'
 
 export async function saveResultsToDb(
   pipelinePayload,

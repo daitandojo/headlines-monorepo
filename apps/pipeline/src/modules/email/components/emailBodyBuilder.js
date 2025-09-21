@@ -1,8 +1,8 @@
 // apps/pipeline/src/modules/email/components/emailBodyBuilder.js (version 4.1.1 - Path Fix)
-import { logger } from '@headlines/utils/src/logger.js'
+import { logger } from '@headlines/utils-server'
 import { EMAIL_CONFIG } from '../../../config/index.js'
 import { formatEventForEmail } from './eventFormatter.js'
-import { getCountryFlag } from '@headlines/utils/src/index.js'
+import { getCountryFlag } from '@headlines/utils-server'
 
 function createEmailWrapper(bodyContent, subject) {
   // ... (wrapper remains the same)

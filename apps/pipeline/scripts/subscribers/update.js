@@ -4,7 +4,7 @@ import { hideBin } from 'yargs/helpers'
 import mongoose from 'mongoose'
 import { Subscriber } from '../../../../packages/models/src/index.js'
 import dbConnect from '../../../../packages/data-access/src/dbConnect.js'
-import { logger } from '../../../../packages/utils/src/server.js';
+import { logger } from '../../../../packages/utils-server'
 import '@headlines/config'
 import readline from 'readline'
 import colors from 'ansi-colors'

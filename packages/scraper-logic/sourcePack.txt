@@ -1,6 +1,6 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 60 files, 9 directories
+Total: 59 files, 9 directories
 
 ```
 headlines/
@@ -62,7 +62,6 @@ headlines/
 │   │   ├── 📄 constants.js
 │   │   ├── 📄 contentScraper.js
 │   │   ├── 📄 dynamicExtractor.js
-│   │   ├── 📄 extractor.js.bak
 │   │   ├── 📄 headlineScraper.js
 │   │   ├── 📄 index.js
 │   │   ├── 📄 newsApiScraper.js
@@ -77,11 +76,11 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-17T18:58:29.078Z
+**Generated**: 2025-09-21T14:17:28.683Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/scraper-logic
-**Total Files**: 60
+**Total Files**: 59
 **Package**: @headlines/scraper-logic@1.0.0
-**Description**: Shared scraping, AI, and notification logic for the Headlines monorepo.
+
 
 
 
@@ -89,23 +88,30 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 29, Size: 781 Bytes*
+*Lines: 36, Size: 997 Bytes*
 
 ```json
 {
   "name": "@headlines/scraper-logic",
   "version": "1.0.0",
-  "description": "Shared scraping, AI, and notification logic for the Headlines monorepo.",
   "main": "src/index.js",
   "type": "module",
   "license": "ISC",
+  "exports": {
+    ".": "./src/index.js",
+    "./config.js": "./src/config.js",
+    "./browser.js": "./src/browser.js",
+    "./scraper/index.js": "./src/scraper/index.js",
+    "./scraper/selectorOptimizer.js": "./src/scraper/selectorOptimizer.js",
+    "./push/client.js": "./src/push/client.js",
+    "./ai/index.js": "./src/ai/index.js"
+  },
   "dependencies": {
-    "@headlines/ai-services": "1.0.0",
-    "@headlines/config": "3.0.0",
-    "@headlines/models": "1.0.0",
-    "@headlines/prompts": "1.0.0",
-    "@headlines/utils": "1.2.0",
-    "@mozilla/readability": "^0.5.0",
+    "@headlines/ai-services": "workspace:*",
+    "@headlines/config": "workspace:*",
+    "@headlines/models": "workspace:*",
+    "@headlines/prompts": "workspace:*",
+    "@mozilla/readability": "^0.6.0",
     "axios": "^1.7.2",
     "cheerio": "^1.0.0-rc.12",
     "date-fns": "*",
@@ -118,9 +124,9 @@ headlines/
     "rss-parser": "^3.13.0",
     "web-push": "^3.6.7",
     "zod": "^3.23.8"
-  },
-  "peerDependencies": {}
+  }
 }
+
 ```
 
 ## 📄 src/ai/AIAgent.js
@@ -2192,134 +2198,6 @@ export function dynamicExtractor($, el, source) {
 
 ```
 
-## 📄 src/scraper/extractor.js.bak
-*Lines: 122, Size: 3.76 KB*
-
-```
-// packages/scraper-logic/src/scraper/extractor.js (version 3.3.0)
-import * as cheerio from 'cheerio'
-import { fetchPageWithPlaywright } from '../browser.js'
-
-const cvcHeadlineExtractor = ($, el, site) => {
-  const element = $(el);
-  if (element.hasClass('portfolio__card-holder--spotlight')) {
-    return null;
-  }
-  const headingElement = element.find('h2.portfolio__card-heading');
-  const companyName = headingElement.text().trim();
-  const button = element.find('button.js-portfolio-card');
-  
-  if (companyName && button.length) {
-    return { 
-        headline: 'CVC Portfolio Company: ' + companyName, 
-        link: site.sectionUrl, 
-        source: site.name, 
-        newspaper: site.name,
-        customData: { dataKey: button.attr('data-key') } 
-    };
-  }
-  return null;
-};
-
-async function cvcContentExtractor(article, source) {
-    const { getConfig } = await import('../config.js');
-    const { fetchPageContentFromPopup } = await import('../browser.js');
-    const cheerio = await import('cheerio');
-
-    if (!article.customData?.dataKey) {
-        return { ...article, enrichment_error: 'Missing data-key for popup interaction.' };
-    }
-
-    const buttonSelector = 'button[data-key="' + article.customData.dataKey + '"]';
-    const popupHtml = await fetchPageContentFromPopup(source.sectionUrl, buttonSelector);
-
-    if (!popupHtml) {
-        return { ...article, enrichment_error: 'Failed to fetch popup HTML for content.' };
-    }
-
-    const $ = cheerio.load(popupHtml);
-    const content = $('.rte').text().trim().replace(/\s+/g, ' ');
-
-    if (content) {
-        article.articleContent = { contents: [content] };
-        getConfig().logger.trace({ article: { headline: article.headline } }, '✅ CVC custom content extraction successful.');
-    } else {
-        article.enrichment_error = 'Could not find content in the CVC popup.';
-    }
-
-    return article;
-}
-
-const simpleExtractor = ($, el, site) => {
-  const element = $(el);
-  const headline = element.text().trim().replace(/\s+/g, ' ')
-  const link = element.attr('href')
-  if (headline && link) {
-    return { headline, link, source: site.name, newspaper: site.name }
-  }
-  return null
-}
-
-const finansDkExtractor = ($, el, site) => ({
-  headline: $(el).text().trim(),
-  link: $(el).closest('a').attr('href'),
-  source: site.name,
-  newspaper: site.name,
-})
-
-const politikenExtractor = ($, el, site) => {
-  const element = $(el);
-  const h = element.find('h2, h3, h4').first().text().trim()
-  const a = element.find('a[href*="/art"]').first().attr('href')
-  return h && a ? { headline: h, link: a, source: site.name, newspaper: site.name } : null
-}
-
-const verdane = ($, el, site) => {
-  const element = $(el);
-  const linkEl = element.find('a.wp-block-klingit-the-product-block-link')
-  const companyName = linkEl.find('h3.wp-block-post-title').text().trim()
-  if (companyName) {
-    return {
-      headline: 'Verdane invests in ' + companyName,
-      link: linkEl.attr('href'),
-      source: site.name,
-      newspaper: site.name,
-    }
-  }
-  return null
-}
-
-const jyllandsPostenHeadlineExtractor = ($, el, site) => {
-  const element = $(el);
-  const headline = element.find('h3').text().trim()
-  const link = element.find('a').attr('href')
-  if (headline && link) {
-    return { headline, link, source: site.name, newspaper: site.name }
-  }
-  return null
-}
-
-export const extractorRegistry = {
-  cvc_portfolio: cvcHeadlineExtractor,
-  okonomisk_ugebrev: simpleExtractor,
-  gro_capital: simpleExtractor,
-  eifo_dk: simpleExtractor,
-  clearwater_dk: simpleExtractor,
-  finans_dk: finansDkExtractor,
-  politiken: politikenExtractor,
-  e24: simpleExtractor,
-  verdane: verdane,
-  quotenet_nl: simpleExtractor,
-  jyllands_posten: jyllandsPostenHeadlineExtractor,
-  simple: simpleExtractor,
-}
-
-export const contentExtractorRegistry = {
-  cvc_portfolio: cvcContentExtractor,
-}
-
-```
-
 ## 📄 src/scraper/extractors/index.js
 *Lines: 45, Size: 1.66 KB*
 
@@ -2702,10 +2580,10 @@ export async function scrapeSiteForHeadlines(source) {
 ```
 
 ## 📄 src/scraper/index.js
-*Lines: 12, Size: 389 Bytes*
+*Lines: 12, Size: 395 Bytes*
 
 ```javascript
-// packages/scraper-logic/src/scraper/index.js (version 1.0)
+// packages/scraper-logic/src/scraper/index.js (Corrected Exports)
 import { scrapeSiteForHeadlines } from './headlineScraper.js'
 import { scrapeArticleContent } from './contentScraper.js'
 import { testHeadlineExtraction, scrapeArticleContentForTest } from './test-helpers.js'
@@ -2859,12 +2737,12 @@ export async function scrapeNewsAPI() {
 ```
 
 ## 📄 src/scraper/orchestrator.js
-*Lines: 105, Size: 3.47 KB*
+*Lines: 105, Size: 3.46 KB*
 
 ```javascript
 // packages/scraper-logic/src/scraper/orchestrator.js (version 5.0.0)
 import pLimit from 'p-limit'
-import { sleep } from '../../../utils/src/index.js'
+import { sleep } from '@headlines/utils'
 import { getConfig } from '../config.js'
 import { scrapeSiteForHeadlines } from './headlineScraper.js'
 // NEWSAPI REWORK: The direct import of scrapeNewsAPI is removed as it's no longer used for proactive scraping.
