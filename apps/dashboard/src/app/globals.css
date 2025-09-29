@@ -1,0 +1,189 @@
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 224 71.4% 4.1%;
+    --foreground: 210 40% 98%;
+    --card: 224 71.4% 4.1%;
+    --card-foreground: 210 40% 98%;
+    --popover: 224 71.4% 4.1%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 220.9 39.3% 11%;
+    --secondary: 222.2 47.4% 11.2%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 215 27.9% 16.9%;
+    --muted-foreground: 217.9 10.6% 64.9%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 85.7% 97.3%;
+    --border: 215 27.9% 16.9%;
+    --input: 215 27.9% 16.9%;
+    --ring: 217 91% 60%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 224 71.4% 4.1%;
+    --foreground: 210 40% 98%;
+    --card: 224 71.4% 4.1%;
+    --card-foreground: 210 40% 98%;
+    --popover: 224 71.4% 4.1%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 220.9 39.3% 11%;
+    --secondary: 222.2 47.4% 11.2%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 215 27.9% 16.9%;
+    --muted-foreground: 217.9 10.6% 64.9%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 85.7% 97.3%;
+    --border: 215 27.9% 16.9%;
+    --input: 215 27.9% 16.9%;
+    --ring: 217 91% 60%;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    background-image:
+      radial-gradient(at 27% 37%, hsla(215, 98%, 43%, 0.15) 0px, transparent 50%),
+      radial-gradient(at 97% 21%, hsla(217, 91%, 60%, 0.1) 0px, transparent 50%),
+      radial-gradient(at 52% 99%, hsla(355, 98%, 51%, 0.1) 0px, transparent 50%);
+  }
+
+  /* Professional Table Styling for Chat */
+  .prose {
+    --tw-prose-body: theme(colors.slate[300]);
+    --tw-prose-headings: theme(colors.slate[100]);
+    --tw-prose-lead: theme(colors.slate[400]);
+    --tw-prose-links: theme(colors.blue[400]);
+    --tw-prose-bold: theme(colors.slate[100]);
+    --tw-prose-counters: theme(colors.slate[400]);
+    --tw-prose-bullets: theme(colors.slate[600]);
+    --tw-prose-hr: theme(colors.slate[700]);
+    --tw-prose-quotes: theme(colors.slate[200]);
+    --tw-prose-quote-borders: theme(colors.slate[700]);
+    --tw-prose-captions: theme(colors.slate[400]);
+    --tw-prose-code: theme(colors.slate[100]);
+    --tw-prose-pre-code: theme(colors.slate[300]);
+    --tw-prose-pre-bg: theme(colors.slate[900]);
+    --tw-prose-th-borders: theme(colors.slate[600]);
+    --tw-prose-td-borders: theme(colors.slate[700]);
+  }
+
+  .prose table {
+    @apply text-sm;
+  }
+  .prose th {
+    @apply text-slate-200 text-left px-3 py-2;
+  }
+  .prose td {
+    @apply px-3 py-2 align-top;
+  }
+}
+
+/* --- Premier Scrollbar Styling --- */
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: hsl(var(--muted) / 0.5);
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--secondary));
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--accent));
+  }
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--secondary)) hsl(var(--muted) / 0.5);
+  }
+
+  /* --- Source-Aware Coloring for Chat --- */
+  .rag-source,
+  .wiki-source {
+    color: #a7f3d0;
+  }
+  .llm-source {
+    color: #fde68a;
+  }
+
+  /* --- Golden Glowing Border for High-Relevance Cards --- */
+  .card-glow {
+    position: relative;
+    overflow: hidden; /* Keep the glow contained */
+  }
+  .card-glow::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: inherit; /* Match parent's border-radius */
+    border: 1px solid transparent;
+    background: conic-gradient(
+        from 180deg at 50% 50%,
+        rgba(252, 211, 77, 0.5) 0deg,
+        rgba(252, 211, 77, 0.2) 50%,
+        rgba(252, 211, 77, 0.5) 360deg
+      )
+      border-box;
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    z-index: 0;
+    animation: glow 4s linear infinite;
+  }
+
+  /* --- Bezier Heartbeat Wobble --- */
+  .impatient-wobble {
+    animation: impatient-wobble 2s cubic-bezier(0.5, 0, 0.1, 1) infinite;
+  }
+
+  @keyframes glow {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* --- NEW: "pum PUM . ." Double-Beat Keyframes --- */
+  @keyframes impatient-wobble {
+    /* The long pause between heartbeats */
+    0%,
+    90%,
+    100% {
+      transform: scale(1) rotate(0deg);
+    }
+    /* The first, smaller beat ("pum") */
+    73% {
+      transform: scale(1.005) rotate(-0.2deg);
+    }
+    /* The second, larger beat ("PUM") */
+    96% {
+      transform: scale(1.012) rotate(0.2deg);
+    }
+  }
+}

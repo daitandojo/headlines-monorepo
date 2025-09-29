@@ -1,8 +1,9 @@
-// apps/pipeline/src/modules/email/components/supervisor/enrichmentFunnel.js (version 2.1.0)
-import { settings } from '@headlines/config/server.js'
-import { escapeHtml, truncateString } from '@headlines/utils-server'
+// apps/pipeline/src/modules/email/components/supervisor/enrichmentFunnel.js (Corrected)
+import { settings } from '@headlines/config'
+import { escapeHtml, truncateString } from '@headlines/utils-shared' // <-- CORRECTED IMPORT
 
 export function createEnrichmentFunnelHtml(runStats) {
+  // ... rest of the file is unchanged ...
   const enrichmentOutcomes = runStats.enrichmentOutcomes || []
 
   if (runStats.relevantHeadlines === 0) {

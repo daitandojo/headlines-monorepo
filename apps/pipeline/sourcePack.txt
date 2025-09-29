@@ -1,6 +1,6 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 104 files, 97 directories
+Total: 106 files, 31 directories
 
 ```
 headlines/
@@ -8,82 +8,19 @@ headlines/
 │   └── 📁 workflows/
 │       ├── 📄 fly-deploy.yml
 │       └── 📄 run-pipeline.yml
-├── 📁 .tmp_backups/
-│   ├── 📁 admin/
-│   │   ├── 📁 app/
-│   │   │   ├── 📁 articles/
-│   │   │   ├── 📁 events/
-│   │   │   └── 📁 opportunities/
-│   │   ├── 📁 hooks/
-│   │   └── 📁 src/
-│   │       └── 📁 app/
-│   │           ├── 📁 _components/
-│   │           ├── 📁 api/
-│   │           │   ├── 📁 events/
-│   │           │   └── 📁 opportunities/
-│   │           ├── 📁 articles/
-│   │           ├── 📁 events/
-│   │           ├── 📁 opportunities/
-│   │           ├── 📁 scraper-ide/
-│   │           │   └── 📁 _components/
-│   │           └── 📁 sources/
-│   ├── 📁 ai-services/
-│   │   └── 📁 src/
-│   │       ├── 📁 chains/
-│   │       ├── 📁 index.js/
-│   │       └── 📁 schemas/
-│   ├── 📁 client/
-│   │   ├── 📁 components/
-│   │   │   └── 📁 events/
-│   │   └── 📁 src/
-│   │       ├── 📁 app/
-│   │       │   └── 📁 main/
-│   │       │       └── 📁 opportunities/
-│   │       │           └── 📁 [opportunityId]/
-│   │       └── 📁 components/
-│   │           └── 📁 events/
-│   ├── 📁 data-access/
-│   │   ├── 📁 actions/
-│   │   └── 📁 src/
-│   │       └── 📁 actions/
-│   ├── 📁 models/
-│   │   └── 📁 src/
-│   ├── 📁 pipeline/
-│   │   ├── 📁 scripts/
-│   │   │   ├── 📁 maintenance/
-│   │   │   └── 📁 seed/
-│   │   │       └── 📁 lib/
-│   │   └── 📁 src/
-│   │       ├── 📁 modules/
-│   │       │   ├── 📁 dataStore/
-│   │       │   └── 📁 notifications/
-│   │       ├── 📁 pipeline/
-│   │       │   └── 📁 submodules/
-│   │       │       └── 📁 commit/
-│   │       └── 📁 utils/
-│   ├── 📁 prompts/
-│   │   └── 📁 src/
-│   │       └── 📁 examples/
-│   ├── 📁 scraper-logic/
-│   │   ├── 📁 ai/
-│   │   │   └── 📁 agents/
-│   │   └── 📁 src/
-│   │       └── 📁 pipeline/
-│   │           └── 📁 submodules/
-│   ├── 📁 ui/
-│   │   └── 📁 src/
-│   └── 📁 utils/
-│       └── 📁 src/
 ├── 📁 scripts/
 │   ├── 📁 infrastructure/
 │   │   └── 📄 setFlySecrets.sh
 │   ├── 📁 maintenance/
+│   │   ├── 📄 backfill-event-article-countries.js
 │   │   ├── 📄 backfill-event-classifications.js
 │   │   ├── 📄 backfill-suggestion-terms.js
 │   │   ├── 📄 clean-e24-headlines.js
 │   │   ├── 📄 delete-today.js
+│   │   ├── 📄 fix-event-countries.js
 │   │   ├── 📄 pipeline-correct-countries.js
 │   │   ├── 📄 recalculate-analytics.js
+│   │   ├── 📄 reprocess-lost-articles.js
 │   │   └── 📄 reset-source-analytics.js
 │   ├── 📁 migrations/
 │   │   ├── 📄 V1_Fix_Scraper_Selectors.js
@@ -133,13 +70,14 @@ headlines/
 │   │   └── 📄 test-payload.js
 │   ├── 📁 tools/
 │   │   ├── 📄 calculate-watchlist-hits.js
+│   │   ├── 📄 diagnose-stuck-articles.js
 │   │   └── 📄 get-db-stats.js
 │   ├── 📁 watchlist/
 │   │   └── 📄 list.js
 │   ├── 📄 mongo-backup.sh
 │   ├── 📄 mongo-restore.sh
 │   ├── 📄 purge-opportunities.js
-│   └── 📄 reset-admin-password.js
+│   └── 📄 reset-admin-password.cjs
 ├── 📁 src/
 │   ├── 📁 config/
 │   │   ├── 📄 dynamicConfig.js
@@ -191,7 +129,6 @@ headlines/
 │   │   ├── 📄 auditLogger.js
 │   │   ├── 📄 errorStream.js
 │   │   ├── 📄 housekeeping.js
-│   │   ├── 📄 humanLogStream.js
 │   │   ├── 📄 pipelineLogger.js
 │   │   ├── 📄 rag.js
 │   │   └── 📄 reportSections.js
@@ -201,7 +138,6 @@ headlines/
 ├── 📄 .npmrc
 ├── 📄 headlines-monorepo@1.0.0
 ├── 📄 jest.config.js
-├── 📄 norway.mjs
 ├── 📄 npm
 ├── 📄 package.json
 └── 📄 run.sh
@@ -209,9 +145,9 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-21T14:17:28.651Z
+**Generated**: 2025-09-29T13:20:36.387Z
 **Repository Path**: /home/mark/Repos/projects/headlines/apps/pipeline
-**Total Files**: 104
+**Total Files**: 106
 **Package**: @headlines/pipeline@1.0.0
 
 
@@ -367,333 +303,6 @@ export default config;
 
 ```
 
-## 📄 norway.mjs
-*Lines: 321, Size: 11 KB*
-
-```
-import fs from 'fs/promises'
-import path from 'path'
-import puppeteer from 'puppeteer' // <-- Import Puppeteer
-import * as cheerio from 'cheerio'
-import * as readline from 'readline/promises'
-import { stdin as input, stdout as output } from 'process'
-
-// --- Configuration ---
-const DATA_FILE_PATH = path.join(process.cwd(), 'data', 'norway.json')
-const AUTOPILOT_DELAY = 2000 // 2-second delay between requests in autopilot mode
-
-// --- ANSI Colors for better console logging ---
-const colors = {
-  reset: '\x1b[0m',
-  bright: '\x1b[1m',
-  dim: '\x1b[2m',
-  red: '\x1b[31m',
-  green: '\x32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  cyan: '\x1b[36m',
-}
-
-/**
- * Loads and parses the JSON data from the file.
- * @returns {Promise<object>} The parsed data object.
- */
-const loadData = async () => {
-  try {
-    const fileContent = await fs.readFile(DATA_FILE_PATH, 'utf-8')
-    return JSON.parse(fileContent)
-  } catch (error) {
-    console.error(`${colors.red}Error loading data file: ${error.message}${colors.reset}`)
-    process.exit(1)
-  }
-}
-
-/**
- * Saves the updated data object back to the JSON file.
- * @param {object} data - The data object to save.
- */
-const saveData = async (data) => {
-  await fs.writeFile(DATA_FILE_PATH, JSON.stringify(data, null, 2))
-}
-
-/**
- * Extracts all available structured and unstructured data from the profile's HTML content.
- * Handles both "modern" and "legacy" page layouts.
- * @param {string} html - The HTML content of the profile page.
- * @returns {object} The scraped data.
- */
-const extractProfileData = (html) => {
-  const $ = cheerio.load(html)
-  const scrapedData = {
-    page_type: 'unknown',
-    date_of_birth: null,
-    city: null,
-    education: null,
-    current_wealth: null,
-    wealth_summary: null,
-    background_information: null,
-    roles: [],
-    latest_news: [],
-    embedded_article_links: [],
-  }
-
-  // --- Helper to clean up text
-  const cleanText = (text) => text.trim().replace(/\s\s+/g, ' ')
-
-  // --- Check for "Modern" Layout ---
-  if ($('main nav').length > 0) {
-    scrapedData.page_type = 'modern'
-    const baseUrl = 'https://www.finansavisen.no'
-
-    // Key-value data
-    $('h2:contains("Bakgrunn")')
-      .parent()
-      .find('div.font-medium.text-gray-500')
-      .each((i, el) => {
-        const key = $(el).text().trim().toLowerCase()
-        const value = $(el).next('.font-semibold').text().trim()
-        if (value) {
-          if (key === 'født') scrapedData.date_of_birth = value
-          if (key === 'bosted') scrapedData.city = value
-          if (key === 'utdannelse') scrapedData.education = value
-        }
-      })
-
-    // Background text and embedded links
-    const backgroundProse = $('h2:contains("Bakgrunn")').parent().find('.prose')
-    scrapedData.background_information = cleanText(backgroundProse.text())
-    backgroundProse.find('a').each((i, el) => {
-      const link = $(el).attr('href')
-      if (link) {
-        scrapedData.embedded_article_links.push({
-          text: cleanText($(el).text()),
-          url: new URL(link, baseUrl).href,
-        })
-      }
-    })
-
-    // Wealth summary text
-    scrapedData.wealth_summary = cleanText($('div.scrollbar-hide > div > p').text())
-
-    // Business Roles
-    $('h2:contains("Roller i norsk næringsliv")')
-      .parent()
-      .find('h3')
-      .each((i, el) => {
-        const roleType = cleanText($(el).text())
-        $(el)
-          .next('ul')
-          .find('li a')
-          .each((j, linkEl) => {
-            scrapedData.roles.push({
-              role: roleType,
-              company: cleanText($(linkEl).text()),
-              url: $(linkEl).attr('href'),
-            })
-          })
-      })
-
-    // Latest News
-    $('hegnar-market-news[title="Siste nytt"]')
-      .find('div.divide-y > a')
-      .each((i, el) => {
-        const relativeUrl = $(el).attr('href')
-        const headline = cleanText($(el).find('h3').text())
-        if (relativeUrl && headline) {
-          scrapedData.latest_news.push({
-            headline,
-            url: new URL(relativeUrl, baseUrl).href,
-          })
-        }
-      })
-  }
-  // --- Check for "Legacy" Layout ---
-  else if ($('.c-kapital-index-profile__main').length > 0) {
-    scrapedData.page_type = 'legacy'
-    const baseUrl = 'https://www.kapital.no'
-
-    // Key-value data
-    $('.c-kapital-index-profile__higlights__item').each((i, el) => {
-      const label = $(el).find('.label').text().trim().toLowerCase()
-      const value = $(el).find('.value').text().trim()
-      if (label === 'født') scrapedData.date_of_birth = value
-      if (label === 'bosted') scrapedData.city = value
-      if (label === 'utdannelse') scrapedData.education = value
-    })
-
-    // Current Wealth Figure
-    const wealthText = cleanText(
-      $('.c-kapital-index-profile__status:contains("mrd formue")').text()
-    )
-    if (wealthText) scrapedData.current_wealth = wealthText
-
-    // Background text and embedded links
-    const listInfo = cleanText($('.c-kapital-index-profile__list-info').text())
-    const bodyInfoEl = $('h4:contains("Bakgrunn")').next('.c-kapital-index-profile__body')
-    const bodyInfoText = cleanText(bodyInfoEl.text())
-    scrapedData.background_information = [listInfo, bodyInfoText].filter(Boolean).join('\n\n')
-    bodyInfoEl.find('a').each((i, el) => {
-      const link = $(el).attr('href')
-      if (link) {
-        scrapedData.embedded_article_links.push({
-          text: cleanText($(el).text()),
-          url: new URL(link, baseUrl).href,
-        })
-      }
-    })
-
-    // Latest News
-    $('.c-kapital-index-profile__articles article.c-teaser').each((i, el) => {
-      const linkEl = $(el).find('a.c-teaser__content__title__link')
-      const relativeUrl = linkEl.attr('href')
-      const headline = cleanText(linkEl.text())
-      if (relativeUrl && headline) {
-        scrapedData.latest_news.push({
-          headline,
-          url: new URL(relativeUrl, baseUrl).href,
-        })
-      }
-    })
-  } else {
-    throw new Error('Could not identify page layout. Neither modern nor legacy structure found.')
-  }
-
-  return scrapedData
-}
-
-/**
- * The main function to orchestrate the scraping process.
- */
-const runScraper = async () => {
-  const rl = readline.createInterface({ input, output })
-  const data = await loadData()
-  const individuals = data.individuals
-  const total = individuals.length
-  const counts = { processed: 0, skipped: 0, error: 0 }
-
-  console.clear()
-  console.log(`${colors.bright}${colors.blue}--- Scraper Initialized ---${colors.reset}`)
-
-  const browser = await puppeteer.launch()
-  const page = await browser.newPage()
-  await page.setUserAgent(
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'
-  )
-
-  let currentIndex = 0
-  let isAutopilotMode = false
-
-  try {
-    while (currentIndex >= 0 && currentIndex < total) {
-      const individual = individuals[currentIndex]
-      const progress = `[${currentIndex + 1}/${total}]`
-      let choice = ''
-
-      if (isAutopilotMode) {
-        if (individual.scraped_data) {
-          console.log(
-            `${colors.dim}${progress} Skipping ${individual.name} (already scraped).${colors.reset}`
-          )
-          counts.skipped++
-          currentIndex++
-          await new Promise((resolve) => setTimeout(resolve, 50))
-          continue
-        } else {
-          console.log(`${progress} Scraping ${individual.name}...`)
-          choice = 'p'
-        }
-      } else {
-        const summary = `(Processed: ${colors.green}${counts.processed}${colors.reset}, Skipped: ${colors.yellow}${counts.skipped}${colors.reset}, Errors: ${colors.red}${counts.error}${colors.reset})`
-        console.clear()
-        console.log(
-          `${colors.bright}${progress} Processing: ${individual.name} (Rank: ${individual.rank}) ${summary}${colors.reset}`
-        )
-        if (individual.scraped_data) {
-          console.log(
-            `${colors.yellow}Status: Already scraped (page type: ${individual.scraped_data.page_type}).${colors.reset}`
-          )
-        } else if (individual.scrape_error) {
-          console.log(
-            `${colors.red}Status: Last attempt failed: ${individual.scrape_error}${colors.reset}`
-          )
-        }
-        console.log(`URL: ${colors.dim}${individual.profile_url}${colors.reset}\n`)
-        choice = (
-          await rl.question(
-            `${colors.cyan}Action: (p)roceed, (r)e-scrape, (s)kip, (b)ack, [rank #], (a)ll, (e)xit -> ${colors.reset}`
-          )
-        ).toLowerCase()
-      }
-
-      const rankJump = parseInt(choice, 10)
-
-      if (choice === 'e') break
-      if (choice === 'a') {
-        isAutopilotMode = true
-        console.log(`\n${colors.bright}${colors.blue}--- Autopilot Mode Activated ---${colors.reset}`)
-        await new Promise((resolve) => setTimeout(resolve, 1500))
-        continue
-      }
-      if (!isNaN(rankJump)) {
-        const targetIndex = individuals.findIndex((p) => p.rank === rankJump)
-        if (targetIndex !== -1) currentIndex = targetIndex
-        else {
-          console.log(`${colors.red}Rank ${rankJump} not found. Press ENTER.${colors.reset}`)
-          await rl.question('')
-        }
-        continue
-      }
-      if (choice === 'b') {
-        currentIndex = Math.max(0, currentIndex - 1)
-        continue
-      }
-      if (choice === 's' || ((choice === 'p' || choice === '') && individual.scraped_data)) {
-        counts.skipped++
-        currentIndex++
-        continue
-      }
-
-      try {
-        if (individual.scrape_error) delete individual.scrape_error
-        if (!isAutopilotMode) console.log(`${colors.dim}Navigating to page...${colors.reset}`)
-        await page.goto(individual.profile_url, { waitUntil: 'networkidle0', timeout: 60000 })
-        const html = await page.content()
-        const scrapedData = extractProfileData(html)
-        individual.scraped_data = scrapedData
-        counts.processed++
-        const summary = `(Layout: ${scrapedData.page_type}, Roles: ${scrapedData.roles.length}, News: ${scrapedData.latest_news.length}, Embedded Links: ${scrapedData.embedded_article_links.length})`
-        console.log(`${isAutopilotMode ? '' : '\n'}${colors.green}SUCCESS: Scraped ${individual.name} ${summary}${colors.reset}`)
-      } catch (error) {
-        console.error(
-          `\n${colors.red}ERROR: Could not process ${individual.name}. Reason: ${error.message}${colors.reset}`
-        )
-        individual.scrape_error = error.message
-        counts.error++
-      }
-
-      await saveData(data)
-      if (!isAutopilotMode) {
-        console.log(`${colors.green}Progress saved to norway.json.${colors.reset}`)
-        await rl.question(`${colors.dim}Press ENTER to continue...${colors.reset}`)
-      } else {
-        await new Promise((resolve) => setTimeout(resolve, AUTOPILOT_DELAY))
-      }
-      currentIndex++
-    }
-  } finally {
-    await browser.close()
-    rl.close()
-  }
-
-  console.log(`\n${colors.bright}${colors.blue}--- Scraping Process Finished ---${colors.reset}`)
-  console.log(`Successfully processed: ${colors.green}${counts.processed}${colors.reset}`)
-  console.log(`Skipped (already done/user): ${colors.yellow}${counts.skipped}${colors.reset}`)
-  console.log(`Failed attempts: ${colors.red}${counts.error}${colors.reset}`)
-}
-
-runScraper()
-```
-
 ## 📄 npm
 *Lines: 1, Size: 0 Bytes*
 
@@ -702,7 +311,7 @@ runScraper()
 ```
 
 ## 📄 package.json
-*Lines: 32, Size: 871 Bytes*
+*Lines: 57, Size: 2.54 KB*
 
 ```json
 {
@@ -711,59 +320,104 @@ runScraper()
   "private": true,
   "type": "module",
   "scripts": {
-    "pipeline": "pnpm exec node --env-file=../../.env src/app.js",
+    "pipeline": "./run.sh src/app.js --",
+    "cli:help": "./run.sh scripts/scripts/list.js",
     "test": "jest",
-    "cli:help": "pnpm exec node scripts/scripts/list.js"
+    "db:seed:all": "./run.sh scripts/seed/seed-settings.js && ./run.sh scripts/seed/seed-countries.js && ./run.sh scripts/seed/seed-admin-user.js",
+    "db:seed:settings": "./run.sh scripts/seed/seed-settings.js",
+    "db:seed:countries": "./run.sh scripts/seed/seed-countries.js",
+    "db:seed:admin": "./run.sh scripts/seed/seed-admin-user.js",
+    "maintenance:delete-today": "./run.sh scripts/maintenance/delete-today.js --",
+    "maintenance:reprocess": "./run.sh scripts/maintenance/reprocess-lost-articles.js",
+    "maintenance:fix-countries": "./run.sh scripts/maintenance/fix-event-countries.js",
+    "maintenance:backfill-countries": "./run.sh scripts/maintenance/backfill-event-article-countries.js",
+    "results:list-events": "./run.sh scripts/results/list-events.js",
+    "results:send-last-events": "./run.sh scripts/results/send-last-events.js --",
+    "subscribers:list": "./run.sh scripts/subscribers/list.js",
+    "subscribers:update": "./run.sh scripts/subscribers/update.js --",
+    "watchlist:list": "./run.sh scripts/watchlist/list.js --",
+    "sources:list": "./run.sh scripts/sources/list.js --",
+    "sources:scrape-one": "./run.sh scripts/sources/scrape-one.js --",
+    "sources:scrape-many": "./run.sh scripts/sources/scrape-many.js --",
+    "sources:discover": "./run.sh scripts/sources/discover.js --",
+    "sources:maintain": "./run.sh scripts/sources/maintain.js",
+    "sources:update": "./run.sh scripts/sources/update.js --",
+    "sources:browse": "./run.sh scripts/sources/browse.js --",
+    "tools:diagnose": "./run.sh scripts/tools/diagnose-stuck-articles.js"
   },
   "dependencies": {
     "@headlines/ai-services": "workspace:*",
     "@headlines/config": "workspace:*",
-    "@headlines/actions": "workspace:*",
+    "@headlines/data-access": "workspace:*",
     "@headlines/models": "workspace:*",
     "@headlines/prompts": "workspace:*",
     "@headlines/scraper-logic": "workspace:*",
     "@headlines/utils-server": "workspace:*",
-    "@headlines/utils-client": "workspace:*",
+    "@headlines/utils-shared": "workspace:*",
+    "@pinecone-database/pinecone": "^6.1.2",
+    "bcryptjs": "^2.4.3",
+    "playwright": "^1.45.1",
     "ansi-colors": "^4.1.3",
+    "dotenv": "^16.4.5",
     "cli-progress": "^3.12.0",
-    "mongoose": "^8.4.1",
-    "p-limit": "^5.0.0",
-    "pino": "^9.9.5",
-    "yargs": "^18.0.0"
-  },
-  "devDependencies": {
+    "date-fns": "^3.6.0",
     "jest": "^29.7.0",
-    "npm-run-all": "^4.1.5"
+    "moment": "^2.30.1",
+    "moment-duration-format": "^2.3.2",
+    "mongoose": "^8.18.2",
+    "p-limit": "^5.0.0",
+    "pino": "^9.2.0",
+    "yargs": "^17.7.2"
   }
 }
 
 ```
 
 ## 📄 run.sh
-*Lines: 21, Size: 880 Bytes*
+*Lines: 41, Size: 1.58 KB*
 
 ```bash
 #!/bin/bash
-# This script executes the pipeline directly from the monorepo root
-# using the npm workspace command for reliability.
+# This is the definitive, robust runner script for all pipeline tasks.
+# It is designed to be called from the monorepo root (e.g., via `pnpm --filter`).
+# It correctly sets up the environment and executes the target script with all arguments.
 
 # Get the directory of this script to reliably find the monorepo root.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-# Navigate up two directories from apps/pipeline to the monorepo root
 MONOREPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
-# Change to the monorepo root directory. This is crucial for npm workspaces.
+# The first argument ($1) is the target script path, relative to the pipeline app's root.
+# Example: "src/app.js"
+TARGET_SCRIPT_RELATIVE=$1
+
+# The full, unambiguous path to the target script from the monorepo root.
+# Example: "apps/pipeline/src/app.js"
+TARGET_SCRIPT_FULL="apps/pipeline/${TARGET_SCRIPT_RELATIVE}"
+
+# Remove the first argument (the script path) from the list of arguments.
+shift
+
+# --- START OF THE FIX ---
+# This loop consumes all leading "--" arguments passed by pnpm or the package.json script.
+# It ensures that only the user-provided flags are passed to the Node.js script.
+while [[ "$1" == "--" ]]; do
+  shift
+done
+# --- END OF THE FIX ---
+
+# Immediately change to the monorepo root. This is critical for dotenv and node module resolution.
 cd "$MONOREPO_ROOT"
 
-echo "Executing pipeline from monorepo root: $(pwd)"
+echo "Executing script: ${TARGET_SCRIPT_FULL}"
+echo "With arguments: $@"
 echo "---"
 
-# DEFINITIVE FIX: Execute the pipeline using the npm workspace command.
-# This ensures that the correct Node.js version (if managed by nvm/volta)
-# and all dependencies are correctly resolved by npm.
-# "$@" passes all arguments from this script to the npm command.
-npm run pipeline -w @headlines/pipeline -- "$@"
+# Set the environment variable that all scripts check for.
+export IS_PIPELINE_RUN=true
 
+# Use dotenv-cli to load the .env file from the root, then execute the target script
+# with its full path, passing along all remaining arguments.
+pnpm exec dotenv -e ./.env -- node "$TARGET_SCRIPT_FULL" "$@"
 ```
 
 ## 📄 scripts/infrastructure/setFlySecrets.sh
@@ -858,6 +512,97 @@ else
     echo "❌ An error occurred while setting secrets."
     exit 1
 fi
+```
+
+## 📄 scripts/maintenance/backfill-event-article-countries.js
+*Lines: 85, Size: 2.49 KB*
+
+```javascript
+// apps/pipeline/scripts/maintenance/backfill-event-article-countries.js
+'use server'
+
+import mongoose from 'mongoose'
+import { SynthesizedEvent, Article } from '@headlines/models'
+import { initializeScriptEnv } from '../seed/lib/script-init.js'
+import { logger } from '@headlines/utils-server'
+import colors from 'ansi-colors'
+import cliProgress from 'cli-progress'
+
+async function main() {
+  await initializeScriptEnv()
+  logger.info('🚀 Starting backfill of `country` field for event source articles...')
+
+  try {
+    const eventsToFix = await SynthesizedEvent.find({
+      'source_articles.country': { $exists: false },
+    })
+      .select('_id source_articles')
+      .lean()
+
+    if (eventsToFix.length === 0) {
+      logger.info(
+        '✅ No events found needing backfill. All source articles have country data.'
+      )
+      return
+    }
+
+    logger.info(
+      colors.yellow(
+        `Found ${eventsToFix.length} events to backfill. This may take a moment...`
+      )
+    )
+
+    const progressBar = new cliProgress.SingleBar({
+      format: `Backfilling | ${colors.cyan('{bar}')} | {percentage}% || {value}/{total} Events`,
+      barCompleteChar: '\u2588',
+      barIncompleteChar: '\u2591',
+      hideCursor: true,
+    })
+    progressBar.start(eventsToFix.length, 0)
+
+    const bulkOps = []
+    for (const event of eventsToFix) {
+      const links = event.source_articles.map((sa) => sa.link)
+      const articles = await Article.find({ link: { $in: links } })
+        .select('link country')
+        .lean()
+      const articleCountryMap = new Map(articles.map((a) => [a.link, a.country]))
+
+      const updatedSourceArticles = event.source_articles.map((sa) => ({
+        ...sa,
+        country: articleCountryMap.get(sa.link) || null,
+      }))
+
+      bulkOps.push({
+        updateOne: {
+          filter: { _id: event._id },
+          update: { $set: { source_articles: updatedSourceArticles } },
+        },
+      })
+      progressBar.increment()
+    }
+    progressBar.stop()
+
+    if (bulkOps.length > 0) {
+      logger.info(`Applying ${bulkOps.length} updates to the database...`)
+      const result = await SynthesizedEvent.bulkWrite(bulkOps)
+      logger.info(
+        colors.green(
+          `✅ Backfill complete. Successfully updated ${result.modifiedCount} events.`
+        )
+      )
+    }
+  } catch (error) {
+    logger.error({ err: error }, 'A critical error occurred during the backfill script.')
+  } finally {
+    if (mongoose.connection.readyState === 1) {
+      await mongoose.disconnect()
+    }
+  }
+}
+
+main()
+
 ```
 
 ## 📄 scripts/maintenance/backfill-event-classifications.js
@@ -1180,7 +925,7 @@ cleanE24Headlines()
 ```
 
 ## 📄 scripts/maintenance/delete-today.js
-*Lines: 74, Size: 2.18 KB*
+*Lines: 74, Size: 2.19 KB*
 
 ```javascript
 // apps/pipeline/scripts/maintenance/delete-today.js (version 2.2.0)
@@ -1246,7 +991,7 @@ export async function deleteTodaysDocuments(confirm = false) {
 // Allow script to be run standalone
 if (import.meta.url.endsWith(process.argv[1])) {
   ;(async () => {
-    const { initializeLogger } = await import('@headlines/utils')
+    const { initializeLogger } = await import('@headlines/utils-server')
     const path = await import('path')
     initializeLogger(path.resolve(process.cwd(), 'apps/pipeline/logs'))
 
@@ -1256,6 +1001,89 @@ if (import.meta.url.endsWith(process.argv[1])) {
     if (mongoose.connection.readyState === 1) await mongoose.disconnect()
   })()
 }
+
+```
+
+## 📄 scripts/maintenance/fix-event-countries.js
+*Lines: 77, Size: 2.42 KB*
+
+```javascript
+// apps/pipeline/scripts/maintenance/fix-event-countries.js
+'use server'
+
+import mongoose from 'mongoose'
+import { SynthesizedEvent } from '@headlines/models'
+import { initializeScriptEnv } from '../seed/lib/script-init.js'
+import { logger } from '@headlines/utils-server'
+import colors from 'ansi-colors'
+
+async function main() {
+  await initializeScriptEnv()
+  logger.info('🚀 Starting script to correct event countries based on source articles...')
+
+  try {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    const eventsToFix = await SynthesizedEvent.find({
+      createdAt: { $gte: twentyFourHoursAgo },
+      // Add any other filter if needed, e.g., to find events with non-Danish countries
+    }).populate({
+      path: 'source_articles',
+      model: 'Article', // This assumes you have an 'Article' model linked
+      select: 'country',
+    })
+
+    if (eventsToFix.length === 0) {
+      logger.info('✅ No recent events found needing country correction.')
+      return
+    }
+
+    logger.info(
+      colors.yellow(
+        `Found ${eventsToFix.length} events to check and potentially correct.`
+      )
+    )
+
+    const bulkOps = []
+    for (const event of eventsToFix) {
+      if (event.source_articles && event.source_articles.length > 0) {
+        const sourceCountry = event.source_articles[0].country
+        if (sourceCountry && event.country !== sourceCountry) {
+          logger.info(`Correction needed for event: "${event.synthesized_headline}"`)
+          logger.info(
+            `  Current Country: ${colors.red(event.country)} -> Correct Country: ${colors.green(sourceCountry)}`
+          )
+          bulkOps.push({
+            updateOne: {
+              filter: { _id: event._id },
+              update: { $set: { country: sourceCountry } },
+            },
+          })
+        }
+      }
+    }
+
+    if (bulkOps.length > 0) {
+      logger.info(`Applying ${bulkOps.length} country corrections to the database...`)
+      const result = await SynthesizedEvent.bulkWrite(bulkOps)
+      logger.info(
+        colors.green(`✅ Successfully corrected ${result.modifiedCount} events.`)
+      )
+    } else {
+      logger.info('✅ No corrections were necessary for the found events.')
+    }
+  } catch (error) {
+    logger.error(
+      { err: error },
+      'A critical error occurred during the correction script.'
+    )
+  } finally {
+    if (mongoose.connection.readyState === 1) {
+      await mongoose.disconnect()
+    }
+  }
+}
+
+main()
 
 ```
 
@@ -1452,6 +1280,101 @@ async function recalculateAnalytics() {
 }
 
 recalculateAnalytics()
+
+```
+
+## 📄 scripts/maintenance/reprocess-lost-articles.js
+*Lines: 89, Size: 3.22 KB*
+
+```javascript
+// apps/pipeline/scripts/maintenance/reprocess-lost-articles.js
+'use server'
+
+import mongoose from 'mongoose'
+import { Article } from '../../../../packages/models/src/index.js'
+import { initializeScriptEnv } from '../seed/lib/script-init.js'
+import { logger } from '@headlines/utils-server'
+import { runAssessAndEnrich } from '../../src/pipeline/3_assessAndEnrich.js'
+import { runClusterAndSynthesize } from '../../src/pipeline/4_clusterAndSynthesize.js'
+import { runCommitAndNotify } from '../../src/pipeline/5_commitAndNotify.js'
+import colors from 'ansi-colors'
+
+async function main() {
+  await initializeScriptEnv()
+  logger.info('🚀 Starting reprocessing script for lost articles...')
+
+  try {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+
+    // DEFINITIVE QUERY: Look for articles that were just scraped but never processed further.
+    // The key indicators are `status: 'scraped'` and the absence of a `synthesizedEventId`.
+    const articlesToReprocess = await Article.find({
+      status: 'scraped', // This is the state they are in after Stage 2
+      synthesizedEventId: { $exists: false },
+      createdAt: { $gte: twentyFourHoursAgo },
+    }).lean()
+
+    if (articlesToReprocess.length === 0) {
+      logger.info('✅ No articles found needing reprocessing.')
+      return
+    }
+
+    logger.info(
+      colors.yellow(`Found ${articlesToReprocess.length} articles to reprocess.`)
+    )
+
+    // Create a pipelinePayload to feed into the subsequent stages
+    let pipelinePayload = {
+      // Start the process with 'articlesForPipeline' so Stage 3 picks them up
+      articlesForPipeline: articlesToReprocess,
+      runStats: {
+        errors: [],
+        eventsSynthesized: 0,
+        judgeVerdict: null,
+        eventsEmailed: 0,
+        enrichmentOutcomes: [],
+        scraperHealth: [],
+      },
+      dbConnection: true,
+      noCommitMode: false,
+    }
+
+    // Run Stage 3: Assess & Enrich
+    logger.info('--- REPROCESSING STAGE 3: ASSESS & ENRICH ---')
+    pipelinePayload = (await runAssessAndEnrich(pipelinePayload)).payload
+
+    // Run Stage 4: Cluster & Synthesize
+    if (pipelinePayload.enrichedArticles && pipelinePayload.enrichedArticles.length > 0) {
+      logger.info('--- REPROCESSING STAGE 4: CLUSTER & SYNTHESIZE ---')
+      pipelinePayload = (await runClusterAndSynthesize(pipelinePayload)).payload
+    } else {
+      logger.info('No articles survived the enrichment stage. Halting.')
+    }
+
+    // Run Stage 5: Commit & Notify
+    if (
+      pipelinePayload.synthesizedEvents &&
+      pipelinePayload.synthesizedEvents.length > 0
+    ) {
+      logger.info('--- REPROCESSING STAGE 5: COMMIT & NOTIFY ---')
+      pipelinePayload = (await runCommitAndNotify(pipelinePayload)).payload
+    } else {
+      logger.info('No events were synthesized from the reprocessed articles.')
+    }
+
+    logger.info(colors.green('✅ Reprocessing complete!'))
+    logger.info(`  - Events created: ${pipelinePayload.runStats.eventsSynthesized}`)
+    logger.info(`  - Notifications sent: ${pipelinePayload.runStats.eventsEmailed}`)
+  } catch (error) {
+    logger.error({ err: error }, 'A critical error occurred during reprocessing.')
+  } finally {
+    if (mongoose.connection.readyState === 1) {
+      await mongoose.disconnect()
+    }
+  }
+}
+
+main()
 
 ```
 
@@ -1686,15 +1609,15 @@ cleanOpportunityReasons()
 ```
 
 ## 📄 scripts/migrations/V3_Fix_E24_Scraper.js
-*Lines: 42, Size: 1.25 KB*
+*Lines: 42, Size: 1.21 KB*
 
 ```javascript
 // apps/pipeline/scripts/migrations/V3_Fix_E24_Scraper.js
 'use server'
 
-import dbConnect from '../../../../packages/data-access/src/dbConnect.js'
-import { Source } from '../../../../packages/models/src/index.js'
-import { logger, reinitializeLogger } from '../../../../packages/utils-server'
+import dbConnect from '../../packages/data-access/src/dbConnect.js'
+import { Source } from '@headlines/models'
+import { logger, reinitializeLogger } from '@headlines/utils-server'
 import path from 'path'
 
 reinitializeLogger(path.resolve(process.cwd(), 'apps/pipeline/logs'))
@@ -2065,122 +1988,140 @@ run().catch((err) => {
 
 ```
 
-## 📄 scripts/reset-admin-password.js
-*Lines: 61, Size: 2.83 KB*
+## 📄 scripts/reset-admin-password.cjs
+*Lines: 74, Size: 2.41 KB*
 
-```javascript
-// scripts/reset-admin-password.js (version 4.0 - Quote Stripping)
-const dotenv = require('dotenv');
-const path = require('path');
-const mongoose = require('mongoose');
-const { subtle, getRandomValues } = require('node:crypto');
+```
+// File: apps/pipeline/scripts/reset-admin-password.cjs (Final, Robust Version)
 
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+const dotenv = require('dotenv')
+const path = require('path')
+const mongoose = require('mongoose')
+const bcrypt = require('bcryptjs') // <-- Explicitly require bcryptjs
 
-const { MONGO_URI, NEXT_PUBLIC_ADMIN_EMAIL, NEXT_PUBLIC_ADMIN_PASSWORD } = process.env;
-const encoder = new TextEncoder();
+dotenv.config({ path: path.resolve(__dirname, '../../../../.env') })
 
-// Manually define the Subscriber model to avoid dependency issues
-const { Schema } = mongoose;
-const SubscriberSchema = new Schema({ email: { type: String, required: true, unique: true }, password: { type: String, required: true }, firstName: { type: String, required: true }, role: { type: String, default: 'user' }, isActive: { type: Boolean, default: true }, }, { timestamps: true, collection: 'subscribers' });
-const Subscriber = mongoose.models.Subscriber || mongoose.model('Subscriber', SubscriberSchema);
+const { MONGO_URI, ADMIN_EMAIL, ADMIN_PASSWORD } = process.env
+const SALT_WORK_FACTOR = 10
 
-async function hashPassword(password) {
-    const salt = getRandomValues(new Uint8Array(16));
-    const keyMaterial = await subtle.importKey('raw', encoder.encode(password), { name: 'PBKDF2' }, false, ['deriveBits']);
-    const derivedBits = await subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, keyMaterial, 256);
-    const hash = Buffer.from(derivedBits);
-    return `${Buffer.from(salt).toString('hex')}:${hash.toString('hex')}`;
-}
+const { Schema } = mongoose
+const SubscriberSchema = new Schema(
+  {
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    firstName: { type: String, required: true },
+    role: { type: String, default: 'user' },
+    isActive: { type: Boolean, default: true },
+  },
+  { timestamps: true, collection: 'subscribers' }
+)
+const Subscriber =
+  mongoose.models.Subscriber || mongoose.model('Subscriber', SubscriberSchema)
 
 async function run() {
-    if (!MONGO_URI || !NEXT_PUBLIC_ADMIN_EMAIL || !NEXT_PUBLIC_ADMIN_PASSWORD) {
-        console.error('❌ ERROR: MONGO_URI, NEXT_PUBLIC_ADMIN_EMAIL, and NEXT_PUBLIC_ADMIN_PASSWORD must be set in your .env file.');
-        process.exit(1);
+  if (!MONGO_URI || !ADMIN_EMAIL || !ADMIN_PASSWORD) {
+    console.error(
+      '❌ ERROR: MONGO_URI, ADMIN_EMAIL, and ADMIN_PASSWORD must be set in your .env file.'
+    )
+    process.exit(1)
+  }
+
+  const cleanPassword = ADMIN_PASSWORD.replace(/^"|"$/g, '')
+
+  let connection
+  try {
+    console.log('Connecting to MongoDB...')
+    connection = await mongoose.connect(MONGO_URI)
+    console.log('✅ MongoDB connection successful.')
+
+    await Subscriber.deleteOne({ email: ADMIN_EMAIL })
+    console.log(`✓ Previous user record for ${ADMIN_EMAIL} deleted.`)
+
+    console.log(`Hashing password "${cleanPassword}" for ${ADMIN_EMAIL} with bcryptjs...`)
+
+    // --- THE CRITICAL FIX: HASH THE PASSWORD HERE ---
+    const salt = await bcrypt.genSalt(SALT_WORK_FACTOR)
+    const hashedPassword = await bcrypt.hash(cleanPassword, salt)
+    console.log(`✓ Password hashed successfully.`)
+
+    // Now, save the user with the already-hashed password
+    const newUser = await Subscriber.create({
+      _id: new mongoose.Types.ObjectId('68d5cb75f9b4fbab29f1e89b'), // Keep a stable ID for consistency
+      email: ADMIN_EMAIL,
+      password: hashedPassword, // <-- SAVE THE HASHED PASSWORD
+      firstName: 'Admin',
+      role: 'admin',
+      isActive: true,
+    })
+    console.log(`✅ SUCCESS: Admin user has been created/reset with ID: ${newUser._id}`)
+  } catch (error) {
+    console.error('❌ CRITICAL FAILURE:', error)
+  } finally {
+    if (connection) {
+      await mongoose.disconnect()
+      console.log('Database connection closed.')
     }
-    
-    // DEFINITIVE FIX: Strip quotes from the password read from .env
-    const cleanPassword = NEXT_PUBLIC_ADMIN_PASSWORD.replace(/^"|"$/g, '');
-
-    let connection;
-    try {
-        console.log('Connecting to MongoDB...');
-        connection = await mongoose.connect(MONGO_URI);
-        console.log('✅ MongoDB connection successful.');
-
-        await Subscriber.deleteOne({ email: NEXT_PUBLIC_ADMIN_EMAIL });
-        console.log(`✓ Previous user record for ${NEXT_PUBLIC_ADMIN_EMAIL} deleted.`);
-
-        console.log(`Hashing password "${cleanPassword}" for ${NEXT_PUBLIC_ADMIN_EMAIL}...`);
-        const hashedPassword = await hashPassword(cleanPassword);
-        console.log(`✓ Password hashed successfully.`);
-
-        const newUser = await Subscriber.create({ email: NEXT_PUBLIC_ADMIN_EMAIL, password: hashedPassword, firstName: 'Admin', role: 'admin', isActive: true });
-        console.log(`✅ SUCCESS: Admin user has been created/reset with ID: ${newUser._id}`);
-
-    } catch (error) {
-        console.error('❌ CRITICAL FAILURE:', error);
-    } finally {
-        if (connection) {
-            await mongoose.disconnect();
-            console.log('Database connection closed.');
-        }
-    }
+  }
 }
 
-run();
+run()
 
 ```
 
 ## 📄 scripts/results/list-events.js
-*Lines: 30, Size: 1.13 KB*
+*Lines: 35, Size: 1.05 KB*
 
 ```javascript
 // apps/pipeline/scripts/results/list-events.js (version 2.0)
-import dbConnect from '../../../../packages/data-access/src/dbConnect.js';
-import { SynthesizedEvent } from '../../../../packages/models/src/index.js';
-import mongoose from 'mongoose';
-import { formatDistanceToNow } from 'date-fns';
+import dbConnect from '../../packages/data-access/src/dbConnect.js'
+import { SynthesizedEvent } from '@headlines/models'
+import mongoose from 'mongoose'
+import { formatDistanceToNow } from 'date-fns'
 
 async function main() {
-    await dbConnect();
-    try {
-        const events = await SynthesizedEvent.find({}).sort({ createdAt: -1 }).limit(10).lean();
-        if (events.length === 0) {
-            console.log('No recent events found.');
-        } else {
-            console.log('\n--- Last 10 Synthesized Events ---');
-            console.table(events.map(e => ({
-                Headline: e.synthesized_headline.substring(0, 80),
-                Score: e.highest_relevance_score,
-                Country: e.country,
-                'Key Individuals': (e.key_individuals || []).map(k => k.name).join(', '),
-                Created: `${formatDistanceToNow(new Date(e.createdAt))} ago`,
-            })));
-        }
-    } catch (error) {
-        console.error('Failed to list events:', error);
-    } finally {
-        await mongoose.disconnect();
+  await dbConnect()
+  try {
+    const events = await SynthesizedEvent.find({})
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean()
+    if (events.length === 0) {
+      console.log('No recent events found.')
+    } else {
+      console.log('\n--- Last 10 Synthesized Events ---')
+      console.table(
+        events.map((e) => ({
+          Headline: e.synthesized_headline.substring(0, 80),
+          Score: e.highest_relevance_score,
+          Country: e.country,
+          'Key Individuals': (e.key_individuals || []).map((k) => k.name).join(', '),
+          Created: `${formatDistanceToNow(new Date(e.createdAt))} ago`,
+        }))
+      )
     }
+  } catch (error) {
+    console.error('Failed to list events:', error)
+  } finally {
+    await mongoose.disconnect()
+  }
 }
-main();
+main()
 
 ```
 
 ## 📄 scripts/results/send-last-events.js
-*Lines: 58, Size: 1.9 KB*
+*Lines: 58, Size: 1.83 KB*
 
 ```javascript
 // apps/pipeline/scripts/results/send-last-events.js (version 2.1.0)
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
-import { initializeSettings } from '../../../../packages/config/src/server.js'
-import { logger } from '../../../../packages/utils-server'
-import { Subscriber, SynthesizedEvent } from '../../../../packages/models/src/index.js'
+import { initializeSettings } from '@headlines/config'
+import { logger } from '@headlines/utils-server'
+import { Subscriber, SynthesizedEvent } from '@headlines/models'
 import { sendNotifications } from '../../src/modules/notifications/index.js'
 import { refreshConfig } from '../../src/config/dynamicConfig.js'
-import dbConnect from '../../../../packages/data-access/src/dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect.js'
 import mongoose from 'mongoose'
 
 async function main() {
@@ -4378,20 +4319,20 @@ for (const topic in groupedScripts) {
 ```
 
 ## 📄 scripts/seed/ingest-denmark-richlist.js
-*Lines: 136, Size: 4.53 KB*
+*Lines: 136, Size: 4.49 KB*
 
 ```javascript
 // apps/pipeline/scripts/seed/ingest-denmark-richlist.js
 import mongoose from 'mongoose'
 import path from 'path'
-import { reinitializeLogger, logger } from '../../../../packages/utils-server'
+import { reinitializeLogger, logger } from '@headlines/utils-server'
 import { initializeScriptEnv } from './lib/script-init.js'
 import { loadAndPrepareDenmarkRichlist } from './lib/denmark-richlist-data-loader.js'
-import { Opportunity } from '../../../../packages/models/src/index.js'
+import { Opportunity } from '@headlines/models'
 import {
   contactFinderChain,
   performGoogleSearch,
-} from '../../../../packages/ai-services/src/index.js'
+} from '../../packages/ai-services/src/index.js'
 import colors from 'ansi-colors'
 import pLimit from 'p-limit'
 
@@ -4629,15 +4570,15 @@ main()
 ```
 
 ## 📄 scripts/seed/lib/denmark-richlist-data-loader.js
-*Lines: 89, Size: 2.9 KB*
+*Lines: 89, Size: 2.86 KB*
 
 ```javascript
 // apps/pipeline/scripts/seed/lib/denmark-richlist-data-loader.js
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { Opportunity } from '../../../../../packages/models/src/index.js'
-import { logger } from '../../../../../packages/utils-server'
+import { Opportunity } from '@headlines/models'
+import { logger } from '@headlines/utils-server'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -5163,20 +5104,17 @@ export async function loadAndPrepareRichlist() {
 ```
 
 ## 📄 scripts/seed/lib/script-init.js
-*Lines: 38, Size: 1.38 KB*
+*Lines: 35, Size: 1.28 KB*
 
 ```javascript
 // apps/pipeline/scripts/lib/script-init.js
-import { logger } from '../@headlines/utils'
+import { logger } from '@headlines/utils-server'
 import { configure as configureScraperLogic } from '@headlines/scraper-logic/config.js'
-import * as appConfig from '../../../../../packages/config/src/server.js'
+import * as appConfig from '@headlines/config'
 import { refreshConfig, configStore } from '../../../src/config/dynamicConfig.js'
-import {
-  initializeSettings,
-  settings,
-} from '../../../../../packages/config/src/server.js'
-import dbConnect from '../../../../../packages/data-access/src/dbConnect.js'
-import * as aiServices from '../../../../../packages/ai-services/src/index.js'
+import { initializeSettings, settings } from '@headlines/config'
+import dbConnect from '@headlines/data-access/dbConnect.js'
+import * as aiServices from '@headlines/ai-services'
 
 let isInitialized = false
 
@@ -5432,13 +5370,13 @@ seedCountries()
 ```
 
 ## 📄 scripts/seed/seed-settings.js
-*Lines: 151, Size: 4.43 KB*
+*Lines: 155, Size: 4.65 KB*
 
 ```javascript
 // apps/pipeline/scripts/seed/seed-settings.js (version 1.8.0)
-import { reinitializeLogger, logger } from '../../../../packages/utils-server'
+import { reinitializeLogger, logger } from '@headlines/utils-server'
 import path from 'path'
-import { Setting } from '../../../../packages/models/src/index.js'
+import { Setting } from '@headlines/models'
 import dbConnect from '../../../../packages/data-access/src/dbConnect.js'
 import mongoose from 'mongoose'
 
@@ -5561,22 +5499,26 @@ const SETTINGS = [
 
 async function seedSettings() {
   await dbConnect()
-  logger.info('🚀 Seeding Pipeline Settings...')
+  logger.info('🚀 Syncing Pipeline Settings from config file...')
   try {
     const bulkOps = SETTINGS.map((setting) => ({
       updateOne: {
         filter: { key: setting.key },
-        update: { $setOnInsert: setting },
+        // Use $set to overwrite existing settings with values from the file.
+        // This ensures the file is always the source of truth.
+        update: { $set: setting },
         upsert: true,
       },
     }))
 
     const result = await Setting.bulkWrite(bulkOps)
+
+    // Improved log message to show both new and modified settings.
     logger.info(
-      `✅ Settings seeding complete. ${result.upsertedCount} new settings added.`
+      `✅ Settings sync complete. ${result.upsertedCount} new settings added, ${result.modifiedCount} settings updated.`
     )
   } catch (error) {
-    logger.fatal({ err: error }, '❌ Settings seeding failed.')
+    logger.fatal({ err: error }, '❌ Settings sync failed.')
   } finally {
     if (mongoose.connection.readyState === 1) {
       await mongoose.disconnect()
@@ -6436,13 +6378,13 @@ listSources();
 ```
 
 ## 📄 scripts/sources/maintain.js
-*Lines: 69, Size: 2.32 KB*
+*Lines: 69, Size: 2.28 KB*
 
 ```javascript
 // apps/pipeline/scripts/sources/maintain.js (version 2.0.0)
-import dbConnect from '../../../../packages/data-access/src/dbConnect.js'
-import { Source } from '../../../../packages/models/src/index.js'
-import { logger } from '../../../../packages/utils-server'
+import dbConnect from '../../packages/data-access/src/dbConnect.js'
+import { Source } from '@headlines/models'
+import { logger } from '@headlines/utils-server'
 import mongoose from 'mongoose'
 import colors from 'ansi-colors'
 
@@ -6511,55 +6453,57 @@ maintainSources().finally(() => mongoose.disconnect())
 ```
 
 ## 📄 scripts/sources/scrape-many.js
-*Lines: 104, Size: 3.5 KB*
+*Lines: 110, Size: 3.09 KB*
 
 ```javascript
-// apps/pipeline/scripts/sources/scrape-many.js (version 1.0)
-undefined
-import { initializeSettings } undefined;
-import { sleep, truncateString } from '../../../../packages/utils/src/index.js';
-import { reinitializeLogger as initializeLogger, logger } from '../../../../packages/utils-server';
-import path from 'path';
-import yargs from 'yargs';
-import { hideBin } from 'yargs/helpers';
-import mongoose from 'mongoose';
-import pLimit from 'p-limit';
-import { Source } from '../../../../packages/models/src/index.js';
-import dbConnect from '../../../../packages/data-access/src/dbConnect.js';
-import { configure as configureScraperLogic } from '@headlines/scraper-logic/config.js';
-import { scrapeSiteForHeadlines, scrapeArticleContent } from '@headlines/scraper-logic/scraper/index.js';
+'use server'
 
-initializeLogger(path.resolve(process.cwd(), 'apps/pipeline/logs'));
+import yargs from 'yargs'
+import { hideBin } from 'yargs/helpers'
+import mongoose from 'mongoose'
+import pLimit from 'p-limit'
+import { initializeScriptEnv } from '../seed/lib/script-init.js' // The centralized initializer
+import { logger } from '@headlines/utils-server/node'
+import { Source } from '@headlines/models'
+import {
+  scrapeSiteForHeadlines,
+  scrapeArticleContent,
+} from '@headlines/scraper-logic/scraper/index.js'
 
-configureScraperLogic({
-  paths: { debugHtmlDir: path.resolve(process.cwd(), 'apps/pipeline/debug_html') },
-  configStore: {},
-  utilityFunctions: {},
-});
-
-const CONCURRENCY = 5;
+const CONCURRENCY = 5
 
 async function testSource(source) {
-  logger.info(`\n▶️  Testing: ${source.name} (${source.country})`);
-  const headlineResult = await scrapeSiteForHeadlines(source);
+  logger.info(`\n▶️  Testing: ${source.name} (${source.country})`)
+  const headlineResult = await scrapeSiteForHeadlines(source)
 
   if (!headlineResult.success || headlineResult.resultCount === 0) {
-    logger.error(`❌ Headline scraping failed. Reason: ${headlineResult.error || 'No headlines found.'}`);
-    return;
+    logger.error(
+      `❌ Headline scraping failed. Reason: ${headlineResult.error || 'No headlines found.'}`
+    )
+    return
   }
 
-  logger.info(`✅ Found ${headlineResult.resultCount} headlines.`);
-  const firstArticle = headlineResult.articles[0];
+  logger.info(`✅ Found ${headlineResult.resultCount} headlines.`)
+  const firstArticle = headlineResult.articles[0]
 
   const contentResult = await scrapeArticleContent(
-    { ...firstArticle, source: source.name, newspaper: source.name, country: source.country },
+    {
+      ...firstArticle,
+      source: source.name,
+      newspaper: source.name,
+      country: source.country,
+    },
     source
-  );
+  )
 
   if (contentResult.articleContent && contentResult.articleContent.contents.length > 0) {
-    logger.info(`✅ Content scraping successful (${contentResult.articleContent.contents.join('').length} chars).`);
+    logger.info(
+      `✅ Content scraping successful (${
+        contentResult.articleContent.contents.join('').length
+      } chars).`
+    )
   } else {
-    logger.error(`❌ Content scraping failed. Reason: ${contentResult.enrichment_error}`);
+    logger.error(`❌ Content scraping failed. Reason: ${contentResult.enrichment_error}`)
   }
 }
 
@@ -6577,80 +6521,71 @@ async function scrapeMany() {
       default: false,
     })
     .help()
-    .alias('help', 'h').argv;
+    .alias('help', 'h').argv
 
   try {
-    await dbConnect();
-    await initializeSettings();
+    // The initializeScriptEnv function handles db connection, config loading, and logger setup.
+    await initializeScriptEnv()
 
-    const query = {};
+    const query = {}
     if (argv.country) {
-      query.country = new RegExp(`^${argv.country}$`, 'i');
-      logger.info(`Filtering for country: "${argv.country}"`);
+      query.country = new RegExp(`^${argv.country}$`, 'i')
+      logger.info(`Filtering for country: "${argv.country}"`)
     }
     if (!argv.includeInactive) {
-      query.status = 'active';
-      logger.info('Including only "active" sources. Use --include-inactive to override.');
+      query.status = 'active'
+      logger.info('Including only "active" sources. Use --include-inactive to override.')
     }
 
-    const sources = await Source.find(query).sort({ country: 1, name: 1 }).lean();
+    const sources = await Source.find(query).sort({ country: 1, name: 1 }).lean()
 
     if (sources.length === 0) {
-      logger.warn('No sources found matching the criteria.');
-      return;
+      logger.warn('No sources found matching the criteria.')
+      return
     }
 
-    logger.info(`🚀 Found ${sources.length} source(s) to test. Starting with concurrency ${CONCURRENCY}...`);
-    const limit = pLimit(CONCURRENCY);
-    const promises = sources.map(source => limit(() => testSource(source)));
+    logger.info(
+      `🚀 Found ${sources.length} source(s) to test. Starting with concurrency ${CONCURRENCY}...`
+    )
+    const limit = pLimit(CONCURRENCY)
+    const promises = sources.map((source) => limit(() => testSource(source)))
 
-    await Promise.all(promises);
-    logger.info('\n✅ All scrape tests completed.');
-
+    await Promise.all(promises)
+    logger.info('\n✅ All scrape tests completed.')
   } catch (error) {
-    logger.fatal({ err: error }, 'A critical error occurred during the scrape-many script.');
+    logger.fatal(
+      { err: error },
+      'A critical error occurred during the scrape-many script.'
+    )
   } finally {
     if (mongoose.connection.readyState === 1) {
-      await mongoose.disconnect();
+      await mongoose.disconnect()
     }
   }
 }
 
-scrapeMany();
+scrapeMany()
 
 ```
 
 ## 📄 scripts/sources/scrape-one.js
-*Lines: 92, Size: 3.45 KB*
+*Lines: 102, Size: 3 KB*
 
 ```javascript
-// apps/pipeline/scripts/sources/scrape-one.js (version 1.5.0)
-undefined
-import { initializeSettings } undefined;
-import { truncateString } from '../../../../packages/utils/src/index.js';
-import { logger, reinitializeLogger } from '../../../../packages/utils-server';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import yargs from 'yargs';
-import { hideBin } from 'yargs/helpers';
-import mongoose from 'mongoose';
-import { Source } from '../../../../packages/models/src/index.js';
-import dbConnect from '../../../../packages/data-access/src/dbConnect.js';
-import { configure as configureScraperLogic } from '@headlines/scraper-logic/config.js';
-import { scrapeSiteForHeadlines, scrapeArticleContent } from '@headlines/scraper-logic/scraper/index.js';
+'use server'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const PROJECT_ROOT = path.resolve(__dirname, '../../../');
+import yargs from 'yargs'
+import { hideBin } from 'yargs/helpers'
+import mongoose from 'mongoose'
+import { initializeScriptEnv } from '../seed/lib/script-init.js' // The centralized initializer
+import { logger } from '@headlines/utils-server/node'
+import { truncateString } from '@headlines/utils-shared'
+import { Source } from '@headlines/models'
+import {
+  scrapeSiteForHeadlines,
+  scrapeArticleContent,
+} from '@headlines/scraper-logic/scraper/index.js'
 
-reinitializeLogger(path.join(PROJECT_ROOT, 'logs'));
-
-configureScraperLogic({
-  paths: { debugHtmlDir: path.join(PROJECT_ROOT, 'debug_html') },
-  configStore: {},
-});
-
-// ... (rest of the script remains the same)
 async function scrapeOne() {
   const argv = yargs(hideBin(process.argv))
     .option('source', {
@@ -6660,61 +6595,84 @@ async function scrapeOne() {
       demandOption: true,
     })
     .help()
-    .alias('help', 'h').argv;
+    .alias('help', 'h').argv
 
-  const sourceName = argv.source;
-  logger.info(`🚀 Starting single source scrape for: "${sourceName}"`);
+  const sourceName = argv.source
 
   try {
-    await dbConnect();
-    await initializeSettings();
+    // The initializeScriptEnv function handles db connection, config loading, and logger setup.
+    await initializeScriptEnv()
 
-    const source = await Source.findOne({ name: new RegExp(`^${sourceName}$`, 'i') }).lean();
+    logger.info(`🚀 Starting single source scrape for: "${sourceName}"`)
+
+    const source = await Source.findOne({
+      name: new RegExp(`^${sourceName}$`, 'i'),
+    }).lean()
     if (!source) {
-      logger.error(`❌ Source "${sourceName}" not found in the database.`);
-      return;
+      logger.error(`❌ Source "${sourceName}" not found in the database.`)
+      return
     }
 
-    logger.info('🔬 Source Configuration:\n' + JSON.stringify(source, null, 2));
+    logger.info('🔬 Source Configuration:\n' + JSON.stringify(source, null, 2))
 
-    logger.info('\n▶️  Phase 1: Scraping Headlines...');
-    const headlineResult = await scrapeSiteForHeadlines(source);
+    logger.info('\n▶️  Phase 1: Scraping Headlines...')
+    const headlineResult = await scrapeSiteForHeadlines(source)
 
     if (!headlineResult.success || headlineResult.resultCount === 0) {
-      logger.error(`❌ Headline scraping failed. Reason: ${headlineResult.error || 'No headlines found.'}`);
-      return;
+      logger.error(
+        `❌ Headline scraping failed. Reason: ${
+          headlineResult.error || 'No headlines found.'
+        }`
+      )
+      return
     }
 
-    logger.info(`✅ Found ${headlineResult.resultCount} headlines.`);
-    const firstArticle = headlineResult.articles[0];
-    logger.info(`    - First Headline: "${firstArticle.headline}"\n    - Link: ${firstArticle.link}`);
+    logger.info(`✅ Found ${headlineResult.resultCount} headlines.`)
+    const firstArticle = headlineResult.articles[0]
+    logger.info(
+      `    - First Headline: "${firstArticle.headline}"\n    - Link: ${firstArticle.link}`
+    )
 
-    logger.info('\n▶️  Phase 2: Scraping Content for First Article...');
+    logger.info('\n▶️  Phase 2: Scraping Content for First Article...')
     const contentResult = await scrapeArticleContent(
-      { ...firstArticle, source: source.name, newspaper: source.name, country: source.country },
+      {
+        ...firstArticle,
+        source: source.name,
+        newspaper: source.name,
+        country: source.country,
+      },
       source
-    );
+    )
 
-    if (contentResult.articleContent && contentResult.articleContent.contents.length > 0) {
-      const content = contentResult.articleContent.contents.join('\n');
-      logger.info(`✅ Content scraping successful! (${content.length} chars)`);
-      logger.info(`    - Snippet: "${truncateString(content, 300)}..."`);
+    if (
+      contentResult.articleContent &&
+      contentResult.articleContent.contents.length > 0
+    ) {
+      const content = contentResult.articleContent.contents.join('\n')
+      logger.info(`✅ Content scraping successful! (${content.length} chars)`)
+      logger.info(`    - Snippet: "${truncateString(content, 300)}..."`)
     } else {
-      logger.error(`❌ Content scraping failed. Reason: ${contentResult.enrichment_error}`);
+      logger.error(
+        `❌ Content scraping failed. Reason: ${contentResult.enrichment_error}`
+      )
       if (contentResult.contentPreview) {
-        logger.warn(`    - Scraped Preview: "${contentResult.contentPreview}..."`);
+        logger.warn(`    - Scraped Preview: "${contentResult.contentPreview}..."`)
       }
     }
   } catch (error) {
-    logger.fatal({ err: error }, 'A critical error occurred during the scrape-one script.');
+    logger.fatal(
+      { err: error },
+      'A critical error occurred during the scrape-one script.'
+    )
   } finally {
     if (mongoose.connection.readyState === 1) {
-      await mongoose.disconnect();
-      logger.info('Database connection closed.');
+      await mongoose.disconnect()
+      logger.info('Database connection closed.')
     }
   }
 }
-scrapeOne();
+
+scrapeOne()
 
 ```
 
@@ -6846,16 +6804,16 @@ listSubscribers()
 ```
 
 ## 📄 scripts/subscribers/update.js
-*Lines: 72, Size: 2.36 KB*
+*Lines: 72, Size: 2.32 KB*
 
 ```javascript
 // apps/pipeline/scripts/subscribers/update.js (version 1.0)
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import mongoose from 'mongoose'
-import { Subscriber } from '../../../../packages/models/src/index.js'
-import dbConnect from '../../../../packages/data-access/src/dbConnect.js'
-import { logger } from '../../../../packages/utils-server'
+import { Subscriber } from '@headlines/models'
+import dbConnect from '../../packages/data-access/src/dbConnect.js'
+import { logger } from '@headlines/utils-server'
 import '@headlines/config'
 import readline from 'readline'
 import colors from 'ansi-colors'
@@ -7077,6 +7035,76 @@ calculateHits()
 
 ```
 
+## 📄 scripts/tools/diagnose-stuck-articles.js
+*Lines: 64, Size: 1.87 KB*
+
+```javascript
+// apps/pipeline/scripts/tools/diagnose-stuck-articles.js
+'use server'
+
+import mongoose from 'mongoose'
+import { Article } from '@headlines/models'
+import dbConnect from '@headlines/data-access/dbConnect.js'
+import { logger } from '@headlines/utils-server'
+import colors from 'ansi-colors'
+
+async function diagnose() {
+  await dbConnect()
+  logger.info('🔬 Running diagnostic script for stuck articles...')
+
+  try {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+
+    const stuckArticles = await Article.find({
+      synthesizedEventId: { $exists: false },
+      createdAt: { $gte: twentyFourHoursAgo },
+    })
+      .sort({ createdAt: -1 })
+      .limit(10) // Let's just look at the first 10 to see the pattern
+      .lean()
+
+    if (stuckArticles.length === 0) {
+      logger.info(
+        '❌ DIAGNOSTIC FAILED: Could not find any articles from the last 24 hours that are missing a `synthesizedEventId`. This is unexpected.'
+      )
+      return
+    }
+
+    logger.info(
+      colors.green(
+        `✅ Found ${stuckArticles.length} potentially stuck articles. Displaying their properties:`
+      )
+    )
+
+    // Use console.log for clean table output that the logger might interfere with.
+    console.log('\n--- Sample of Stuck Articles ---')
+    console.table(
+      stuckArticles.map((a) => ({
+        _id: a._id.toString(),
+        createdAt: a.createdAt.toISOString(),
+        headline: a.headline.substring(0, 50) + '...',
+        newspaper: a.newspaper,
+        status: a.status, // THIS IS THE KEY FIELD TO CHECK
+        relevance_headline: a.relevance_headline,
+        relevance_article: a.relevance_article,
+      }))
+    )
+  } catch (error) {
+    logger.error(
+      { err: error },
+      'A critical error occurred during the diagnostic script.'
+    )
+  } finally {
+    if (mongoose.connection.readyState === 1) {
+      await mongoose.disconnect()
+    }
+  }
+}
+
+diagnose()
+
+```
+
 ## 📄 scripts/tools/get-db-stats.js
 *Lines: 46, Size: 1.4 KB*
 
@@ -7130,14 +7158,14 @@ getStats()
 ```
 
 ## 📄 scripts/watchlist/list.js
-*Lines: 42, Size: 1.21 KB*
+*Lines: 42, Size: 1.18 KB*
 
 ```javascript
 // apps/pipeline/scripts/watchlist/list.js (version 1.0)
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import mongoose from 'mongoose'
-import { WatchlistEntity } from '../../../../packages/models/src/index.js'
+import { WatchlistEntity } from '@headlines/models'
 import dbConnect from '../../../../packages/data-access/src/dbConnect.js'
 import colors from 'ansi-colors'
 
@@ -7178,20 +7206,18 @@ main()
 ```
 
 ## 📄 src/app.js
-*Lines: 71, Size: 2.13 KB*
+*Lines: 81, Size: 2.45 KB*
 
 ```javascript
 // apps/pipeline/src/app.js
-process.env.IS_PIPELINE_RUN = 'true'
-
-import { env } from '@headlines/config/server.js'
+// import { env } from '@headlines/config'
 import { reinitializeLogger } from '@headlines/utils-server'
 import { initializeAuditLogger } from './utils/auditLogger.js'
 import path from 'path'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import { runPipeline } from './orchestrator.js'
-import humanLogStream from './utils/humanLogStream.js'
+// DEFINITIVE FIX: The 'humanLogStream' import is no longer needed and is removed.
 import fs from 'fs'
 import { fileURLToPath } from 'url'
 
@@ -7202,21 +7228,33 @@ const PROJECT_ROOT = path.resolve(__dirname, '../../..')
 const logDirectory = path.join(PROJECT_ROOT, 'apps/pipeline/logs')
 if (!fs.existsSync(logDirectory)) fs.mkdirSync(logDirectory, { recursive: true })
 
-const logFile = path.join(logDirectory, 'run.log')
-try {
-  fs.unlinkSync(logFile)
-} catch (e) {
-  if (e.code !== 'ENOENT') console.error('Could not clear old log file:', e)
-}
-const fileWriteStream = fs.createWriteStream(logFile, { flags: 'a' })
-humanLogStream.pipe(fileWriteStream)
-const extraStreams = [{ level: 'trace', stream: humanLogStream }]
-
-const logger = reinitializeLogger(logDirectory, extraStreams)
+// DEFINITIVE FIX: The logger initialization is simplified.
+// reinitializeLogger now handles both console and file logging internally.
+const logger = reinitializeLogger(logDirectory)
 initializeAuditLogger(logDirectory)
 
 async function start() {
-  const argv = yargs(hideBin(process.argv)).argv
+  const argv = yargs(hideBin(process.argv))
+    .option('source', {
+      alias: 's',
+      type: 'string',
+      description: 'Run the pipeline for a single source by name.',
+    })
+    .option('country', {
+      alias: 'c',
+      type: 'string',
+      description: 'Run the pipeline for all sources in a specific country.',
+    })
+    .option('deleteToday', {
+      type: 'boolean',
+      description: 'Delete all documents created today before running.',
+    })
+    .option('useTestPayload', {
+      type: 'boolean',
+      description: 'Use a predefined test payload instead of scraping.',
+    })
+    .help().argv
+
   const options = {
     ...argv,
     countryFilter: argv.country,
@@ -7547,15 +7585,15 @@ export async function refreshConfig() {
 ```
 
 ## 📄 src/config/index.js
-*Lines: 50, Size: 1.51 KB*
+*Lines: 50, Size: 1.49 KB*
 
 ```javascript
 // apps/pipeline/src/config/index.js (version 6.0.0)
 // Use the server-safe entrypoint for all config imports in the pipeline
-import { env, settings } from '@headlines/config/server.js'
+import { env, settings } from '@headlines/config'
 
 // --- Re-export all shared env and settings for local pipeline use ---
-export * from '@headlines/config/server.js'
+export * from '@headlines/config'
 
 // --- App-Specific Static Constants (Not dynamically configurable) ---
 export const IS_REFRESH_MODE = process.env.REFRESH_MODE === 'true'
@@ -7603,21 +7641,21 @@ export const SUPERVISOR_EMAIL_CONFIG = {
 ```
 
 ## 📄 src/modules/dataStore/index.js
-*Lines: 188, Size: 6.85 KB*
+*Lines: 188, Size: 6.84 KB*
 
 ```javascript
 // apps/pipeline/src/modules/dataStore/index.js (version 6.1.0)
 import { Pinecone } from '@pinecone-database/pinecone'
 import { logger } from '@headlines/utils-server'
 import { generateEmbedding } from '@headlines/ai-services'
-import { env } from '@headlines/config/server.js'
+import { env } from '@headlines/config'
 import { Opportunity } from '@headlines/models'
 import {
   bulkWriteEvents,
   bulkWriteArticles,
   findEventsByKeys,
   findArticlesByLinks,
-} from '@headlines/actions'
+} from '@headlines/data-access'
 
 const { PINECONE_API_KEY, PINECONE_INDEX_NAME } = env
 
@@ -7802,7 +7840,7 @@ export async function filterFreshArticles(articles, isRefreshMode = false) {
 ```javascript
 // apps/pipeline/src/modules/email/components/articleFormatter.js (version 2.0.0)
 import { logger } from '@headlines/utils-server'
-import { truncateString } from '@headlines/utils-server'
+import { truncateString } from '@headlines/utils-shared'
 
 function createArticleCard(article) {
   const {
@@ -7897,7 +7935,7 @@ export function formatArticleForEmail(article) {
 import { logger } from '@headlines/utils-server'
 import { EMAIL_CONFIG } from '../../../config/index.js'
 import { formatEventForEmail } from './eventFormatter.js'
-import { getCountryFlag } from '@headlines/utils-server'
+import { getCountryFlag } from '@headlines/utils-shared'
 
 function createEmailWrapper(bodyContent, subject) {
   // ... (wrapper remains the same)
@@ -8213,7 +8251,7 @@ export async function formatEventForEmail(event) {
 
 ```javascript
 // apps/pipeline/src/modules/email/components/supervisor/costSummary.js (version 2.0.0)
-import { escapeHtml } from '@headlines/utils-server'
+import { escapeHtml } from '@headlines/utils-shared'
 
 function formatCost(cost) {
   return `$${cost.toFixed(4)}`
@@ -8300,15 +8338,16 @@ export function createCostSummaryHtml(runStats) {
 ```
 
 ## 📄 src/modules/email/components/supervisor/databaseTables.js
-*Lines: 83, Size: 3.35 KB*
+*Lines: 84, Size: 3.4 KB*
 
 ```javascript
-// apps/pipeline/src/modules/email/components/supervisor/databaseTables.js (version 2.2.0)
+// apps/pipeline/src/modules/email/components/supervisor/databaseTables.js (Corrected)
 import { SynthesizedEvent } from '@headlines/models'
-import { settings } from '@headlines/config/server.js'
-import { truncateString, escapeHtml } from '@headlines/utils-server'
+import { settings } from '@headlines/config'
+import { truncateString, escapeHtml } from '@headlines/utils-shared' // <-- CORRECTED IMPORT
 
 const sourceIcons = {
+  // ... rest of the file is unchanged ...
   rag_db: '🗄️',
   wikipedia: '🌐',
   news_api: '📰',
@@ -8389,14 +8428,15 @@ export async function createArticlesTableHtml(runStats) {
 ```
 
 ## 📄 src/modules/email/components/supervisor/enrichmentFunnel.js
-*Lines: 63, Size: 2.92 KB*
+*Lines: 64, Size: 2.97 KB*
 
 ```javascript
-// apps/pipeline/src/modules/email/components/supervisor/enrichmentFunnel.js (version 2.1.0)
-import { settings } from '@headlines/config/server.js'
-import { escapeHtml, truncateString } from '@headlines/utils-server'
+// apps/pipeline/src/modules/email/components/supervisor/enrichmentFunnel.js (Corrected)
+import { settings } from '@headlines/config'
+import { escapeHtml, truncateString } from '@headlines/utils-shared' // <-- CORRECTED IMPORT
 
 export function createEnrichmentFunnelHtml(runStats) {
+  // ... rest of the file is unchanged ...
   const enrichmentOutcomes = runStats.enrichmentOutcomes || []
 
   if (runStats.relevantHeadlines === 0) {
@@ -8462,7 +8502,7 @@ export function createEnrichmentFunnelHtml(runStats) {
 
 ```javascript
 // apps/pipeline/src/modules/email/components/supervisor/judgeVerdict.js (version 2.0.0)
-import { escapeHtml } from '@headlines/utils-server'
+import { escapeHtml } from '@headlines/utils-shared'
 
 function getVerdictClass(quality) {
   if (!quality) return 'verdict-neutral'
@@ -8517,11 +8557,11 @@ export function createJudgeVerdictHtml(judgeVerdict) {
 ```
 
 ## 📄 src/modules/email/components/supervisor/scraperHealth.js
-*Lines: 66, Size: 2.49 KB*
+*Lines: 66, Size: 2.48 KB*
 
 ```javascript
-// apps/pipeline/src/modules/email/components/supervisor/scraperHealth.js (version 2.0.0)
-import { escapeHtml } from '@headlines/utils-server'
+// apps/pipeline/src/modules/email/components/supervisor/scraperHealth.js (Corrected)
+import { escapeHtml } from '@headlines/utils-shared'
 
 export function createScraperFailureAlertHtml(enrichmentOutcomes) {
   if (!enrichmentOutcomes || enrichmentOutcomes.length === 0) return ''
@@ -8589,11 +8629,11 @@ export function createScraperHealthTable(healthStats) {
 ```
 
 ## 📄 src/modules/email/components/supervisor/supervisorEmailBodyBuilder.js
-*Lines: 134, Size: 4.72 KB*
+*Lines: 134, Size: 4.71 KB*
 
 ```javascript
 // apps/pipeline/src/modules/email/components/supervisor/supervisorEmailBodyBuilder.js (version 5.2.2 - Path Fix)
-import { SUPERVISOR_EMAIL_CONFIG } from '../../../../config/index.js'
+import { SUPERVISOR_EMAIL_CONFIG } from '@headlines/config'
 import { createSupervisorEmailWrapper } from '../../templates/supervisorWrapper.js'
 import {
   createScraperHealthTable,
@@ -8744,11 +8784,11 @@ export const LOGO_PATH = './public/bullion.png';
 ```
 
 ## 📄 src/modules/email/emailDispatcher.js
-*Lines: 131, Size: 4.33 KB*
+*Lines: 131, Size: 4.32 KB*
 
 ```javascript
 // apps/pipeline/src/modules/notifications/emailDispatcher.js (version 4.0.1)
-import { groupItemsByCountry, getCountryFlag } from '@headlines/utils-server'
+import { groupItemsByCountry, getCountryFlag } from '@headlines/utils-shared'
 import { logger } from '@headlines/utils-server'
 import { createPersonalizedEmailBody } from '../email/components/emailBodyBuilder.js'
 import { sendWealthEventsEmail } from '@headlines/utils-server'
@@ -8800,7 +8840,7 @@ export async function sendBulkEmails(emailQueue) {
         summary: e.synthesized_summary,
       }))
 
-      // DEFINITIVE FIX: Use direct await calls instead of  
+      // DEFINITIVE FIX: Use direct await calls instead of
       const [subjectResult, introResult] = await Promise.all([
         emailSubjectChain({
           events_json_string: JSON.stringify(eventPayloadForAI),
@@ -8848,7 +8888,7 @@ export async function sendBulkEmails(emailQueue) {
 
       if (targetLanguage !== 'English') {
         logger.info(`Translating email for ${user.email} into ${targetLanguage}...`)
-        // DEFINITIVE FIX: Use direct await calls instead of  
+        // DEFINITIVE FIX: Use direct await calls instead of
         const translationResult = await translateChain({
           language: targetLanguage,
           html_content: htmlBody,
@@ -8881,13 +8921,15 @@ export async function sendBulkEmails(emailQueue) {
 ```
 
 ## 📄 src/modules/email/index.js
-*Lines: 39, Size: 1.17 KB*
+*Lines: 51, Size: 1.56 KB*
 
 ```javascript
-// apps/pipeline/src/modules/email/index.js (version 3.0.0)
+// AFTER
+// apps/pipeline/src/modules/email/index.js (Corrected)
 import { logger } from '@headlines/utils-server'
-import { performActualSupervisorEmailSend } from './mailer.js'
+import { sendGenericEmail } from '@headlines/utils-server' // <-- CORRECT IMPORT
 import { Subscriber } from '@headlines/models'
+import { createSupervisorEmailBody } from './components/supervisor/supervisorEmailBodyBuilder.js'
 
 /**
  * Coordinates sending the supervisor report email.
@@ -8916,7 +8958,17 @@ export async function sendSupervisorReportEmail(runStats) {
       return
     }
 
-    await performActualSupervisorEmailSend(runStats, superUserEmails)
+    // Generate the complex HTML body
+    const emailBody = await createSupervisorEmailBody(runStats)
+
+    // Send the email using the shared mailer
+    await sendGenericEmail({
+      to: superUserEmails.join(','),
+      subject: '⚙️ Hourly Headlines Processing Run Summary',
+      html: emailBody,
+      emailType: 'SupervisorReport',
+    })
+
     logger.info('✅ Supervisor report email successfully sent/queued to all superusers.')
   } catch (error) {
     logger.error({ err: error }, '💥 CRITICAL: Failed to send supervisor report email.')
@@ -8981,14 +9033,14 @@ export function createSupervisorEmailWrapper(bodyContent, subject) {
 ```
 
 ## 📄 src/modules/notifications/emailDispatcher.js
-*Lines: 135, Size: 4.29 KB*
+*Lines: 135, Size: 4.31 KB*
 
 ```javascript
 // apps/pipeline/src/modules/notifications/emailDispatcher.js
-import { groupItemsByCountry, getCountryFlag } from '@headlines/utils-server'
+import { groupItemsByCountry, getCountryFlag } from '@headlines/utils-shared'
 import { logger, auditLogger } from '@headlines/utils-server'
 import { createPersonalizedEmailBody } from '../email/components/emailBodyBuilder.js'
-import { sendWealthEventsEmail } from '../email/mailer.js'
+import { sendGenericEmail as sendWealthEventsEmail } from '@headlines/utils-server'
 import {
   emailSubjectChain,
   emailIntroChain,
@@ -9122,12 +9174,13 @@ export async function sendBulkEmails(emailQueue) {
 ```
 
 ## 📄 src/modules/notifications/index.js
-*Lines: 113, Size: 3.64 KB*
+*Lines: 127, Size: 4.12 KB*
 
 ```javascript
-// apps/pipeline/src/modules/notifications/index.js (version 2.2.0)
-import { groupItemsByCountry } from '@headlines/utils-server'
-import { logger } from '@headlines/utils-server'
+// File: apps/pipeline/src/modules/notifications/index.js
+
+import { groupItemsByCountry } from '@headlines/utils-shared'
+import { logger } from '@headlines/utils-server/node'
 import { Subscriber, PushSubscription } from '@headlines/models'
 import { sendBulkEmails } from './emailDispatcher.js'
 import { sendBulkPushNotifications } from './pushService.js'
@@ -9162,18 +9215,32 @@ export async function sendNotifications(newEvents, newOpportunities = []) {
   const pushQueue = []
 
   for (const user of activeSubscribers) {
-    const userCountries = new Set(
-      (user.countries || []).filter((c) => c.active).map((c) => c.name)
-    )
-    if (userCountries.size === 0) continue
+    let userEvents = []
+    let userOpportunities = []
 
-    const userEvents = filterItemsForUser(eventsByCountry, userCountries)
-    const userOpportunities = filterItemsForUser(opportunitiesByCountry, userCountries)
+    // --- START OF THE FIX ---
+    if (user.role === 'admin') {
+      // If the user is an admin, they get all events and opportunities.
+      userEvents = newEvents
+      userOpportunities = newOpportunities
+      logger.trace(`Admin user ${user.email} is subscribed to all items.`)
+    } else {
+      // For regular users, filter based on their country subscriptions.
+      const userCountries = new Set(
+        (user.countries || []).filter((c) => c.active).map((c) => c.name)
+      )
+
+      // The original bug was here: this would skip admins. Now it only skips users with no subscriptions.
+      if (userCountries.size === 0) continue
+
+      userEvents = filterItemsForUser(eventsByCountry, userCountries)
+      userOpportunities = filterItemsForUser(opportunitiesByCountry, userCountries)
+    }
+    // --- END OF THE FIX ---
 
     if (userEvents.length === 0 && userOpportunities.length === 0) continue
 
     if (user.emailNotificationsEnabled && userEvents.length > 0) {
-      // Only queue email if there are events
       emailQueue.push({ user, events: userEvents, opportunities: userOpportunities })
     }
 
@@ -9199,7 +9266,6 @@ export async function sendNotifications(newEvents, newOpportunities = []) {
     sendBulkPushNotifications(pushQueue),
   ])
 
-  // --- UPDATE COUNTERS ---
   if (emailSentCount > 0) {
     const bulkOps = emailQueue.map(({ user, events }) => ({
       updateOne: {
@@ -9324,10 +9390,10 @@ export async function sendBulkPushNotifications(pushQueue) {
 ```
 
 ## 📄 src/orchestrator.js
-*Lines: 148, Size: 5.3 KB*
+*Lines: 149, Size: 5.3 KB*
 
 ```javascript
-// apps/pipeline/src/orchestrator.js (version 14.2.0)
+// apps/pipeline/src/orchestrator.js
 import { logger } from '@headlines/utils-server'
 import { tokenTracker, apiCallTracker } from '@headlines/utils-server'
 import { logFinalReport } from './utils/pipelineLogger.js'
@@ -9339,7 +9405,7 @@ import { runCommitAndNotify } from './pipeline/5_commitAndNotify.js'
 import { suggestNewWatchlistEntities } from './pipeline/6_suggestNewWatchlistEntities.js'
 import { runSelfHealAndOptimize } from './pipeline/7_selfHealAndOptimize.js'
 import { updateSourceAnalytics } from './pipeline/submodules/commit/4_updateSourceAnalytics.js'
-import { settings } from '@headlines/config/server.js'
+import { settings } from '@headlines/config'
 import { RunVerdict } from '@headlines/models'
 
 async function saveRunVerdict(payload, duration) {
@@ -9395,6 +9461,8 @@ export async function runPipeline(options) {
   }
 
   try {
+    // DEFINITIVE FIX: Add the log message for Stage 1 here.
+    logger.info('--- STAGE 1: PRE-FLIGHT CHECKS ---')
     const preflight = await runPreFlightChecks(currentPayload)
     if (!preflight.success) {
       success = false
@@ -9420,7 +9488,6 @@ export async function runPipeline(options) {
       currentPayload = scrape.payload
     }
 
-    // DEFINITIVE FIX: This logic block ensures AI stages run if there are articles.
     if (
       currentPayload.articlesForPipeline &&
       currentPayload.articlesForPipeline.length > 0
@@ -9478,24 +9545,24 @@ export async function runPipeline(options) {
 ```
 
 ## 📄 src/pipeline/1_preflight.js
-*Lines: 57, Size: 2.12 KB*
+*Lines: 53, Size: 1.91 KB*
 
 ```javascript
-// apps/pipeline/src/pipeline/1_preflight.js (version 7.3.0)
+// apps/pipeline/src/pipeline/1_preflight.js
 import { logger } from '@headlines/utils-server'
 import { configure as configureScraperLogic } from '@headlines/scraper-logic/config.js'
-import * as appConfig from '@headlines/config/server.js'
+import { env, initializeSettings, settings } from '@headlines/config'
 import { refreshConfig, configStore } from '../config/dynamicConfig.js'
-import { initializeSettings, settings } from '@headlines/config/server.js'
-import dbConnect from '@headlines/actions/dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect.js'
 import { deleteTodaysDocuments } from '../../scripts/maintenance/delete-today.js'
 import * as aiServices from '@headlines/ai-services'
 import { performDatabaseHousekeeping } from '../utils/housekeeping.js'
 import { configurePush } from '@headlines/scraper-logic/push/client.js'
 import { configurePusher } from '@headlines/utils-server'
-import { testRedisConnection } from '../utils/redisClient.js'
+import { testRedisConnection } from '@headlines/utils-server'
 
 export async function runPreFlightChecks(pipelinePayload) {
+  logger.info('--- STAGE 1: PRE-FLIGHT CHECKS ---')
   await dbConnect()
   pipelinePayload.dbConnection = true
 
@@ -9504,16 +9571,13 @@ export async function runPreFlightChecks(pipelinePayload) {
     await deleteTodaysDocuments(true)
   }
 
-  // Load crucial settings before anything else
   await initializeSettings()
   await refreshConfig()
 
-  // Now that env vars and settings are loaded, configure external services
   configurePush()
   configurePusher()
 
-  // New Redis Pre-flight Check
-  if (!(await testRedisConnection())) {
+  if (!(await testRedisConnection(env))) {
     logger.fatal('Redis pre-flight check failed. Aborting pipeline.')
     return { success: false }
   }
@@ -9525,14 +9589,13 @@ export async function runPreFlightChecks(pipelinePayload) {
     fetchWikipediaSummary: aiServices.fetchWikipediaSummary,
   }
 
-  configureScraperLogic({ ...appConfig, configStore, utilityFunctions, logger, settings })
+  configureScraperLogic({ ...env, configStore, utilityFunctions, logger, settings })
 
   if (!(await aiServices.performAiSanityCheck(settings))) {
     logger.fatal('AI service checks failed. Aborting pipeline.')
     return { success: false }
   }
 
-  // Run housekeeping early
   await performDatabaseHousekeeping()
 
   return { success: true, payload: pipelinePayload }
@@ -9541,18 +9604,20 @@ export async function runPreFlightChecks(pipelinePayload) {
 ```
 
 ## 📄 src/pipeline/2_scrapeAndFilter.js
-*Lines: 165, Size: 5.57 KB*
+*Lines: 239, Size: 7.53 KB*
 
 ```javascript
-// apps/pipeline/src/pipeline/2_scrapeAndFilter.js (version 9.0.0)
+// apps/pipeline/src/pipeline/2_scrapeAndFilter.js
 import { logger, auditLogger } from '@headlines/utils-server'
 import { filterFreshArticles } from '../modules/dataStore/index.js'
-import { triggerSelectorRepair } from './submodules/triggerSelectorRepair.js'
-import { Source, Article } from '../../../../packages/models/src/index.js'
-import { scrapeAllHeadlines } from '../../../../packages/scraper-logic/src/scraper/orchestrator.js'
-import { scrapeArticleContent } from '../../../../packages/scraper-logic/src/scraper/index.js'
+import { Source, Article } from '@headlines/models'
+import {
+  scrapeSiteForHeadlines,
+  scrapeArticleContent,
+} from '@headlines/scraper-logic/scraper/index.js'
 import mongoose from 'mongoose'
-import { settings } from '../../../../packages/config/src/server.js'
+import { env, settings } from '@headlines/config'
+import pLimit from 'p-limit'
 
 async function performContentPreflight(source, articles) {
   if (!articles || articles.length === 0)
@@ -9579,6 +9644,56 @@ async function performContentPreflight(source, articles) {
   return { success: true }
 }
 
+async function performStandardScraping(sourcesToScrape) {
+  if (sourcesToScrape.length === 0) {
+    return { allArticles: [], scraperHealth: [] }
+  }
+
+  const limit = pLimit(env.CONCURRENCY_LIMIT || 3)
+  logger.info(
+    `Pipeline will now scrape ${sourcesToScrape.length} active standard sources.`
+  )
+
+  const allArticles = []
+  const scraperHealth = []
+
+  const promises = sourcesToScrape.map((source) =>
+    limit(async () => {
+      logger.info(`[Scraping] -> Starting scrape for "${source.name}"...`)
+      const result = await scrapeSiteForHeadlines(source)
+      const foundCount = result.resultCount !== undefined ? result.resultCount : 0
+      logger.info(
+        `[Scraping] <- Finished scrape for "${source.name}". Success: ${result.success}, Found: ${foundCount}`
+      )
+
+      const healthReport = {
+        source: source.name,
+        success: result.success && result.resultCount > 0,
+        count: result.resultCount || 0,
+        error: result.error,
+      }
+      scraperHealth.push(healthReport)
+
+      if (healthReport.success) {
+        const articlesWithMetadata = result.articles.map((a) => ({
+          ...a,
+          source: source.name,
+          newspaper: source.name,
+          country: source.country,
+        }))
+        allArticles.push(...articlesWithMetadata)
+      } else {
+        logger.warn(
+          `[Scraping] ❌ FAILED for "${source.name}": ${result.error || 'Extracted 0 headlines.'}.`
+        )
+      }
+    })
+  )
+
+  await Promise.all(promises)
+  return { allArticles, scraperHealth }
+}
+
 export async function runScrapeAndFilter(pipelinePayload) {
   logger.info('--- STAGE 2: SCRAPE & FILTER ---')
   const { runStats } = pipelinePayload
@@ -9600,10 +9715,13 @@ export async function runScrapeAndFilter(pipelinePayload) {
     queryCriteria.country = new RegExp(`^${pipelinePayload.countryFilter}$`, 'i')
     delete queryCriteria.$or
   }
+  // --- DEFINITIVE FIX: Change the source filter from an exact match to a "contains" match ---
   if (pipelinePayload.sourceFilter) {
-    queryCriteria.name = new RegExp(`^${pipelinePayload.sourceFilter}$`, 'i')
+    // This allows you to run "--source Berlingske" and it will match "Berlingske Business"
+    queryCriteria.name = new RegExp(pipelinePayload.sourceFilter, 'i')
     delete queryCriteria.$or
   }
+  // --- END FIX ---
 
   const sourcesToScrape = await Source.find(queryCriteria).lean()
   if (sourcesToScrape.length === 0) {
@@ -9613,7 +9731,7 @@ export async function runScrapeAndFilter(pipelinePayload) {
     return { success: true, payload: { ...pipelinePayload, articlesForPipeline: [] } }
   }
 
-  const { allArticles, scraperHealth } = await scrapeAllHeadlines(sourcesToScrape)
+  const { allArticles, scraperHealth } = await performStandardScraping(sourcesToScrape)
   runStats.scraperHealth = scraperHealth
   auditLogger.info(
     {
@@ -9684,49 +9802,66 @@ export async function runScrapeAndFilter(pipelinePayload) {
 
   runStats.headlinesScraped = allArticles.length
   runStats.validatedHeadlines = validatedArticles.length
+  runStats.freshHeadlinesFound = validatedArticles.length
 
-  const articlesWithIds = validatedArticles.map((article) => ({
-    ...article,
-    _id: article._id || new mongoose.Types.ObjectId(),
-    status: 'scraped',
-  }))
-  runStats.freshHeadlinesFound = articlesWithIds.length
+  if (validatedArticles.length > 0) {
+    const bulkOps = validatedArticles.map((article) => ({
+      updateOne: {
+        filter: { link: article.link },
+        update: {
+          $setOnInsert: {
+            _id: new mongoose.Types.ObjectId(),
+            headline: article.headline,
+            newspaper: article.newspaper,
+            source: article.source,
+            country: article.country,
+            status: 'scraped',
+          },
+        },
+        upsert: true,
+      },
+    }))
 
-  if (articlesWithIds.length > 0) {
-    await Article.insertMany(articlesWithIds, { ordered: false }).catch((err) => {
-      if (err.code !== 11000) logger.error({ err }, 'Error inserting scraped articles')
-    })
+    const result = await Article.bulkWrite(bulkOps, { ordered: false })
+    if (result.hasWriteErrors()) {
+      logger.warn(
+        { details: result.getWriteErrors() },
+        'Non-fatal errors occurred during bulk article save.'
+      )
+    }
+
     logger.info(
-      `Successfully saved ${articlesWithIds.length} fresh & validated articles to the database.`
+      `Successfully saved/upserted ${validatedArticles.length} fresh & validated articles to the database.`
     )
+
+    const savedArticleLinks = validatedArticles.map((a) => a.link)
+    pipelinePayload.articlesForPipeline = await Article.find({
+      link: { $in: savedArticleLinks },
+    }).lean()
   } else {
     logger.info('No new, validated articles to process. Ending run early.')
     pipelinePayload.articlesForPipeline = []
-    return { success: true, payload: pipelinePayload }
   }
 
-  pipelinePayload.articlesForPipeline = articlesWithIds
   return { success: true, payload: pipelinePayload }
 }
 
 ```
 
 ## 📄 src/pipeline/3_assessAndEnrich.js
-*Lines: 266, Size: 9.26 KB*
+*Lines: 280, Size: 9.48 KB*
 
 ```javascript
-// apps/pipeline/src/pipeline/3_assessAndEnrich.js (version 9.2.0 - Retry & Fallback Logic)
-import { truncateString, sleep } from '@headlines/utils-server'
-import { logger } from '@headlines/utils-server'
-import { settings } from '@headlines/config/server.js'
-import { Article } from '@headlines/models'
-import { batchHeadlineChain } from '@headlines/ai-services'
+import { truncateString, sleep } from '@headlines/utils-shared'
+import { logger } from '@headlines/utils-server/node'
+import { settings } from '@headlines/config/node'
+import { Article, WatchlistEntity } from '@headlines/models'
+import { batchHeadlineChain } from '@headlines/ai-services/node'
 import { processSingleArticle } from './submodules/processSingleArticle.js'
 import pLimit from 'p-limit'
-import { env } from '@headlines/config/server.js'
-import { getConfig } from '@headlines/scraper-logic/config.js'
+import { env } from '@headlines/config/node'
 
-const BATCH_SIZE = 8 // Reduced batch size
+const BATCH_SIZE = 8
 const MAX_RETRIES = 1
 
 async function withRetry(fn, retries = MAX_RETRIES) {
@@ -9745,17 +9880,14 @@ async function withRetry(fn, retries = MAX_RETRIES) {
   }
 }
 
-function findWatchlistHits(text, country) {
+function findWatchlistHits(text, country, watchlistEntities) {
   const hits = new Map()
   const lowerText = text.toLowerCase()
-  const config = getConfig()
-  if (!config.configStore?.watchlistEntities) return []
+
   const createSearchRegex = (term) =>
     new RegExp(`\\b${term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`, 'i')
 
-  const relevantEntities = Array.from(
-    config.configStore.watchlistEntities.values()
-  ).filter(
+  const relevantEntities = watchlistEntities.filter(
     (entity) =>
       !entity.country ||
       entity.country === country ||
@@ -9765,6 +9897,8 @@ function findWatchlistHits(text, country) {
 
   for (const entity of relevantEntities) {
     const terms = [entity.name.toLowerCase(), ...(entity.searchTerms || [])]
+      .map((t) => t.trim())
+      .filter(Boolean)
     for (const term of terms) {
       if (term.length > 3 && createSearchRegex(term).test(lowerText)) {
         if (!hits.has(entity.name)) hits.set(entity.name, { entity, matchedTerm: term })
@@ -9782,6 +9916,8 @@ export async function runAssessAndEnrich(pipelinePayload) {
     pipelinePayload.enrichedArticles = []
     return { success: true, payload: pipelinePayload }
   }
+
+  const watchlistEntities = await WatchlistEntity.find({ status: 'active' }).lean()
 
   const syntheticArticles = articlesForPipeline.filter(
     (a) => a.source === 'Richlist Ingestion'
@@ -9810,7 +9946,11 @@ export async function runAssessAndEnrich(pipelinePayload) {
       try {
         const batchProcessor = async () => {
           const batchWithContext = batch.map((article) => {
-            const hits = findWatchlistHits(article.headline, article.country)
+            const hits = findWatchlistHits(
+              article.headline,
+              article.country,
+              watchlistEntities
+            )
             let headlineWithContext = `[COUNTRY CONTEXT: ${article.country}] ${article.headline}`
             if (hits.length > 0) {
               const hitStrings = hits
@@ -9821,10 +9961,9 @@ export async function runAssessAndEnrich(pipelinePayload) {
                 .join(' ')
               headlineWithContext = `${hitStrings} ${headlineWithContext}`
             }
-            return { ...article, headlineWithContext }
+            return { ...article, headlineWithContext, hits } // Pass hits through
           })
 
-          // DEFINITIVE FIX: Changed from .invoke to direct await
           const response = await batchHeadlineChain({
             headlines_json_string: JSON.stringify(
               batchWithContext.map((a) => a.headlineWithContext)
@@ -9841,7 +9980,7 @@ export async function runAssessAndEnrich(pipelinePayload) {
 
           const batchResults = batchWithContext.map((originalArticle, i) => {
             const assessment = response.assessments[i]
-            if (originalArticle.headlineWithContext.includes('[WATCHLIST HIT')) {
+            if (originalArticle.hits.length > 0) {
               let score = assessment.relevance_headline
               score = Math.min(100, score + settings.WATCHLIST_SCORE_BOOST)
               assessment.assessment_headline = `Watchlist boost (+${settings.WATCHLIST_SCORE_BOOST}). ${assessment.assessment_headline}`
@@ -9859,7 +9998,14 @@ export async function runAssessAndEnrich(pipelinePayload) {
           { err: batchError },
           `Batch ${index + 1} failed after all retries. FALLING BACK to single-article assessment.`
         )
-        const fallbackPromises = batch.map((article) => processSingleArticle(article))
+        const fallbackPromises = batch.map((article) => {
+          const hits = findWatchlistHits(
+            article.headline,
+            article.country,
+            watchlistEntities
+          )
+          return processSingleArticle(article, hits)
+        })
         const fallbackResults = await Promise.all(fallbackPromises)
 
         fallbackResults.forEach((result, i) => {
@@ -9880,16 +10026,15 @@ export async function runAssessAndEnrich(pipelinePayload) {
 
   runStats.headlinesAssessed = assessedCandidates.length
 
-  // DEFINITIVE FIX: Add detailed logging for every assessed headline.
   logger.info('--- Headline Assessment Complete ---')
   assessedCandidates.forEach((article) => {
     const status =
       article.relevance_headline >= settings.HEADLINES_RELEVANCE_THRESHOLD
         ? 'PASSED'
         : 'DROPPED'
-    const color = status === 'PASSED' ? '\\x1b[32m' : '\\x1b[90m'
+    const color = status === 'PASSED' ? '\x1b[32m' : '\x1b[90m'
     logger.info(
-      `${color}[${status.padEnd(7)}] [Score: ${String(article.relevance_headline).padStart(3)}] "${truncateString(article.headline, 60)}" (${article.assessment_headline})\\x1b[0m`
+      `${color}[${status.padEnd(7)}] [Score: ${String(article.relevance_headline).padStart(3)}] "${truncateString(article.headline, 60)}" (${article.assessment_headline})\x1b[0m`
     )
   })
 
@@ -9910,7 +10055,13 @@ export async function runAssessAndEnrich(pipelinePayload) {
 
   const limit = pLimit(env.CONCURRENCY_LIMIT)
   const processingPromises = enrichmentQueue.map((article) =>
-    limit(() => processSingleArticle(article))
+    limit(() => {
+      // Pass the hits we already calculated in the batch stage (or calculate if synthetic)
+      const hits =
+        article.hits ||
+        findWatchlistHits(article.headline, article.country, watchlistEntities)
+      return processSingleArticle(article, hits)
+    })
   )
   const results = await Promise.all(processingPromises)
 
@@ -9923,7 +10074,7 @@ export async function runAssessAndEnrich(pipelinePayload) {
     const originalArticle = enrichmentQueue[index]
     const finalArticleState = {
       ...originalArticle,
-      ...result.article,
+      ...(result.article || {}),
       pipeline_lifecycle: [
         ...(originalArticle.pipeline_lifecycle || []),
         result.lifecycleEvent,
@@ -9984,11 +10135,11 @@ export async function runAssessAndEnrich(pipelinePayload) {
 ```
 
 ## 📄 src/pipeline/4_clusterAndSynthesize.js
-*Lines: 213, Size: 7.41 KB*
+*Lines: 217, Size: 7.75 KB*
 
 ```javascript
 // apps/pipeline/src/pipeline/4_clusterAndSynthesize.js
-import { truncateString } from '@headlines/utils-server'
+import { truncateString } from '@headlines/utils-shared'
 import { logger, auditLogger } from '@headlines/utils-server'
 import {
   clusteringChain,
@@ -9997,12 +10148,13 @@ import {
   opportunityChain,
   findSimilarArticles,
 } from '@headlines/ai-services'
-import { settings } from '@headlines/config/server.js'
+import { settings } from '@headlines/config'
 import { getConfig } from '@headlines/scraper-logic/config.js'
 
 async function synthesizeEventsFromCluster(articlesInCluster, clusterKey, runStats) {
   const config = getConfig()
   const primaryHeadline = articlesInCluster[0]?.headline || clusterKey
+  const primaryCountry = articlesInCluster[0]?.country || 'Unknown'
   logger.info(
     `--- [ Synthesizing from Cluster: "${truncateString(primaryHeadline, 60)}" ] ---`
   )
@@ -10038,6 +10190,7 @@ async function synthesizeEventsFromCluster(articlesInCluster, clusterKey, runSta
   const newsApiContext = newsApiResult.snippets
 
   const synthesisInput = {
+    SOURCE_COUNTRY_CONTEXT: `The source newspaper for this event is from ${primaryCountry}. Prioritize this as the event's country unless the text explicitly states otherwise.`,
     "[ TODAY'S NEWS ]": uniqueArticlesInCluster.map((a) => ({
       headline: a.headline,
       source: a.newspaper,
@@ -10098,10 +10251,12 @@ async function synthesizeEventsFromCluster(articlesInCluster, clusterKey, runSta
         link: a.link,
         newspaper: a.newspaper,
         imageUrl: a.imageUrl,
+        country: a.country,
       })),
       enrichmentSources,
     }
 
+    // --- DEFINITIVE FIX: Replace the incorrect variable 'x' with 'eventObject' ---
     const opportunityInput = {
       context_text: `Event Key: ${eventObject.event_key}\nSynthesized Event Headline: ${eventObject.synthesized_headline}\nSynthesized Event Summary: ${eventObject.synthesized_summary}\nKey Individuals already identified: ${JSON.stringify(eventObject.key_individuals)}\nSource Article Snippets: ${truncateString(combinedText, settings.LLM_CONTEXT_MAX_CHARS)}`,
     }
@@ -10266,7 +10421,7 @@ export async function runCommitAndNotify(pipelinePayload) {
 ```
 
 ## 📄 src/pipeline/6_suggestNewWatchlistEntities.js
-*Lines: 81, Size: 2.54 KB*
+*Lines: 81, Size: 2.53 KB*
 
 ```javascript
 // apps/pipeline/src/pipeline/6_suggestNewWatchlistEntities.js (version 4.1)
@@ -10275,8 +10430,8 @@ import { watchlistSuggestionChain } from '@headlines/ai-services'
 import {
   getActiveWatchlistEntityNames,
   bulkWriteWatchlistSuggestions,
-} from '@headlines/actions'
-import { settings } from '@headlines/config/server.js'
+} from '@headlines/data-access'
+import { settings } from '@headlines/config'
 
 export async function suggestNewWatchlistEntities(pipelinePayload) {
   logger.info('--- STAGE 6: WATCHLIST SUGGESTION ---')
@@ -10521,14 +10676,15 @@ export async function saveResultsToDb(
 ```
 
 ## 📄 src/pipeline/submodules/commit/3_triggerNotifications.js
-*Lines: 60, Size: 1.93 KB*
+*Lines: 69, Size: 2.05 KB*
 
 ```javascript
-// apps/pipeline/src/pipeline/submodules/commit/3_triggerNotifications.js (version 2.2.3)
+// AFTER
+// apps/pipeline/src/pipeline/submodules/commit/3_triggerNotifications.js (Corrected)
 import { logger } from '@headlines/utils-server'
-import { triggerRealtimeEvent } from '../../../modules/realtime/index.js'
+import { triggerRealtimeEvent } from '@headlines/utils-server' // <-- CORRECT IMPORT from the shared utility package
 import { SynthesizedEvent, Article } from '@headlines/models'
-import { settings } from '@headlines/config/server.js'
+import { settings } from '@headlines/config'
 import { sendNotifications } from '../../../modules/notifications/index.js'
 
 export async function triggerNotifications(
@@ -10551,7 +10707,11 @@ export async function triggerNotifications(
           link: { $in: relevantArticleLinks },
         })
         for (const articleDoc of relevantArticleDocs) {
-          await triggerRealtimeEvent('articles-channel', 'new-article', articleDoc.toRealtimePayload())
+          await triggerRealtimeEvent(
+            'articles-channel',
+            'new-article',
+            articleDoc.toRealtimePayload()
+          )
         }
       }
     }
@@ -10561,7 +10721,11 @@ export async function triggerNotifications(
         _id: { $in: eventIds },
       })
       for (const eventDoc of eventDocsForStreaming) {
-        await triggerRealtimeEvent('events-channel', 'new-event', eventDoc.toRealtimePayload())
+        await triggerRealtimeEvent(
+          'events-channel',
+          'new-event',
+          eventDoc.toRealtimePayload()
+        )
       }
     }
   }
@@ -10587,13 +10751,13 @@ export async function triggerNotifications(
 ```
 
 ## 📄 src/pipeline/submodules/commit/4_updateSourceAnalytics.js
-*Lines: 89, Size: 3.1 KB*
+*Lines: 89, Size: 3.09 KB*
 
 ```javascript
 // apps/pipeline/src/pipeline/submodules/commit/4_updateSourceAnalytics.js (version 3.2.0)
 import { logger } from '@headlines/utils-server'
-import { settings } from '@headlines/config/server.js'
-import { updateSourceAnalyticsBatch } from '@headlines/actions'
+import { settings } from '@headlines/config'
+import { updateSourceAnalyticsBatch } from '@headlines/data-access'
 
 export async function updateSourceAnalytics(pipelinePayload) {
   const { runStats, assessedCandidates, articlesForPipeline } = pipelinePayload
@@ -10873,30 +11037,32 @@ export async function enrichAndLinkOpportunities(potentialOpportunities, savedEv
 ```
 
 ## 📄 src/pipeline/submodules/processSingleArticle.js
-*Lines: 173, Size: 5.64 KB*
+*Lines: 171, Size: 5.36 KB*
 
 ```javascript
-// apps/pipeline/src/pipeline/submodules/processSingleArticle.js
-import { logger } from '@headlines/utils-server'
-import { articleChain, articlePreAssessmentChain } from '@headlines/ai-services'
-import { getConfig } from '@headlines/scraper-logic/config.js'
-import { scrapeArticleContent } from '@headlines/scraper-logic/scraper/contentScraper.js'
-import { settings } from '@headlines/config/server.js'
+import { logger } from '@headlines/utils-server/node'
+import {
+  articleChain,
+  articlePreAssessmentChain,
+  assessArticleContent,
+  findAlternativeSources,
+} from '@headlines/ai-services/node'
+import { scrapeArticleContent } from '@headlines/scraper-logic/scraper/index.js'
+import { settings } from '@headlines/config/node'
 import { Source } from '@headlines/models'
 
 function createLifecycleEvent(stage, status, reason) {
   return { stage, status, reason, timestamp: new Date() }
 }
 
-async function salvageHighSignalArticle(article) {
+async function salvageHighSignalArticle(article, hits) {
   logger.warn(
     { headline: article.headline },
     `SALVAGE MODE: Attempting to find alternative sources for high-signal headline.`
   )
-  const config = getConfig()
-  const searchResult = await config.utilityFunctions.findAlternativeSources(
-    article.headline
-  )
+
+  const searchResult = await findAlternativeSources(article.headline)
+
   if (!searchResult.success || searchResult.results.length === 0) {
     logger.error(
       { headline: article.headline },
@@ -10918,9 +11084,7 @@ async function salvageHighSignalArticle(article) {
     const contentResult = await scrapeArticleContent(tempArticle, tempSourceConfig)
 
     if (contentResult.articleContent) {
-      const finalAssessment = await articleChain({
-        article_text: contentResult.articleContent.contents.join('\n'),
-      })
+      const finalAssessment = await assessArticleContent(contentResult, hits, true)
       if (
         finalAssessment &&
         !finalAssessment.error &&
@@ -10955,7 +11119,7 @@ async function salvageHighSignalArticle(article) {
   }
 }
 
-export async function processSingleArticle(article) {
+export async function processSingleArticle(article, hits) {
   let transientArticle
   try {
     let source
@@ -10975,7 +11139,6 @@ export async function processSingleArticle(article) {
 
     if (transientArticle.articleContent) {
       const articleText = transientArticle.articleContent.contents.join('\n')
-      // DEFINITIVE FIX: Changed from .invoke to direct await
       const triageResult = await articlePreAssessmentChain({ input: articleText })
 
       if (triageResult.error || triageResult.classification !== 'private') {
@@ -10990,8 +11153,7 @@ export async function processSingleArticle(article) {
         }
       }
 
-      // DEFINITIVE FIX: Changed from .invoke to direct await
-      const finalAssessment = await articleChain({ article_text: articleText })
+      const finalAssessment = await assessArticleContent(transientArticle, hits)
 
       if (finalAssessment.error) {
         throw new Error(finalAssessment.error)
@@ -11021,7 +11183,7 @@ export async function processSingleArticle(article) {
     } else {
       if (article.relevance_headline >= settings.HIGH_SIGNAL_HEADLINE_THRESHOLD) {
         return {
-          ...(await salvageHighSignalArticle(article)),
+          ...(await salvageHighSignalArticle(article, hits)),
           contentPreview: transientArticle.contentPreview,
         }
       } else {
@@ -11215,7 +11377,7 @@ export default errorStream
 ```javascript
 // apps/pipeline/src/utils/housekeeping.js (version 3.0.0)
 import { logger } from '@headlines/utils-server'
-import { findSourcesForScraping, performHousekeeping } from '@headlines/actions'
+import { findSourcesForScraping, performHousekeeping } from '@headlines/data-access'
 
 const ARTICLE_RETENTION_DAYS = 14
 
@@ -11272,71 +11434,6 @@ export async function performDatabaseHousekeeping() {
 
 ```
 
-## 📄 src/utils/humanLogStream.js
-*Lines: 59, Size: 1.91 KB*
-
-```javascript
-// apps/pipeline/src/utils/humanLogStream.js (version 2.1.0)
-import { Transform } from 'stream'
-import { EOL } from 'os'
-import moment from 'moment'
-import { format } from 'util'
-
-const KEYS_TO_IGNORE = new Set(['level', 'time', 'pid', 'hostname', 'msg', 'v']);
-
-function prettyPrint(obj, indent = '  ') {
-    let output = '';
-    for (const [key, value] of Object.entries(obj)) {
-        if (KEYS_TO_IGNORE.has(key)) continue;
-        if (value === undefined || value === null || (Array.isArray(value) && value.length === 0)) continue;
-
-        const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase());
-        
-        if (typeof value === 'object' && value !== null) {
-            const nested = prettyPrint(value, indent + '  ');
-            if (nested) {
-                output += `${indent}${formattedKey}:${EOL}${nested}`;
-            }
-        } else {
-            output += `${indent}${formattedKey}: ${format(value)}${EOL}`;
-        }
-    }
-    return output;
-}
-
-const humanLogStream = new Transform({
-    transform(chunk, enc, cb) {
-        try {
-            const logObject = JSON.parse(chunk);
-            const { time, msg, level, ...rest } = logObject;
-            
-            if (msg.includes("PIPELINE RUN INITIATED")) {
-                return cb();
-            }
-
-            const timestamp = moment(time).format('HH:mm:ss.SSS');
-            let output = `[${timestamp}] ${msg}${EOL}`;
-
-            // DEFINITIVE FIX: Remove the level check. All details from all levels will now be logged to the file.
-            const details = prettyPrint(rest);
-            if (details) {
-                output += details + EOL;
-            }
-            
-            this.push(output);
-        } catch (e) {
-            // Non-JSON logs (like the final report) will pass through as is.
-            this.push(chunk);
-            this.push(EOL);
-        }
-        cb();
-    },
-});
-
-export default humanLogStream;
-
-```
-
 ## 📄 src/utils/pipelineLogger.js
 *Lines: 46, Size: 1.59 KB*
 
@@ -11390,16 +11487,16 @@ export async function logFinalReport(runStats, duration) {
 ```
 
 ## 📄 src/utils/rag.js
-*Lines: 65, Size: 2.26 KB*
+*Lines: 65, Size: 2.24 KB*
 
 ```javascript
 // apps/pipeline/src/utils/rag.js (version 2.0.0)
 import { Pinecone } from '@pinecone-database/pinecone'
-import { logger } from './logger.js';
+import { logger } from './logger.js'
 import { generateEmbedding } from '@headlines/ai-services'
-import { env } from '@headlines/config/server.js'
+import { env } from '@headlines/config'
 
-const { PINECONE_API_KEY, PINECONE_INDEX_NAME } = env;
+const { PINECONE_API_KEY, PINECONE_INDEX_NAME } = env
 
 const SIMILARITY_THRESHOLD = 0.65
 const MAX_CONTEXT_ARTICLES = 3
@@ -11416,56 +11513,56 @@ const pineconeIndex = pc.index(PINECONE_INDEX_NAME)
  * @returns {Promise<Array<Object>>} A promise that resolves to an array of relevant historical articles.
  */
 export async function findSimilarArticles(articlesInCluster) {
-  logger.info('RAG: Searching for historical context in Pinecone...');
-  if (!articlesInCluster || articlesInCluster.length === 0) return [];
+  logger.info('RAG: Searching for historical context in Pinecone...')
+  if (!articlesInCluster || articlesInCluster.length === 0) return []
 
-  const queryText = articlesInCluster.map((a) => a.headline).join('\n');
-  
+  const queryText = articlesInCluster.map((a) => a.headline).join('\n')
+
   try {
-    const queryEmbedding = await generateEmbedding(queryText);
+    const queryEmbedding = await generateEmbedding(queryText)
 
     const queryResponse = await pineconeIndex.query({
       topK: MAX_CONTEXT_ARTICLES,
       vector: queryEmbedding,
       includeMetadata: true,
-    });
+    })
 
     const relevantMatches = queryResponse.matches.filter(
       (match) => match.score >= SIMILARITY_THRESHOLD
-    );
+    )
 
     if (relevantMatches.length > 0) {
       const retrievedArticlesForLogging = relevantMatches
         .map(
           (match) => `  - [Score: ${match.score.toFixed(3)}] "${match.metadata.headline}"`
         )
-        .join('\n');
+        .join('\n')
       logger.info(
         `RAG: Found ${relevantMatches.length} relevant historical articles:\n${retrievedArticlesForLogging}`
-      );
+      )
       return relevantMatches.map((match) => ({
         headline: match.metadata.headline,
         newspaper: match.metadata.newspaper,
         assessment_article: match.metadata.summary,
-      }));
+      }))
     } else {
-      logger.info('RAG: Found no relevant historical articles in Pinecone.');
-      return [];
+      logger.info('RAG: Found no relevant historical articles in Pinecone.')
+      return []
     }
   } catch (error) {
-    logger.error({ err: error }, 'RAG: Pinecone query or embedding generation failed.');
-    return [];
+    logger.error({ err: error }, 'RAG: Pinecone query or embedding generation failed.')
+    return []
   }
 }
 
 ```
 
 ## 📄 src/utils/reportSections.js
-*Lines: 215, Size: 7.64 KB*
+*Lines: 215, Size: 7.63 KB*
 
 ```javascript
-// apps/pipeline/src/utils/reportSections.js (version 5.1.0)
-import { truncateString } from '@headlines/utils-server'
+// apps/pipeline/src/utils/reportSections.js (Corrected)
+import { truncateString } from '@headlines/utils-shared'
 import { logger } from '@headlines/utils-server'
 import moment from 'moment'
 import 'moment-duration-format'

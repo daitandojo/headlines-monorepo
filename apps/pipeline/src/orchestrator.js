@@ -1,4 +1,4 @@
-// apps/pipeline/src/orchestrator.js (version 14.2.0)
+// apps/pipeline/src/orchestrator.js
 import { logger } from '@headlines/utils-server'
 import { tokenTracker, apiCallTracker } from '@headlines/utils-server'
 import { logFinalReport } from './utils/pipelineLogger.js'
@@ -10,7 +10,7 @@ import { runCommitAndNotify } from './pipeline/5_commitAndNotify.js'
 import { suggestNewWatchlistEntities } from './pipeline/6_suggestNewWatchlistEntities.js'
 import { runSelfHealAndOptimize } from './pipeline/7_selfHealAndOptimize.js'
 import { updateSourceAnalytics } from './pipeline/submodules/commit/4_updateSourceAnalytics.js'
-import { settings } from '@headlines/config/server.js'
+import { settings } from '@headlines/config'
 import { RunVerdict } from '@headlines/models'
 
 async function saveRunVerdict(payload, duration) {
@@ -66,6 +66,8 @@ export async function runPipeline(options) {
   }
 
   try {
+    // DEFINITIVE FIX: Add the log message for Stage 1 here.
+    logger.info('--- STAGE 1: PRE-FLIGHT CHECKS ---')
     const preflight = await runPreFlightChecks(currentPayload)
     if (!preflight.success) {
       success = false
@@ -91,7 +93,6 @@ export async function runPipeline(options) {
       currentPayload = scrape.payload
     }
 
-    // DEFINITIVE FIX: This logic block ensures AI stages run if there are articles.
     if (
       currentPayload.articlesForPipeline &&
       currentPayload.articlesForPipeline.length > 0

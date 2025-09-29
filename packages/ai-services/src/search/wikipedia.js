@@ -1,10 +1,39 @@
-'use server'; 
-// DEFINITIVE FIX: Import the logger directly. It is a server-safe module.
+// File: packages/ai-services/src/search/wikipedia.js (Unabridged and Corrected)
+
+'use server'
 import { logger, apiCallTracker } from '@headlines/utils-server'
-import { disambiguationChain } from '../chains/index.js'
+import { settings } from '@headlines/config'
+import { ChatPromptTemplate } from '@langchain/core/prompts'
+import { JsonOutputParser } from '@langchain/core/output_parsers'
+import { RunnableSequence } from '@langchain/core/runnables'
+import { getUtilityModel } from '../lib/langchain.js'
+import { safeInvoke } from '../lib/safeInvoke.js'
+import { disambiguationSchema } from '../schemas/index.js'
+import { instructionDisambiguation } from '@headlines/prompts'
 
 const WIKI_API_ENDPOINT = 'https://en.wikipedia.org/w/api.php'
 const WIKI_SUMMARY_LENGTH = 750
+
+// --- START: DEFINITIVE FIX FOR WIKIPEDIA CHAIN ---
+const systemPrompt = [
+  instructionDisambiguation.whoYouAre,
+  instructionDisambiguation.whatYouDo,
+  ...instructionDisambiguation.guidelines,
+  instructionDisambiguation.outputFormatDescription,
+].join('\n\n')
+
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', systemPrompt],
+  ['human', '{inputText}'],
+])
+
+// Revert to the simpler, more direct chain. Our safeInvoke function will handle errors.
+const disambiguationChain = RunnableSequence.from([
+  prompt,
+  getUtilityModel(),
+  new JsonOutputParser(),
+])
+// --- END: DEFINITIVE FIX ---
 
 async function fetchWithRetry(url, options, maxRetries = 2) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -42,16 +71,34 @@ export async function fetchWikipediaSummary(query) {
     if (!searchResults || searchResults.length === 0)
       throw new Error(`No search results for "${query}".`)
 
-    const userContent = `Original Query: "${query}"\n\nSearch Results:\n${JSON.stringify(searchResults.map((r) => ({ title: r.title, snippet: r.snippet })))}`
-    const disambiguationResponse = await disambiguationChain({ inputText: userContent })
+    let best_title = null
+    try {
+      const userContent = `Original Query: "${query}"\n\nSearch Results:\n${JSON.stringify(searchResults.map((r) => ({ title: r.title, snippet: r.snippet })))}`
 
-    if (disambiguationResponse.error || !disambiguationResponse.best_title) {
-      throw new Error(
-        disambiguationResponse.error ||
-          `AI agent could not disambiguate a relevant page for "${query}".`
+      const disambiguationResponse = await safeInvoke(
+        disambiguationChain,
+        { inputText: userContent },
+        'disambiguationChain',
+        disambiguationSchema
+      )
+
+      if (
+        disambiguationResponse &&
+        !disambiguationResponse.error &&
+        disambiguationResponse.best_title
+      ) {
+        best_title = disambiguationResponse.best_title
+      }
+    } catch (e) {
+      logger.warn({ err: e }, `Disambiguation chain failed for query "${query}".`)
+    }
+
+    if (!best_title) {
+      best_title = searchResults[0].title
+      logger.info(
+        `[Wikipedia] AI disambiguation failed or returned null. Falling back to top search result: "${best_title}"`
       )
     }
-    const { best_title } = disambiguationResponse
 
     const summaryParams = new URLSearchParams({
       action: 'query',

@@ -1,11 +1,13 @@
-// packages/ai-services/src/lib/rag/generation.js (Corrected for OpenAI)
-import { getSynthesizerPrompt } from './prompts'
-import { checkGroundedness } from './validation'
-// CORRECTED IMPORT: Use the generic callLanguageModel instead of the Groq-specific one.
-import { callLanguageModel } from '../lib/langchain.js'
+// File: packages/ai-services/src/rag/generation.js (Unabridged, Final Fix)
 
-// CORRECTED MODEL: Switched from a Groq-specific model to a powerful OpenAI model.
-const SYNTHESIZER_MODEL = 'gpt-4o'
+'use server'
+
+import { getSynthesizerPrompt } from './prompts.js'
+import { checkGroundedness } from './validation.js'
+import { callLanguageModel } from '../lib/langchain.js'
+import { settings } from '@headlines/config'
+
+const SYNTHESIZER_MODEL = settings.LLM_MODEL_SYNTHESIS
 
 function assembleContext(ragResults, wikiResults, searchResults) {
   const dbContext =
@@ -65,7 +67,7 @@ ${context.wikiResults.map((w) => `  - **Query:** "${w.query}"\n    - **Result:**
 ${context.searchResults.map((s) => `  - **Query:** "${plan.user_query}"\n    - **Result:** ${s.title}: ${s.snippet.substring(0, 100)}...`).join('\n')}
 
 **FINAL CHECK:**
-- **Groundedness Passed:** CONFIRMED
+- **Groundedness Passed:** ${groundednessResult.is_grounded ? 'CONFIRMED' : 'FAILED'}
 `
   return thoughts.trim().replace(/\n\n+/g, '\n\n')
 }
@@ -77,8 +79,7 @@ export async function generateFinalResponse({ plan, context }) {
     context.searchResults
   )
 
-  console.log('[RAG Generation] Calling Synthesizer Agent with OpenAI...')
-  // CORRECTED CALL: Replaced callGroqWithRetry with the standard callLanguageModel.
+  console.log(`[RAG Generation] Calling Synthesizer Agent with ${SYNTHESIZER_MODEL}...`)
   const synthesizerResponse = await callLanguageModel({
     modelName: SYNTHESIZER_MODEL,
     systemPrompt: getSynthesizerPrompt(),
@@ -87,8 +88,8 @@ export async function generateFinalResponse({ plan, context }) {
       null,
       2
     )}\n\nUSER'S QUESTION: "${plan.user_query}"`,
-    isJson: false, // CRITICAL: The synthesizer prompt returns Markdown, not JSON.
-    temperature: 0.1,
+    isJson: false,
+    // temperature: 0.1, // <-- THIS LINE IS NOW REMOVED
   })
 
   const rawResponse = synthesizerResponse

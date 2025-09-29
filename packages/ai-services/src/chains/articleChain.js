@@ -6,7 +6,7 @@ import {
 import { AIMessage, HumanMessage } from '@langchain/core/messages'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { settings } from '@headlines/config/server'
+import { settings } from '@headlines/config'
 import {
   getInstructionArticle,
   shotsInputArticle,

@@ -9,6 +9,8 @@ import { getConfig } from '../config.js'
 import { fetchPageWithPlaywright } from '../browser.js'
 import { contentExtractorRegistry } from './extractors/index.js'
 
+import { settings } from '@headlines/config/node';
+
 async function saveDebugHtml(filename, html) {
   const config = getConfig()
   const debugDir = config.paths?.debugHtmlDir
@@ -26,26 +28,42 @@ async function saveDebugHtml(filename, html) {
 
 function extractWithReadability(url, html) {
   try {
-    const virtualConsole = new VirtualConsole();
-    virtualConsole.on('cssParseError', () => {}); 
+    const virtualConsole = new VirtualConsole()
+    // Suppress CSS parsing errors which are common and noisy
+    virtualConsole.on('cssParseError', () => {})
 
-    const doc = new JSDOM(html, { url, virtualConsole });
-    const reader = new Readability(doc.window.document);
-    const article = reader.parse();
-    return article?.textContent || null;
+    // --- START OF THE FIX ---
+    // Tell JSDOM not to fetch external resources like images, scripts, or stylesheets.
+    // This prevents it from trying to use the 'canvas' package which is not available.
+    const doc = new JSDOM(html, {
+      url,
+      virtualConsole,
+      resources: 'usable', // This is the key change
+    })
+    // --- END OF THE FIX ---
+
+    const reader = new Readability(doc.window.document)
+    const article = reader.parse()
+    return article?.textContent || null
   } catch (e) {
-    getConfig().logger.warn({ err: e, url }, 'Readability.js failed to parse article.');
-    return null;
+    getConfig().logger.warn({ err: e, url }, 'Readability.js failed to parse article.')
+    return null
   }
 }
 
 export async function scrapeArticleContent(article, source) {
-  if (source.extractionMethod === 'custom' && contentExtractorRegistry[source.extractorKey]) {
-    const customContentExtractor = contentExtractorRegistry[source.extractorKey];
-    return await customContentExtractor(article, source);
+  if (
+    source.extractionMethod === 'custom' &&
+    contentExtractorRegistry[source.extractorKey]
+  ) {
+    const customContentExtractor = contentExtractorRegistry[source.extractorKey]
+    return await customContentExtractor(article, source)
   }
 
-  if (article.rssContent && article.rssContent.length >= getConfig().settings.MIN_ARTICLE_CHARS) {
+  if (
+    article.rssContent &&
+    article.rssContent.length >= settings.MIN_ARTICLE_CHARS
+  ) {
     article.articleContent = { contents: [article.rssContent] }
     return article
   }
@@ -58,7 +76,7 @@ export async function scrapeArticleContent(article, source) {
   let contentText = extractWithReadability(article.link, html)
   let extractionMethod = 'Readability.js'
 
-  if (!contentText || contentText.length < getConfig().settings.MIN_ARTICLE_CHARS) {
+  if (!contentText || contentText.length < settings.MIN_ARTICLE_CHARS) {
     const $ = cheerio.load(html)
     const selectors = Array.isArray(source.articleSelector)
       ? source.articleSelector
@@ -76,7 +94,7 @@ export async function scrapeArticleContent(article, source) {
     }
   }
 
-  if (contentText && contentText.length >= getConfig().settings.MIN_ARTICLE_CHARS) {
+  if (contentText && contentText.length >= settings.MIN_ARTICLE_CHARS) {
     article.articleContent = { contents: [contentText] }
     getConfig().logger.trace(
       {
@@ -94,7 +112,8 @@ export async function scrapeArticleContent(article, source) {
       : `Content too short (` + (contentText ? contentText.length : 0) + ` chars).`
     article.enrichment_error = reason
     article.contentPreview = contentText ? contentText.substring(0, 100) : ''
-    const filename = source.name.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '_content_fail.html'
+    const filename =
+      source.name.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '_content_fail.html'
     await saveDebugHtml(filename, html)
   }
   return article

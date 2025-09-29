@@ -1,23 +1,11 @@
-// src/lib/rag/validation.js (version 3.0)
-import OpenAI from 'openai'
-import { env } from '@/lib/env.mjs'
-import { GROUNDEDNESS_CHECK_PROMPT } from './prompts'
+// packages/ai-services/src/rag/validation.js (Corrected)
+import { settings } from '@headlines/config'
+import { callLanguageModel } from '../lib/langchain.js'
+import { GROUNDEDNESS_CHECK_PROMPT } from './prompts.js'
 
 // --- Constants ---
 const HIGH_CONFIDENCE_THRESHOLD = 0.75
 const SIMILARITY_THRESHOLD = 0.38
-const GROUNDEDNESS_MODEL = 'openai/gpt-oss-120b'
-
-let groq
-function getGroqClient() {
-  if (!groq) {
-    groq = new OpenAI({
-      apiKey: env.GROQ_API_KEY,
-      baseURL: 'https://api.groq.com/openai/v1',
-    })
-  }
-  return groq
-}
 
 // --- Internal Helper Functions ---
 function simpleEntityExtractor(text, sourceIdentifier) {
@@ -119,20 +107,22 @@ export async function checkGroundedness(responseText, contextString) {
   }
 
   try {
-    const client = getGroqClient()
     const prompt = GROUNDEDNESS_CHECK_PROMPT.replace('{CONTEXT}', contextString).replace(
       '{RESPONSE}',
       responseText
     )
 
-    const response = await client.chat.completions.create({
-      model: GROUNDEDNESS_MODEL,
-      messages: [{ role: 'system', content: prompt }],
-      response_format: { type: 'json_object' },
-      temperature: 0.0,
+    // CORRECTED: Use the project's standard AI call function and configured model
+    const result = await callLanguageModel({
+      modelName: settings.LLM_MODEL_UTILITY,
+      systemPrompt: prompt,
+      userContent: 'Perform the groundedness check based on the system prompt.',
+      isJson: true,
     })
 
-    const result = JSON.parse(response.choices[0].message.content)
+    if (result.error) {
+      throw new Error(result.error)
+    }
 
     if (result.is_grounded) {
       console.log('[RAG Validation] PASSED: Response is grounded in sources.')

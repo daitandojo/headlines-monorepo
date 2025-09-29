@@ -1,11 +1,15 @@
+// packages/utils-server/src/logger.js
 import pino from 'pino'
 import fs from 'fs'
 import path from 'path'
 import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
-const LOG_LEVEL = process.env.LOG_LEVEL || 'info'
+
+const LOG_LEVEL = process.env.LOG_LEVEL || 'trace'
 const IS_PRODUCTION = process.env.NODE_ENV === 'production'
+
 let loggerInstance
+
 const createSimpleLogger = () => {
   const simpleLogger = {}
   const levels = ['trace', 'debug', 'info', 'warn', 'error', 'fatal']
@@ -17,16 +21,18 @@ const createSimpleLogger = () => {
   })
   return simpleLogger
 }
-export function initializeLogger(logDirectory = null) {
+
+export function initializeLogger(logDirectory = null, extraStreams = []) {
   if (loggerInstance) {
     return loggerInstance
   }
+
   if (process.env.NEXT_RUNTIME) {
     console.log('Detected Next.js runtime. Initializing safe console logger.')
     loggerInstance = createSimpleLogger()
     return loggerInstance
   }
-  console.log('Detected standard Node.js runtime. Initializing pino logger.')
+
   const pinoPrettyPath = require.resolve('pino-pretty')
   const consoleTransport = pino.transport({
     target: pinoPrettyPath,
@@ -39,18 +45,13 @@ export function initializeLogger(logDirectory = null) {
       messageFormat: '{msg}',
     },
   })
-  const streams = [{ level: LOG_LEVEL, stream: consoleTransport }]
-  if (logDirectory && !IS_PRODUCTION) {
-    if (!fs.existsSync(logDirectory)) fs.mkdirSync(logDirectory, { recursive: true })
-    const errorLogFile = path.join(logDirectory, 'error.log')
-    streams.push({
-      level: 'warn',
-      stream: fs.createWriteStream(errorLogFile, { flags: 'w' }),
-    })
-  }
+
+  const streams = [{ level: LOG_LEVEL, stream: consoleTransport }, ...extraStreams]
+
   loggerInstance = pino({ level: 'trace' }, pino.multistream(streams))
   return loggerInstance
 }
+
 export const logger = new Proxy(
   {},
   {
@@ -58,14 +59,48 @@ export const logger = new Proxy(
       if (loggerInstance) {
         return loggerInstance[prop]
       }
-      const defaultLogPath = path.resolve(process.cwd(), 'logs')
-      initializeLogger(defaultLogPath)
-      return loggerInstance[prop]
+      return initializeLogger()[prop]
     },
   }
 )
+
 export function reinitializeLogger(logDirectory, extraStreams = []) {
-  loggerInstance = null
-  loggerInstance = initializeLogger(logDirectory, extraStreams)
+  const pinoPrettyPath = require.resolve('pino-pretty')
+
+  const consoleTransport = {
+    level: LOG_LEVEL,
+    target: pinoPrettyPath,
+    options: {
+      colorize: true,
+      translateTime: 'HH:mm:ss',
+      ignore: 'pid,hostname,context',
+      singleLine: true,
+      messageFormat: '{msg}',
+    },
+  }
+
+  const logFile = path.join(logDirectory, 'run.log')
+  const fileTransport = {
+    level: 'trace',
+    target: pinoPrettyPath,
+    options: {
+      colorize: false,
+      // DEFINITIVE FIX: Use 'mm' for minutes and 'MM' for month.
+      translateTime: 'YYYY/MM/DD HH:mm:ss',
+      ignore: 'pid,hostname',
+      destination: logFile,
+      mkdir: true,
+      append: false,
+    },
+  }
+
+  const allStreams = [
+    pino.transport(consoleTransport),
+    pino.transport(fileTransport),
+    ...extraStreams,
+  ]
+
+  loggerInstance = pino({ level: 'trace' }, pino.multistream(allStreams))
+
   return loggerInstance
 }

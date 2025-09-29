@@ -1,7 +1,9 @@
-// apps/pipeline/src/modules/email/index.js (version 3.0.0)
+// AFTER
+// apps/pipeline/src/modules/email/index.js (Corrected)
 import { logger } from '@headlines/utils-server'
-import { performActualSupervisorEmailSend } from './mailer.js'
+import { sendGenericEmail } from '@headlines/utils-server' // <-- CORRECT IMPORT
 import { Subscriber } from '@headlines/models'
+import { createSupervisorEmailBody } from './components/supervisor/supervisorEmailBodyBuilder.js'
 
 /**
  * Coordinates sending the supervisor report email.
@@ -30,7 +32,17 @@ export async function sendSupervisorReportEmail(runStats) {
       return
     }
 
-    await performActualSupervisorEmailSend(runStats, superUserEmails)
+    // Generate the complex HTML body
+    const emailBody = await createSupervisorEmailBody(runStats)
+
+    // Send the email using the shared mailer
+    await sendGenericEmail({
+      to: superUserEmails.join(','),
+      subject: '⚙️ Hourly Headlines Processing Run Summary',
+      html: emailBody,
+      emailType: 'SupervisorReport',
+    })
+
     logger.info('✅ Supervisor report email successfully sent/queued to all superusers.')
   } catch (error) {
     logger.error({ err: error }, '💥 CRITICAL: Failed to send supervisor report email.')

@@ -63,13 +63,34 @@ const SubscriberSchema = new Schema(
 
 SubscriberSchema.pre('save', function (next) {
   const user = this
-  if (!user.isModified('password')) return next()
+  console.log('[Subscriber Model] pre-save hook triggered.')
+
+  if (!user.isModified('password')) {
+    console.log('[Subscriber Model] Password not modified. Skipping hash.')
+    return next()
+  }
+
+  console.log('[Subscriber Model] Password has been modified. Proceeding to hash.')
+  console.log(
+    '[Subscriber Model]   - Plain text password received:',
+    `"${user.password}"`
+  )
 
   bcrypt.genSalt(SALT_WORK_FACTOR, function (err, salt) {
-    if (err) return next(err)
+    if (err) {
+      console.error('[Subscriber Model] Error generating salt:', err)
+      return next(err)
+    }
     bcrypt.hash(user.password, salt, function (err, hash) {
-      if (err) return next(err)
+      if (err) {
+        console.error('[Subscriber Model] Error hashing password:', err)
+        return next(err)
+      }
       user.password = hash
+      console.log(
+        '[Subscriber Model]   - Hashing successful. New hash:',
+        `"${user.password}"`
+      )
       next()
     })
   })

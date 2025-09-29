@@ -2,7 +2,7 @@
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import mongoose from 'mongoose'
-import { WatchlistEntity } from '../../../../packages/models/src/index.js'
+import { WatchlistEntity } from '@headlines/models'
 import dbConnect from '../../../../packages/data-access/src/dbConnect.js'
 import colors from 'ansi-colors'
 

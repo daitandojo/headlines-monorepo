@@ -1,8 +1,9 @@
-// apps/pipeline/src/pipeline/submodules/commit/3_triggerNotifications.js (version 2.2.3)
+// AFTER
+// apps/pipeline/src/pipeline/submodules/commit/3_triggerNotifications.js (Corrected)
 import { logger } from '@headlines/utils-server'
-import { triggerRealtimeEvent } from '../../../modules/realtime/index.js'
+import { triggerRealtimeEvent } from '@headlines/utils-server' // <-- CORRECT IMPORT from the shared utility package
 import { SynthesizedEvent, Article } from '@headlines/models'
-import { settings } from '@headlines/config/server.js'
+import { settings } from '@headlines/config'
 import { sendNotifications } from '../../../modules/notifications/index.js'
 
 export async function triggerNotifications(
@@ -25,7 +26,11 @@ export async function triggerNotifications(
           link: { $in: relevantArticleLinks },
         })
         for (const articleDoc of relevantArticleDocs) {
-          await triggerRealtimeEvent('articles-channel', 'new-article', articleDoc.toRealtimePayload())
+          await triggerRealtimeEvent(
+            'articles-channel',
+            'new-article',
+            articleDoc.toRealtimePayload()
+          )
         }
       }
     }
@@ -35,7 +40,11 @@ export async function triggerNotifications(
         _id: { $in: eventIds },
       })
       for (const eventDoc of eventDocsForStreaming) {
-        await triggerRealtimeEvent('events-channel', 'new-event', eventDoc.toRealtimePayload())
+        await triggerRealtimeEvent(
+          'events-channel',
+          'new-event',
+          eventDoc.toRealtimePayload()
+        )
       }
     }
   }

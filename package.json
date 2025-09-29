@@ -1,22 +1,75 @@
 {
   "name": "headlines-monorepo",
-  "version": "1.0.0",
+  "version": "1.2.2",
   "private": true,
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
-  "scripts": {
-    "dev": "concurrently \"pnpm admin\" \"pnpm client\"",
-    "admin": "pnpm --filter @headlines/admin dev",
-    "client": "pnpm --filter @headlines/client dev",
-    "build": "pnpm -r build",
-    "build:admin": "pnpm --filter @headlines/admin build",
-    "build:client": "pnpm --filter @headlines/client build",
-    "pipeline": "pnpm --filter @headlines/pipeline pipeline --"
+"scripts": {
+    "//--- DASHBOARD APP (http://localhost:3000) ---//": "---",
+    "dev:dashboard": "dotenv -e ./.env -- pnpm --filter @headlines/dashboard dev",
+    "build:dashboard": "pnpm --filter @headlines/dashboard build",
+    "lint:dashboard": "pnpm --filter @headlines/dashboard lint",
+    "//--- COPYBOARD APP (http://localhost:3000) ---//": "---",
+    "dev:copyboard": "dotenv -e ./.env -- pnpm --filter @headlines/copyboard dev",
+    "build:copyboard": "pnpm --filter @headlines/copyboard build",
+    "lint:copyboard": "pnpm --filter @headlines/copyboard lint",
+    "//--- PIPELINE EXECUTION ---//": "---",
+    "pipeline": "pnpm --filter @headlines/pipeline pipeline --",
+    "pipeline:test": "pnpm --filter @headlines/pipeline test",
+    "//--- DATABASE SEEDING ---//": "---",
+    "seed": "pnpm --filter @headlines/pipeline db:seed:all",
+    "seed:admin": "pnpm --filter @headlines/pipeline db:seed:admin",
+    "seed:countries": "pnpm --filter @headlines/pipeline db:seed:countries",
+    "seed:settings": "pnpm --filter @headlines/pipeline db:seed:settings",
+    "//--- DATA MANAGEMENT ---//": "---",
+    "maintenance:delete-today": "pnpm --filter @headlines/pipeline maintenance:delete-today --",
+    "results:list-events": "pnpm --filter @headlines/pipeline results:list-events",
+    "results:send-last-events": "pnpm --filter @headlines/pipeline results:send-last-events --",
+    "results:resend-today": "pnpm --filter @headlines/pipeline results:resend-today --",
+    "subscribers:list": "pnpm --filter @headlines/pipeline subscribers:list",
+    "subscribers:update": "pnpm --filter @headlines/pipeline subscribers:update --",
+    "watchlist:list": "pnpm --filter @headlines/pipeline watchlist:list --",
+    "watchlist:add-term": "pnpm --filter @headlines/pipeline watchlist:add-term --",
+    "//--- SOURCE MANAGEMENT ---//": "---",
+    "sources:list": "pnpm --filter @headlines/pipeline sources:list --",
+    "sources:scrape-one": "pnpm --filter @headlines/pipeline sources:scrape-one --",
+    "sources:scrape-many": "pnpm --filter @headlines/pipeline sources:scrape-many --",
+    "sources:discover": "pnpm --filter @headlines/pipeline sources:discover --",
+    "sources:optimize": "pnpm --filter @headlines/pipeline sources:optimize --",
+    "sources:maintain": "pnpm --filter @headlines/pipeline sources:maintain --",
+    "sources:update": "pnpm --filter @headlines/pipeline sources:update --",
+    "sources:browse": "pnpm --filter @headlines/pipeline sources:browse --",
+    "//--- MONOREPO UTILITIES ---//": "---",
+    "cli": "pnpm --filter @headlines/pipeline cli:help",
+    "nuke": "rm -rf apps/*/.next && find . -name \"node_modules\" -type d -prune -exec rm -rf '{}' + && rm -f pnpm-lock.yaml && pnpm store prune && pnpm install",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "next": "14.2.4",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2",
-    "dotenv-cli": "^7.4.2"
+    "dotenv-cli": "^7.4.2",
+    "eslint": "^8.0.0",
+    "eslint-config-next": "14.2.3",
+    "prettier": "^3.0.0",
+    "tailwindcss": "^3.4.1",
+    "postcss": "^8",
+    "autoprefixer": "^10.4.19"
+  },
+  "packageManager": "pnpm@9.1.1",
+  "pnpm": {
+    "allowed-build-scripts": [
+      "sharp",
+      "bcrypt"
+    ],
+    "overrides": {
+      "sharp": "0.33.4",
+      "react": "18.3.1",
+      "react-dom": "18.3.1"
+    }
   }
 }

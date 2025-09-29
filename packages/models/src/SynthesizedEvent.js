@@ -8,6 +8,7 @@ const SourceArticleSchema = new Schema(
     link: { type: String, required: true, trim: true },
     newspaper: { type: String, required: true, trim: true },
     imageUrl: { type: String, trim: true },
+    country: { type: String, trim: true }
   },
   { _id: false }
 )

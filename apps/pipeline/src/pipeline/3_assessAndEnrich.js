@@ -1,15 +1,13 @@
-// apps/pipeline/src/pipeline/3_assessAndEnrich.js (version 9.2.0 - Retry & Fallback Logic)
-import { truncateString, sleep } from '@headlines/utils-server'
-import { logger } from '@headlines/utils-server'
-import { settings } from '@headlines/config/server.js'
-import { Article } from '@headlines/models'
-import { batchHeadlineChain } from '@headlines/ai-services'
+import { truncateString, sleep } from '@headlines/utils-shared'
+import { logger } from '@headlines/utils-server/node'
+import { settings } from '@headlines/config/node'
+import { Article, WatchlistEntity } from '@headlines/models'
+import { batchHeadlineChain } from '@headlines/ai-services/node'
 import { processSingleArticle } from './submodules/processSingleArticle.js'
 import pLimit from 'p-limit'
-import { env } from '@headlines/config/server.js'
-import { getConfig } from '@headlines/scraper-logic/config.js'
+import { env } from '@headlines/config/node'
 
-const BATCH_SIZE = 8 // Reduced batch size
+const BATCH_SIZE = 8
 const MAX_RETRIES = 1
 
 async function withRetry(fn, retries = MAX_RETRIES) {
@@ -28,17 +26,14 @@ async function withRetry(fn, retries = MAX_RETRIES) {
   }
 }
 
-function findWatchlistHits(text, country) {
+function findWatchlistHits(text, country, watchlistEntities) {
   const hits = new Map()
   const lowerText = text.toLowerCase()
-  const config = getConfig()
-  if (!config.configStore?.watchlistEntities) return []
+
   const createSearchRegex = (term) =>
     new RegExp(`\\b${term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`, 'i')
 
-  const relevantEntities = Array.from(
-    config.configStore.watchlistEntities.values()
-  ).filter(
+  const relevantEntities = watchlistEntities.filter(
     (entity) =>
       !entity.country ||
       entity.country === country ||
@@ -48,6 +43,8 @@ function findWatchlistHits(text, country) {
 
   for (const entity of relevantEntities) {
     const terms = [entity.name.toLowerCase(), ...(entity.searchTerms || [])]
+      .map((t) => t.trim())
+      .filter(Boolean)
     for (const term of terms) {
       if (term.length > 3 && createSearchRegex(term).test(lowerText)) {
         if (!hits.has(entity.name)) hits.set(entity.name, { entity, matchedTerm: term })
@@ -65,6 +62,8 @@ export async function runAssessAndEnrich(pipelinePayload) {
     pipelinePayload.enrichedArticles = []
     return { success: true, payload: pipelinePayload }
   }
+
+  const watchlistEntities = await WatchlistEntity.find({ status: 'active' }).lean()
 
   const syntheticArticles = articlesForPipeline.filter(
     (a) => a.source === 'Richlist Ingestion'
@@ -93,7 +92,11 @@ export async function runAssessAndEnrich(pipelinePayload) {
       try {
         const batchProcessor = async () => {
           const batchWithContext = batch.map((article) => {
-            const hits = findWatchlistHits(article.headline, article.country)
+            const hits = findWatchlistHits(
+              article.headline,
+              article.country,
+              watchlistEntities
+            )
             let headlineWithContext = `[COUNTRY CONTEXT: ${article.country}] ${article.headline}`
             if (hits.length > 0) {
               const hitStrings = hits
@@ -104,10 +107,9 @@ export async function runAssessAndEnrich(pipelinePayload) {
                 .join(' ')
               headlineWithContext = `${hitStrings} ${headlineWithContext}`
             }
-            return { ...article, headlineWithContext }
+            return { ...article, headlineWithContext, hits } // Pass hits through
           })
 
-          // DEFINITIVE FIX: Changed from .invoke to direct await
           const response = await batchHeadlineChain({
             headlines_json_string: JSON.stringify(
               batchWithContext.map((a) => a.headlineWithContext)
@@ -124,7 +126,7 @@ export async function runAssessAndEnrich(pipelinePayload) {
 
           const batchResults = batchWithContext.map((originalArticle, i) => {
             const assessment = response.assessments[i]
-            if (originalArticle.headlineWithContext.includes('[WATCHLIST HIT')) {
+            if (originalArticle.hits.length > 0) {
               let score = assessment.relevance_headline
               score = Math.min(100, score + settings.WATCHLIST_SCORE_BOOST)
               assessment.assessment_headline = `Watchlist boost (+${settings.WATCHLIST_SCORE_BOOST}). ${assessment.assessment_headline}`
@@ -142,7 +144,14 @@ export async function runAssessAndEnrich(pipelinePayload) {
           { err: batchError },
           `Batch ${index + 1} failed after all retries. FALLING BACK to single-article assessment.`
         )
-        const fallbackPromises = batch.map((article) => processSingleArticle(article))
+        const fallbackPromises = batch.map((article) => {
+          const hits = findWatchlistHits(
+            article.headline,
+            article.country,
+            watchlistEntities
+          )
+          return processSingleArticle(article, hits)
+        })
         const fallbackResults = await Promise.all(fallbackPromises)
 
         fallbackResults.forEach((result, i) => {
@@ -163,16 +172,15 @@ export async function runAssessAndEnrich(pipelinePayload) {
 
   runStats.headlinesAssessed = assessedCandidates.length
 
-  // DEFINITIVE FIX: Add detailed logging for every assessed headline.
   logger.info('--- Headline Assessment Complete ---')
   assessedCandidates.forEach((article) => {
     const status =
       article.relevance_headline >= settings.HEADLINES_RELEVANCE_THRESHOLD
         ? 'PASSED'
         : 'DROPPED'
-    const color = status === 'PASSED' ? '\\x1b[32m' : '\\x1b[90m'
+    const color = status === 'PASSED' ? '\x1b[32m' : '\x1b[90m'
     logger.info(
-      `${color}[${status.padEnd(7)}] [Score: ${String(article.relevance_headline).padStart(3)}] "${truncateString(article.headline, 60)}" (${article.assessment_headline})\\x1b[0m`
+      `${color}[${status.padEnd(7)}] [Score: ${String(article.relevance_headline).padStart(3)}] "${truncateString(article.headline, 60)}" (${article.assessment_headline})\x1b[0m`
     )
   })
 
@@ -193,7 +201,13 @@ export async function runAssessAndEnrich(pipelinePayload) {
 
   const limit = pLimit(env.CONCURRENCY_LIMIT)
   const processingPromises = enrichmentQueue.map((article) =>
-    limit(() => processSingleArticle(article))
+    limit(() => {
+      // Pass the hits we already calculated in the batch stage (or calculate if synthetic)
+      const hits =
+        article.hits ||
+        findWatchlistHits(article.headline, article.country, watchlistEntities)
+      return processSingleArticle(article, hits)
+    })
   )
   const results = await Promise.all(processingPromises)
 
@@ -206,7 +220,7 @@ export async function runAssessAndEnrich(pipelinePayload) {
     const originalArticle = enrichmentQueue[index]
     const finalArticleState = {
       ...originalArticle,
-      ...result.article,
+      ...(result.article || {}),
       pipeline_lifecycle: [
         ...(originalArticle.pipeline_lifecycle || []),
         result.lifecycleEvent,

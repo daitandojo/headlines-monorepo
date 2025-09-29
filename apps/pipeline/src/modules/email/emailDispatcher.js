@@ -1,5 +1,5 @@
 // apps/pipeline/src/modules/notifications/emailDispatcher.js (version 4.0.1)
-import { groupItemsByCountry, getCountryFlag } from '@headlines/utils-server'
+import { groupItemsByCountry, getCountryFlag } from '@headlines/utils-shared'
 import { logger } from '@headlines/utils-server'
 import { createPersonalizedEmailBody } from '../email/components/emailBodyBuilder.js'
 import { sendWealthEventsEmail } from '@headlines/utils-server'
@@ -51,7 +51,7 @@ export async function sendBulkEmails(emailQueue) {
         summary: e.synthesized_summary,
       }))
 
-      // DEFINITIVE FIX: Use direct await calls instead of  
+      // DEFINITIVE FIX: Use direct await calls instead of
       const [subjectResult, introResult] = await Promise.all([
         emailSubjectChain({
           events_json_string: JSON.stringify(eventPayloadForAI),
@@ -99,7 +99,7 @@ export async function sendBulkEmails(emailQueue) {
 
       if (targetLanguage !== 'English') {
         logger.info(`Translating email for ${user.email} into ${targetLanguage}...`)
-        // DEFINITIVE FIX: Use direct await calls instead of  
+        // DEFINITIVE FIX: Use direct await calls instead of
         const translationResult = await translateChain({
           language: targetLanguage,
           html_content: htmlBody,

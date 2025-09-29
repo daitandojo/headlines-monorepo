@@ -1,20 +1,41 @@
 #!/bin/bash
-# This script executes the pipeline directly from the monorepo root
-# using the npm workspace command for reliability.
+# This is the definitive, robust runner script for all pipeline tasks.
+# It is designed to be called from the monorepo root (e.g., via `pnpm --filter`).
+# It correctly sets up the environment and executes the target script with all arguments.
 
 # Get the directory of this script to reliably find the monorepo root.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-# Navigate up two directories from apps/pipeline to the monorepo root
 MONOREPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
-# Change to the monorepo root directory. This is crucial for npm workspaces.
+# The first argument ($1) is the target script path, relative to the pipeline app's root.
+# Example: "src/app.js"
+TARGET_SCRIPT_RELATIVE=$1
+
+# The full, unambiguous path to the target script from the monorepo root.
+# Example: "apps/pipeline/src/app.js"
+TARGET_SCRIPT_FULL="apps/pipeline/${TARGET_SCRIPT_RELATIVE}"
+
+# Remove the first argument (the script path) from the list of arguments.
+shift
+
+# --- START OF THE FIX ---
+# This loop consumes all leading "--" arguments passed by pnpm or the package.json script.
+# It ensures that only the user-provided flags are passed to the Node.js script.
+while [[ "$1" == "--" ]]; do
+  shift
+done
+# --- END OF THE FIX ---
+
+# Immediately change to the monorepo root. This is critical for dotenv and node module resolution.
 cd "$MONOREPO_ROOT"
 
-echo "Executing pipeline from monorepo root: $(pwd)"
+echo "Executing script: ${TARGET_SCRIPT_FULL}"
+echo "With arguments: $@"
 echo "---"
 
-# DEFINITIVE FIX: Execute the pipeline using the npm workspace command.
-# This ensures that the correct Node.js version (if managed by nvm/volta)
-# and all dependencies are correctly resolved by npm.
-# "$@" passes all arguments from this script to the npm command.
-npm run pipeline -w @headlines/pipeline -- "$@"
+# Set the environment variable that all scripts check for.
+export IS_PIPELINE_RUN=true
+
+# Use dotenv-cli to load the .env file from the root, then execute the target script
+# with its full path, passing along all remaining arguments.
+pnpm exec dotenv -e ./.env -- node "$TARGET_SCRIPT_FULL" "$@"

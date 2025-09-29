@@ -1,12 +1,14 @@
-// apps/pipeline/src/pipeline/2_scrapeAndFilter.js (version 9.0.0)
+// apps/pipeline/src/pipeline/2_scrapeAndFilter.js
 import { logger, auditLogger } from '@headlines/utils-server'
 import { filterFreshArticles } from '../modules/dataStore/index.js'
-import { triggerSelectorRepair } from './submodules/triggerSelectorRepair.js'
-import { Source, Article } from '../../../../packages/models/src/index.js'
-import { scrapeAllHeadlines } from '../../../../packages/scraper-logic/src/scraper/orchestrator.js'
-import { scrapeArticleContent } from '../../../../packages/scraper-logic/src/scraper/index.js'
+import { Source, Article } from '@headlines/models'
+import {
+  scrapeSiteForHeadlines,
+  scrapeArticleContent,
+} from '@headlines/scraper-logic/scraper/index.js'
 import mongoose from 'mongoose'
-import { settings } from '../../../../packages/config/src/server.js'
+import { env, settings } from '@headlines/config'
+import pLimit from 'p-limit'
 
 async function performContentPreflight(source, articles) {
   if (!articles || articles.length === 0)
@@ -33,6 +35,56 @@ async function performContentPreflight(source, articles) {
   return { success: true }
 }
 
+async function performStandardScraping(sourcesToScrape) {
+  if (sourcesToScrape.length === 0) {
+    return { allArticles: [], scraperHealth: [] }
+  }
+
+  const limit = pLimit(env.CONCURRENCY_LIMIT || 3)
+  logger.info(
+    `Pipeline will now scrape ${sourcesToScrape.length} active standard sources.`
+  )
+
+  const allArticles = []
+  const scraperHealth = []
+
+  const promises = sourcesToScrape.map((source) =>
+    limit(async () => {
+      logger.info(`[Scraping] -> Starting scrape for "${source.name}"...`)
+      const result = await scrapeSiteForHeadlines(source)
+      const foundCount = result.resultCount !== undefined ? result.resultCount : 0
+      logger.info(
+        `[Scraping] <- Finished scrape for "${source.name}". Success: ${result.success}, Found: ${foundCount}`
+      )
+
+      const healthReport = {
+        source: source.name,
+        success: result.success && result.resultCount > 0,
+        count: result.resultCount || 0,
+        error: result.error,
+      }
+      scraperHealth.push(healthReport)
+
+      if (healthReport.success) {
+        const articlesWithMetadata = result.articles.map((a) => ({
+          ...a,
+          source: source.name,
+          newspaper: source.name,
+          country: source.country,
+        }))
+        allArticles.push(...articlesWithMetadata)
+      } else {
+        logger.warn(
+          `[Scraping] ❌ FAILED for "${source.name}": ${result.error || 'Extracted 0 headlines.'}.`
+        )
+      }
+    })
+  )
+
+  await Promise.all(promises)
+  return { allArticles, scraperHealth }
+}
+
 export async function runScrapeAndFilter(pipelinePayload) {
   logger.info('--- STAGE 2: SCRAPE & FILTER ---')
   const { runStats } = pipelinePayload
@@ -54,10 +106,13 @@ export async function runScrapeAndFilter(pipelinePayload) {
     queryCriteria.country = new RegExp(`^${pipelinePayload.countryFilter}$`, 'i')
     delete queryCriteria.$or
   }
+  // --- DEFINITIVE FIX: Change the source filter from an exact match to a "contains" match ---
   if (pipelinePayload.sourceFilter) {
-    queryCriteria.name = new RegExp(`^${pipelinePayload.sourceFilter}$`, 'i')
+    // This allows you to run "--source Berlingske" and it will match "Berlingske Business"
+    queryCriteria.name = new RegExp(pipelinePayload.sourceFilter, 'i')
     delete queryCriteria.$or
   }
+  // --- END FIX ---
 
   const sourcesToScrape = await Source.find(queryCriteria).lean()
   if (sourcesToScrape.length === 0) {
@@ -67,7 +122,7 @@ export async function runScrapeAndFilter(pipelinePayload) {
     return { success: true, payload: { ...pipelinePayload, articlesForPipeline: [] } }
   }
 
-  const { allArticles, scraperHealth } = await scrapeAllHeadlines(sourcesToScrape)
+  const { allArticles, scraperHealth } = await performStandardScraping(sourcesToScrape)
   runStats.scraperHealth = scraperHealth
   auditLogger.info(
     {
@@ -138,27 +193,46 @@ export async function runScrapeAndFilter(pipelinePayload) {
 
   runStats.headlinesScraped = allArticles.length
   runStats.validatedHeadlines = validatedArticles.length
+  runStats.freshHeadlinesFound = validatedArticles.length
 
-  const articlesWithIds = validatedArticles.map((article) => ({
-    ...article,
-    _id: article._id || new mongoose.Types.ObjectId(),
-    status: 'scraped',
-  }))
-  runStats.freshHeadlinesFound = articlesWithIds.length
+  if (validatedArticles.length > 0) {
+    const bulkOps = validatedArticles.map((article) => ({
+      updateOne: {
+        filter: { link: article.link },
+        update: {
+          $setOnInsert: {
+            _id: new mongoose.Types.ObjectId(),
+            headline: article.headline,
+            newspaper: article.newspaper,
+            source: article.source,
+            country: article.country,
+            status: 'scraped',
+          },
+        },
+        upsert: true,
+      },
+    }))
 
-  if (articlesWithIds.length > 0) {
-    await Article.insertMany(articlesWithIds, { ordered: false }).catch((err) => {
-      if (err.code !== 11000) logger.error({ err }, 'Error inserting scraped articles')
-    })
+    const result = await Article.bulkWrite(bulkOps, { ordered: false })
+    if (result.hasWriteErrors()) {
+      logger.warn(
+        { details: result.getWriteErrors() },
+        'Non-fatal errors occurred during bulk article save.'
+      )
+    }
+
     logger.info(
-      `Successfully saved ${articlesWithIds.length} fresh & validated articles to the database.`
+      `Successfully saved/upserted ${validatedArticles.length} fresh & validated articles to the database.`
     )
+
+    const savedArticleLinks = validatedArticles.map((a) => a.link)
+    pipelinePayload.articlesForPipeline = await Article.find({
+      link: { $in: savedArticleLinks },
+    }).lean()
   } else {
     logger.info('No new, validated articles to process. Ending run early.')
     pipelinePayload.articlesForPipeline = []
-    return { success: true, payload: pipelinePayload }
   }
 
-  pipelinePayload.articlesForPipeline = articlesWithIds
   return { success: true, payload: pipelinePayload }
 }

@@ -1,4 +1,4 @@
-// src/lib/rag/prompts.js (version 5.5)
+// File: packages/ai-services/src/rag/prompts.js (Unabridged and Corrected)
 
 export const PLANNER_PROMPT = `You are an expert AI Planner. Your job is to analyze the user's query and conversation history to create a step-by-step plan for an AI Synthesizer Agent to follow. You also create a list of optimized search queries for a Retrieval Agent.
 
@@ -63,6 +63,7 @@ Synthesize information from all sources in the "CONTEXT" into a single, cohesive
 2.  **DIRECT ATTRIBUTION:** You MUST still cite your sources inline for the UI. Wrap facts from the Internal DB with <rag>tags</rag>, from Wikipedia with <wiki>tags</wiki>, and from Search Results with <search>tags</search>. The user will not see these tags, but they are essential for the system.
 3.  **BE CONFIDENT AND DIRECT:** Present the synthesized facts as a definitive answer.
 4.  **INSUFFICIENT DATA:** If the context is insufficient to answer the question at all, respond with EXACTLY: "I do not have sufficient information in my sources to answer that question."
+5.  **DO NOT OFFER HELP (CRITICAL):** You MUST NOT end your response by offering to search for more information, provide more details, or ask follow-up questions. Your answer should be a complete, self-contained statement of facts.
 
 **DO NOT:**
 -   Use phrases like "According to the context provided...", "The sources state...", or "Based on the information...".
@@ -98,4 +99,4 @@ Analyze the "Proposed Response" sentence by sentence.
 
 If the response is fully supported, "unsupported_claims" should be an empty array. If the "Proposed Response" states that it cannot answer the question, consider it grounded.`
 
-export const FAILED_GROUNDEDNESS_PROMPT = `I could not form a reliable answer based on the available information. The initial response I generated may have contained information not supported by the sources. For accuracy, please ask a more specific question or try rephradist se your request.`
+export const FAILED_GROUNDEDNESS_PROMPT = `I could not form a reliable answer based on the available information. The initial response I generated may have contained information not supported by the sources. For accuracy, please ask a more specific question or try rephrasing your request.`

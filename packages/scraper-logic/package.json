@@ -6,6 +6,8 @@
   "license": "ISC",
   "exports": {
     ".": "./src/index.js",
+    "./node": "./src/index.js",
+    "./next": "./src/next.js",
     "./config.js": "./src/config.js",
     "./browser.js": "./src/browser.js",
     "./scraper/index.js": "./src/scraper/index.js",
@@ -18,6 +20,7 @@
     "@headlines/config": "workspace:*",
     "@headlines/models": "workspace:*",
     "@headlines/prompts": "workspace:*",
+    "@headlines/utils-shared": "workspace:*",
     "@mozilla/readability": "^0.6.0",
     "axios": "^1.7.2",
     "cheerio": "^1.0.0-rc.12",
@@ -26,10 +29,12 @@
     "lodash": "*",
     "newsapi": "^2.4.1",
     "p-limit": "^5.0.0",
-    "playwright": "^1.45.1",
     "pusher": "^5.2.0",
     "rss-parser": "^3.13.0",
     "web-push": "^3.6.7",
     "zod": "^3.23.8"
+  },
+  "peerDependencies": {
+    "playwright": "^1.45.1"
   }
 }

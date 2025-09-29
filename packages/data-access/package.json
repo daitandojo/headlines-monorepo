@@ -11,8 +11,12 @@
     "./seed/dev-user.js": "./src/seed/dev-user.js"
   },
   "dependencies": {
-    "@headlines/auth": "workspace:*",
+    "@headlines/ai-services": "workspace:*",
     "@headlines/config": "workspace:*",
-    "@headlines/models": "workspace:*"
+    "@headlines/models": "workspace:*",
+    "@pinecone-database/pinecone": "^6.1.2",
+    "bcryptjs": "^3.0.2",
+    "mongoose": "^8.18.1",
+    "openai": "^5.22.0"
   }
 }

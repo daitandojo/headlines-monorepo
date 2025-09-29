@@ -1,6 +1,7 @@
-// apps/pipeline/src/modules/notifications/index.js (version 2.2.0)
-import { groupItemsByCountry } from '@headlines/utils-server'
-import { logger } from '@headlines/utils-server'
+// File: apps/pipeline/src/modules/notifications/index.js
+
+import { groupItemsByCountry } from '@headlines/utils-shared'
+import { logger } from '@headlines/utils-server/node'
 import { Subscriber, PushSubscription } from '@headlines/models'
 import { sendBulkEmails } from './emailDispatcher.js'
 import { sendBulkPushNotifications } from './pushService.js'
@@ -35,18 +36,32 @@ export async function sendNotifications(newEvents, newOpportunities = []) {
   const pushQueue = []
 
   for (const user of activeSubscribers) {
-    const userCountries = new Set(
-      (user.countries || []).filter((c) => c.active).map((c) => c.name)
-    )
-    if (userCountries.size === 0) continue
+    let userEvents = []
+    let userOpportunities = []
 
-    const userEvents = filterItemsForUser(eventsByCountry, userCountries)
-    const userOpportunities = filterItemsForUser(opportunitiesByCountry, userCountries)
+    // --- START OF THE FIX ---
+    if (user.role === 'admin') {
+      // If the user is an admin, they get all events and opportunities.
+      userEvents = newEvents
+      userOpportunities = newOpportunities
+      logger.trace(`Admin user ${user.email} is subscribed to all items.`)
+    } else {
+      // For regular users, filter based on their country subscriptions.
+      const userCountries = new Set(
+        (user.countries || []).filter((c) => c.active).map((c) => c.name)
+      )
+
+      // The original bug was here: this would skip admins. Now it only skips users with no subscriptions.
+      if (userCountries.size === 0) continue
+
+      userEvents = filterItemsForUser(eventsByCountry, userCountries)
+      userOpportunities = filterItemsForUser(opportunitiesByCountry, userCountries)
+    }
+    // --- END OF THE FIX ---
 
     if (userEvents.length === 0 && userOpportunities.length === 0) continue
 
     if (user.emailNotificationsEnabled && userEvents.length > 0) {
-      // Only queue email if there are events
       emailQueue.push({ user, events: userEvents, opportunities: userOpportunities })
     }
 
@@ -72,7 +87,6 @@ export async function sendNotifications(newEvents, newOpportunities = []) {
     sendBulkPushNotifications(pushQueue),
   ])
 
-  // --- UPDATE COUNTERS ---
   if (emailSentCount > 0) {
     const bulkOps = emailQueue.map(({ user, events }) => ({
       updateOne: {

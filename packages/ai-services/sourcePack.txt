@@ -1,10 +1,26 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 60 files, 7 directories
+Total: 78 files, 8 directories
 
 ```
 headlines/
 ├── 📁 src/
+│   ├── 📁 agents/
+│   │   ├── 📄 articleAgent.js
+│   │   ├── 📄 articlePreAssessmentAgent.js
+│   │   ├── 📄 batchArticleAgent.js
+│   │   ├── 📄 clusteringAgent.js
+│   │   ├── 📄 contactAgent.js
+│   │   ├── 📄 emailAgents.js
+│   │   ├── 📄 entityAgent.js
+│   │   ├── 📄 executiveSummaryAgent.js
+│   │   ├── 📄 headlineAgent.js
+│   │   ├── 📄 judgeAgent.js
+│   │   ├── 📄 opportunityAgent.js
+│   │   ├── 📄 sectionClassifierAgent.js
+│   │   ├── 📄 selectorRepairAgent.js
+│   │   ├── 📄 synthesisAgent.js
+│   │   └── 📄 watchlistAgent.js
 │   ├── 📁 chains/
 │   │   ├── 📄 articleChain.js
 │   │   ├── 📄 articlePreAssessmentChain.js
@@ -32,6 +48,7 @@ headlines/
 │   │   ├── 📄 embeddings.js
 │   │   └── 📄 vectorSearch.js
 │   ├── 📁 lib/
+│   │   ├── 📄 AIAgent.js
 │   │   ├── 📄 langchain.js
 │   │   └── 📄 safeInvoke.js
 │   ├── 📁 rag/
@@ -69,15 +86,17 @@ headlines/
 │   │   ├── 📄 search.js
 │   │   ├── 📄 serpapi.js
 │   │   └── 📄 wikipedia.js
-│   └── 📄 index.js
+│   ├── 📄 core.js
+│   ├── 📄 index.js
+│   └── 📄 next.js
 └── 📄 package.json
 ```
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-21T14:17:28.663Z
+**Generated**: 2025-09-29T13:20:36.398Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/ai-services
-**Total Files**: 60
+**Total Files**: 78
 **Package**: @headlines/ai-services@1.0.0
 **Description**: Centralized, LangChain-powered AI and external service logic.
 
@@ -87,7 +106,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 27, Size: 722 Bytes*
+*Lines: 35, Size: 946 Bytes*
 
 ```json
 {
@@ -97,33 +116,1058 @@ headlines/
   "main": "src/index.js",
   "type": "module",
   "license": "ISC",
+  "exports": {
+    ".": "./src/index.js",
+    "./node": "./src/index.js",
+    "./next": "./src/next.js"
+  },
   "dependencies": {
     "@headlines/config": "workspace:*",
-    "@headlines/utils-server": "workspace:*",
     "@headlines/models": "workspace:*",
     "@headlines/prompts": "workspace:*",
+    "@headlines/utils-shared": "workspace:*",
+    "@headlines/utils-server": "workspace:*",
     "@langchain/community": "*",
     "@langchain/core": "*",
     "@langchain/openai": "*",
     "@langchain/pinecone": "*",
+    "@pinecone-database/pinecone": "^2.2.2",
     "@xenova/transformers": "^2.17.2",
     "axios": "^1.7.2",
     "langchain": "*",
     "newsapi": "^2.4.1",
+    "openai": "^5.22.0",
     "p-limit": "^5.0.0",
     "serpapi": "^2.1.0",
-    "sharp": "^0.34.4",
+    "sharp": "0.33.4",
     "zod": "*"
   }
 }
 
 ```
 
-## 📄 src/chains/articleChain.js
-*Lines: 64, Size: 2.1 KB*
+## 📄 src/agents/articleAgent.js
+*Lines: 76, Size: 2.64 KB*
 
 ```javascript
 'use server'
+
+import { truncateString } from '@headlines/utils-shared'
+import { logger } from '@headlines/utils-server/node'
+import { AIAgent } from '../lib/AIAgent.js'
+import { articleAssessmentSchema } from '../schemas/articleAssessmentSchema.js'
+import { settings } from '@headlines/config/node'
+import {
+  getInstructionArticle,
+  shotsInputArticle,
+  shotsOutputArticle,
+} from '@headlines/prompts'
+
+const getAgent = () =>
+  new AIAgent({
+    model: settings.LLM_MODEL_ARTICLE_ASSESSMENT,
+    systemPrompt: getInstructionArticle,
+    fewShotInputs: shotsInputArticle,
+    fewShotOutputs: shotsOutputArticle,
+    zodSchema: articleAssessmentSchema,
+  })
+
+// The agent now accepts `hits` as a parameter, breaking the circular dependency.
+// It is no longer responsible for fetching data.
+export async function assessArticleContent(article, hits = [], isSalvaged = false) {
+  const articleAssessmentAgent = getAgent()
+  const fullContent = (article.articleContent?.contents || []).join('\n')
+  const truncatedContent = truncateString(fullContent, settings.LLM_CONTEXT_MAX_CHARS)
+
+  if (fullContent.length > settings.LLM_CONTEXT_MAX_CHARS) {
+    logger.warn(
+      {
+        originalLength: fullContent.length,
+        truncatedLength: truncatedContent.length,
+        limit: settings.LLM_CONTEXT_MAX_CHARS,
+      },
+      `Article content for LLM was truncated to prevent context overload.`
+    )
+  }
+
+  let articleText = `HEADLINE: ${article.headline}\n\nBODY:\n${truncatedContent}`
+
+  if (hits.length > 0) {
+    const hitStrings = hits.map(
+      (hit) => `[WATCHLIST HIT: ${hit.name} | CONTEXT: ${hit.context || 'N/A'}]`
+    )
+    const hitPrefix = hitStrings.join(' ')
+    articleText = `${hitPrefix} ${articleText}`
+    logger.info({ hits: hits.map((h) => h.name) }, 'Watchlist entities found in article.')
+  }
+
+  if (isSalvaged) {
+    articleText = `[SALVAGE CONTEXT: The original source for this headline failed to scrape. This content is from an alternative source. Please assess based on this new context.]\n\n${articleText}`
+  }
+
+  const response = await articleAssessmentAgent.execute(articleText)
+
+  if (response.error) {
+    logger.error(
+      { article: { link: article.link }, details: response },
+      `Article assessment failed for ${article.link}.`
+    )
+    return { ...article, error: `AI Error: ${response.error}` }
+  }
+
+  if (
+    response.amount > 0 &&
+    response.amount < settings.MINIMUM_EVENT_AMOUNT_USD_MILLIONS
+  ) {
+    response.relevance_article = 10
+    response.assessment_article = `Dropped: Amount ($${response.amount}M) is below the financial threshold of $${settings.MINIMUM_EVENT_AMOUNT_USD_MILLIONS}M.`
+  }
+
+  return { ...article, ...response, error: null }
+}
+
+```
+
+## 📄 src/agents/articlePreAssessmentAgent.js
+*Lines: 24, Size: 829 Bytes*
+
+```javascript
+// This file is a standard server-side JavaScript module.
+// It does NOT contain environment-specific directives.
+
+import { AIAgent } from '../lib/AIAgent.js'
+import { articlePreAssessmentSchema } from '../schemas/articlePreAssessmentSchema.js'
+import { settings } from '@headlines/config/node'
+import { instructionArticlePreAssessment } from '@headlines/prompts'
+
+const getAgent = () =>
+  new AIAgent({
+    model: settings.LLM_MODEL_UTILITY,
+    systemPrompt: instructionArticlePreAssessment,
+    zodSchema: articlePreAssessmentSchema,
+  })
+
+export async function preAssessArticle(articleContent) {
+  const articlePreAssessmentAgent = getAgent()
+  const response = await articlePreAssessmentAgent.execute(articleContent)
+  if (response.error) {
+    return { classification: null, error: response.error }
+  }
+  return response
+}
+
+```
+
+## 📄 src/agents/batchArticleAgent.js
+*Lines: 67, Size: 2.2 KB*
+
+```javascript
+// This is a standard server-side module, do not add environment-specific directives.
+
+import { logger } from '@headlines/utils-server/node'
+import { AIAgent } from '../lib/AIAgent.js'
+import { batchArticleAssessmentSchema } from '../schemas/batchArticleAssessmentSchema.js'
+import { settings, AI_BATCH_SIZE } from '@headlines/config/node'
+import { getInstructionBatchArticleAssessment } from '@headlines/prompts'
+import { assessArticleContent } from './articleAgent.js' // The fallback single-article agent
+
+const getAgent = () =>
+  new AIAgent({
+    model: settings.LLM_MODEL_ARTICLE_ASSESSMENT,
+    systemPrompt: getInstructionBatchArticleAssessment,
+    zodSchema: batchArticleAssessmentSchema,
+  })
+
+export async function batchAssessArticles(articles) {
+  if (!articles || articles.length === 0) return []
+
+  const batchAgent = getAgent()
+  const articleBatches = []
+  // Use the centralized batch size from config
+  for (let i = 0; i < articles.length; i += AI_BATCH_SIZE) {
+    articleBatches.push(articles.slice(i, i + AI_BATCH_SIZE))
+  }
+
+  const allResults = []
+
+  for (const batch of articleBatches) {
+    const payload = batch.map((article) => ({
+      headline: article.headline,
+      content: (article.articleContent?.contents || []).join('\n'),
+    }))
+
+    const response = await batchAgent.execute(JSON.stringify(payload))
+
+    if (
+      response.error ||
+      !response.assessments ||
+      response.assessments.length !== batch.length
+    ) {
+      logger.error(
+        {
+          details: response,
+          expectedCount: batch.length,
+          receivedCount: response.assessments?.length,
+        },
+        'Batch assessment failed or returned mismatched count. Falling back to single-article processing for this batch.'
+      )
+
+      // The fallback now correctly calls the refactored single-article agent
+      const fallbackPromises = batch.map((article) => assessArticleContent(article))
+      const fallbackResults = await Promise.all(fallbackPromises)
+      allResults.push(...fallbackResults)
+      continue
+    }
+
+    const mergedResults = batch.map((originalArticle, index) => ({
+      ...originalArticle,
+      ...response.assessments[index],
+    }))
+    allResults.push(...mergedResults)
+  }
+
+  return allResults
+}
+
+```
+
+## 📄 src/agents/clusteringAgent.js
+*Lines: 77, Size: 2.6 KB*
+
+```javascript
+import { logger } from '@headlines/utils-server/node'
+import { AIAgent } from '../lib/AIAgent.js'
+import { clusterSchema } from '../schemas/clusterSchema.js'
+import { settings, LLM_CONTEXT_MAX_CHARS } from '@headlines/config/node'
+import { instructionCluster } from '@headlines/prompts'
+
+const CLUSTER_BATCH_SIZE = 25 // This is a processing batch, not a model limit, so it can be defined locally.
+
+const getAgent = () =>
+  new AIAgent({
+    // Correct: Use the settings object for the model name
+    model: settings.LLM_MODEL_SYNTHESIS, // Clustering is a high-level synthesis task
+    systemPrompt: instructionCluster,
+    zodSchema: clusterSchema,
+  })
+
+export async function clusterArticlesIntoEvents(articles) {
+  const articleClusterAgent = getAgent()
+  logger.info(`Clustering ${articles.length} articles into unique events...`)
+
+  if (!articles || articles.length === 0) {
+    return []
+  }
+
+  const batches = []
+  for (let i = 0; i < articles.length; i += CLUSTER_BATCH_SIZE) {
+    batches.push(articles.slice(i, i + CLUSTER_BATCH_SIZE))
+  }
+  logger.info(`Processing clusters in ${batches.length} batches.`)
+
+  const allClusters = []
+  for (const [index, batch] of batches.entries()) {
+    logger.info(`Clustering batch ${index + 1} of ${batches.length}...`)
+    const articlePayload = batch.map((a) => ({
+      id: a._id.toString(),
+      headline: a.headline,
+      source: a.newspaper,
+      // Use a more robust summary, preferring the AI's assessment
+      summary: (a.assessment_article || a.assessment_headline || '').substring(0, 400),
+    }))
+    const userContent = JSON.stringify(articlePayload)
+    const response = await articleClusterAgent.execute(userContent)
+
+    if (response.error || !response.events) {
+      logger.error(`Failed to cluster articles in batch ${index + 1}.`, {
+        response,
+      })
+      continue
+    }
+    allClusters.push(...response.events)
+  }
+
+  if (allClusters.length === 0) {
+    logger.warn('Failed to cluster any articles across all batches.')
+    return []
+  }
+
+  // De-duplicate clusters that might have been created across batches with the same key
+  const finalEventMap = new Map()
+  allClusters.forEach((event) => {
+    if (finalEventMap.has(event.event_key)) {
+      const existing = finalEventMap.get(event.event_key)
+      event.article_ids.forEach((id) => existing.article_ids.add(id))
+    } else {
+      finalEventMap.set(event.event_key, {
+        event_key: event.event_key,
+        article_ids: new Set(event.article_ids),
+      })
+    }
+  })
+
+  return Array.from(finalEventMap.values()).map((event) => ({
+    event_key: event.event_key,
+    article_ids: Array.from(event.article_ids),
+  }))
+}
+
+```
+
+## 📄 src/agents/contactAgent.js
+*Lines: 61, Size: 2.09 KB*
+
+```javascript
+import { logger } from '@headlines/utils-server/node';
+import { AIAgent } from '../lib/AIAgent.js';
+import { findContactSchema } from '../schemas/findContactSchema.js';
+import { settings } from '@headlines/config/node';
+import { instructionContacts } from '@headlines/prompts';
+import { performGoogleSearch } from '../search/search.js'; // Import search function directly
+
+const getFinderAgent = () =>
+  new AIAgent({
+    model: settings.LLM_MODEL_ARTICLE_ASSESSMENT,
+    systemPrompt: instructionContacts,
+    zodSchema: findContactSchema,
+  });
+
+/**
+ * Uses Google search and an AI agent to find a contact email for a given person.
+ * @param {object} person - An object representing the person to research.
+ *  - {string} reachOutTo - The person's full name.
+ *  - {object} contactDetails - An object with a `company` property.
+ * @returns {Promise<{email: string|null}>} An object containing the found email or null.
+ */
+export async function findContactDetails(person) {
+  const contactFinderAgent = getFinderAgent();
+  logger.info(`[Contact Research Agent] Initiated for: ${person.reachOutTo}`);
+  
+  const company = person.contactDetails?.company || '';
+  const queries = [
+    `"${person.reachOutTo}" ${company} email address`,
+    `"${person.reachOutTo}" contact information`,
+  ];
+
+  let combinedSnippets = '';
+  for (const query of queries) {
+    const searchResult = await performGoogleSearch(query);
+    if (searchResult.success && searchResult.snippets) {
+      combinedSnippets += `\n--- Results for query: "${query}" ---\n${searchResult.snippets}`;
+    }
+  }
+
+  if (!combinedSnippets) {
+    logger.warn(
+      `[Contact Research Agent] No search results for "${person.reachOutTo}".`
+    );
+    return { email: null };
+  }
+
+  const response = await contactFinderAgent.execute(combinedSnippets);
+
+  if (response.error || !response.email) {
+    logger.warn(
+      `[Contact Research Agent] LLM failed to extract details for "${person.reachOutTo}".`
+    );
+    return { email: null };
+  }
+
+  logger.info(
+    { details: response },
+    `[Contact Research Agent] Found details for "${person.reachOutTo}".`
+  );
+  return response;
+}
+```
+
+## 📄 src/agents/emailAgents.js
+*Lines: 80, Size: 2.92 KB*
+
+```javascript
+import { logger } from '@headlines/utils-server/node'
+import { AIAgent } from '../lib/AIAgent.js'
+import { emailSubjectSchema } from '../schemas/emailSubjectSchema.js'
+import { emailIntroSchema } from '../schemas/emailIntroSchema.js'
+import { settings } from '@headlines/config/node'
+import { instructionEmailSubject, instructionEmailIntro } from '@headlines/prompts'
+
+const getAgent = (systemPrompt, zodSchema) =>
+  new AIAgent({
+    model: settings.LLM_MODEL_SYNTHESIS,
+    systemPrompt,
+    zodSchema,
+  })
+
+export async function generateEmailSubjectLine(events) {
+  const subjectLineAgent = getAgent(instructionEmailSubject, emailSubjectSchema)
+  try {
+    const eventPayload = events.map((e) => ({
+      headline: e.synthesized_headline,
+      summary: e.synthesized_summary,
+    }))
+    const response = await subjectLineAgent.execute(JSON.stringify(eventPayload))
+    if (response.error || !response.subject_headline) {
+      logger.warn('AI failed to generate a custom email subject line.', response)
+      return 'Key Developments' // Fallback
+    }
+    return response.subject_headline
+  } catch (error) {
+    logger.error({ err: error }, 'Error in generateEmailSubjectLine')
+    return 'Key Developments' // Fallback
+  }
+}
+
+export async function generatePersonalizedIntro(user, events) {
+  const introAgent = getAgent(instructionEmailIntro, emailIntroSchema)
+  try {
+    const eventPayload = events.map((e) => ({
+      headline: e.synthesized_headline,
+      summary: e.synthesized_summary,
+    }))
+    const payload = {
+      firstName: user.firstName,
+      events: eventPayload,
+    }
+    const response = await introAgent.execute(JSON.stringify(payload))
+
+    // The schema returns a structured object, not a simple string.
+    if (response.error || !response.greeting) {
+      logger.warn('AI failed to generate a personalized intro.', response)
+      // Return a fallback object that matches the schema's structure
+      return {
+        greeting: `Dear ${user.firstName},`,
+        body: 'Here are the latest relevant wealth events we have identified for your review.',
+        bullets: events
+          .slice(0, 2)
+          .map(
+            (e) =>
+              `A key development regarding ${e.synthesized_headline.substring(0, 40)}...`
+          ),
+        signoff: 'We wish you a fruitful day!\\n\\nThe team at Wealth Watch',
+      }
+    }
+    return response // Return the full structured object
+  } catch (error) {
+    logger.error({ err: error }, 'Error in generatePersonalizedIntro')
+    // Return a fallback object that matches the schema's structure
+    return {
+      greeting: `Dear ${user.firstName},`,
+      body: 'Here are the latest relevant wealth events we have identified for your review.',
+      bullets: events
+        .slice(0, 2)
+        .map(
+          (e) =>
+            `A key development regarding ${e.synthesized_headline.substring(0, 40)}...`
+        ),
+      signoff: 'We wish you a fruitful day!\\n\\nThe team at Wealth Watch',
+    }
+  }
+}
+
+```
+
+## 📄 src/agents/entityAgent.js
+*Lines: 65, Size: 2.22 KB*
+
+```javascript
+import { logger } from '@headlines/utils-server/node'
+import { AIAgent } from '../lib/AIAgent.js'
+import { entitySchema } from '../schemas/entitySchema.js'
+import { canonicalizerSchema } from '../schemas/canonicalizerSchema.js'
+import { settings } from '@headlines/config/node'
+import { instructionEntity, instructionCanonicalizer } from '@headlines/prompts'
+
+const getEntityExtractorAgent = () =>
+  new AIAgent({
+    model: settings.LLM_MODEL_UTILITY,
+    systemPrompt: instructionEntity,
+    zodSchema: entitySchema,
+  })
+
+const getEntityCanonicalizerAgent = () =>
+  new AIAgent({
+    model: settings.LLM_MODEL_UTILITY,
+    systemPrompt: instructionCanonicalizer,
+    zodSchema: canonicalizerSchema,
+  })
+
+// Export the agent instance directly for potential reuse
+export const entityCanonicalizerAgent = getEntityCanonicalizerAgent()
+
+export async function extractEntities(text) {
+  const entityExtractorAgent = getEntityExtractorAgent()
+  // Use the exported agent instance
+  const canonicalizer = entityCanonicalizerAgent
+
+  if (!text) return []
+
+  try {
+    const response = await entityExtractorAgent.execute(`Article Text:\n${text}`)
+
+    if (response.error) {
+      throw new Error(response.error)
+    }
+
+    const { reasoning, entities } = response
+    logger.info(`[Query Planner Agent] Reasoning: ${reasoning}`)
+    if (!entities || !Array.isArray(entities)) return []
+
+    const canonicalizationPromises = entities
+      .map((entity) => entity.replace(/\s*\(.*\)\s*/g, '').trim())
+      .filter(Boolean)
+      .map(async (entity) => {
+        const canonResponse = await canonicalizer.execute(entity)
+        if (canonResponse && !canonResponse.error && canonResponse.canonical_name) {
+          logger.trace(`Canonicalized "${entity}" -> "${canonResponse.canonical_name}"`)
+          return canonResponse.canonical_name
+        }
+        return null
+      })
+
+    const canonicalEntities = await Promise.all(canonicalizationPromises)
+    const uniqueEntities = [...new Set(canonicalEntities.filter(Boolean))]
+
+    logger.info({ entities: uniqueEntities }, `Final list of canonical entities for RAG.`)
+    return uniqueEntities
+  } catch (error) {
+    logger.warn({ err: error }, 'Wikipedia query planning (entity extraction) failed.')
+    return []
+  }
+}
+
+```
+
+## 📄 src/agents/executiveSummaryAgent.js
+*Lines: 36, Size: 1.24 KB*
+
+```javascript
+import { logger } from '@headlines/utils-server/node'
+import { AIAgent } from '../lib/AIAgent.js'
+import { executiveSummarySchema } from '../schemas/executiveSummarySchema.js'
+import { settings } from '@headlines/config/node'
+import { instructionExecutiveSummary } from '@headlines/prompts'
+
+const getAgent = () =>
+  new AIAgent({
+    model: settings.LLM_MODEL_SYNTHESIS,
+    systemPrompt: instructionExecutiveSummary,
+    zodSchema: executiveSummarySchema,
+  })
+
+export async function generateExecutiveSummary(judgeVerdict, runStats) {
+  const agent = getAgent()
+  try {
+    // Create a payload with the crucial context for the AI
+    const payload = {
+      freshHeadlinesFound: runStats.freshHeadlinesFound,
+      judgeVerdict: judgeVerdict || { event_judgements: [], opportunity_judgements: [] },
+    }
+
+    const response = await agent.execute(JSON.stringify(payload))
+
+    if (response.error || !response.summary) {
+      logger.warn('AI failed to generate an executive summary.', response)
+      return 'AI failed to generate a summary for this run.'
+    }
+
+    return response.summary
+  } catch (error) {
+    logger.error({ err: error }, 'Error in generateExecutiveSummary')
+    return 'An unexpected error occurred while generating the executive summary.'
+  }
+}
+
+```
+
+## 📄 src/agents/headlineAgent.js
+*Lines: 69, Size: 2.26 KB*
+
+```javascript
+import { logger } from '@headlines/utils-server/node'
+import { AIAgent } from '../lib/AIAgent.js'
+import { headlineAssessmentSchema } from '../schemas/headlineAssessmentSchema.js'
+import { settings } from '@headlines/config/node'
+import {
+  instructionHeadlines,
+  shotsInputHeadlines,
+  shotsOutputHeadlines,
+} from '@headlines/prompts'
+
+const getAgent = () =>
+  new AIAgent({
+    model: settings.LLM_MODEL_HEADLINE_ASSESSMENT,
+    systemPrompt: instructionHeadlines,
+    fewShotInputs: shotsInputHeadlines,
+    fewShotOutputs: shotsOutputHeadlines,
+    zodSchema: headlineAssessmentSchema,
+  })
+
+// This agent now accepts pre-calculated hits. It no longer fetches data.
+async function assessSingleHeadline(article, hits = []) {
+  const headlineAssessmentAgent = getAgent()
+  let headlineWithContext = `[COUNTRY CONTEXT: ${article.country}] ${article.headline}`
+
+  if (hits.length > 0) {
+    const hitStrings = hits
+      .map(
+        (hit) => `[WATCHLIST HIT: ${hit.entity.name} (matched on '${hit.matchedTerm}')]`
+      )
+      .join(' ')
+    headlineWithContext = `${hitStrings} ${headlineWithContext}`
+  }
+
+  const response = await headlineAssessmentAgent.execute(headlineWithContext)
+
+  // Define a default assessment object for fallback
+  let assessment = {
+    relevance_headline: 0,
+    assessment_headline: 'AI assessment failed.',
+    headline_en: article.headline,
+  }
+
+  if (response && response.assessment && response.assessment.length > 0) {
+    assessment = response.assessment[0]
+    let score = assessment.relevance_headline
+    const boost = settings.WATCHLIST_SCORE_BOOST
+
+    if (hits.length > 0 && boost > 0) {
+      score = Math.min(100, score + boost)
+      assessment.assessment_headline = `Watchlist boost (+${boost}). ${assessment.assessment_headline}`
+    }
+    assessment.relevance_headline = score
+  }
+
+  return { ...article, ...assessment }
+}
+
+// The batching function now needs to accept hits for each article.
+// We'll pass an array of `hits` arrays.
+export async function assessHeadlinesInBatches(articles, articlesHits) {
+  const assessmentPromises = articles.map((article, index) => {
+    const hitsForArticle = articlesHits[index] || []
+    return assessSingleHeadline(article, hitsForArticle)
+  })
+
+  const results = await Promise.all(assessmentPromises)
+  return results
+}
+
+```
+
+## 📄 src/agents/judgeAgent.js
+*Lines: 62, Size: 1.76 KB*
+
+```javascript
+import { logger } from '@headlines/utils-server/node'
+import { AIAgent } from '../lib/AIAgent.js'
+import { judgeSchema } from '../schemas/judgeSchema.js'
+import { settings } from '@headlines/config/node'
+import { instructionJudge } from '@headlines/prompts'
+
+const getAgent = () =>
+  new AIAgent({
+    model: settings.LLM_MODEL_SYNTHESIS,
+    systemPrompt: instructionJudge,
+    zodSchema: judgeSchema,
+  })
+
+export async function judgePipelineOutput(events, opportunities) {
+  const judgeAgent = getAgent()
+  if (
+    (!events || events.length === 0) &&
+    (!opportunities || opportunities.length === 0)
+  ) {
+    return {
+      event_judgements: [],
+      opportunity_judgements: [],
+    }
+  }
+  logger.info('⚖️ [Judge Agent] Reviewing final pipeline output for quality control...')
+
+  const lightweightEvents = (events || []).map((e) => ({
+    identifier: `Event: ${e.synthesized_headline}`,
+    summary: e.synthesized_summary,
+    assessment: e.ai_assessment_reason,
+    score: e.highest_relevance_score,
+  }))
+
+  const lightweightOpportunities = (opportunities || []).map((o) => ({
+    identifier: `Opportunity: ${o.reachOutTo}`,
+    reason: o.whyContact,
+    wealth_estimate_mm: o.likelyMMDollarWealth,
+  }))
+
+  const inputText = JSON.stringify({
+    events: lightweightEvents,
+    opportunities: lightweightOpportunities,
+  })
+
+  const response = await judgeAgent.execute(inputText)
+
+  if (response.error) {
+    logger.error({ details: response }, 'Judge Agent failed to produce a verdict.')
+    // Return a default "empty" verdict on failure to avoid crashing the pipeline
+    return {
+      event_judgements: [],
+      opportunity_judgements: [],
+    }
+  }
+
+  logger.info(
+    { details: response },
+    '[Judge Agent] Successfully produced quality control verdicts.'
+  )
+  return response
+}
+
+```
+
+## 📄 src/agents/opportunityAgent.js
+*Lines: 69, Size: 2.28 KB*
+
+```javascript
+import { truncateString } from '@headlines/utils-shared'
+import { logger } from '@headlines/utils-server/node'
+import { AIAgent } from '../lib/AIAgent.js'
+import { opportunitySchema } from '../schemas/opportunitySchema.js'
+import { settings, LLM_CONTEXT_MAX_CHARS } from '@headlines/config/node'
+import { getInstructionOpportunities } from '@headlines/prompts'
+
+const getOppAgent = () =>
+  new AIAgent({
+    model: settings.LLM_MODEL_ARTICLE_ASSESSMENT,
+    systemPrompt: getInstructionOpportunities,
+    zodSchema: opportunitySchema,
+  })
+
+export async function generateOpportunitiesFromEvent(
+  synthesizedEvent,
+  articlesInCluster
+) {
+  const opportunityGeneratorAgent = getOppAgent()
+
+  const highestRelevanceArticle = articlesInCluster.reduce((max, current) =>
+    (current.relevance_article || 0) > (max.relevance_article || 0) ? current : max
+  )
+
+  const fullText = articlesInCluster
+    .map((a) => (a.articleContent?.contents || []).join('\n'))
+    .join('\n\n')
+
+  const inputText = `
+        Synthesized Event Headline: ${synthesizedEvent.synthesized_headline}
+        Synthesized Event Summary: ${synthesizedEvent.synthesized_summary}
+        Key Individuals already identified: ${JSON.stringify(synthesizedEvent.key_individuals)}
+        Source Article Snippets: ${truncateString(fullText, LLM_CONTEXT_MAX_CHARS)}
+    `
+
+  const response = await opportunityGeneratorAgent.execute(inputText)
+
+  if (response.error || !response.opportunities) {
+    logger.warn(
+      { event: synthesizedEvent.synthesized_headline, details: response },
+      `Opportunity generation failed.`
+    )
+    return []
+  }
+
+  const validOpportunities = (response.opportunities || []).filter(
+    (opp) =>
+      opp.likelyMMDollarWealth === null || // Keep opportunities where wealth is unknown
+      opp.likelyMMDollarWealth >= settings.MINIMUM_EVENT_AMOUNT_USD_MILLIONS
+  )
+
+  const opportunitiesWithSource = validOpportunities.map((opp) => ({
+    ...opp,
+    event_key: synthesizedEvent.event_key,
+    sourceArticleId: highestRelevanceArticle._id,
+  }))
+
+  logger.info(
+    { details: opportunitiesWithSource },
+    `[Opportunity Agent] Generated ${
+      opportunitiesWithSource.length
+    } opportunity/ies from event "${truncateString(
+      synthesizedEvent.synthesized_headline,
+      50
+    )}"`
+  )
+  return opportunitiesWithSource
+}
+
+```
+
+## 📄 src/agents/sectionClassifierAgent.js
+*Lines: 41, Size: 1.21 KB*
+
+```javascript
+import { logger } from '@headlines/utils-server/node'
+import { AIAgent } from '../lib/AIAgent.js'
+import { sectionClassifierSchema } from '../schemas/sectionClassifierSchema.js'
+import { settings } from '@headlines/config/node'
+import { instructionSectionClassifier } from '@headlines/prompts'
+
+const getAgent = () =>
+  new AIAgent({
+    model: settings.LLM_MODEL_UTILITY, // Using the cheap and fast model
+    systemPrompt: [
+      instructionSectionClassifier.whoYouAre,
+      instructionSectionClassifier.whatYouDo,
+      ...instructionSectionClassifier.guidelines,
+      instructionSectionClassifier.outputFormatDescription,
+    ].join('\n\n'),
+    zodSchema: sectionClassifierSchema,
+  })
+
+export async function classifyLinks(links) {
+  if (!links || links.length === 0) {
+    return []
+  }
+
+  const agent = getAgent()
+  const response = await agent.execute(JSON.stringify(links))
+
+  if (
+    response.error ||
+    !response.classifications ||
+    response.classifications.length !== links.length
+  ) {
+    logger.error(
+      { response, expectedCount: links.length },
+      'Section classifier agent failed or returned mismatched count.'
+    )
+    return null // Return null to indicate failure
+  }
+
+  return response.classifications
+}
+
+```
+
+## 📄 src/agents/selectorRepairAgent.js
+*Lines: 54, Size: 1.58 KB*
+
+```javascript
+import { truncateString } from '@headlines/utils-shared'
+import { logger } from '@headlines/utils-server/node'
+import { AIAgent } from '../lib/AIAgent.js'
+import { selectorRepairSchema } from '../schemas/selectorRepairSchema.js'
+import { settings, LLM_CONTEXT_MAX_CHARS } from '@headlines/config/node'
+import { instructionSelectorRepair } from '@headlines/prompts'
+
+const getAgent = () =>
+  new AIAgent({
+    model: settings.LLM_MODEL_UTILITY,
+    systemPrompt: [
+      instructionSelectorRepair.whoYouAre,
+      instructionSelectorRepair.whatYouDo,
+      ...instructionSelectorRepair.guidelines,
+      instructionSelectorRepair.outputFormatDescription,
+      instructionSelectorRepair.reiteration,
+    ].join('\n\n'),
+    zodSchema: selectorRepairSchema,
+  })
+
+export async function suggestNewSelector(
+  url,
+  failedSelector,
+  htmlContent,
+  heuristicSuggestions = []
+) {
+  const selectorRepairAgent = getAgent()
+  try {
+    const payload = {
+      url,
+      failed_selector: failedSelector,
+      heuristic_suggestions: heuristicSuggestions.map((s) => ({
+        selector: s.selector,
+        samples: s.samples.slice(0, 3),
+      })),
+      html_content: truncateString(htmlContent, LLM_CONTEXT_MAX_CHARS),
+    }
+
+    const response = await selectorRepairAgent.execute(JSON.stringify(payload))
+
+    if (response.error || !response.suggested_selectors) {
+      logger.error('Selector repair agent failed to produce a valid suggestion.', {
+        response,
+      })
+      return null
+    }
+
+    return response
+  } catch (error) {
+    logger.error({ err: error }, 'Error in suggestNewSelector')
+    return null
+  }
+}
+
+```
+
+## 📄 src/agents/synthesisAgent.js
+*Lines: 99, Size: 3.04 KB*
+
+```javascript
+import { truncateString } from '@headlines/utils-shared'
+import { logger } from '@headlines/utils-server/node'
+import { AIAgent } from '../lib/AIAgent.js'
+import { synthesisSchema } from '../schemas/synthesisSchema.js'
+import { settings, LLM_CONTEXT_MAX_CHARS } from '@headlines/config/node'
+import { instructionSynthesize } from '@headlines/prompts'
+
+const getAgent = () =>
+  new AIAgent({
+    model: settings.LLM_MODEL_SYNTHESIS,
+    systemPrompt: [
+      instructionSynthesize.whoYouAre,
+      instructionSynthesize.whatYouDo,
+      ...instructionSynthesize.guidelines,
+      instructionSynthesize.outputFormatDescription,
+    ].join('\n\n'),
+    zodSchema: synthesisSchema,
+  })
+
+export async function synthesizeEvent(
+  articlesInCluster,
+  historicalContext,
+  wikipediaContext,
+  newsApiContext
+  // gdeltContext is no longer used, so it's removed.
+) {
+  const eventSynthesizerAgent = getAgent()
+
+  const todayPayload = articlesInCluster.map((a) => ({
+    headline: a.headline,
+    source: a.newspaper,
+    full_text: truncateString(
+      (a.articleContent?.contents || []).join('\n'),
+      // Use a safe division, prevent division by zero.
+      LLM_CONTEXT_MAX_CHARS / (articlesInCluster.length || 1)
+    ),
+    key_individuals: a.key_individuals || [],
+  }))
+
+  const historyPayload = (historicalContext || []).map((h) => ({
+    headline: h.headline,
+    source: h.newspaper,
+    published: h.createdAt,
+    summary: h.assessment_article || '',
+  }))
+
+  const userContent = {
+    "[ TODAY'S NEWS ]": todayPayload,
+    '[ HISTORICAL CONTEXT (Internal Database) ]': historyPayload,
+    '[ PUBLIC WIKIPEDIA CONTEXT ]': wikipediaContext || 'Not available.',
+    '[ LATEST NEWS CONTEXT (NewsAPI) ]': newsApiContext || 'Not available.',
+  }
+
+  logger.trace({ synthesis_context: userContent }, '--- SYNTHESIS CONTEXT ---')
+
+  const response = await eventSynthesizerAgent.execute(JSON.stringify(userContent))
+
+  if (response.error) {
+    logger.error('Failed to synthesize event.', { response })
+    return { error: 'Synthesis failed' }
+  }
+  return response
+}
+
+export async function synthesizeFromHeadline(article) {
+  const eventSynthesizerAgent = getAgent()
+  logger.warn(
+    { headline: article.headline },
+    `Salvaging high-signal headline with failed enrichment...`
+  )
+
+  const todayPayload = [
+    {
+      headline: article.headline,
+      source: article.newspaper,
+      full_text:
+        "NOTE: Full article text could not be retrieved. Synthesize based on the headline's explicit claims and your general knowledge.",
+      key_individuals: article.key_individuals || [],
+    },
+  ]
+
+  const userContent = {
+    "[ TODAY'S NEWS ]": todayPayload,
+    '[ HISTORICAL CONTEXT ]': [],
+    '[ PUBLIC WIKIPEDIA CONTEXT ]': 'Not available.',
+    '[ LATEST NEWS CONTEXT (NewsAPI) ]': 'Not available.',
+  }
+
+  logger.trace({ synthesis_context: userContent }, '--- SALVAGE SYNTHESIS CONTEXT ---')
+
+  const response = await eventSynthesizerAgent.execute(JSON.stringify(userContent))
+
+  if (response.error) {
+    logger.error('Failed to salvage headline.', { response })
+    return null
+  }
+  return response
+}
+
+```
+
+## 📄 src/agents/watchlistAgent.js
+*Lines: 48, Size: 1.77 KB*
+
+```javascript
+import { logger } from '@headlines/utils-server/node'
+import { AIAgent } from '../lib/AIAgent.js'
+import { watchlistSuggestionSchema } from '../schemas/watchlistSuggestionSchema.js'
+import { settings } from '@headlines/config/node'
+import { instructionWatchlistSuggestion } from '@headlines/prompts'
+
+const getAgent = () =>
+  new AIAgent({
+    model: settings.LLM_MODEL_SYNTHESIS,
+    systemPrompt: [
+      instructionWatchlistSuggestion.whoYouAre,
+      instructionWatchlistSuggestion.whatYouDo,
+      ...instructionWatchlistSuggestion.guidelines,
+      instructionWatchlistSuggestion.outputFormatDescription,
+      instructionWatchlistSuggestion.reiteration,
+    ].join('\n\n'),
+    zodSchema: watchlistSuggestionSchema,
+  })
+
+/**
+ * Analyzes events to generate new watchlist suggestions.
+ * @param {Array<object>} events - High-quality synthesized events.
+ * @param {Set<string>} existingWatchlistNames - A set of lowercase names already on the watchlist.
+ * @returns {Promise<Array<object>>} An array of new WatchlistSuggestion documents.
+ */
+export async function generateWatchlistSuggestions(events, existingWatchlistNames) {
+  const watchlistSuggestionAgent = getAgent()
+  try {
+    const payload = { events }
+    const response = await watchlistSuggestionAgent.execute(JSON.stringify(payload))
+
+    if (response.error || !Array.isArray(response.suggestions)) {
+      logger.warn('AI failed to generate watchlist suggestions.', response)
+      return []
+    }
+
+    // Post-filter to ensure we don't suggest entities that already exist
+    const newSuggestions = response.suggestions.filter(
+      (s) => !existingWatchlistNames.has(s.name.toLowerCase())
+    )
+
+    return newSuggestions
+  } catch (error) {
+    logger.error({ err: error }, 'Error in generateWatchlistSuggestions')
+    return []
+  }
+}
+
+```
+
+## 📄 src/chains/articleChain.js
+*Lines: 63, Size: 2.08 KB*
+
+```javascript
 import {
   ChatPromptTemplate,
   HumanMessagePromptTemplate,
@@ -132,7 +1176,7 @@ import {
 import { AIMessage, HumanMessage } from '@langchain/core/messages'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { settings } from '@headlines/config/server'
+import { settings } from '@headlines/config'
 import {
   getInstructionArticle,
   shotsInputArticle,
@@ -190,14 +1234,14 @@ export const articleChain = { invoke }
 ```
 
 ## 📄 src/chains/articlePreAssessmentChain.js
-*Lines: 29, Size: 1.14 KB*
+*Lines: 29, Size: 1.13 KB*
 
 ```javascript
 // packages/ai-services/src/chains/articlePreAssessmentChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionArticlePreAssessment } from '../../../prompts/src/index.js'
+import { instructionArticlePreAssessment } from '@headlines/prompts'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { articlePreAssessmentSchema } from '../schemas/index.js'
@@ -225,14 +1269,14 @@ export const articlePreAssessmentChain = {
 ```
 
 ## 📄 src/chains/batchHeadlineChain.js
-*Lines: 30, Size: 1.24 KB*
+*Lines: 30, Size: 1.23 KB*
 
 ```javascript
 // packages/ai-services/src/chains/batchHeadlineChain.js (version 1.0)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionBatchHeadlineAssessment } from '../../../prompts/src/index.js'
+import { instructionBatchHeadlineAssessment } from '@headlines/prompts'
 import { getHeadlineModel } from '../lib/langchain.js' // Use the specific model for headlines
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { batchHeadlineAssessmentSchema } from '../schemas/index.js'
@@ -261,14 +1305,14 @@ export const batchHeadlineChain = {
 ```
 
 ## 📄 src/chains/clusteringChain.js
-*Lines: 28, Size: 1.01 KB*
+*Lines: 28, Size: 1 KB*
 
 ```javascript
 // packages/ai-services/src/chains/clusteringChain.js (version 3.2 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionCluster } from '../../../prompts/src/index.js'
+import { instructionCluster } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { clusterSchema } from '../schemas/index.js'
@@ -295,14 +1339,14 @@ export const clusteringChain = {
 ```
 
 ## 📄 src/chains/contactFinderChain.js
-*Lines: 28, Size: 1.02 KB*
+*Lines: 28, Size: 1.01 KB*
 
 ```javascript
 // packages/ai-services/src/chains/contactFinderChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionContacts } from '../../../prompts/src/index.js'
+import { instructionContacts } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { findContactSchema } from '../schemas/index.js'
@@ -329,14 +1373,14 @@ export const contactFinderChain = {
 ```
 
 ## 📄 src/chains/contactResolverChain.js
-*Lines: 28, Size: 1.03 KB*
+*Lines: 28, Size: 1.02 KB*
 
 ```javascript
 // packages/ai-services/src/chains/contactResolverChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionEnrichContact } from '../../../prompts/src/index.js'
+import { instructionEnrichContact } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { enrichContactSchema } from '../schemas/index.js'
@@ -409,14 +1453,14 @@ export const countryCorrectionChain = {
 ```
 
 ## 📄 src/chains/disambiguationChain.js
-*Lines: 28, Size: 1.03 KB*
+*Lines: 28, Size: 1.02 KB*
 
 ```javascript
 // packages/ai-services/src/chains/disambiguationChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionDisambiguation } from '../../../prompts/src/index.js'
+import { instructionDisambiguation } from '@headlines/prompts'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { disambiguationSchema } from '../schemas/index.js'
@@ -443,14 +1487,14 @@ export const disambiguationChain = {
 ```
 
 ## 📄 src/chains/emailIntroChain.js
-*Lines: 28, Size: 1.06 KB*
+*Lines: 28, Size: 1.05 KB*
 
 ```javascript
 // packages/ai-services/src/chains/emailIntroChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionEmailIntro } from '../../../prompts/src/index.js'
+import { instructionEmailIntro } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { emailIntroSchema } from '../schemas/index.js'
@@ -477,14 +1521,14 @@ export const emailIntroChain = {
 ```
 
 ## 📄 src/chains/emailSubjectChain.js
-*Lines: 28, Size: 1.07 KB*
+*Lines: 28, Size: 1.06 KB*
 
 ```javascript
 // packages/ai-services/src/chains/emailSubjectChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionEmailSubject } from '../../../prompts/src/index.js'
+import { instructionEmailSubject } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { emailSubjectSchema } from '../schemas/index.js'
@@ -511,14 +1555,14 @@ export const emailSubjectChain = {
 ```
 
 ## 📄 src/chains/entityCanonicalizerChain.js
-*Lines: 28, Size: 1.04 KB*
+*Lines: 28, Size: 1.03 KB*
 
 ```javascript
 // packages/ai-services/src/chains/entityCanonicalizerChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionCanonicalizer } from '../../../prompts/src/index.js'
+import { instructionCanonicalizer } from '@headlines/prompts'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { canonicalizerSchema } from '../schemas/index.js'
@@ -545,14 +1589,14 @@ export const entityCanonicalizerChain = {
 ```
 
 ## 📄 src/chains/entityExtractorChain.js
-*Lines: 27, Size: 999 Bytes*
+*Lines: 27, Size: 988 Bytes*
 
 ```javascript
 // packages/ai-services/src/chains/entityExtractorChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionEntity } from '../../../prompts/src/index.js'
+import { instructionEntity } from '@headlines/prompts'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { entitySchema } from '../schemas/index.js'
@@ -578,14 +1622,14 @@ export const entityExtractorChain = {
 ```
 
 ## 📄 src/chains/executiveSummaryChain.js
-*Lines: 29, Size: 1.11 KB*
+*Lines: 29, Size: 1.1 KB*
 
 ```javascript
 // packages/ai-services/src/chains/executiveSummaryChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionExecutiveSummary } from '../../../prompts/src/index.js'
+import { instructionExecutiveSummary } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { executiveSummarySchema } from '../schemas/index.js'
@@ -613,10 +1657,9 @@ export const executiveSummaryChain = {
 ```
 
 ## 📄 src/chains/headlineChain.js
-*Lines: 85, Size: 2.74 KB*
+*Lines: 84, Size: 2.72 KB*
 
 ```javascript
-// packages/ai-services/src/chains/headlineChain.js (version 4.2.1 - Confirmed Final)
 import {
   ChatPromptTemplate,
   HumanMessagePromptTemplate,
@@ -629,11 +1672,11 @@ import {
   instructionHeadlines,
   shotsInputHeadlines,
   shotsOutputHeadlines,
-} from '../../../prompts/src/index.js'
+} from '@headlines/prompts' // Correct: Import from the monorepo package
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { headlineAssessmentSchema } from '../schemas/index.js'
-import { settings } from '../../../config/src/server.js'
+import { settings } from '@headlines/config/node' // Correct: Import from the /node entry point
 
 const systemPrompt = [
   instructionHeadlines.whoYouAre,
@@ -757,14 +1800,14 @@ export const countryCorrectionChain = async (input) => ccc.invoke(input)
 ```
 
 ## 📄 src/chains/judgeChain.js
-*Lines: 28, Size: 1022 Bytes*
+*Lines: 28, Size: 1011 Bytes*
 
 ```javascript
 // packages/ai-services/src/chains/judgeChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionJudge } from '../../../prompts/src/index.js'
+import { instructionJudge } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { judgeSchema } from '../schemas/index.js'
@@ -791,18 +1834,18 @@ export const judgeChain = {
 ```
 
 ## 📄 src/chains/opportunityChain.js
-*Lines: 29, Size: 1.08 KB*
+*Lines: 29, Size: 1.07 KB*
 
 ```javascript
-// packages/ai-services/src/chains/opportunityChain.js (version 2.4 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { getInstructionOpportunities } from '../../../prompts/src/index.js'
+import { getInstructionOpportunities } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { opportunitySchema } from '../schemas/index.js'
-import { settings } from '../../../config/src/server.js'
+// Correct: Import from the /node entry point for the pipeline/Node.js environment
+import { settings } from '@headlines/config/node'
 
 const instructions = getInstructionOpportunities(settings)
 const systemPrompt = [
@@ -866,14 +1909,14 @@ export const sectionClassifierChain = {
 ```
 
 ## 📄 src/chains/selectorRepairChain.js
-*Lines: 29, Size: 1.08 KB*
+*Lines: 29, Size: 1.07 KB*
 
 ```javascript
 // packages/ai-services/src/chains/selectorRepairChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionSelectorRepair } from '../../../prompts/src/index.js'
+import { instructionSelectorRepair } from '@headlines/prompts'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { selectorRepairSchema } from '../schemas/index.js'
@@ -901,14 +1944,14 @@ export const selectorRepairChain = {
 ```
 
 ## 📄 src/chains/synthesisChain.js
-*Lines: 27, Size: 1018 Bytes*
+*Lines: 27, Size: 1007 Bytes*
 
 ```javascript
 // packages/ai-services/src/chains/synthesisChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionSynthesize } from '../../../prompts/src/index.js'
+import { instructionSynthesize } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { synthesisSchema } from '../schemas/index.js'
@@ -934,14 +1977,14 @@ export const synthesisChain = {
 ```
 
 ## 📄 src/chains/translateChain.js
-*Lines: 29, Size: 1.07 KB*
+*Lines: 28, Size: 1.05 KB*
 
 ```javascript
 // packages/ai-services/src/chains/translateChain.js (version 1.0.0)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionTranslate } from '../../../prompts/src/index.js'
+import { instructionTranslate } from '@headlines/prompts'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { translateSchema } from '../schemas/index.js'
@@ -962,21 +2005,20 @@ const prompt = ChatPromptTemplate.fromMessages([
 const chain = RunnableSequence.from([prompt, getUtilityModel(), new JsonOutputParser()])
 
 export const translateChain = {
-  invoke: (input) =>
-    safeInvoke(chain, input, 'translateChain', translateSchema),
+  invoke: (input) => safeInvoke(chain, input, 'translateChain', translateSchema),
 }
 
 ```
 
 ## 📄 src/chains/watchlistSuggestionChain.js
-*Lines: 29, Size: 1.15 KB*
+*Lines: 29, Size: 1.14 KB*
 
 ```javascript
 // packages/ai-services/src/chains/watchlistSuggestionChain.js (version 2.3 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionWatchlistSuggestion } from '../../../prompts/src/index.js'
+import { instructionWatchlistSuggestion } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { watchlistSuggestionSchema } from '../schemas/index.js'
@@ -1001,6 +2043,144 @@ export const watchlistSuggestionChain = {
     safeInvoke(chain, input, 'watchlistSuggestionChain', watchlistSuggestionSchema),
 }
 
+```
+
+## 📄 src/core.js
+*Lines: 132, Size: 4.58 KB*
+
+```javascript
+// This is the core, shared module for the ai-services package.
+// It exports all AI chains, agents, and utility functions.
+
+// --- Low-Level LangChain Primitives & Helpers ---
+import { callLanguageModel } from './lib/langchain.js'
+import * as chains from './chains/index.js'
+import * as search from './search/search.js'
+import * as wikipedia from './search/wikipedia.js'
+import * as embeddings from './embeddings/embeddings.js'
+import * as vectorSearch from './embeddings/vectorSearch.js'
+import { processChatRequest } from './rag/orchestrator.js'
+import { logger } from '@headlines/utils-server/node' // Use the node-safe entry point
+import { settings } from '@headlines/config/node' // Use the node-safe entry point
+
+// --- High-Level Agents (Moved from scraper-logic) ---
+// Note: You will need to ensure the agent files themselves are moved into `packages/ai-services/src/agents/`
+// and their internal imports are updated to be relative to their new location.
+import { assessArticleContent } from './agents/articleAgent.js';
+import { preAssessArticle } from './agents/articlePreAssessmentAgent.js';
+import { batchAssessArticles } from './agents/batchArticleAgent.js';
+import { clusterArticlesIntoEvents } from './agents/clusteringAgent.js';
+import { findContactDetails } from './agents/contactAgent.js';
+import { generateEmailSubjectLine, generatePersonalizedIntro } from './agents/emailAgents.js';
+import { extractEntities, entityCanonicalizerAgent } from './agents/entityAgent.js';
+import { generateExecutiveSummary } from './agents/executiveSummaryAgent.js';
+import { assessHeadlinesInBatches } from './agents/headlineAgent.js';
+import { judgePipelineOutput } from './agents/judgeAgent.js';
+import { generateOpportunitiesFromEvent } from './agents/opportunityAgent.js';
+import { classifyLinks as sectionClassifierAgent } from './agents/sectionClassifierAgent.js'; // aliased to match old export
+import { suggestNewSelector } from './agents/selectorRepairAgent.js';
+import { synthesizeEvent, synthesizeFromHeadline } from './agents/synthesisAgent.js';
+import { generateWatchlistSuggestions } from './agents/watchlistAgent.js';
+
+// --- Sanity Check Function ---
+export async function performAiSanityCheck() {
+  try {
+    logger.info('🔬 Performing AI service sanity check (OpenAI)...')
+    const answer = await callLanguageModel({
+      modelName: settings.LLM_MODEL_UTILITY,
+      prompt: 'What is in one word the name of the capital of France',
+      isJson: false,
+    })
+    if (
+      answer &&
+      typeof answer === 'string' &&
+      answer.trim().toLowerCase().includes('paris')
+    ) {
+      logger.info('✅ AI service sanity check passed.')
+      return true
+    } else {
+      logger.fatal(
+        { details: { expected: 'paris', received: answer } },
+        `OpenAI sanity check failed.`
+      )
+      return false
+    }
+  } catch (error) {
+    if (error.status === 401 || error.message?.includes('Incorrect API key')) {
+      logger.fatal(`OpenAI sanity check failed due to INVALID API KEY (401).`)
+    } else {
+      logger.fatal(
+        { err: error },
+        'OpenAI sanity check failed with an unexpected API error.'
+      )
+    }
+    return false
+  }
+}
+
+// --- EXPORT ALL FUNCTIONALITY ---
+
+// Foundational exports
+export { processChatRequest, callLanguageModel }
+
+// Low-level chains (re-exported from chains/index.js)
+export const {
+  articleChain,
+  articlePreAssessmentChain,
+  clusteringChain,
+  contactFinderChain,
+  contactResolverChain,
+  disambiguationChain,
+  emailIntroChain,
+  emailSubjectChain,
+  entityCanonicalizerChain,
+  entityExtractorChain,
+  executiveSummaryChain,
+  headlineChain,
+  batchHeadlineChain,
+  judgeChain,
+  opportunityChain,
+  sectionClassifierChain,
+  selectorRepairChain,
+  synthesisChain,
+  watchlistSuggestionChain,
+  translateChain,
+  countryCorrectionChain,
+} = chains
+
+// External search and data retrieval services
+export const {
+  findAlternativeSources,
+  performGoogleSearch,
+  findNewsApiArticlesForEvent,
+} = search
+export const { fetchWikipediaSummary } = wikipedia
+
+// Vector embedding and search services
+export const { generateEmbedding } = embeddings
+export const { findSimilarArticles } = vectorSearch
+
+// High-level agent functions
+export {
+  assessArticleContent,
+  preAssessArticle,
+  batchAssessArticles,
+  clusterArticlesIntoEvents,
+  findContactDetails,
+  generateEmailSubjectLine,
+  generatePersonalizedIntro,
+  extractEntities,
+  entityCanonicalizerAgent,
+  assessHeadlinesInBatches,
+  judgePipelineOutput,
+  generateOpportunitiesFromEvent,
+  sectionClassifierAgent,
+  suggestNewSelector,
+  synthesizeEvent,
+  synthesizeFromHeadline,
+  generateWatchlistSuggestions,
+  generateExecutiveSummary,
+}
 ```
 
 ## 📄 src/embeddings/embeddings.js
@@ -1245,20 +2425,21 @@ export async function getCacheStats() {
 ```
 
 ## 📄 src/embeddings/vectorSearch.js
-*Lines: 70, Size: 2.3 KB*
+*Lines: 77, Size: 2.49 KB*
 
 ```javascript
-// packages/ai-services/src/vectorSearch.js (version 1.1.0)
+// packages/ai-services/src/embeddings/vectorSearch.js
 'use server'
 import { Pinecone } from '@pinecone-database/pinecone'
 import { logger } from '@headlines/utils-server'
 import { generateEmbedding } from './embeddings.js'
-import { env } from '@headlines/config/server'
+import { env } from '@headlines/config'
 
 const { PINECONE_API_KEY, PINECONE_INDEX_NAME } = env
 
 const SIMILARITY_THRESHOLD = 0.65
 const MAX_CONTEXT_ARTICLES = 3
+const MAX_RETRIES = 2 // Add retry configuration
 
 let pineconeIndex
 if (PINECONE_API_KEY) {
@@ -1270,162 +2451,169 @@ if (PINECONE_API_KEY) {
   )
 }
 
-/**
- * Finds historical articles similar to a given query text by querying Pinecone.
- * @param {string} queryText - The text to search for (e.g., a headline or comma-separated entities).
- * @returns {Promise<Array<Object>>} A promise that resolves to an array of relevant historical articles.
- */
 export async function findSimilarArticles(queryText) {
   if (!pineconeIndex) return []
   logger.info('RAG: Searching for historical context in Pinecone...')
   if (!queryText || typeof queryText !== 'string' || queryText.trim().length === 0)
     return []
 
-  try {
-    const queryEmbedding = await generateEmbedding(queryText)
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const queryEmbedding = await generateEmbedding(queryText)
 
-    const queryResponse = await pineconeIndex.query({
-      topK: MAX_CONTEXT_ARTICLES,
-      vector: queryEmbedding,
-      includeMetadata: true,
-    })
+      const queryResponse = await pineconeIndex.query({
+        topK: MAX_CONTEXT_ARTICLES,
+        vector: queryEmbedding,
+        includeMetadata: true,
+      })
 
-    const relevantMatches = queryResponse.matches.filter(
-      (match) => match.score >= SIMILARITY_THRESHOLD
-    )
-
-    if (relevantMatches.length > 0) {
-      const retrievedArticlesForLogging = relevantMatches
-        .map(
-          (match) => `  - [Score: ${match.score.toFixed(3)}] "${match.metadata.headline}"`
-        )
-        .join('\n')
-      logger.info(
-        `RAG: Found ${relevantMatches.length} relevant historical articles:\n${retrievedArticlesForLogging}`
+      const relevantMatches = queryResponse.matches.filter(
+        (match) => match.score >= SIMILARITY_THRESHOLD
       )
-      return relevantMatches.map((match) => ({
-        headline: match.metadata.headline,
-        newspaper: match.metadata.newspaper,
-        assessment_article: match.metadata.summary,
-      }))
-    } else {
-      logger.info('RAG: Found no relevant historical articles in Pinecone.')
-      return []
+
+      if (relevantMatches.length > 0) {
+        const retrievedArticlesForLogging = relevantMatches
+          .map(
+            (match) =>
+              `  - [Score: ${match.score.toFixed(3)}] "${match.metadata.headline}"`
+          )
+          .join('\n')
+        logger.info(
+          `RAG: Found ${relevantMatches.length} relevant historical articles:\n${retrievedArticlesForLogging}`
+        )
+        return relevantMatches.map((match) => ({
+          headline: match.metadata.headline,
+          newspaper: match.metadata.newspaper,
+          assessment_article: match.metadata.summary,
+        }))
+      } else {
+        logger.info('RAG: Found no relevant historical articles in Pinecone.')
+        return []
+      }
+    } catch (error) {
+      logger.error({ err: error }, `RAG: Pinecone query attempt ${attempt} failed.`)
+      if (attempt === MAX_RETRIES) {
+        logger.error(
+          { err: error },
+          'RAG: Pinecone query or embedding generation failed after all retries.'
+        )
+        return []
+      }
+      await new Promise((res) => setTimeout(res, 1000 * attempt)) // Exponential backoff
     }
-  } catch (error) {
-    logger.error({ err: error }, 'RAG: Pinecone query or embedding generation failed.')
-    return []
   }
+  return [] // Should be unreachable
 }
 
 ```
 
 ## 📄 src/index.js
-*Lines: 75, Size: 2.19 KB*
+*Lines: 3, Size: 76 Bytes*
 
 ```javascript
-import { callLanguageModel } from './lib/langchain.js'
-import * as chains from './chains/index.js'
-import * as search from './search/search.js'
-import * as wikipedia from './search/wikipedia.js'
-import * as embeddings from './embeddings/embeddings.js'
-import * as vectorSearch from './embeddings/vectorSearch.js'
-import { logger } from '@headlines/utils-server'
-import { processChatRequest } from './rag/orchestrator.js'
-export async function performAiSanityCheck(settings) {
-  try {
-    logger.info('🔬 Performing AI service sanity check (OpenAI)...')
-    const answer = await callLanguageModel({
-      modelName: settings.LLM_MODEL_UTILITY,
-      prompt: 'What is in one word the name of the capital of France',
-      isJson: false,
+// This is the default, Node.js-safe entry point.
+export * from './core.js'
+
+```
+
+## 📄 src/lib/AIAgent.js
+*Lines: 64, Size: 1.77 KB*
+
+```javascript
+import { callLanguageModel } from './langchain.js'
+import { logger } from '@headlines/utils-server/node'
+
+export class AIAgent {
+  constructor({
+    model,
+    systemPrompt,
+    isJson = true,
+    fewShotInputs = [],
+    fewShotOutputs = [],
+    zodSchema,
+  }) {
+    if (!model || !systemPrompt) {
+      throw new Error('AIAgent requires a model and systemPrompt.')
+    }
+    this.model = model
+    this.systemPrompt = systemPrompt
+    this.isJson = isJson
+    this.fewShotInputs = fewShotInputs
+    this.fewShotOutputs = fewShotOutputs
+    this.zodSchema = zodSchema
+
+    logger.trace(
+      { agentConfig: { model, isJson, hasSchema: !!zodSchema } },
+      'Initialized new AIAgent.'
+    )
+  }
+
+  async execute(userContent) {
+    let systemPromptContent = this.systemPrompt
+    // If the provided prompt is a function (for dynamic settings), execute it.
+    if (typeof systemPromptContent === 'function') {
+      systemPromptContent = systemPromptContent()
+    }
+
+    const response = await callLanguageModel({
+      modelName: this.model,
+      systemPrompt: systemPromptContent,
+      userContent,
+      isJson: this.isJson,
+      fewShotInputs: this.fewShotInputs,
+      fewShotOutputs: this.fewShotOutputs,
     })
-    if (
-      answer &&
-      typeof answer === 'string' &&
-      answer.trim().toLowerCase().includes('paris')
-    ) {
-      logger.info('✅ AI service sanity check passed.')
-      return true
-    } else {
-      logger.fatal(
-        { details: { expected: 'paris', received: answer } },
-        `OpenAI sanity check failed.`
-      )
-      return false
+
+    if (this.isJson && this.zodSchema && !response.error) {
+      const validationResult = this.zodSchema.safeParse(response)
+      if (!validationResult.success) {
+        logger.error(
+          {
+            details: validationResult.error.flatten(),
+            model: this.model,
+            rawResponse: response, // Log the raw response for debugging
+          },
+          `AI response failed Zod validation.`
+        )
+        return { error: 'Zod validation failed', details: validationResult.error }
+      }
+      return validationResult.data
     }
-  } catch (error) {
-    if (error.status === 401 || error.message?.includes('Incorrect API key')) {
-      logger.fatal(`OpenAI sanity check failed due to INVALID API KEY (401).`)
-    } else {
-      logger.fatal(
-        { err: error },
-        'OpenAI sanity check failed with an unexpected API error.'
-      )
-    }
-    return false
+
+    return response
   }
 }
-export { processChatRequest, callLanguageModel }
-export const {
-  articleChain,
-  articlePreAssessmentChain,
-  clusteringChain,
-  contactFinderChain,
-  contactResolverChain,
-  disambiguationChain,
-  emailIntroChain,
-  emailSubjectChain,
-  entityCanonicalizerChain,
-  entityExtractorChain,
-  executiveSummaryChain,
-  headlineChain,
-  batchHeadlineChain,
-  judgeChain,
-  opportunityChain,
-  sectionClassifierChain,
-  selectorRepairChain,
-  synthesisChain,
-  watchlistSuggestionChain,
-  translateChain,
-  countryCorrectionChain,
-} = chains
-export const {
-  findAlternativeSources,
-  performGoogleSearch,
-  findNewsApiArticlesForEvent,
-} = search
-export const { fetchWikipediaSummary } = wikipedia
-export const { generateEmbedding } = embeddings
-export const { findSimilarArticles } = vectorSearch
 
 ```
 
 ## 📄 src/lib/langchain.js
-*Lines: 79, Size: 2.56 KB*
+*Lines: 92, Size: 2.97 KB*
 
 ```javascript
-'use server'
-import { ChatOpenAI } from '@langchain/openai'
-import { env, settings } from '@headlines/config/server'
-import { logger } from '@headlines/utils-server/logger'
-import { tokenTracker } from '@headlines/utils-server/tokenTracker'
-import { safeExecute } from '@headlines/utils-server/helpers'
-import OpenAI from 'openai'
+'use server';
 
-const modelConfig = { response_format: { type: 'json_object' } }
+import { ChatOpenAI } from '@langchain/openai';
+import { env, settings } from '@headlines/config/node';
+import { logger } from '@headlines/utils-server/node';
+import { tokenTracker } from '@headlines/utils-server/node';
+import { safeExecute } from '@headlines/utils-server/helpers';
+import OpenAI from 'openai';
+
+const modelConfig = { response_format: { type: 'json_object' } };
+
+// Temperature parameters have been removed to rely on provider defaults, which is more robust.
 export const getHeadlineModel = () =>
-  new ChatOpenAI({ modelName: settings.LLM_MODEL_HEADLINE_ASSESSMENT }).bind(modelConfig)
+  new ChatOpenAI({ modelName: settings.LLM_MODEL_HEADLINE_ASSESSMENT }).bind(modelConfig);
 export const getHighPowerModel = () =>
-  new ChatOpenAI({ modelName: settings.LLM_MODEL_ARTICLE_ASSESSMENT }).bind(modelConfig)
+  new ChatOpenAI({ modelName: settings.LLM_MODEL_SYNTHESIS }).bind(modelConfig);
 export const getUtilityModel = () =>
-  new ChatOpenAI({ modelName: settings.LLM_MODEL_UTILITY }).bind(modelConfig)
+  new ChatOpenAI({ modelName: settings.LLM_MODEL_UTILITY }).bind(modelConfig);
 
 const baseClient = new OpenAI({
   apiKey: env.OPENAI_API_KEY,
-  timeout: 120 * 1000,
+  timeout: 120 * 1000, // This is a TCP-level timeout, good to have.
   maxRetries: 3,
-})
+});
 
 export async function callLanguageModel({
   modelName,
@@ -1435,72 +2623,85 @@ export async function callLanguageModel({
   isJson = true,
   fewShotInputs = [],
   fewShotOutputs = [],
-  temperature = 0.0,
 }) {
-  const messages = []
+  const messages = [];
   if (systemPrompt) {
     const systemContent =
-      typeof systemPrompt === 'object' ? JSON.stringify(systemPrompt) : systemPrompt
-    messages.push({ role: 'system', content: systemContent })
+      typeof systemPrompt === 'object' ? JSON.stringify(systemPrompt) : systemPrompt;
+    messages.push({ role: 'system', content: systemContent });
   }
   fewShotInputs.forEach((input, i) => {
-    const shotContent = typeof input === 'string' ? input : JSON.stringify(input)
+    const shotContent = typeof input === 'string' ? input : JSON.stringify(input);
     if (shotContent) {
-      messages.push({ role: 'user', content: shotContent })
-      messages.push({ role: 'assistant', content: fewShotOutputs[i] })
+      messages.push({ role: 'user', content: shotContent });
+      messages.push({ role: 'assistant', content: fewShotOutputs[i] });
     }
-  })
-  const finalUserContent = userContent || prompt
-  messages.push({ role: 'user', content: finalUserContent })
+  });
+  const finalUserContent = userContent || prompt;
+  messages.push({ role: 'user', content: finalUserContent });
   logger.trace(
     { payload: { model: modelName, messages_count: messages.length } },
     'Sending payload to LLM.'
-  )
-  const result = await safeExecute(() =>
-    baseClient.chat.completions.create({
-      model: modelName,
-      messages: messages,
-      temperature,
-      response_format: isJson ? { type: 'json_object' } : undefined,
-    })
-  )
-  if (!result) return { error: 'API call failed' }
-  if (result.usage) {
-    tokenTracker.recordUsage(modelName, result.usage)
+  );
+
+  const apiPayload = {
+    model: modelName,
+    messages: messages,
+  };
+  if (isJson) {
+    apiPayload.response_format = { type: 'json_object' };
   }
-  const responseContent = result.choices[0].message.content
-  logger.trace({ chars: responseContent.length }, 'Received LLM response.')
+
+  // Use the robust safeExecute with its built-in timeout race.
+  // We'll give it an 85-second timeout, slightly less than the safeExecute default.
+  const result = await safeExecute(() => baseClient.chat.completions.create(apiPayload), {
+    timeout: 85000,
+  });
+
+  if (!result) {
+    // safeExecute will have already logged the error (timeout or otherwise).
+    return { error: 'API call failed or timed out' };
+  }
+
+  if (result.usage) {
+    tokenTracker.recordUsage(modelName, result.usage);
+  }
+  const responseContent = result.choices[0].message.content;
+  logger.trace({ chars: responseContent.length }, 'Received LLM response.');
+
   if (isJson) {
     try {
-      return JSON.parse(responseContent)
+      return JSON.parse(responseContent);
     } catch (parseError) {
       logger.error(
         { err: parseError, details: responseContent },
         `LLM response JSON Parse Error for model ${modelName}`
-      )
-      return { error: 'JSON Parsing Error' }
+      );
+      return { error: 'JSON Parsing Error' };
     }
   }
-  return responseContent
+  return responseContent;
 }
-
 ```
 
 ## 📄 src/lib/safeInvoke.js
-*Lines: 82, Size: 2.53 KB*
+*Lines: 94, Size: 2.96 KB*
 
 ```javascript
+// File: packages/ai-services/src/lib/safeInvoke.js
+
 'use server'
 import { logger } from '@headlines/utils-server/logger'
 import { getRedisClient } from '@headlines/utils-server/redisClient'
 import { createHash } from 'crypto'
+// REMOVED: StringOutputParser is no longer needed.
 
 const MAX_RETRIES = 1
 const CACHE_TTL_SECONDS = 60 * 60 * 24
 const inMemoryCache = new Map()
 
 function createCacheKey(agentName, input) {
-  const hash = createHash('sha256')
+  const hash = createHash('sha256') // FIX 1: Corrected hashing algorithm from 'sha269' to 'sha256'
   hash.update(JSON.stringify(input))
   return `ai_cache:${agentName}:${hash.digest('hex')}`
 }
@@ -1508,23 +2709,31 @@ function createCacheKey(agentName, input) {
 export async function safeInvoke(chain, input, agentName, zodSchema) {
   const redis = await getRedisClient()
   const cacheKey = createCacheKey(agentName, input)
+
   if (redis) {
     try {
       const cachedResult = await redis.get(cacheKey)
-      if (cachedResult) {
+      if (typeof cachedResult === 'string' && cachedResult.length > 0) {
         logger.trace({ agent: agentName }, `[Redis Cache HIT] for ${agentName}.`)
         return JSON.parse(cachedResult)
       }
     } catch (err) {
-      logger.error({ err, agent: agentName }, `Redis GET failed for ${agentName}.`)
+      logger.error(
+        { err, agent: agentName, key: cacheKey },
+        `Redis GET or PARSE failed for ${agentName}.`
+      )
     }
   } else if (inMemoryCache.has(cacheKey)) {
     logger.trace({ agent: agentName }, `[In-Memory Cache HIT] for ${agentName}.`)
     return inMemoryCache.get(cacheKey)
   }
+
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
+      // FIX 2: Invoke the chain directly. It already has a JsonOutputParser.
+      // This eliminates the TypeError by not piping a JS object into a StringOutputParser.
       const result = await chain.invoke(input)
+
       const validation = zodSchema.safeParse(result)
       if (!validation.success) {
         logger.error(
@@ -1539,6 +2748,7 @@ export async function safeInvoke(chain, input, agentName, zodSchema) {
         throw new Error('Zod validation failed')
       }
       const dataToCache = validation.data
+
       if (redis) {
         try {
           await redis.set(cacheKey, JSON.stringify(dataToCache), {
@@ -1574,18 +2784,91 @@ export async function safeInvoke(chain, input, agentName, zodSchema) {
 
 ```
 
-## 📄 src/rag/generation.js
-*Lines: 128, Size: 4.31 KB*
+## 📄 src/next.js
+*Lines: 65, Size: 1.46 KB*
 
 ```javascript
-// packages/ai-services/src/lib/rag/generation.js (Corrected for OpenAI)
-import { getSynthesizerPrompt } from './prompts'
-import { checkGroundedness } from './validation'
-// CORRECTED IMPORT: Use the generic callLanguageModel instead of the Groq-specific one.
-import { callLanguageModel } from '../lib/langchain.js'
+import 'server-only'
 
-// CORRECTED MODEL: Switched from a Groq-specific model to a powerful OpenAI model.
-const SYNTHESIZER_MODEL = 'gpt-4o'
+// Explicitly re-export all functions and services from the core module
+// for the Next.js server runtime.
+export {
+  // Foundational exports
+  performAiSanityCheck,
+  processChatRequest,
+  callLanguageModel,
+
+  // Low-level chains
+  articleChain,
+  articlePreAssessmentChain,
+  clusteringChain,
+  contactFinderChain,
+  contactResolverChain,
+  disambiguationChain,
+  emailIntroChain,
+  emailSubjectChain,
+  entityCanonicalizerChain,
+  entityExtractorChain,
+  executiveSummaryChain,
+  headlineChain,
+  batchHeadlineChain,
+  judgeChain,
+  opportunityChain,
+  sectionClassifierChain,
+  selectorRepairChain,
+  synthesisChain,
+  watchlistSuggestionChain,
+  translateChain,
+  countryCorrectionChain,
+
+  // External search and data retrieval services
+  findAlternativeSources,
+  performGoogleSearch,
+  findNewsApiArticlesForEvent,
+  fetchWikipediaSummary,
+
+  // Vector embedding and search services
+  generateEmbedding,
+  findSimilarArticles,
+
+  // High-level agent functions
+  assessArticleContent,
+  preAssessArticle,
+  batchAssessArticles,
+  clusterArticlesIntoEvents,
+  resolveVagueContact,
+  findContactDetails,
+  generateEmailSubjectLine,
+  generatePersonalizedIntro,
+  extractEntities,
+  entityCanonicalizerAgent,
+  assessHeadlinesInBatches,
+  judgePipelineOutput,
+  generateOpportunitiesFromEvent,
+  sectionClassifierAgent,
+  suggestNewSelector,
+  synthesizeEvent,
+  synthesizeFromHeadline,
+  generateWatchlistSuggestions,
+  generateExecutiveSummary,
+} from './core.js'
+
+```
+
+## 📄 src/rag/generation.js
+*Lines: 129, Size: 4.17 KB*
+
+```javascript
+// File: packages/ai-services/src/rag/generation.js (Unabridged, Final Fix)
+
+'use server'
+
+import { getSynthesizerPrompt } from './prompts.js'
+import { checkGroundedness } from './validation.js'
+import { callLanguageModel } from '../lib/langchain.js'
+import { settings } from '@headlines/config'
+
+const SYNTHESIZER_MODEL = settings.LLM_MODEL_SYNTHESIS
 
 function assembleContext(ragResults, wikiResults, searchResults) {
   const dbContext =
@@ -1645,7 +2928,7 @@ ${context.wikiResults.map((w) => `  - **Query:** "${w.query}"\n    - **Result:**
 ${context.searchResults.map((s) => `  - **Query:** "${plan.user_query}"\n    - **Result:** ${s.title}: ${s.snippet.substring(0, 100)}...`).join('\n')}
 
 **FINAL CHECK:**
-- **Groundedness Passed:** CONFIRMED
+- **Groundedness Passed:** ${groundednessResult.is_grounded ? 'CONFIRMED' : 'FAILED'}
 `
   return thoughts.trim().replace(/\n\n+/g, '\n\n')
 }
@@ -1657,8 +2940,7 @@ export async function generateFinalResponse({ plan, context }) {
     context.searchResults
   )
 
-  console.log('[RAG Generation] Calling Synthesizer Agent with OpenAI...')
-  // CORRECTED CALL: Replaced callGroqWithRetry with the standard callLanguageModel.
+  console.log(`[RAG Generation] Calling Synthesizer Agent with ${SYNTHESIZER_MODEL}...`)
   const synthesizerResponse = await callLanguageModel({
     modelName: SYNTHESIZER_MODEL,
     systemPrompt: getSynthesizerPrompt(),
@@ -1667,8 +2949,8 @@ export async function generateFinalResponse({ plan, context }) {
       null,
       2
     )}\n\nUSER'S QUESTION: "${plan.user_query}"`,
-    isJson: false, // CRITICAL: The synthesizer prompt returns Markdown, not JSON.
-    temperature: 0.1,
+    isJson: false,
+    // temperature: 0.1, // <-- THIS LINE IS NOW REMOVED
   })
 
   const rawResponse = synthesizerResponse
@@ -1709,16 +2991,16 @@ export async function generateFinalResponse({ plan, context }) {
 ```
 
 ## 📄 src/rag/orchestrator.js
-*Lines: 49, Size: 1.78 KB*
+*Lines: 49, Size: 1.79 KB*
 
 ```javascript
 'use server';
 
 // src/lib/rag/orchestrator.js (version 4.2)
-import { retrieveContextForQuery } from './retrieval'
-import { assessContextQuality } from './validation'
-import { generateFinalResponse } from './generation'
-import { runPlannerAgent } from './planner'
+import { retrieveContextForQuery } from './retrieval.js'
+import { assessContextQuality } from './validation.js'
+import { generateFinalResponse } from './generation.js'
+import { runPlannerAgent } from './planner.js'
 
 /**
  * Main orchestrator for the Agentic RAG chat pipeline.
@@ -1764,90 +3046,38 @@ export async function processChatRequest(messages) {
 ```
 
 ## 📄 src/rag/planner.js
-*Lines: 92, Size: 3.27 KB*
+*Lines: 40, Size: 1.1 KB*
 
 ```javascript
-// packages/ai-services/src/lib/rag/planner.js (Corrected for OpenAI)
+// File: packages/ai-services/src/rag/planner.js (Unabridged and Corrected)
+
 'use server'
 
-// CORRECTED IMPORT: Use the generic callLanguageModel instead of the Groq-specific one.
 import { callLanguageModel } from '../lib/langchain.js'
-import { PLANNER_PROMPT } from './prompts'
+import { PLANNER_PROMPT } from './prompts.js'
+import { settings } from '@headlines/config'
 
-// CORRECTED MODEL: Switched from a Groq-specific model to a powerful OpenAI model.
-const PLANNER_MODEL = 'gpt-4o'
+const PLANNER_MODEL = settings.LLM_MODEL_UTILITY
 
-/**
- * A resilient parser that attempts to fix common LLM-induced JSON errors.
- * @param {string} jsonString - The potentially malformed JSON string from the LLM.
- * @returns {object} A valid JavaScript object.
- * @throws {Error} If the JSON is irreparable.
- */
-function resilientJSONParse(jsonString) {
-  try {
-    return JSON.parse(jsonString)
-  } catch (e) {
-    console.warn(
-      '[Planner Agent] Initial JSON.parse failed. Attempting cleanup.',
-      e.message
-    )
-    // Attempt to fix common errors, like unescaped quotes in search queries
-    let cleanedString = jsonString.replace(/""/g, '"\\"')
-
-    // Find the start and end of the JSON object
-    const startIndex = cleanedString.indexOf('{')
-    const endIndex = cleanedString.lastIndexOf('}')
-    if (startIndex === -1 || endIndex === -1) {
-      throw new Error('Could not find a valid JSON object in the string.')
-    }
-    cleanedString = cleanedString.substring(startIndex, endIndex + 1)
-
-    try {
-      return JSON.parse(cleanedString)
-    } catch (finalError) {
-      console.error('[Planner Agent] Resilient JSON parsing failed.', finalError.message)
-      throw new Error('Failed to parse LLM JSON response after cleanup.')
-    }
-  }
-}
-
-/**
- * Runs the Planner Agent to decompose the user's query into a logical plan
- * and a set of optimized search queries.
- * @param {Array<object>} messages - The conversation history.
- * @returns {Promise<object>} An object containing the plan and search queries.
- */
 export async function runPlannerAgent(messages) {
-  const userQuery = messages[messages.length - 1].content
-  const conversationHistory =
-    messages.length > 1
-      ? messages
-          .slice(-5, -1)
-          .map((m) => `${m.role}: ${m.content}`)
-          .join('\n')
-      : 'No history.'
+  const conversationText = messages
+    .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
+    .join('\n\n')
 
-  const prompt = PLANNER_PROMPT.replace(
-    '{CONVERSATION_HISTORY}',
-    conversationHistory
-  ).replace('{USER_QUERY}', userQuery)
+  console.log(`[Planner Agent] Generating plan with ${PLANNER_MODEL}...`)
 
-  console.log('[Planner Agent] Generating plan with OpenAI...')
-  // CORRECTED CALL: Replaced callGroqWithRetry with the standard callLanguageModel.
   const response = await callLanguageModel({
     modelName: PLANNER_MODEL,
-    systemPrompt: prompt, // The full prompt is now treated as a system prompt for this agent
-    userContent: 'Generate the plan based on the instructions.', // A simple user message to trigger the system prompt
+    systemPrompt: PLANNER_PROMPT,
+    userContent: conversationText,
     isJson: true,
-    temperature: 0.0,
   })
 
-  // The response from callLanguageModel is already a parsed JSON object or an error object.
   if (response.error) {
     throw new Error(`Planner Agent failed: ${response.error}`)
   }
 
-  const planObject = response // No need for resilientJSONParse
+  const planObject = response
 
   console.groupCollapsed('[Planner Agent] Plan Generated')
   console.log('User Query:', planObject.user_query)
@@ -1862,10 +3092,10 @@ export async function runPlannerAgent(messages) {
 ```
 
 ## 📄 src/rag/prompts.js
-*Lines: 102, Size: 5.82 KB*
+*Lines: 103, Size: 6.08 KB*
 
 ```javascript
-// src/lib/rag/prompts.js (version 5.5)
+// File: packages/ai-services/src/rag/prompts.js (Unabridged and Corrected)
 
 export const PLANNER_PROMPT = `You are an expert AI Planner. Your job is to analyze the user's query and conversation history to create a step-by-step plan for an AI Synthesizer Agent to follow. You also create a list of optimized search queries for a Retrieval Agent.
 
@@ -1930,6 +3160,7 @@ Synthesize information from all sources in the "CONTEXT" into a single, cohesive
 2.  **DIRECT ATTRIBUTION:** You MUST still cite your sources inline for the UI. Wrap facts from the Internal DB with <rag>tags</rag>, from Wikipedia with <wiki>tags</wiki>, and from Search Results with <search>tags</search>. The user will not see these tags, but they are essential for the system.
 3.  **BE CONFIDENT AND DIRECT:** Present the synthesized facts as a definitive answer.
 4.  **INSUFFICIENT DATA:** If the context is insufficient to answer the question at all, respond with EXACTLY: "I do not have sufficient information in my sources to answer that question."
+5.  **DO NOT OFFER HELP (CRITICAL):** You MUST NOT end your response by offering to search for more information, provide more details, or ask follow-up questions. Your answer should be a complete, self-contained statement of facts.
 
 **DO NOT:**
 -   Use phrases like "According to the context provided...", "The sources state...", or "Based on the information...".
@@ -1965,18 +3196,19 @@ Analyze the "Proposed Response" sentence by sentence.
 
 If the response is fully supported, "unsupported_claims" should be an empty array. If the "Proposed Response" states that it cannot answer the question, consider it grounded.`
 
-export const FAILED_GROUNDEDNESS_PROMPT = `I could not form a reliable answer based on the available information. The initial response I generated may have contained information not supported by the sources. For accuracy, please ask a more specific question or try rephradist se your request.`
+export const FAILED_GROUNDEDNESS_PROMPT = `I could not form a reliable answer based on the available information. The initial response I generated may have contained information not supported by the sources. For accuracy, please ask a more specific question or try rephrasing your request.`
 
 ```
 
 ## 📄 src/rag/retrieval.js
-*Lines: 182, Size: 5.31 KB*
+*Lines: 183, Size: 5.46 KB*
 
 ```javascript
-// packages/ai-services/src/rag/retrieval.js
+// File: packages/ai-services/src/rag/retrieval.js (Unabridged and Corrected)
+
 'use server'
 
-import OpenAI from 'openai'
+import { OpenAI } from 'openai'
 import { Pinecone } from '@pinecone-database/pinecone'
 import { generateQueryEmbeddings } from '../embeddings/embeddings.js'
 import {
@@ -1984,27 +3216,25 @@ import {
   validateWikipediaContent,
 } from '../search/wikipedia.js'
 import { getGoogleSearchResults } from '../search/serpapi.js'
-import { env } from '@headlines/config/server'
+import { env } from '@headlines/config'
 
-let groq, pineconeIndex
+let openAIClient, pineconeIndex
 function initializeClients() {
-  if (!groq) {
-    groq = new OpenAI({
-      apiKey: env.GROQ_API_KEY,
-      baseURL: 'https://api.groq.com/openai/v1',
-    })
+  if (!openAIClient) {
+    openAIClient = new OpenAI({ apiKey: env.OPENAI_API_KEY })
     const pc = new Pinecone({ apiKey: env.PINECONE_API_KEY })
     pineconeIndex = pc.index(env.PINECONE_INDEX_NAME)
   }
 }
 
-const ENTITY_EXTRACTOR_MODEL = 'llama3-70b-8192'
+const ENTITY_EXTRACTOR_MODEL = 'gpt-5-mini'
 const SIMILARITY_THRESHOLD = 0.38
 const ENTITY_EXTRACTOR_PROMPT_FOR_HISTORY = `You are an entity extractor. Your job is to identify all specific people and companies mentioned in a given text.
 Respond ONLY with a valid JSON object with the following structure:
 { "entities": ["Entity Name 1", "Entity Name 2"] }
 `
 
+// This function is no longer called by the main orchestrator but is kept for potential future use.
 async function extractEntitiesFromHistory(messages) {
   if (messages.length < 2) {
     return []
@@ -2016,7 +3246,7 @@ async function extractEntitiesFromHistory(messages) {
 
   initializeClients()
   try {
-    const entityResponse = await groq.chat.completions.create({
+    const entityResponse = await openAIClient.chat.completions.create({
       model: ENTITY_EXTRACTOR_MODEL,
       messages: [
         { role: 'system', content: ENTITY_EXTRACTOR_PROMPT_FOR_HISTORY },
@@ -2053,7 +3283,7 @@ async function fetchPineconeContext(queries, exclude_entities = []) {
 
   const filter =
     exclude_entities.length > 0
-      ? { key_individuals: { $nin: exclude_entities } }
+      ? { 'metadata.entities': { $nin: exclude_entities } }
       : undefined
 
   if (filter) {
@@ -2119,7 +3349,9 @@ async function fetchValidatedWikipediaContext(entities) {
 
 export async function retrieveContextForQuery(plan, messages, mode = 'full') {
   const { search_queries, user_query } = plan
-  const entitiesToExclude = await extractEntitiesFromHistory(messages)
+
+  const entitiesToExclude = []
+  console.log('[RAG Retrieval] History-based entity exclusion is temporarily disabled.')
 
   const pineconeResults = await fetchPineconeContext(search_queries, entitiesToExclude)
 
@@ -2158,29 +3390,17 @@ export async function retrieveContextForQuery(plan, messages, mode = 'full') {
 ```
 
 ## 📄 src/rag/validation.js
-*Lines: 152, Size: 4.92 KB*
+*Lines: 142, Size: 4.79 KB*
 
 ```javascript
-// src/lib/rag/validation.js (version 3.0)
-import OpenAI from 'openai'
-import { env } from '@/lib/env.mjs'
-import { GROUNDEDNESS_CHECK_PROMPT } from './prompts'
+// packages/ai-services/src/rag/validation.js (Corrected)
+import { settings } from '@headlines/config'
+import { callLanguageModel } from '../lib/langchain.js'
+import { GROUNDEDNESS_CHECK_PROMPT } from './prompts.js'
 
 // --- Constants ---
 const HIGH_CONFIDENCE_THRESHOLD = 0.75
 const SIMILARITY_THRESHOLD = 0.38
-const GROUNDEDNESS_MODEL = 'openai/gpt-oss-120b'
-
-let groq
-function getGroqClient() {
-  if (!groq) {
-    groq = new OpenAI({
-      apiKey: env.GROQ_API_KEY,
-      baseURL: 'https://api.groq.com/openai/v1',
-    })
-  }
-  return groq
-}
 
 // --- Internal Helper Functions ---
 function simpleEntityExtractor(text, sourceIdentifier) {
@@ -2282,20 +3502,22 @@ export async function checkGroundedness(responseText, contextString) {
   }
 
   try {
-    const client = getGroqClient()
     const prompt = GROUNDEDNESS_CHECK_PROMPT.replace('{CONTEXT}', contextString).replace(
       '{RESPONSE}',
       responseText
     )
 
-    const response = await client.chat.completions.create({
-      model: GROUNDEDNESS_MODEL,
-      messages: [{ role: 'system', content: prompt }],
-      response_format: { type: 'json_object' },
-      temperature: 0.0,
+    // CORRECTED: Use the project's standard AI call function and configured model
+    const result = await callLanguageModel({
+      modelName: settings.LLM_MODEL_UTILITY,
+      systemPrompt: prompt,
+      userContent: 'Perform the groundedness check based on the system prompt.',
+      isJson: true,
     })
 
-    const result = JSON.parse(response.choices[0].message.content)
+    if (result.error) {
+      throw new Error(result.error)
+    }
 
     if (result.is_grounded) {
       console.log('[RAG Validation] PASSED: Response is grounded in sources.')
@@ -2739,13 +3961,13 @@ export const watchlistSuggestionSchema = z.object({
 ```
 
 ## 📄 src/search/search.js
-*Lines: 86, Size: 3.11 KB*
+*Lines: 86, Size: 3.1 KB*
 
 ```javascript
 'use server'
 import axios from 'axios'
 import NewsAPI from 'newsapi'
-import { env } from '@headlines/config/server'
+import { env } from '@headlines/config'
 import { logger, apiCallTracker } from '@headlines/utils-server'
 
 const { SERPER_API_KEY, NEWSAPI_API_KEY } = env
@@ -2831,19 +4053,25 @@ export async function findNewsApiArticlesForEvent(headline) {
 ```
 
 ## 📄 src/search/serpapi.js
-*Lines: 57, Size: 1.61 KB*
+*Lines: 63, Size: 1.78 KB*
 
 ```javascript
-// packages/ai-services/src/search/serpapi.js
+// File: packages/ai-services/src/search/serpapi.js (Unabridged)
+
 'use server'
 
 import { getJson } from 'serpapi'
-import { env } from '@headlines/config/server'
+import { env } from '@headlines/config'
 
 const searchCache = new Map()
 const CACHE_TTL = 1000 * 60 * 60 // 1 hour
 
 export async function getGoogleSearchResults(query) {
+  if (!env.SERPAPI_API_KEY) {
+    console.warn('[SerpAPI] SERPAPI_API_KEY is not configured. Skipping web search.')
+    return { success: true, results: [] }
+  }
+
   if (!query) {
     return { success: false, error: 'Query is required.' }
   }
@@ -2894,16 +4122,45 @@ export async function getGoogleSearchResults(query) {
 ```
 
 ## 📄 src/search/wikipedia.js
-*Lines: 107, Size: 3.62 KB*
+*Lines: 154, Size: 4.98 KB*
 
 ```javascript
-'use server'; 
-// DEFINITIVE FIX: Import the logger directly. It is a server-safe module.
+// File: packages/ai-services/src/search/wikipedia.js (Unabridged and Corrected)
+
+'use server'
 import { logger, apiCallTracker } from '@headlines/utils-server'
-import { disambiguationChain } from '../chains/index.js'
+import { settings } from '@headlines/config'
+import { ChatPromptTemplate } from '@langchain/core/prompts'
+import { JsonOutputParser } from '@langchain/core/output_parsers'
+import { RunnableSequence } from '@langchain/core/runnables'
+import { getUtilityModel } from '../lib/langchain.js'
+import { safeInvoke } from '../lib/safeInvoke.js'
+import { disambiguationSchema } from '../schemas/index.js'
+import { instructionDisambiguation } from '@headlines/prompts'
 
 const WIKI_API_ENDPOINT = 'https://en.wikipedia.org/w/api.php'
 const WIKI_SUMMARY_LENGTH = 750
+
+// --- START: DEFINITIVE FIX FOR WIKIPEDIA CHAIN ---
+const systemPrompt = [
+  instructionDisambiguation.whoYouAre,
+  instructionDisambiguation.whatYouDo,
+  ...instructionDisambiguation.guidelines,
+  instructionDisambiguation.outputFormatDescription,
+].join('\n\n')
+
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', systemPrompt],
+  ['human', '{inputText}'],
+])
+
+// Revert to the simpler, more direct chain. Our safeInvoke function will handle errors.
+const disambiguationChain = RunnableSequence.from([
+  prompt,
+  getUtilityModel(),
+  new JsonOutputParser(),
+])
+// --- END: DEFINITIVE FIX ---
 
 async function fetchWithRetry(url, options, maxRetries = 2) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -2941,16 +4198,34 @@ export async function fetchWikipediaSummary(query) {
     if (!searchResults || searchResults.length === 0)
       throw new Error(`No search results for "${query}".`)
 
-    const userContent = `Original Query: "${query}"\n\nSearch Results:\n${JSON.stringify(searchResults.map((r) => ({ title: r.title, snippet: r.snippet })))}`
-    const disambiguationResponse = await disambiguationChain({ inputText: userContent })
+    let best_title = null
+    try {
+      const userContent = `Original Query: "${query}"\n\nSearch Results:\n${JSON.stringify(searchResults.map((r) => ({ title: r.title, snippet: r.snippet })))}`
 
-    if (disambiguationResponse.error || !disambiguationResponse.best_title) {
-      throw new Error(
-        disambiguationResponse.error ||
-          `AI agent could not disambiguate a relevant page for "${query}".`
+      const disambiguationResponse = await safeInvoke(
+        disambiguationChain,
+        { inputText: userContent },
+        'disambiguationChain',
+        disambiguationSchema
+      )
+
+      if (
+        disambiguationResponse &&
+        !disambiguationResponse.error &&
+        disambiguationResponse.best_title
+      ) {
+        best_title = disambiguationResponse.best_title
+      }
+    } catch (e) {
+      logger.warn({ err: e }, `Disambiguation chain failed for query "${query}".`)
+    }
+
+    if (!best_title) {
+      best_title = searchResults[0].title
+      logger.info(
+        `[Wikipedia] AI disambiguation failed or returned null. Falling back to top search result: "${best_title}"`
       )
     }
-    const { best_title } = disambiguationResponse
 
     const summaryParams = new URLSearchParams({
       action: 'query',

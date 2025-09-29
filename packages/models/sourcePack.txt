@@ -1,14 +1,17 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 15 files, 1 directories
+Total: 18 files, 1 directories
 
 ```
 headlines/
 ├── 📁 src/
 │   ├── 📄 Article.js
+│   ├── 📄 client.js
 │   ├── 📄 constants.js
 │   ├── 📄 Country.js
 │   ├── 📄 index.js
+│   ├── 📄 next.js
+│   ├── 📄 node.js
 │   ├── 📄 Opportunity.js
 │   ├── 📄 PushSubscription.js
 │   ├── 📄 RunVerdict.js
@@ -24,9 +27,9 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-21T14:17:28.675Z
+**Generated**: 2025-09-29T13:20:36.408Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/models
-**Total Files**: 15
+**Total Files**: 18
 **Package**: @headlines/models@1.0.0
 **Description**: Shared Mongoose models for the Headlines monorepo.
 
@@ -36,7 +39,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 17, Size: 355 Bytes*
+*Lines: 19, Size: 412 Bytes*
 
 ```json
 {
@@ -48,7 +51,9 @@ headlines/
   "license": "ISC",
   "exports": {
     ".": "./src/index.js",
-    "./src/index.js": "./src/index.js"
+    "./node": "./src/node.js",
+    "./next": "./src/next.js",
+    "./client": "./src/client.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
@@ -59,133 +64,417 @@ headlines/
 ```
 
 ## 📄 src/Article.js
-*Lines: 12, Size: 2.71 KB*
+*Lines: 79, Size: 2.44 KB*
 
 ```javascript
-import mongoose from 'mongoose';
-import { ARTICLE_STATUSES } from './constants.js';
-const { Schema, model, models } = mongoose;
-const LifecycleEventSchema = new Schema({ stage: { type: String, required: true }, status: { type: String, required: true }, reason: { type: String }, timestamp: { type: Date, default: Date.now }, }, { _id: false });
-const ArticleSchema = new Schema({ headline: { type: String, required: true, trim: true, minlength: 5, maxlength: 500 }, headline_en: { type: String, trim: true }, link: { type: String, required: true, unique: true, trim: true }, newspaper: { type: String, required: true, trim: true }, source: { type: String, required: true, trim: true }, country: { type: String, trim: true, index: true }, imageUrl: { type: String, trim: true }, headline_selector: { type: String, trim: true }, relevance_headline: { type: Number, required: true, min: 0, max: 100 }, assessment_headline: { type: String, required: true, trim: true }, articleContent: { type: { contents: { type: [String], default: [] } }, required: false }, classification: { type: String, trim: true }, topic: { type: String, trim: true }, relevance_article: { type: Number, min: 0, max: 100 }, assessment_article: { type: String, trim: true }, amount: { type: Number }, key_individuals: [{ _id: false, name: { type: String, trim: true }, role_in_event: { type: String, trim: true }, company: { type: String, trim: true }, email_suggestion: { type: String, trim: true }, }], enrichment_error: { type: String, trim: true }, emailed: { type: Boolean, default: false }, embedding: { type: [Number] }, synthesizedEventId: { type: Schema.Types.ObjectId, ref: 'SynthesizedEvent', index: true, required: false, }, status: { type: String, enum: ARTICLE_STATUSES, default: 'scraped', index: true }, pipeline_lifecycle: { type: [LifecycleEventSchema], default: [] }, }, { timestamps: true, collection: 'articles', methods: { toRealtimePayload() { return { _id: this._id, headline: this.headline, headline_en: this.headline_en, link: this.link, newspaper: this.newspaper, country: this.country, topic: this.topic, relevance_article: this.relevance_article, assessment_article: this.assessment_article, key_individuals: (this.key_individuals || []).map((p) => ({ name: p.name, role_in_event: p.role_in_event, company: p.company, })), createdAt: this.createdAt, updatedAt: this.updatedAt, }; }, }, });
-ArticleSchema.index({ headline: 'text', headline_en: 'text', assessment_article: 'text' });
-ArticleSchema.index({ newspaper: 1, createdAt: -1 });
-ArticleSchema.index({ relevance_article: -1, createdAt: -1 });
-ArticleSchema.index({ relevance_headline: -1, createdAt: -1 });
-ArticleSchema.index({ country: 1, createdAt: -1 });
-export default models.Article || model('Article', ArticleSchema);
+// packages/models/src/Article.js (version 2.0.2)
+import mongoose from 'mongoose'
+import { ARTICLE_STATUSES } from './constants.js'
+
+const { Schema, model, models } = mongoose
+
+const LifecycleEventSchema = new Schema(
+  {
+    stage: { type: String, required: true },
+    status: { type: String, required: true },
+    reason: { type: String },
+    timestamp: { type: Date, default: Date.now },
+  },
+  { _id: false }
+)
+
+const ArticleSchema = new Schema(
+  {
+    headline: { type: String, required: true, trim: true, minlength: 5, maxlength: 500 },
+    headline_en: { type: String, trim: true },
+    link: { type: String, required: true, unique: true, trim: true },
+    newspaper: { type: String, required: true, trim: true },
+    source: { type: String, required: true, trim: true },
+    country: { type: String, trim: true, index: true },
+    imageUrl: { type: String, trim: true },
+    relevance_headline: { type: Number, required: true, min: 0, max: 100 },
+    assessment_headline: { type: String, required: true, trim: true },
+    articleContent: {
+      type: { contents: { type: [String], default: [] } },
+      required: false,
+      select: false,
+    },
+    relevance_article: { type: Number, min: 0, max: 100 },
+    assessment_article: { type: String, trim: true },
+    key_individuals: [
+      {
+        _id: false,
+        name: String,
+        role_in_event: String,
+        company: String,
+        email_suggestion: String,
+      },
+    ],
+    enrichment_error: { type: String, trim: true },
+    emailed: { type: Boolean, default: false },
+    embedding: { type: [Number], select: false },
+    synthesizedEventId: {
+      type: Schema.Types.ObjectId,
+      ref: 'SynthesizedEvent',
+      index: true,
+      required: false,
+    },
+    status: { type: String, enum: ARTICLE_STATUSES, default: 'scraped', index: true },
+    pipeline_lifecycle: { type: [LifecycleEventSchema], default: [] },
+  },
+  {
+    timestamps: true,
+    collection: 'articles',
+    methods: {
+      toRealtimePayload() {
+        return {
+          _id: this._id,
+          headline: this.headline,
+          headline_en: this.headline_en,
+          link: this.link,
+          newspaper: this.newspaper,
+          country: this.country,
+          relevance_article: this.relevance_article,
+          createdAt: this.createdAt,
+        }
+      },
+    },
+  }
+)
+
+ArticleSchema.index({ headline: 'text', headline_en: 'text', assessment_article: 'text' })
+
+export default models.Article || model('Article', ArticleSchema)
 
 ```
 
 ## 📄 src/Country.js
-*Lines: 6, Size: 584 Bytes*
+*Lines: 29, Size: 663 Bytes*
 
 ```javascript
-// packages/models/src/Country.js (version 4.0.0 - Self-Contained)
-import mongoose from 'mongoose';
-const { Schema, model, models } = mongoose;
-const CountrySchema = new Schema({ name: { type: String, required: true, unique: true, trim: true, }, isoCode: { type: String, required: true, unique: true, trim: true, uppercase: true, minlength: 2, maxlength: 2, }, status: { type: String, enum: ['active', 'inactive'], default: 'active', required: true, index: true, }, }, { timestamps: true, collection: 'countries', });
-export default models.Country || model('Country', CountrySchema);
+// packages/models/src/Country.js (version 5.0.0)
+import mongoose from 'mongoose'
+const { Schema, model, models } = mongoose
+
+const CountrySchema = new Schema(
+  {
+    name: { type: String, required: true, unique: true, trim: true },
+    isoCode: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      uppercase: true,
+      minlength: 2,
+      maxlength: 2,
+    },
+    status: {
+      type: String,
+      enum: ['active', 'inactive'],
+      default: 'active',
+      required: true,
+      index: true,
+    },
+  },
+  { timestamps: true, collection: 'countries' }
+)
+
+export default models.Country || model('Country', CountrySchema)
 
 ```
 
 ## 📄 src/Opportunity.js
-*Lines: 7, Size: 1.01 KB*
+*Lines: 30, Size: 1.06 KB*
 
 ```javascript
-// packages/models/src/Opportunity.js (version 8.0.0 - Self-Contained)
-import mongoose from 'mongoose';
-const { Schema, model, models } = mongoose;
-const ContactDetailsSchema = new Schema({ email: { type: String, trim: true }, role: { type: String, trim: true }, company: { type: String, trim: true }, }, { _id: false });
-const OpportunitySchema = new Schema({ reachOutTo: { type: String, required: true, trim: true, unique: true, index: true }, contactDetails: { type: ContactDetailsSchema }, basedIn: { type: String, trim: true, index: true }, city: { type: String, trim: true, required: false }, whyContact: { type: [String], required: true }, likelyMMDollarWealth: { type: Number, required: true, default: 0 }, embedding: { type: [Number] }, events: [{ type: Schema.Types.ObjectId, ref: 'SynthesizedEvent', index: true, }], relatedOpportunities: [{ type: Schema.Types.ObjectId, ref: 'Opportunity' }], }, { timestamps: true, collection: 'opportunities', });
-export default models.Opportunity || model('Opportunity', OpportunitySchema);
+// packages/models/src/Opportunity.js (version 9.0.0)
+import mongoose from 'mongoose'
+const { Schema, model, models } = mongoose
+
+const ContactDetailsSchema = new Schema(
+  {
+    email: { type: String, trim: true },
+    role: { type: String, trim: true },
+    company: { type: String, trim: true },
+  },
+  { _id: false }
+)
+
+const OpportunitySchema = new Schema(
+  {
+    reachOutTo: { type: String, required: true, trim: true, unique: true, index: true },
+    contactDetails: { type: ContactDetailsSchema },
+    basedIn: { type: String, trim: true, index: true },
+    city: { type: String, trim: true, required: false },
+    whyContact: { type: [String], required: true },
+    likelyMMDollarWealth: { type: Number, required: true, default: 0 },
+    embedding: { type: [Number] },
+    events: [{ type: Schema.Types.ObjectId, ref: 'SynthesizedEvent', index: true }],
+    relatedOpportunities: [{ type: Schema.Types.ObjectId, ref: 'Opportunity' }],
+  },
+  { timestamps: true, collection: 'opportunities' }
+)
+
+export default models.Opportunity || model('Opportunity', OpportunitySchema)
 
 ```
 
 ## 📄 src/PushSubscription.js
-*Lines: 6, Size: 598 Bytes*
+*Lines: 24, Size: 644 Bytes*
 
 ```javascript
-// packages/models/src/PushSubscription.js (version 4.0.0 - Self-Contained)
-import mongoose from 'mongoose';
-const { Schema, model, models } = mongoose;
-const PushSubscriptionSchema = new Schema({ subscriberId: { type: Schema.Types.ObjectId, ref: 'Subscriber', required: true, index: true, }, endpoint: { type: String, required: true, unique: true }, keys: { p256dh: { type: String, required: true }, auth: { type: String, required: true }, }, }, { timestamps: true, collection: 'push_subscriptions', });
-export default models.PushSubscription || model('PushSubscription', PushSubscriptionSchema);
+// packages/models/src/PushSubscription.js (version 5.0.0)
+import mongoose from 'mongoose'
+const { Schema, model, models } = mongoose
+
+const PushSubscriptionSchema = new Schema(
+  {
+    subscriberId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Subscriber',
+      required: true,
+      index: true,
+    },
+    endpoint: { type: String, required: true, unique: true },
+    keys: {
+      p256dh: { type: String, required: true },
+      auth: { type: String, required: true },
+    },
+  },
+  { timestamps: true, collection: 'push_subscriptions' }
+)
+
+export default models.PushSubscription ||
+  model('PushSubscription', PushSubscriptionSchema)
 
 ```
 
 ## 📄 src/RunVerdict.js
-*Lines: 7, Size: 763 Bytes*
+*Lines: 20, Size: 769 Bytes*
 
 ```javascript
-// packages/models/src/RunVerdict.js (version 4.0.0 - Self-Contained)
-import mongoose from 'mongoose';
-const { Schema, model, models } = mongoose;
-const RunVerdictSchema = new Schema({ runStats: { type: Schema.Types.Mixed, required: true, }, judgeVerdict: { type: Schema.Types.Mixed, required: false, default: {}, }, generatedEvents: [{ type: Schema.Types.ObjectId, ref: 'SynthesizedEvent', }], generatedOpportunities: [{ type: Schema.Types.ObjectId, ref: 'Opportunity', }], duration_seconds: { type: Number, required: true, }, cost_summary: { type: Schema.Types.Mixed, required: false, }, }, { timestamps: true, collection: 'run_verdicts', });
-RunVerdictSchema.index({ createdAt: -1 });
-export default models.RunVerdict || model('RunVerdict', RunVerdictSchema);
+// packages/models/src/RunVerdict.js (version 5.0.0)
+import mongoose from 'mongoose'
+const { Schema, model, models } = mongoose
+
+const RunVerdictSchema = new Schema(
+  {
+    runStats: { type: Schema.Types.Mixed, required: true },
+    judgeVerdict: { type: Schema.Types.Mixed, required: false, default: {} },
+    generatedEvents: [{ type: Schema.Types.ObjectId, ref: 'SynthesizedEvent' }],
+    generatedOpportunities: [{ type: Schema.Types.ObjectId, ref: 'Opportunity' }],
+    duration_seconds: { type: Number, required: true },
+    cost_summary: { type: Schema.Types.Mixed, required: false },
+  },
+  { timestamps: true, collection: 'run_verdicts' }
+)
+
+RunVerdictSchema.index({ createdAt: -1 })
+
+export default models.RunVerdict || model('RunVerdict', RunVerdictSchema)
 
 ```
 
 ## 📄 src/Setting.js
-*Lines: 6, Size: 1.04 KB*
+*Lines: 40, Size: 1.14 KB*
 
 ```javascript
-// packages/models/src/Setting.js (version 4.0.0 - Self-Contained)
-import mongoose from 'mongoose';
-const { Schema, model, models } = mongoose;
-const SettingSchema = new Schema({ key: { type: String, required: true, unique: true, index: true, enum: [ 'HEADLINES_RELEVANCE_THRESHOLD', 'ARTICLES_RELEVANCE_THRESHOLD', 'EVENT_RELEVANCE_THRESHOLD', 'MINIMUM_EVENT_AMOUNT_USD_MILLIONS', 'HIGH_SIGNAL_HEADLINE_THRESHOLD', 'AGENT_DISAGREEMENT_THRESHOLD', 'SINGLETON_RELEVANCE_THRESHOLD', 'HIGH_VALUE_DEAL_USD_MM', 'SIGNIFICANT_PRIVATE_BENEFICIARY_USD_MM', 'WATCHLIST_SCORE_BOOST', 'SUGGESTION_GENERATION_THRESHOLD', 'MIN_ARTICLE_CHARS', 'LLM_MODEL_HEADLINE_ASSESSMENT', 'LLM_MODEL_ARTICLE_ASSESSMENT', 'LLM_MODEL_SYNTHESIS', 'LLM_MODEL_UTILITY', ], }, value: { type: Schema.Types.Mixed, required: true, }, description: { type: String, required: false, }, type: { type: String, required: true, enum: ['number', 'boolean', 'string'], default: 'number', }, }, { timestamps: true, collection: 'settings', });
-export default models.Setting || model('Setting', SettingSchema);
+// packages/models/src/Setting.js (version 5.0.0)
+import mongoose from 'mongoose'
+const { Schema, model, models } = mongoose
+
+const SETTING_KEYS = [
+  'HEADLINES_RELEVANCE_THRESHOLD',
+  'ARTICLES_RELEVANCE_THRESHOLD',
+  'EVENT_RELEVANCE_THRESHOLD',
+  'MINIMUM_EVENT_AMOUNT_USD_MILLIONS',
+  'HIGH_SIGNAL_HEADLINE_THRESHOLD',
+  'AGENT_DISAGREEMENT_THRESHOLD',
+  'SINGLETON_RELEVANCE_THRESHOLD',
+  'HIGH_VALUE_DEAL_USD_MM',
+  'SIGNIFICANT_PRIVATE_BENEFICIARY_USD_MM',
+  'WATCHLIST_SCORE_BOOST',
+  'SUGGESTION_GENERATION_THRESHOLD',
+  'MIN_ARTICLE_CHARS',
+  'LLM_MODEL_HEADLINE_ASSESSMENT',
+  'LLM_MODEL_ARTICLE_ASSESSMENT',
+  'LLM_MODEL_SYNTHESIS',
+  'LLM_MODEL_UTILITY',
+]
+
+const SettingSchema = new Schema(
+  {
+    key: { type: String, required: true, unique: true, index: true, enum: SETTING_KEYS },
+    value: { type: Schema.Types.Mixed, required: true },
+    description: { type: String, required: false, trim: true },
+    type: {
+      type: String,
+      required: true,
+      enum: ['number', 'boolean', 'string'],
+      default: 'number',
+    },
+  },
+  { timestamps: true, collection: 'settings' }
+)
+
+export default models.Setting || model('Setting', SettingSchema)
 
 ```
 
 ## 📄 src/Source.js
-*Lines: 10, Size: 2.06 KB*
+*Lines: 61, Size: 2.14 KB*
 
 ```javascript
-// packages/models/src/Source.js (version 6.0.0 - Self-Contained)
-import mongoose from 'mongoose';
-import { SOURCE_STATUSES, SOURCE_FREQUENCIES, EXTRACTION_METHODS } from './constants.js';
-const { Schema, model, models } = mongoose;
-const SourceAnalyticsSchema = new Schema({ totalRuns: { type: Number, default: 0 }, totalSuccesses: { type: Number, default: 0 }, totalFailures: { type: Number, default: 0 }, totalScraped: { type: Number, default: 0 }, totalRelevant: { type: Number, default: 0 }, lastRunHeadlineCount: { type: Number, default: 0 }, lastRunRelevantCount: { type: Number, default: 0 }, lastRunContentSuccess: { type: Boolean, default: false }, }, { _id: false });
-const SourceSchema = new Schema({ name: { type: String, required: true, unique: true, trim: true }, baseUrl: { type: String, required: true, trim: true }, sectionUrl: { type: String, required: true, trim: true }, rssUrl: { type: String, required: false, trim: true }, country: { type: String, required: true, trim: true, index: true }, language: { type: String, required: true, trim: true, default: 'en' }, status: { type: String, enum: SOURCE_STATUSES, default: 'active', required: true, index: true, }, scrapeFrequency: { type: String, enum: SOURCE_FREQUENCIES, default: 'high', required: true, }, extractionMethod: { type: String, enum: EXTRACTION_METHODS, required: true, default: 'declarative', }, headlineSelector: { type: [String], required: false }, linkSelector: { type: String, required: false, trim: true }, headlineTextSelector: { type: String, required: false, trim: true }, articleSelector: { type: [String], required: false }, lastScrapedAt: { type: Date, required: false, index: true }, lastSuccessAt: { type: Date, required: false }, notes: { type: String, required: false, trim: true }, analytics: { type: SourceAnalyticsSchema, default: () => ({}) }, }, { timestamps: true, collection: 'sources', });
-SourceSchema.index({ status: 1, scrapeFrequency: 1, lastScrapedAt: 1 });
-SourceSchema.index({ 'analytics.lastRunHeadlineCount': 1, status: 1 });
-export default models.Source || model('Source', SourceSchema);
+// packages/models/src/Source.js (version 7.0.0)
+import mongoose from 'mongoose'
+import { SOURCE_STATUSES, SOURCE_FREQUENCIES, EXTRACTION_METHODS } from './constants.js'
+const { Schema, model, models } = mongoose
+
+const SourceAnalyticsSchema = new Schema(
+  {
+    totalRuns: { type: Number, default: 0 },
+    totalSuccesses: { type: Number, default: 0 },
+    totalFailures: { type: Number, default: 0 },
+    totalScraped: { type: Number, default: 0 },
+    totalRelevant: { type: Number, default: 0 },
+    lastRunHeadlineCount: { type: Number, default: 0 },
+    lastRunRelevantCount: { type: Number, default: 0 },
+    lastRunContentSuccess: { type: Boolean, default: false },
+  },
+  { _id: false }
+)
+
+const SourceSchema = new Schema(
+  {
+    name: { type: String, required: true, unique: true, trim: true },
+    baseUrl: { type: String, required: true, trim: true },
+    sectionUrl: { type: String, required: true, trim: true },
+    country: { type: String, required: true, trim: true, index: true },
+    language: { type: String, required: true, trim: true, default: 'en' },
+    status: {
+      type: String,
+      enum: SOURCE_STATUSES,
+      default: 'active',
+      required: true,
+      index: true,
+    },
+    scrapeFrequency: {
+      type: String,
+      enum: SOURCE_FREQUENCIES,
+      default: 'high',
+      required: true,
+    },
+    extractionMethod: {
+      type: String,
+      enum: EXTRACTION_METHODS,
+      required: true,
+      default: 'declarative',
+    },
+    headlineSelector: { type: [String], required: false, default: [] },
+    linkSelector: { type: String, required: false, trim: true },
+    headlineTextSelector: { type: String, required: false, trim: true },
+    articleSelector: { type: [String], required: false, default: [] },
+    lastScrapedAt: { type: Date, required: false, index: true },
+    lastSuccessAt: { type: Date, required: false },
+    notes: { type: String, required: false, trim: true },
+    analytics: { type: SourceAnalyticsSchema, default: () => ({}) },
+  },
+  { timestamps: true, collection: 'sources' }
+)
+
+SourceSchema.index({ status: 1, scrapeFrequency: 1, lastScrapedAt: 1 })
+
+export default models.Source || model('Source', SourceSchema)
 
 ```
 
 ## 📄 src/SourceSuggestion.js
-*Lines: 7, Size: 955 Bytes*
+*Lines: 31, Size: 975 Bytes*
 
 ```javascript
-// packages/models/src/SourceSuggestion.js (version 4.0.0 - Self-Contained)
-import mongoose from 'mongoose';
-import { SUGGESTION_STATUSES } from './constants.js';
-const { Schema, model, models } = mongoose;
-const SourceSuggestionSchema = new Schema({ sourceId: { type: Schema.Types.ObjectId, ref: 'Source', required: true, index: true }, sourceName: { type: String, required: true }, failedSelector: { type: String, required: true }, sourceHtmlPath: { type: String, required: false }, suggestedSelectors: { headlineSelector: { type: String }, linkSelector: { type: String }, headlineTextSelector: { type: String }, articleSelector: { type: String }, }, reasoning: { type: String, required: true }, status: { type: String, enum: SUGGESTION_STATUSES, default: 'pending', required: true, index: true, }, }, { timestamps: true, collection: 'source_suggestions', });
-export default models.SourceSuggestion || model('SourceSuggestion', SourceSuggestionSchema);
+// packages/models/src/SourceSuggestion.js (version 5.0.0)
+import mongoose from 'mongoose'
+import { SUGGESTION_STATUSES } from './constants.js'
+const { Schema, model, models } = mongoose
+
+const SourceSuggestionSchema = new Schema(
+  {
+    sourceId: { type: Schema.Types.ObjectId, ref: 'Source', required: true, index: true },
+    sourceName: { type: String, required: true, trim: true },
+    failedSelector: { type: String, required: true, trim: true },
+    suggestedSelectors: {
+      headlineSelector: String,
+      linkSelector: String,
+      headlineTextSelector: String,
+      articleSelector: String,
+    },
+    reasoning: { type: String, required: true, trim: true },
+    status: {
+      type: String,
+      enum: SUGGESTION_STATUSES,
+      default: 'pending',
+      required: true,
+      index: true,
+    },
+  },
+  { timestamps: true, collection: 'source_suggestions' }
+)
+
+export default models.SourceSuggestion ||
+  model('SourceSuggestion', SourceSuggestionSchema)
 
 ```
 
 ## 📄 src/Subscriber.js
-*Lines: 46, Size: 2.59 KB*
+*Lines: 104, Size: 3.38 KB*
 
 ```javascript
-import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
-import { SUBSCRIBER_ROLES, SUBSCRIPTION_TIERS } from './constants.js';
-const { Schema, model, models } = mongoose;
-const SALT_WORK_FACTOR = 10;
-const CountrySubscriptionSchema = new Schema({ name: { type: String, required: true }, active: { type: Boolean, default: true, required: true }, }, { _id: false });
-const InteractionSchema = new Schema({ articles: { type: [String], default: [] }, events: { type: [String], default: [] }, opportunities: { type: [String], default: [] }, }, { _id: false });
-const FilterPreferencesSchema = new Schema({ globalCountryFilter: { type: [String], default: [] } }, { _id: false });
-const SubscriberSchema = new Schema({
-    email: { type: String, required: true, unique: true, trim: true, lowercase: true, index: true },
+// packages/models/src/Subscriber.js (version 5.0.1 - Complete)
+import mongoose from 'mongoose'
+import bcrypt from 'bcryptjs'
+import { SUBSCRIBER_ROLES, SUBSCRIPTION_TIERS } from './constants.js'
+const { Schema, model, models } = mongoose
+const SALT_WORK_FACTOR = 10
+
+const CountrySubscriptionSchema = new Schema(
+  {
+    name: { type: String, required: true },
+    active: { type: Boolean, default: true, required: true },
+  },
+  { _id: false }
+)
+
+const InteractionSchema = new Schema(
+  {
+    articles: [{ type: Schema.Types.ObjectId, ref: 'Article' }],
+    events: [{ type: Schema.Types.ObjectId, ref: 'SynthesizedEvent' }],
+    opportunities: [{ type: Schema.Types.ObjectId, ref: 'Opportunity' }],
+  },
+  { _id: false }
+)
+
+const FilterPreferencesSchema = new Schema(
+  {
+    globalCountryFilter: { type: [String], default: [] },
+  },
+  { _id: false }
+)
+
+const SubscriberSchema = new Schema(
+  {
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+      index: true,
+    },
     password: { type: String, required: true, select: false },
     firstName: { type: String, required: true, trim: true },
     lastName: { type: String, required: false, trim: true },
     language: { type: String, required: true, default: 'English' },
-    countries: { type: [CountrySubscriptionSchema], required: true, default: [] },
+    countries: { type: [CountrySubscriptionSchema], default: [] },
     role: { type: String, enum: SUBSCRIBER_ROLES, default: 'user', required: true },
     emailNotificationsEnabled: { type: Boolean, default: true },
     pushNotificationsEnabled: { type: Boolean, default: true },
@@ -196,42 +485,133 @@ const SubscriberSchema = new Schema({
     lastLoginAt: { type: Date, default: null },
     discardedItems: { type: InteractionSchema, default: () => ({}) },
     favoritedItems: { type: InteractionSchema, default: () => ({}) },
-    filterPreferences: { type: FilterPreferencesSchema, default: () => ({ globalCountryFilter: [] }) },
+    filterPreferences: { type: FilterPreferencesSchema, default: () => ({}) },
     emailSentCount: { type: Number, default: 0 },
     eventsReceivedCount: { type: Number, default: 0 },
-}, { timestamps: true, collection: 'subscribers' });
+  },
+  { timestamps: true, collection: 'subscribers' }
+)
+
 SubscriberSchema.pre('save', function (next) {
-  const user = this;
-  if (!user.isModified('password')) return next();
+  const user = this
+  console.log('[Subscriber Model] pre-save hook triggered.')
+
+  if (!user.isModified('password')) {
+    console.log('[Subscriber Model] Password not modified. Skipping hash.')
+    return next()
+  }
+
+  console.log('[Subscriber Model] Password has been modified. Proceeding to hash.')
+  console.log(
+    '[Subscriber Model]   - Plain text password received:',
+    `"${user.password}"`
+  )
+
   bcrypt.genSalt(SALT_WORK_FACTOR, function (err, salt) {
-    if (err) return next(err);
+    if (err) {
+      console.error('[Subscriber Model] Error generating salt:', err)
+      return next(err)
+    }
     bcrypt.hash(user.password, salt, function (err, hash) {
-      if (err) return next(err);
-      user.password = hash;
-      next();
-    });
-  });
-});
+      if (err) {
+        console.error('[Subscriber Model] Error hashing password:', err)
+        return next(err)
+      }
+      user.password = hash
+      console.log(
+        '[Subscriber Model]   - Hashing successful. New hash:',
+        `"${user.password}"`
+      )
+      next()
+    })
+  })
+})
+
 SubscriberSchema.methods.comparePassword = function (candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
-};
-export default models.Subscriber || model('Subscriber', SubscriberSchema);
+  return bcrypt.compare(candidatePassword, this.password)
+}
+
+export default models.Subscriber || model('Subscriber', SubscriberSchema)
 
 ```
 
 ## 📄 src/SynthesizedEvent.js
-*Lines: 10, Size: 2.35 KB*
+*Lines: 74, Size: 2.33 KB*
 
 ```javascript
-// packages/models/src/SynthesizedEvent.js (version 7.0.0 - Self-Contained)
-import mongoose from 'mongoose';
-const { Schema, model, models } = mongoose;
-const SourceArticleSchema = new Schema({ headline: { type: String, required: true, trim: true }, link: { type: String, required: true, trim: true }, newspaper: { type: String, required: true, trim: true }, imageUrl: { type: String, trim: true }, }, { _id: false });
-const KeyIndividualSchema = new Schema({ name: { type: String, trim: true }, role_in_event: { type: String, trim: true }, company: { type: String, trim: true }, email_suggestion: { type: String, trim: true }, }, { _id: false });
-const SynthesizedEventSchema = new Schema({ event_key: { type: String, required: true, unique: true, trim: true, index: true }, synthesized_headline: { type: String, required: true, trim: true }, synthesized_summary: { type: String, required: true, trim: true }, advisorSummary: { type: String, trim: true }, ai_assessment_reason: { type: String, trim: true }, eventClassification: { type: String, trim: true }, country: { type: String, required: true, index: true }, source_articles: { type: [SourceArticleSchema], required: true }, highest_relevance_score: { type: Number, required: true, min: 0, max: 100 }, key_individuals: { type: [KeyIndividualSchema], default: [] }, relatedOpportunities: [{ type: Schema.Types.ObjectId, ref: 'Opportunity', index: true },], enrichmentSources: { type: [String], enum: ['rag_db', 'wikipedia', 'news_api'], default: [], }, event_date: { type: Date, default: Date.now, index: true }, emailed: { type: Boolean, default: false }, email_sent_at: { type: Date }, }, { timestamps: true, collection: 'synthesized_events', methods: { toRealtimePayload() { return { _id: this._id, synthesized_headline: this.synthesized_headline, synthesized_summary: this.synthesized_summary, country: this.country, highest_relevance_score: this.highest_relevance_score, key_individuals: (this.key_individuals || []).map((p) => p.name), opportunity_count: (this.relatedOpportunities || []).length, source_article_count: (this.source_articles || []).length, createdAt: this.createdAt, }; }, }, });
-SynthesizedEventSchema.index({ synthesized_headline: 'text', synthesized_summary: 'text', });
-SynthesizedEventSchema.index({ country: 1, createdAt: -1 });
-export default models.SynthesizedEvent || model('SynthesizedEvent', SynthesizedEventSchema);
+// packages/models/src/SynthesizedEvent.js (version 8.0.2)
+import mongoose from 'mongoose'
+const { Schema, model, models } = mongoose
+
+const SourceArticleSchema = new Schema(
+  {
+    headline: { type: String, required: true, trim: true },
+    link: { type: String, required: true, trim: true },
+    newspaper: { type: String, required: true, trim: true },
+    imageUrl: { type: String, trim: true },
+    country: { type: String, trim: true }
+  },
+  { _id: false }
+)
+
+const KeyIndividualSchema = new Schema(
+  {
+    name: { type: String, trim: true },
+    role_in_event: { type: String, trim: true },
+    company: { type: String, trim: true },
+    email_suggestion: { type: String, trim: true },
+  },
+  { _id: false }
+)
+
+const SynthesizedEventSchema = new Schema(
+  {
+    event_key: { type: String, required: true, unique: true, trim: true, index: true },
+    synthesized_headline: { type: String, required: true, trim: true },
+    synthesized_summary: { type: String, required: true, trim: true },
+    advisorSummary: { type: String, trim: true },
+    ai_assessment_reason: { type: String, trim: true },
+    eventClassification: { type: String, trim: true },
+    country: { type: String, required: true, index: true },
+    source_articles: { type: [SourceArticleSchema], required: true },
+    highest_relevance_score: { type: Number, required: true, min: 0, max: 100 },
+    key_individuals: { type: [KeyIndividualSchema], default: [] },
+    relatedOpportunities: [
+      { type: Schema.Types.ObjectId, ref: 'Opportunity', index: true },
+    ],
+    enrichmentSources: {
+      type: [String],
+      enum: ['rag_db', 'wikipedia', 'news_api'],
+      default: [],
+    },
+    emailed: { type: Boolean, default: false },
+    email_sent_at: { type: Date },
+  },
+  {
+    timestamps: true,
+    collection: 'synthesized_events',
+    methods: {
+      toRealtimePayload() {
+        return {
+          _id: this._id,
+          synthesized_headline: this.synthesized_headline,
+          country: this.country,
+          highest_relevance_score: this.highest_relevance_score,
+          createdAt: this.createdAt,
+        }
+      },
+    },
+  }
+)
+
+SynthesizedEventSchema.index({
+  synthesized_headline: 'text',
+  synthesized_summary: 'text',
+})
+SynthesizedEventSchema.index({ country: 1, createdAt: -1 })
+
+export default models.SynthesizedEvent ||
+  model('SynthesizedEvent', SynthesizedEventSchema)
 
 ```
 
@@ -309,6 +689,32 @@ export default models.WatchlistSuggestion || model('WatchlistSuggestion', Watchl
 
 ```
 
+## 📄 src/client.js
+*Lines: 20, Size: 528 Bytes*
+
+```javascript
+// File: packages/models/src/client.js (version 1.0 - New File)
+'use client'
+
+// This file is the designated "client-safe" entry point for the models package.
+// It ONLY exports constants and contains NO server-side code (like Mongoose).
+import * as constants from './constants.js'
+
+export const {
+  ENTITY_TYPES,
+  ENTITY_STATUSES,
+  SOURCE_STATUSES,
+  SOURCE_FREQUENCIES,
+  EXTRACTION_METHODS,
+  ARTICLE_STATUSES,
+  SUGGESTION_STATUSES,
+  WATCHLIST_SUGGESTION_STATUSES,
+  SUBSCRIBER_ROLES,
+  SUBSCRIPTION_TIERS,
+} = constants
+
+```
+
 ## 📄 src/constants.js
 *Lines: 11, Size: 688 Bytes*
 
@@ -327,30 +733,58 @@ export const SUBSCRIPTION_TIERS = ['free', 'premium', 'enterprise'];
 ```
 
 ## 📄 src/index.js
-*Lines: 23, Size: 999 Bytes*
+*Lines: 31, Size: 860 Bytes*
 
 ```javascript
-import Article from './Article.js';
-import Country from './Country.js';
-import Opportunity from './Opportunity.js';
-import PushSubscription from './PushSubscription.js';
-import RunVerdict from './RunVerdict.js';
-import Setting from './Setting.js';
-import Source from './Source.js';
-import SourceSuggestion from './SourceSuggestion.js';
-import Subscriber from './Subscriber.js';
-import SynthesizedEvent from './SynthesizedEvent.js';
-import WatchlistEntity from './WatchlistEntity.js';
-import WatchlistSuggestion from './WatchlistSuggestion.js';
-import * as constants from './constants.js';
+// This file is the core, shared module for the models package.
+// It exports all Mongoose models and is environment-agnostic.
+
+import Article from './Article.js'
+import Country from './Country.js'
+import Opportunity from './Opportunity.js'
+import PushSubscription from './PushSubscription.js'
+import RunVerdict from './RunVerdict.js'
+import Setting from './Setting.js'
+import Source from './Source.js'
+import SourceSuggestion from './SourceSuggestion.js'
+import Subscriber from './Subscriber.js'
+import SynthesizedEvent from './SynthesizedEvent.js'
+import WatchlistEntity from './WatchlistEntity.js'
+import WatchlistSuggestion from './WatchlistSuggestion.js'
+
 export {
-  Article, Country, Opportunity, PushSubscription, RunVerdict, Setting, Source,
-  SourceSuggestion, Subscriber, SynthesizedEvent, WatchlistEntity, WatchlistSuggestion
-};
-export const {
-  ENTITY_TYPES, ENTITY_STATUSES, SOURCE_STATUSES, SOURCE_FREQUENCIES,
-  EXTRACTION_METHODS, ARTICLE_STATUSES, SUGGESTION_STATUSES,
-  WATCHLIST_SUGGESTION_STATUSES, SUBSCRIBER_ROLES, SUBSCRIPTION_TIERS
-} = constants;
+  Article,
+  Country,
+  Opportunity,
+  PushSubscription,
+  RunVerdict,
+  Setting,
+  Source,
+  SourceSuggestion,
+  Subscriber,
+  SynthesizedEvent,
+  WatchlistEntity,
+  WatchlistSuggestion,
+}
+
+```
+
+## 📄 src/next.js
+*Lines: 5, Size: 108 Bytes*
+
+```javascript
+import 'server-only'
+
+// Re-export all models for the Next.js server environment
+export * from './index.js'
+
+```
+
+## 📄 src/node.js
+*Lines: 3, Size: 84 Bytes*
+
+```javascript
+// Re-export all models for the pure Node.js environment
+export * from './index.js'
 
 ```

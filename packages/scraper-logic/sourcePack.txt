@@ -1,48 +1,11 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 59 files, 9 directories
+Total: 27 files, 7 directories
 
 ```
 headlines/
 ├── 📁 src/
 │   ├── 📁 ai/
-│   │   ├── 📁 agents/
-│   │   │   ├── 📄 articleAgent.js
-│   │   │   ├── 📄 articlePreAssessmentAgent.js
-│   │   │   ├── 📄 batchArticleAgent.js
-│   │   │   ├── 📄 clusteringAgent.js
-│   │   │   ├── 📄 contactAgent.js
-│   │   │   ├── 📄 emailAgents.js
-│   │   │   ├── 📄 entityAgent.js
-│   │   │   ├── 📄 executiveSummaryAgent.js
-│   │   │   ├── 📄 headlineAgent.js
-│   │   │   ├── 📄 judgeAgent.js
-│   │   │   ├── 📄 opportunityAgent.js
-│   │   │   ├── 📄 sectionClassifierAgent.js
-│   │   │   ├── 📄 selectorRepairAgent.js
-│   │   │   ├── 📄 synthesisAgent.js
-│   │   │   └── 📄 watchlistAgent.js
-│   │   ├── 📁 schemas/
-│   │   │   ├── 📄 articleAssessmentSchema.js
-│   │   │   ├── 📄 articlePreAssessmentSchema.js
-│   │   │   ├── 📄 batchArticleAssessmentSchema.js
-│   │   │   ├── 📄 canonicalizerSchema.js
-│   │   │   ├── 📄 clusterSchema.js
-│   │   │   ├── 📄 disambiguationSchema.js
-│   │   │   ├── 📄 emailIntroSchema.js
-│   │   │   ├── 📄 emailSubjectSchema.js
-│   │   │   ├── 📄 enrichContactSchema.js
-│   │   │   ├── 📄 entitySchema.js
-│   │   │   ├── 📄 findContactSchema.js
-│   │   │   ├── 📄 headlineAssessmentSchema.js
-│   │   │   ├── 📄 judgeSchema.js
-│   │   │   ├── 📄 opportunitySchema.js
-│   │   │   ├── 📄 sectionClassifierSchema.js
-│   │   │   ├── 📄 selectorRepairSchema.js
-│   │   │   ├── 📄 sourceNameSchema.js
-│   │   │   ├── 📄 synthesisSchema.js
-│   │   │   └── 📄 watchlistSuggestionSchema.js
-│   │   ├── 📄 AIAgent.js
 │   │   └── 📄 index.js
 │   ├── 📁 push/
 │   │   └── 📄 client.js
@@ -70,15 +33,18 @@ headlines/
 │   │   └── 📄 test-helpers.js
 │   ├── 📄 browser.js
 │   ├── 📄 config.js
-│   └── 📄 index.js
+│   ├── 📄 core.js
+│   ├── 📄 index.js
+│   ├── 📄 next.js
+│   └── 📄 test-orchestrator.js
 └── 📄 package.json
 ```
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-21T14:17:28.683Z
+**Generated**: 2025-09-29T13:20:36.414Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/scraper-logic
-**Total Files**: 59
+**Total Files**: 27
 **Package**: @headlines/scraper-logic@1.0.0
 
 
@@ -88,7 +54,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 36, Size: 997 Bytes*
+*Lines: 41, Size: 1.11 KB*
 
 ```json
 {
@@ -99,6 +65,8 @@ headlines/
   "license": "ISC",
   "exports": {
     ".": "./src/index.js",
+    "./node": "./src/index.js",
+    "./next": "./src/next.js",
     "./config.js": "./src/config.js",
     "./browser.js": "./src/browser.js",
     "./scraper/index.js": "./src/scraper/index.js",
@@ -111,6 +79,7 @@ headlines/
     "@headlines/config": "workspace:*",
     "@headlines/models": "workspace:*",
     "@headlines/prompts": "workspace:*",
+    "@headlines/utils-shared": "workspace:*",
     "@mozilla/readability": "^0.6.0",
     "axios": "^1.7.2",
     "cheerio": "^1.0.0-rc.12",
@@ -119,1127 +88,13 @@ headlines/
     "lodash": "*",
     "newsapi": "^2.4.1",
     "p-limit": "^5.0.0",
-    "playwright": "^1.45.1",
     "pusher": "^5.2.0",
     "rss-parser": "^3.13.0",
     "web-push": "^3.6.7",
     "zod": "^3.23.8"
-  }
-}
-
-```
-
-## 📄 src/ai/AIAgent.js
-*Lines: 64, Size: 1.84 KB*
-
-```javascript
-// packages/scraper-logic/src/ai/AIAgent.js (version 3.2.0)
-import { callLanguageModel } from '../../../ai-services/src/index.js'
-import { getConfig } from '../config.js';
-
-export class AIAgent {
-  constructor({
-    model,
-    systemPrompt,
-    isJson = true,
-    fewShotInputs = [],
-    fewShotOutputs = [],
-    zodSchema,
-  }) {
-    if (!model || !systemPrompt) {
-      throw new Error('AIAgent requires a model and systemPrompt.')
-    }
-    this.model = model
-    this.systemPrompt = systemPrompt
-    this.isJson = isJson
-    this.fewShotInputs = fewShotInputs
-    this.fewShotOutputs = fewShotOutputs
-    this.zodSchema = zodSchema
-
-    getConfig().logger.trace(
-      { agentConfig: { model, isJson, hasSchema: !!zodSchema } },
-      'Initialized new AIAgent.'
-    )
-  }
-
-  async execute(userContent) {
-    let systemPromptContent = this.systemPrompt
-    // If the provided prompt is a function, execute it to get the dynamic prompt object
-    if (typeof systemPromptContent === 'function') {
-      systemPromptContent = systemPromptContent()
-    }
-
-    const response = await callLanguageModel({
-      modelName: this.model, // Note: The new function expects modelName
-      systemPrompt: systemPromptContent,
-      userContent,
-      isJson: this.isJson,
-      fewShotInputs: this.fewShotInputs,
-      fewShotOutputs: this.fewShotOutputs,
-    })
-
-    if (this.isJson && this.zodSchema && !response.error) {
-      const validationResult = this.zodSchema.safeParse(response)
-      if (!validationResult.success) {
-        getConfig().logger.error(
-          {
-            details: validationResult.error.flatten(),
-            model: this.model,
-          },
-          `AI response failed Zod validation.`
-        )
-        return { error: 'Zod validation failed', details: validationResult.error }
-      }
-      return validationResult.data
-    }
-
-    return response
-  }
-}
-
-```
-
-## 📄 src/ai/agents/articleAgent.js
-*Lines: 90, Size: 3.6 KB*
-
-```javascript
-// packages/scraper-logic/src/ai/agents/articleAgent.js (version 3.4.1)
-import { truncateString } from '../../../../utils/src/index.js';
-import { AIAgent } from '../AIAgent.js'
-import { articleAssessmentSchema } from '../schemas/articleAssessmentSchema.js'
-import { env } from '../../../../config/src/index.js'
-import { getInstructionArticle } from '../../../../prompts/src/index.js'
-import { shotsInputArticle } from '../../../../prompts/src/index.js'
-import { shotsOutputArticle } from '../../../../prompts/src/index.js'
-import { getConfig } from '../../config.js'
-
-const getAgent = () =>
-  new AIAgent({
-    model: env.LLM_MODEL_ARTICLE_ASSESSMENT,
-    systemPrompt: getInstructionArticle,
-    fewShotInputs: shotsInputArticle,
-    fewShotOutputs: shotsOutputArticle,
-    zodSchema: articleAssessmentSchema,
-  })
-
-function findWatchlistHits(text, country) {
-  const hits = []
-  const lowerText = text.toLowerCase()
-  const config = getConfig();
-  if (!config.configStore) return []
-
-  for (const entity of config.configStore.watchlistEntities.values()) {
-      if (entity.country && entity.country !== country && entity.country !== 'Global PE' && entity.country !== 'M&A Aggregators') {
-          continue;
-      }
-
-      const terms = [entity.name.toLowerCase(), ...(entity.searchTerms || [])]
-      for (const term of terms) {
-          if (term.length > 3 && lowerText.includes(term)) {
-              hits.push(entity)
-              break; 
-          }
-      }
-  }
-  return [...new Map(hits.map((item) => [item['name'], item])).values()]
-}
-
-export async function assessArticleContent(article, isSalvaged = false) {
-  const articleAssessmentAgent = getAgent()
-  const fullContent = (article.articleContent?.contents || []).join('\n')
-  const truncatedContent = truncateString(fullContent, getConfig().settings.LLM_CONTEXT_MAX_CHARS)
-
-  if (fullContent.length > getConfig().settings.LLM_CONTEXT_MAX_CHARS) {
-    getConfig().logger.warn(
-      {
-        originalLength: fullContent.length,
-        truncatedLength: truncatedContent.length,
-        limit: getConfig().settings.LLM_CONTEXT_MAX_CHARS,
-      },
-      `Article content for LLM was truncated to prevent context overload.`
-    )
-  }
-
-  const combinedTextForHitCheck = `${article.headline}\n${truncatedContent}`
-  const hits = findWatchlistHits(combinedTextForHitCheck, article.country)
-  let articleText = `HEADLINE: ${article.headline}\n\nBODY:\n${truncatedContent}`
-
-  if (hits.length > 0) {
-    const hitStrings = hits.map((hit) => `[WATCHLIST HIT: ${hit.name} | CONTEXT: ${hit.context || 'N/A'}]`)
-    const hitPrefix = hitStrings.join(' ')
-    articleText = `${hitPrefix} ${articleText}`
-    getConfig().logger.info({ hits: hits.map((h) => h.name) }, 'Watchlist entities found in article content.')
-  }
-  
-  if (isSalvaged) {
-      articleText = `[SALVAGE CONTEXT: The original source for this headline failed to scrape. This content is from an alternative source. Please assess based on this new context.]\n\n${articleText}`;
-  }
-
-  const response = await articleAssessmentAgent.execute(articleText)
-
-  if (response.error) {
-    getConfig().logger.error(
-      { article: { link: article.link }, details: response },
-      `Article assessment failed for ${article.link}.`
-    )
-    return { ...article, error: `AI Error: ${response.error}` }
-  }
-
-  if (response.amount > 0 && response.amount < getConfig().settings.MINIMUM_EVENT_AMOUNT_USD_MILLIONS) {
-      response.relevance_article = 10;
-      response.assessment_article = `Dropped: Amount ($${response.amount}M) is below the financial threshold of $${getConfig().settings.MINIMUM_EVENT_AMOUNT_USD_MILLIONS}M.`
-  }
-
-  return { ...article, ...response, error: null }
-}
-
-```
-
-## 📄 src/ai/agents/articlePreAssessmentAgent.js
-*Lines: 22, Size: 808 Bytes*
-
-```javascript
-// packages/scraper-logic/src/ai/agents/articlePreAssessmentAgent.js (version 2.2.1)
-import { AIAgent } from '../AIAgent.js'
-import { articlePreAssessmentSchema } from '../schemas/articlePreAssessmentSchema.js'
-import { env } from '../../../../config/src/index.js'
-import { instructionArticlePreAssessment } from '../../../../prompts/src/index.js'
-
-const getAgent = () =>
-  new AIAgent({
-    model: env.LLM_MODEL_UTILITY,
-    systemPrompt: instructionArticlePreAssessment,
-    zodSchema: articlePreAssessmentSchema,
-  })
-
-export async function preAssessArticle(articleContent) {
-  const articlePreAssessmentAgent = getAgent()
-  const response = await articlePreAssessmentAgent.execute(articleContent)
-  if (response.error) {
-    return { classification: null, error: response.error }
-  }
-  return response
-}
-
-```
-
-## 📄 src/ai/agents/batchArticleAgent.js
-*Lines: 59, Size: 2.01 KB*
-
-```javascript
-// packages/scraper-logic/src/ai/agents/batchArticleAgent.js (version 1.0)
-import { getConfig } from '../../config.js';
-import { AIAgent } from '../AIAgent.js'
-import { batchArticleAssessmentSchema } from '../schemas/batchArticleAssessmentSchema.js'
-import { env } from '../../../../config/src/index.js'
-import { getInstructionBatchArticleAssessment } from '../../../../prompts/src/index.js'
-import { assessArticleContent } from './articleAgent.js' // Fallback
-
-const BATCH_SIZE = 5;
-
-const getAgent = () =>
-  new AIAgent({
-    model: env.LLM_MODEL_ARTICLE_ASSESSMENT,
-    systemPrompt: getInstructionBatchArticleAssessment,
-    zodSchema: batchArticleAssessmentSchema,
-  });
-
-export async function batchAssessArticles(articles) {
-  if (!articles || articles.length === 0) return [];
-
-  const batchAgent = getAgent();
-  const articleBatches = [];
-  for (let i = 0; i < articles.length; i += BATCH_SIZE) {
-    articleBatches.push(articles.slice(i, i + BATCH_SIZE));
-  }
-
-  const allResults = [];
-
-  for (const batch of articleBatches) {
-    const payload = batch.map(article => ({
-      headline: article.headline,
-      content: (article.articleContent?.contents || []).join('\n'),
-    }));
-
-    const response = await batchAgent.execute(JSON.stringify(payload));
-    
-    if (response.error || response.assessments.length !== batch.length) {
-      getConfig().logger.error({ 
-          details: response,
-          expectedCount: batch.length, 
-          receivedCount: response.assessments?.length 
-      }, "Batch assessment failed or returned mismatched count. Falling back to single-article processing for this batch.");
-      
-      const fallbackPromises = batch.map(article => assessArticleContent(article));
-      const fallbackResults = await Promise.all(fallbackPromises);
-      allResults.push(...fallbackResults);
-      continue;
-    }
-
-    const mergedResults = batch.map((originalArticle, index) => ({
-      ...originalArticle,
-      ...response.assessments[index],
-    }));
-    allResults.push(...mergedResults);
-  }
-
-  return allResults;
-}
-
-```
-
-## 📄 src/ai/agents/clusteringAgent.js
-*Lines: 67, Size: 2.3 KB*
-
-```javascript
-// packages/scraper-logic/src/ai/agents/clusteringAgent.js (version 2.2.1)
-import { getConfig } from '../../config.js';
-import { AIAgent } from '../AIAgent.js'
-import { clusterSchema } from '../schemas/clusterSchema.js'
-import { env } from '../../../../config/src/index.js'
-import { instructionCluster } from '../../../../prompts/src/index.js'
-
-const getAgent = () =>
-  new AIAgent({
-    model: env.LLM_MODEL_ARTICLE_ASSESSMENT,
-    systemPrompt: instructionCluster,
-    zodSchema: clusterSchema,
-  })
-
-export async function clusterArticlesIntoEvents(articles) {
-  const articleClusterAgent = getAgent()
-  getConfig().logger.info(`Clustering ${articles.length} articles into unique events...`)
-  const CLUSTER_BATCH_SIZE = 25
-  const batches = []
-  for (let i = 0; i < articles.length; i += CLUSTER_BATCH_SIZE) {
-    batches.push(articles.slice(i, i + CLUSTER_BATCH_SIZE))
-  }
-  getConfig().logger.info(`Processing clusters in ${batches.length} batches.`)
-
-  const allClusters = []
-  for (const [index, batch] of batches.entries()) {
-    getConfig().logger.info(`Clustering batch ${index + 1} of ${batches.length}...`)
-    const articlePayload = batch.map((a) => ({
-      id: a._id.toString(),
-      headline: a.headline,
-      source: a.newspaper,
-      summary: (a.topic || a.assessment_article || '').substring(0, 400),
-    }))
-    const userContent = JSON.stringify(articlePayload)
-    const response = await articleClusterAgent.execute(userContent)
-
-    if (response.error || !response.events) {
-      getConfig().logger.error(`Failed to cluster articles in batch ${index + 1}.`, { response })
-      continue
-    }
-    allClusters.push(...response.events)
-  }
-
-  if (allClusters.length === 0) {
-    getConfig().logger.warn('Failed to cluster any articles across all batches.')
-    return []
-  }
-
-  const finalEventMap = new Map()
-  allClusters.forEach((event) => {
-    if (finalEventMap.has(event.event_key)) {
-      const existing = finalEventMap.get(event.event_key)
-      event.article_ids.forEach((id) => existing.article_ids.add(id))
-    } else {
-      finalEventMap.set(event.event_key, {
-        event_key: event.event_key,
-        article_ids: new Set(event.article_ids),
-      })
-    }
-  })
-
-  return Array.from(finalEventMap.values()).map((event) => ({
-    event_key: event.event_key,
-    article_ids: Array.from(event.article_ids),
-  }))
-}
-
-```
-
-## 📄 src/ai/agents/contactAgent.js
-*Lines: 104, Size: 3.29 KB*
-
-```javascript
-// packages/scraper-logic/src/ai/agents/contactAgent.js (version 3.1.3)
-import { AIAgent } from '../AIAgent.js'
-import { enrichContactSchema } from '../schemas/enrichContactSchema.js'
-import { findContactSchema } from '../schemas/findContactSchema.js'
-import { env } from '../../../../config/src/index.js'
-import { instructionEnrichContact } from '../../../../prompts/src/index.js'
-import { instructionContacts } from '../../../../prompts/src/index.js'
-// DEFINITIVE FIX: Removed the duplicate import of getConfig.
-import { getConfig } from '../../config.js'
-
-const getResolverAgent = () =>
-  new AIAgent({
-    model: env.LLM_MODEL_ARTICLE_ASSESSMENT,
-    systemPrompt: instructionEnrichContact,
-    zodSchema: enrichContactSchema,
-  })
-
-const getFinderAgent = () =>
-  new AIAgent({
-    model: env.LLM_MODEL_ARTICLE_ASSESSMENT,
-    systemPrompt: instructionContacts,
-    zodSchema: findContactSchema,
-  })
-
-export async function resolveVagueContact(contact, article) {
-  const contactResolverAgent = getResolverAgent()
-  const config = getConfig()
-  const researchQuery = `${contact.name} ${contact.company || article.newspaper}`
-  const searchResult =
-    await getConfig().utilityFunctions.performGoogleSearch(researchQuery)
-
-  if (!searchResult.success) {
-    getConfig().logger.warn(
-      `[Resolve Agent] Google search failed for "${researchQuery}".`
-    )
-    return [contact]
-  }
-
-  const context = `Initial Contact Profile:\n${JSON.stringify(
-    contact
-  )}\n\nSource Article Headline: ${
-    article.headline
-  }\n\nGoogle Search Snippets:\n${searchResult.snippets}`
-  const response = await contactResolverAgent.execute(context)
-
-  if (
-    response.error ||
-    !response.enriched_contacts ||
-    response.enriched_contacts.length === 0
-  ) {
-    getConfig().logger.warn(
-      `[Resolve Agent] Failed to resolve contact "${contact.name}".`
-    )
-    return [contact]
-  }
-
-  getConfig().logger.info(
-    `[Resolve Agent] Successfully resolved "${contact.name}" -> "${response.enriched_contacts
-      .map((c) => c.name)
-      .join(', ')}"`
-  )
-  return response.enriched_contacts
-}
-
-export async function findContactDetails(person) {
-  const contactFinderAgent = getFinderAgent()
-  const config = getConfig()
-  getConfig().logger.info(`[Contact Research Agent] Initiated for: ${person.reachOutTo}`)
-  const queries = [
-    `"${person.reachOutTo}" ${person.contactDetails.company} email address`,
-    `"${person.reachOutTo}" contact information`,
-  ]
-
-  let combinedSnippets = ''
-  for (const query of queries) {
-    const searchResult = await getConfig().utilityFunctions.performGoogleSearch(query)
-    if (searchResult.success && searchResult.snippets) {
-      combinedSnippets += `\n--- Results for query: "${query}" ---\n${searchResult.snippets}`
-    }
-  }
-
-  if (!combinedSnippets) {
-    getConfig().logger.warn(
-      `[Contact Research Agent] No search results for "${person.reachOutTo}".`
-    )
-    return { email: null }
-  }
-
-  const response = await contactFinderAgent.execute(combinedSnippets)
-
-  if (response.error || !response.email) {
-    getConfig().logger.warn(
-      `[Contact Research Agent] LLM failed to extract details for "${person.reachOutTo}".`
-    )
-    return { email: null }
-  }
-
-  getConfig().logger.info(
-    { details: response },
-    `[Contact Research Agent] Found details for "${person.reachOutTo}".`
-  )
-  return response
-}
-
-```
-
-## 📄 src/ai/agents/emailAgents.js
-*Lines: 58, Size: 2.25 KB*
-
-```javascript
-// packages/scraper-logic/src/ai/agents/emailAgents.js (version 2.2.1)
-import { getConfig } from '../../config.js';
-import { AIAgent } from '../AIAgent.js'
-import { emailSubjectSchema } from '../schemas/emailSubjectSchema.js'
-import { emailIntroSchema } from '../schemas/emailIntroSchema.js'
-import { env } from '../../../../config/src/index.js'
-import { instructionEmailSubject } from '../../../../prompts/src/index.js'
-import { instructionEmailIntro } from '../../../../prompts/src/index.js'
-
-const getAgent = (systemPrompt, zodSchema) =>
-  new AIAgent({
-    model: env.LLM_MODEL_SYNTHESIS,
-    systemPrompt,
-    zodSchema,
-  })
-
-export async function generateEmailSubjectLine(events) {
-  const subjectLineAgent = getAgent(instructionEmailSubject, emailSubjectSchema)
-  try {
-    const eventPayload = events.map((e) => ({
-      headline: e.synthesized_headline,
-      summary: e.synthesized_summary,
-    }))
-    const response = await subjectLineAgent.execute(JSON.stringify(eventPayload))
-    if (response.error || !response.subject_headline) {
-      getConfig().logger.warn('AI failed to generate a custom email subject line.', response)
-      return 'Key Developments' // Fallback
-    }
-    return response.subject_headline
-  } catch (error) {
-    getConfig().logger.error({ err: error }, 'Error in generateEmailSubjectLine')
-    return 'Key Developments' // Fallback
-  }
-}
-
-export async function generatePersonalizedIntro(user, events) {
-  const introAgent = getAgent(instructionEmailIntro, emailIntroSchema)
-  try {
-    const eventPayload = events.map((e) => ({
-      headline: e.synthesized_headline,
-      summary: e.synthesized_summary,
-    }))
-    const payload = {
-      firstName: user.firstName,
-      events: eventPayload,
-    }
-    const response = await introAgent.execute(JSON.stringify(payload))
-    if (response.error || !response.intro_text) {
-      getConfig().logger.warn('AI failed to generate a personalized intro.', response)
-      return `Dear ${user.firstName}, here are the latest relevant wealth events we have identified.`
-    }
-    return response.intro_text
-  } catch (error) {
-    getConfig().logger.error({ err: error }, 'Error in generatePersonalizedIntro')
-    return `Dear ${user.firstName}, here are the latest relevant wealth events we have identified.`
-  }
-}
-
-```
-
-## 📄 src/ai/agents/entityAgent.js
-*Lines: 73, Size: 2.41 KB*
-
-```javascript
-// packages/scraper-logic/src/ai/agents/entityAgent.js (version 3.1.2)
-import { AIAgent } from '../AIAgent.js'
-import { entitySchema } from '../schemas/entitySchema.js'
-import { canonicalizerSchema } from '../schemas/canonicalizerSchema.js'
-import { env } from '../../../../config/src/index.js'
-import { instructionEntity } from '../../../../prompts/src/index.js'
-import { instructionCanonicalizer } from '../../../../prompts/src/index.js'
-// DEFINITIVE FIX: Removed the duplicate import of getConfig.
-import { getConfig } from '../../config.js'
-
-const getEntityExtractorAgent = () =>
-  new AIAgent({
-    model: env.LLM_MODEL_UTILITY,
-    systemPrompt: instructionEntity,
-    zodSchema: entitySchema,
-  })
-
-const getEntityCanonicalizerAgent = () =>
-  new AIAgent({
-    model: env.LLM_MODEL_UTILITY,
-    systemPrompt: instructionCanonicalizer,
-    zodSchema: canonicalizerSchema,
-  })
-
-export const entityCanonicalizerAgent = () => getEntityCanonicalizerAgent()
-
-export async function extractEntities(text) {
-  const entityExtractorAgent = getEntityExtractorAgent()
-  const canonicalizer = getEntityCanonicalizerAgent()
-
-  if (!text) return []
-  try {
-    const response = await entityExtractorAgent.execute(`Article Text:\n${text}`)
-
-    if (response.error) {
-      throw new Error(response.error)
-    }
-
-    const { reasoning, entities } = response
-    getConfig().logger.info(`[Query Planner Agent] Reasoning: ${reasoning}`)
-    if (!entities || !Array.isArray(entities)) return []
-
-    const canonicalizationPromises = entities
-      .map((entity) => entity.replace(/\s*\(.*\)\s*/g, '').trim())
-      .filter(Boolean)
-      .map(async (entity) => {
-        const canonResponse = await canonicalizer.execute(entity)
-        if (canonResponse && !canonResponse.error && canonResponse.canonical_name) {
-          getConfig().logger.trace(
-            `Canonicalized "${entity}" -> "${canonResponse.canonical_name}"`
-          )
-          return canonResponse.canonical_name
-        }
-        return null
-      })
-
-    const canonicalEntities = await Promise.all(canonicalizationPromises)
-    const uniqueEntities = [...new Set(canonicalEntities.filter(Boolean))]
-
-    getConfig().logger.info(
-      { entities: uniqueEntities },
-      `Final list of canonical entities for RAG.`
-    )
-    return uniqueEntities
-  } catch (error) {
-    getConfig().logger.warn(
-      { err: error },
-      'Wikipedia query planning (entity extraction) failed.'
-    )
-    return []
-  }
-}
-
-```
-
-## 📄 src/ai/agents/executiveSummaryAgent.js
-*Lines: 39, Size: 1.36 KB*
-
-```javascript
-// packages/scraper-logic/src/ai/agents/executiveSummaryAgent.js (version 2.0)
-import { getConfig } from '../../config.js';
-import { AIAgent } from '../AIAgent.js';
-import { env } from '../../../../config/src/index.js';
-import { instructionExecutiveSummary } from '../../../../prompts/src/index.js';
-import { z } from 'zod';
-
-const executiveSummarySchema = z.object({
-  summary: z.string(),
-});
-
-const getAgent = () =>
-  new AIAgent({
-    model: env.LLM_MODEL_SYNTHESIS,
-    systemPrompt: instructionExecutiveSummary,
-    zodSchema: executiveSummarySchema,
-  });
-
-export async function generateExecutiveSummary(judgeVerdict, runStats) {
-  const agent = getAgent();
-  try {
-    // Create a payload with the crucial context
-    const payload = {
-      freshHeadlinesFound: runStats.freshHeadlinesFound,
-      judgeVerdict: judgeVerdict || { event_judgements: [], opportunity_judgements: [] },
-    };
-
-    const response = await agent.execute(JSON.stringify(payload));
-    if (response.error || !response.summary) {
-      getConfig().logger.warn('AI failed to generate an executive summary.', response);
-      return 'AI failed to generate a summary for this run.';
-    }
-    return response.summary;
-  } catch (error) {
-    getConfig().logger.error({ err: error }, 'Error in generateExecutiveSummary');
-    return 'An unexpected error occurred while generating the executive summary.';
-  }
-}
-
-```
-
-## 📄 src/ai/agents/headlineAgent.js
-*Lines: 89, Size: 3.44 KB*
-
-```javascript
-// packages/scraper-logic/src/ai/agents/headlineAgent.js (version 4.1.3)
-// DEFINITIVE FIX: Removed p-limit as it uses server-only modules.
-// Using Promise.all is sufficient for this use case.
-import { AIAgent } from '../AIAgent.js'
-import { headlineAssessmentSchema } from '../schemas/headlineAssessmentSchema.js'
-import { env } from '../../../../config/src/index.js'
-import { instructionHeadlines } from '../../../../prompts/src/index.js'
-import { shotsInputHeadlines } from '../../../../prompts/src/index.js'
-import { shotsOutputHeadlines } from '../../../../prompts/src/index.js'
-import { getConfig } from '../../config.js'
-
-const getAgent = () =>
-  new AIAgent({
-    model: env.LLM_MODEL_HEADLINE_ASSESSMENT,
-    systemPrompt: instructionHeadlines,
-    fewShotInputs: shotsInputHeadlines,
-    fewShotOutputs: shotsOutputHeadlines,
-    zodSchema: headlineAssessmentSchema,
-  })
-
-function findWatchlistHits(text, country) {
-  const hits = new Map()
-  const lowerText = text.toLowerCase()
-  const config = getConfig();
-  if (!getConfig().configStore?.watchlistEntities) return []
-  
-  const createSearchRegex = (term) => new RegExp(`\\b${term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`, 'i')
-  
-  const relevantEntities = Array.from(getConfig().configStore.watchlistEntities.values()).filter(entity => 
-      !entity.country || entity.country === country || entity.country === 'Global PE' || entity.country === 'M&A Aggregators'
-  );
-
-  for (const entity of relevantEntities) {
-      const nameKey = entity.name.toLowerCase();
-      if (nameKey.length > 3 && createSearchRegex(nameKey).test(lowerText)) {
-          if (!hits.has(entity.name)) hits.set(entity.name, { entity, matchedTerm: nameKey })
-      }
-      for(const term of (entity.searchTerms || [])) {
-          if (term.length > 3 && createSearchRegex(term).test(lowerText)) {
-              if (!hits.has(entity.name)) hits.set(entity.name, { entity, matchedTerm: term })
-          }
-      }
-  }
-  return Array.from(hits.values())
-}
-
-async function assessSingleHeadline(article) {
-  const headlineAssessmentAgent = getAgent();
-  const hits = findWatchlistHits(article.headline, article.country);
-  let headlineWithContext = `[COUNTRY CONTEXT: ${article.country}] ${article.headline}`;
-  
-  if (hits.length > 0) {
-    const hitStrings = hits.map((hit) => `[WATCHLIST HIT: ${hit.entity.name} (matched on '${hit.matchedTerm}')]`).join(' ');
-    headlineWithContext = `${hitStrings} ${headlineWithContext}`;
-  }
-
-  const response = await headlineAssessmentAgent.execute(headlineWithContext);
-  
-  let assessment = {
-    relevance_headline: 0,
-    assessment_headline: 'AI assessment failed.',
-    headline_en: article.headline,
-  };
-
-  if (response && response.assessment && response.assessment.length > 0) {
-    assessment = response.assessment[0];
-    let score = assessment.relevance_headline;
-    const boost = getConfig().settings.WATCHLIST_SCORE_BOOST;
-    if (hits.length > 0 && boost > 0) {
-      score = Math.min(100, score + boost);
-      assessment.assessment_headline = `Watchlist boost (+${boost}). ${assessment.assessment_headline}`;
-    }
-    assessment.relevance_headline = score;
-  }
-  
-  return { ...article, ...assessment };
-}
-
-
-export async function assessHeadlinesInBatches(articles) {
-  // Using Promise.all provides sufficient concurrency for this operation.
-  const assessmentPromises = articles.map(article => 
-    assessSingleHeadline(article)
-  );
-  
-  const results = await Promise.all(assessmentPromises);
-  return results;
-}
-
-```
-
-## 📄 src/ai/agents/judgeAgent.js
-*Lines: 54, Size: 1.85 KB*
-
-```javascript
-// packages/scraper-logic/src/ai/agents/judgeAgent.js (version 2.3.2)
-import { getConfig } from '../../config.js';
-import { AIAgent } from '../AIAgent.js'
-import { judgeSchema } from '../schemas/judgeSchema.js'
-import { env } from '../../../../config/src/index.js'
-import { instructionJudge } from '../../../../prompts/src/index.js'
-
-const getAgent = () =>
-  new AIAgent({
-    model: env.LLM_MODEL_SYNTHESIS,
-    systemPrompt: instructionJudge,
-    zodSchema: judgeSchema,
-  })
-
-export async function judgePipelineOutput(events, opportunities) {
-  const judgeAgent = getAgent()
-  if ((!events || events.length === 0) && (!opportunities || opportunities.length === 0)) {
-    return {
-      event_judgements: [],
-      opportunity_judgements: [],
-    }
-  }
-  getConfig().logger.info('⚖️ [Judge Agent] Reviewing final pipeline output for quality control...')
-  const lightweightEvents = (events || []).map((e) => ({
-    identifier: `Event: ${e.synthesized_headline}`,
-    summary: e.synthesized_summary,
-    assessment: e.ai_assessment_reason,
-    score: e.highest_relevance_score,
-  }))
-  const lightweightOpportunities = (opportunities || []).map((o) => ({
-    identifier: `Opportunity: ${o.reachOutTo}`,
-    reason: o.whyContact,
-    wealth_estimate_mm: o.likelyMMDollarWealth,
-  }))
-  const inputText = JSON.stringify({
-    events: lightweightEvents,
-    opportunities: lightweightOpportunities,
-  })
-  const response = await judgeAgent.execute(inputText)
-  if (response.error) {
-    getConfig().logger.error({ details: response }, 'Judge Agent failed to produce a verdict.')
-    // Return a default "empty" verdict on failure to avoid crashing the pipeline
-    return {
-      event_judgements: [],
-      opportunity_judgements: [],
-    }
-  }
-  getConfig().logger.info(
-    { details: response },
-    '[Judge Agent] Successfully produced quality control verdicts.'
-  )
-  return response
-}
-
-```
-
-## 📄 src/ai/agents/opportunityAgent.js
-*Lines: 76, Size: 2.62 KB*
-
-```javascript
-// packages/scraper-logic/src/ai/agents/opportunityAgent.js (version 3.2.2)
-import { truncateString } from '../../../../utils/src/index.js';
-import { AIAgent } from '../AIAgent.js'
-import { opportunitySchema } from '../schemas/opportunitySchema.js'
-import { enrichContactSchema } from '../schemas/enrichContactSchema.js'
-import { env } from '../../../../config/src/index.js'
-import { getInstructionOpportunities } from '../../../../prompts/src/index.js'
-import { instructionEnrichContact } from '../../../../prompts/src/index.js'
-import { getConfig } from '../../config.js'
-
-const getOppAgent = () =>
-  new AIAgent({
-    model: env.LLM_MODEL_ARTICLE_ASSESSMENT,
-    systemPrompt: getInstructionOpportunities,
-    zodSchema: opportunitySchema,
-  })
-
-const getContactResolverAgent = () =>
-  new AIAgent({
-    model: env.LLM_MODEL_ARTICLE_ASSESSMENT,
-    systemPrompt: instructionEnrichContact,
-    zodSchema: enrichContactSchema,
-  })
-
-export async function generateOpportunitiesFromEvent(
-  synthesizedEvent,
-  articlesInCluster
-) {
-  const opportunityGeneratorAgent = getOppAgent()
-
-  const highestRelevanceArticle = articlesInCluster.reduce((max, current) =>
-    (current.relevance_article || 0) > (max.relevance_article || 0) ? current : max
-  )
-
-  const fullText = articlesInCluster
-    .map((a) => (a.articleContent?.contents || []).join('\n'))
-    .join('\n\n')
-
-  const inputText = `
-        Synthesized Event Headline: ${synthesizedEvent.synthesized_headline}
-        Synthesized Event Summary: ${synthesizedEvent.synthesized_summary}
-        Key Individuals already identified: ${JSON.stringify(synthesizedEvent.key_individuals)}
-        Source Article Snippets: ${truncateString(fullText, getConfig().settings.LLM_CONTEXT_MAX_CHARS)}
-    `
-  const response = await opportunityGeneratorAgent.execute(inputText)
-
-  if (response.error || !response.opportunities) {
-    getConfig().logger.warn(
-      { event: synthesizedEvent.synthesized_headline, details: response },
-      `Opportunity generation failed.`
-    )
-    return []
-  }
-
-  const validOpportunities = (response.opportunities || []).filter(
-    (opp) => opp.likelyMMDollarWealth >= getConfig().settings.MINIMUM_EVENT_AMOUNT_USD_MILLIONS
-  )
-
-  const opportunitiesWithSource = validOpportunities.map((opp) => ({
-    ...opp,
-    event_key: synthesizedEvent.event_key,
-    sourceArticleId: highestRelevanceArticle._id,
-  }))
-
-  getConfig().logger.info(
-    { details: opportunitiesWithSource },
-    `[Opportunity Agent] Generated ${
-      opportunitiesWithSource.length
-    } opportunity/ies from event "${truncateString(
-      synthesizedEvent.synthesized_headline,
-      50
-    )}"`
-  )
-  return opportunitiesWithSource
-}
-
-```
-
-## 📄 src/ai/agents/sectionClassifierAgent.js
-*Lines: 36, Size: 1.83 KB*
-
-```javascript
-// packages/scraper-logic/src/ai/agents/sectionClassifierAgent.js (version 1.0)
-import { AIAgent } from '../AIAgent.js';
-import { sectionClassifierSchema } from '../schemas/sectionClassifierSchema.js';
-import { env } from '../../../../config/src/index.js';
-
-const INSTRUCTION = `You are a master website navigation analyst. Your task is to analyze a list of hyperlinks (anchor text and href) from a webpage and classify each one into one of four categories.
-
-**Categories:**
-1.  **"news_section"**: A link to a major category or section of news (e.g., "Business", "Technology", "World News", "/erhverv", "/økonomi"). These are typically found in main navigation bars.
-2.  **"article_headline"**: A link to a specific news article or story. The text is usually a full sentence or a descriptive title.
-3.  **"navigation"**: A link to a functional page on the site (e.g., "About Us", "Contact", "Login", "Subscribe").
-4.  **"other"**: Any other type of link, such as advertisements, privacy policies, terms of service, or social media links.
-
-**Instructions:**
--   You will receive a JSON array of link objects.
--   You MUST return a JSON object with a single key, "classifications".
--   The "classifications" array MUST contain one classification object for EACH link in the input, in the EXACT SAME ORDER.
--   Base your decision on both the link's text and its URL structure.
-`;
-
-const getAgent = () =>
-  new AIAgent({
-    model: env.LLM_MODEL_UTILITY, // Using the cheap and fast model
-    systemPrompt: INSTRUCTION,
-    zodSchema: sectionClassifierSchema,
-  });
-
-export async function classifyLinks(links) {
-    const agent = getAgent();
-    const response = await agent.execute(JSON.stringify(links));
-    if (response.error || !response.classifications || response.classifications.length !== links.length) {
-        return null;
-    }
-    return response.classifications;
-}
-
-```
-
-## 📄 src/ai/agents/selectorRepairAgent.js
-*Lines: 44, Size: 1.47 KB*
-
-```javascript
-// packages/scraper-logic/src/ai/agents/selectorRepairAgent.js (version 3.0.0)
-import { truncateString } from '../../../../utils/src/index.js';
-import { getConfig } from '../../config.js';
-import { AIAgent } from '../AIAgent.js'
-import { selectorRepairSchema } from '../schemas/selectorRepairSchema.js'
-import { env } from '../../../../config/src/index.js'
-import { instructionSelectorRepair } from '../../../../prompts/src/index.js'
-
-const getAgent = () =>
-  new AIAgent({
-    model: env.LLM_MODEL_UTILITY,
-    systemPrompt: instructionSelectorRepair,
-    zodSchema: selectorRepairSchema,
-  })
-
-export async function suggestNewSelector(url, failedSelector, htmlContent, heuristicSuggestions = []) {
-  const selectorRepairAgent = getAgent()
-  try {
-    const payload = {
-      url,
-      failed_selector: failedSelector,
-      // NEW: Add heuristic suggestions to the payload
-      heuristic_suggestions: heuristicSuggestions.map(s => ({
-          selector: s.selector,
-          samples: s.samples.slice(0, 3)
-      })),
-      html_content: truncateString(htmlContent, 30000),
-    }
-
-    const response = await selectorRepairAgent.execute(JSON.stringify(payload))
-    if (response.error || !response.suggested_selectors) {
-      getConfig().logger.error('Selector repair agent failed to produce a valid suggestion.', {
-        response,
-      })
-      return null
-    }
-
-    return response
-  } catch (error) {
-    getConfig().logger.error({ err: error }, 'Error in suggestNewSelector')
-    return null
-  }
-}
-
-```
-
-## 📄 src/ai/agents/synthesisAgent.js
-*Lines: 102, Size: 3.13 KB*
-
-```javascript
-// packages/scraper-logic/src/ai/agents/synthesisAgent.js (version 3.0.2)
-import { truncateString } from '../../../../utils/src/index.js'
-import { AIAgent } from '../AIAgent.js'
-import { synthesisSchema } from '../schemas/synthesisSchema.js'
-import { env } from '../../../../config/src/index.js'
-import { instructionSynthesize } from '../../../../prompts/src/index.js'
-// DEFINITIVE FIX: Removed the duplicate import of getConfig.
-import { getConfig } from '../../config.js'
-
-const getAgent = () =>
-  new AIAgent({
-    model: env.LLM_MODEL_SYNTHESIS,
-    systemPrompt: instructionSynthesize,
-    zodSchema: synthesisSchema,
-  })
-
-export async function synthesizeEvent(
-  articlesInCluster,
-  historicalContext,
-  wikipediaContext,
-  newsApiContext,
-  gdeltContext
-) {
-  const eventSynthesizerAgent = getAgent()
-  const config = getConfig()
-
-  const todayPayload = articlesInCluster.map((a) => ({
-    headline: a.headline,
-    source: a.newspaper,
-    full_text: truncateString(
-      (a.articleContent?.contents || []).join('\n'),
-      getConfig().settings.LLM_CONTEXT_MAX_CHARS / articlesInCluster.length
-    ),
-    key_individuals: a.key_individuals || [],
-  }))
-
-  const historyPayload = historicalContext.map((h) => ({
-    headline: h.headline,
-    source: h.newspaper,
-    published: h.createdAt,
-    summary: h.assessment_article || '',
-  }))
-
-  const userContent = {
-    "[ TODAY'S NEWS ]": todayPayload,
-    '[ HISTORICAL CONTEXT (Internal Database) ]': historyPayload,
-    '[ PUBLIC WIKIPEDIA CONTEXT ]': wikipediaContext || 'Not available.',
-    '[ LATEST NEWS CONTEXT (NewsAPI) ]': newsApiContext || 'Not available.',
-    '[ GLOBAL GDELT CONTEXT ]': gdeltContext || 'Not available.',
-  }
-
-  getConfig().logger.trace(
-    { synthesis_context: userContent },
-    '--- SYNTHESIS CONTEXT ---'
-  )
-
-  const response = await eventSynthesizerAgent.execute(JSON.stringify(userContent))
-
-  if (response.error) {
-    getConfig().logger.error('Failed to synthesize event.', { response })
-    return { error: 'Synthesis failed' }
-  }
-  return response
-}
-
-export async function synthesizeFromHeadline(article) {
-  const eventSynthesizerAgent = getAgent()
-  getConfig().logger.warn(
-    { headline: article.headline },
-    `Salvaging high-signal headline with failed enrichment...`
-  )
-  const todayPayload = [
-    {
-      headline: article.headline,
-      source: article.newspaper,
-      full_text:
-        "NOTE: Full article text could not be retrieved. Synthesize based on the headline's explicit claims and your general knowledge.",
-      key_individuals: article.key_individuals || [],
-    },
-  ]
-  const userContent = {
-    "[ TODAY'S NEWS ]": todayPayload,
-    '[ HISTORICAL CONTEXT ]': [],
-    '[ PUBLIC WIKIPEDIA CONTEXT ]': 'Not available.',
-    '[ LATEST NEWS CONTEXT (NewsAPI) ]': 'Not available.',
-    '[ GLOBAL GDELT CONTEXT ]': 'Not available.',
-  }
-
-  getConfig().logger.trace(
-    { synthesis_context: userContent },
-    '--- SALVAGE SYNTHESIS CONTEXT ---'
-  )
-
-  const response = await eventSynthesizerAgent.execute(JSON.stringify(userContent))
-
-  if (response.error) {
-    getConfig().logger.error('Failed to salvage headline.', { response })
-    return null
-  }
-  return response
-}
-
-```
-
-## 📄 src/ai/agents/watchlistAgent.js
-*Lines: 43, Size: 1.62 KB*
-
-```javascript
-// packages/scraper-logic/src/ai/agents/watchlistAgent.js (version 2.3.1)
-import { getConfig } from '../../config.js';
-import { AIAgent } from '../AIAgent.js'
-import { watchlistSuggestionSchema } from '../schemas/watchlistSuggestionSchema.js'
-import { env } from '../../../../config/src/index.js'
-import { instructionWatchlistSuggestion } from '../../../../prompts/src/index.js'
-
-const getAgent = () =>
-  new AIAgent({
-    model: env.LLM_MODEL_SYNTHESIS,
-    systemPrompt: instructionWatchlistSuggestion,
-    zodSchema: watchlistSuggestionSchema,
-  })
-
-/**
- * Analyzes events to generate new watchlist suggestions.
- * @param {Array<object>} events - High-quality synthesized events.
- * @param {Set<string>} existingWatchlistNames - A set of lowercase names already on the watchlist.
- * @returns {Promise<Array<object>>} An array of new WatchlistSuggestion documents.
- */
-export async function generateWatchlistSuggestions(events, existingWatchlistNames) {
-  const watchlistSuggestionAgent = getAgent()
-  try {
-    const payload = { events }
-    const response = await watchlistSuggestionAgent.execute(JSON.stringify(payload))
-
-    if (response.error || !Array.isArray(response.suggestions)) {
-      getConfig().logger.warn('AI failed to generate watchlist suggestions.', response)
-      return []
-    }
-
-    // Post-filter to ensure we don't suggest entities that already exist
-    const newSuggestions = response.suggestions.filter(
-      (s) => !existingWatchlistNames.has(s.name.toLowerCase())
-    )
-
-    return newSuggestions
-  } catch (error) {
-    getConfig().logger.error({ err: error }, 'Error in generateWatchlistSuggestions')
-    return []
+  },
+  "peerDependencies": {
+    "playwright": "^1.45.1"
   }
 }
 
@@ -1384,350 +239,6 @@ export {
   sectionClassifierAgent,
   generateExecutiveSummary,
 }
-
-```
-
-## 📄 src/ai/schemas/articleAssessmentSchema.js
-*Lines: 30, Size: 862 Bytes*
-
-```javascript
-// packages/scraper-logic/src/ai/schemas/articleAssessmentSchema.js (version 1.1.0)
-import { z } from 'zod'
-
-export const articleAssessmentSchema = z.object({
-  reasoning: z.object({
-    event_type: z.string(),
-    is_liquidity_event: z.boolean(),
-    beneficiary: z.string(),
-  }),
-  relevance_article: z
-    .number()
-    .min(0)
-    .max(100)
-    .describe('The relevance score of the article content.'),
-  assessment_article: z
-    .string()
-    .min(1)
-    .describe('A single, concise sentence assessing the article.'),
-  amount: z.number().nullable().optional(),
-  key_individuals: z.array(
-    z.object({
-      name: z.string(),
-      role_in_event: z.string(),
-      // ROBUSTNESS FIX: Allow company to be null, as the AI sometimes cannot determine it.
-      company: z.string().nullable(),
-      email_suggestion: z.string().nullable(),
-    })
-  ),
-})
-
-```
-
-## 📄 src/ai/schemas/articlePreAssessmentSchema.js
-*Lines: 7, Size: 213 Bytes*
-
-```javascript
-// src/modules/ai/schemas/articlePreAssessmentSchema.js (version 1.0)
-import { z } from 'zod'
-
-export const articlePreAssessmentSchema = z.object({
-  classification: z.enum(['private', 'public', 'corporate']),
-})
-
-```
-
-## 📄 src/ai/schemas/batchArticleAssessmentSchema.js
-*Lines: 8, Size: 290 Bytes*
-
-```javascript
-// packages/scraper-logic/src/ai/schemas/batchArticleAssessmentSchema.js (version 1.0)
-import { z } from 'zod'
-import { articleAssessmentSchema } from './articleAssessmentSchema.js'
-
-export const batchArticleAssessmentSchema = z.object({
-  assessments: z.array(articleAssessmentSchema),
-})
-
-```
-
-## 📄 src/ai/schemas/canonicalizerSchema.js
-*Lines: 7, Size: 178 Bytes*
-
-```javascript
-// src/modules/ai/schemas/canonicalizerSchema.js (version 1.0)
-import { z } from 'zod'
-
-export const canonicalizerSchema = z.object({
-  canonical_name: z.string().nullable(),
-})
-
-```
-
-## 📄 src/ai/schemas/clusterSchema.js
-*Lines: 12, Size: 240 Bytes*
-
-```javascript
-// src/modules/ai/schemas/clusterSchema.js (version 1.0)
-import { z } from 'zod'
-
-export const clusterSchema = z.object({
-  events: z.array(
-    z.object({
-      event_key: z.string(),
-      article_ids: z.array(z.string()),
-    })
-  ),
-})
-
-```
-
-## 📄 src/ai/schemas/disambiguationSchema.js
-*Lines: 7, Size: 176 Bytes*
-
-```javascript
-// src/modules/ai/schemas/disambiguationSchema.js (version 1.0)
-import { z } from 'zod'
-
-export const disambiguationSchema = z.object({
-  best_title: z.string().nullable(),
-})
-
-```
-
-## 📄 src/ai/schemas/emailIntroSchema.js
-*Lines: 7, Size: 164 Bytes*
-
-```javascript
-// src/modules/ai/schemas/emailIntroSchema.js (version 1.0)
-import { z } from 'zod'
-
-export const emailIntroSchema = z.object({
-  intro_text: z.string().min(1),
-})
-
-```
-
-## 📄 src/ai/schemas/emailSubjectSchema.js
-*Lines: 7, Size: 174 Bytes*
-
-```javascript
-// src/modules/ai/schemas/emailSubjectSchema.js (version 1.0)
-import { z } from 'zod'
-
-export const emailSubjectSchema = z.object({
-  subject_headline: z.string().min(1),
-})
-
-```
-
-## 📄 src/ai/schemas/enrichContactSchema.js
-*Lines: 14, Size: 325 Bytes*
-
-```javascript
-// src/modules/ai/schemas/enrichContactSchema.js (version 1.0)
-import { z } from 'zod'
-
-export const enrichContactSchema = z.object({
-  enriched_contacts: z.array(
-    z.object({
-      name: z.string(),
-      role_in_event: z.string(),
-      company: z.string(),
-      email_suggestion: z.string().nullable(),
-    })
-  ),
-})
-
-```
-
-## 📄 src/ai/schemas/entitySchema.js
-*Lines: 8, Size: 181 Bytes*
-
-```javascript
-// src/modules/ai/schemas/entitySchema.js (version 1.0)
-import { z } from 'zod'
-
-export const entitySchema = z.object({
-  reasoning: z.string(),
-  entities: z.array(z.string()),
-})
-
-```
-
-## 📄 src/ai/schemas/findContactSchema.js
-*Lines: 7, Size: 173 Bytes*
-
-```javascript
-// src/modules/ai/schemas/findContactSchema.js (version 1.0)
-import { z } from 'zod'
-
-export const findContactSchema = z.object({
-  email: z.string().email().nullable(),
-})
-
-```
-
-## 📄 src/ai/schemas/headlineAssessmentSchema.js
-*Lines: 13, Size: 352 Bytes*
-
-```javascript
-// src/modules/ai/schemas/headlineAssessmentSchema.js (version 1.0)
-import { z } from 'zod'
-
-const singleAssessmentSchema = z.object({
-  headline_en: z.string(),
-  relevance_headline: z.number().min(0).max(100),
-  assessment_headline: z.string(),
-})
-
-export const headlineAssessmentSchema = z.object({
-  assessment: z.array(singleAssessmentSchema),
-})
-
-```
-
-## 📄 src/ai/schemas/judgeSchema.js
-*Lines: 14, Size: 394 Bytes*
-
-```javascript
-// src/modules/ai/schemas/judgeSchema.js (version 1.0)
-import { z } from 'zod'
-
-const verdictSchema = z.object({
-  identifier: z.string(),
-  quality: z.enum(['Excellent', 'Good', 'Acceptable', 'Marginal', 'Poor', 'Irrelevant']),
-  commentary: z.string(),
-})
-
-export const judgeSchema = z.object({
-  event_judgements: z.array(verdictSchema),
-  opportunity_judgements: z.array(verdictSchema),
-})
-
-```
-
-## 📄 src/ai/schemas/opportunitySchema.js
-*Lines: 19, Size: 490 Bytes*
-
-```javascript
-// src/modules/ai/schemas/opportunitySchema.js (version 1.0)
-import { z } from 'zod'
-
-export const opportunitySchema = z.object({
-  opportunities: z.array(
-    z.object({
-      reachOutTo: z.string(),
-      contactDetails: z.object({
-        email: z.string().email().nullable(),
-        role: z.string().nullable(),
-        company: z.string().nullable(),
-      }),
-      basedIn: z.string(),
-      whyContact: z.string(),
-      likelyMMDollarWealth: z.number().nullable(),
-    })
-  ),
-})
-
-```
-
-## 📄 src/ai/schemas/sectionClassifierSchema.js
-*Lines: 17, Size: 443 Bytes*
-
-```javascript
-// packages/scraper-logic/src/ai/schemas/sectionClassifierSchema.js (version 1.0)
-import { z } from 'zod';
-
-export const sectionClassifierSchema = z.object({
-  classifications: z.array(
-    z.object({
-      classification: z.enum([
-        "news_section", 
-        "article_headline", 
-        "navigation", 
-        "other"
-      ]),
-      reasoning: z.string().describe("A brief explanation for the classification choice."),
-    })
-  ),
-});
-
-```
-
-## 📄 src/ai/schemas/selectorRepairSchema.js
-*Lines: 13, Size: 405 Bytes*
-
-```javascript
-// src/modules/ai/schemas/selectorRepairSchema.js (version 1.0)
-import { z } from 'zod'
-
-export const selectorRepairSchema = z.object({
-  reasoning: z.string(),
-  suggested_selectors: z.object({
-    headlineSelector: z.string().optional(),
-    linkSelector: z.string().optional().nullable(),
-    headlineTextSelector: z.string().optional().nullable(),
-    articleSelector: z.string().optional(),
-  }),
-})
-
-```
-
-## 📄 src/ai/schemas/sourceNameSchema.js
-*Lines: 7, Size: 213 Bytes*
-
-```javascript
-// src/modules/ai/schemas/sourceNameSchema.js (version 1.0)
-import { z } from 'zod'
-
-export const sourceNameSchema = z.object({
-  name: z.string().min(1).describe('The official name of the news publication.'),
-})
-
-```
-
-## 📄 src/ai/schemas/synthesisSchema.js
-*Lines: 18, Size: 543 Bytes*
-
-```javascript
-// packages/scraper-logic/src/ai/schemas/synthesisSchema.js (version 1.1.0)
-import { z } from 'zod'
-
-export const synthesisSchema = z.object({
-  headline: z.string().min(1),
-  summary: z.string().min(1),
-  country: z.string().min(1),
-  key_individuals: z.array(
-    z.object({
-      name: z.string(),
-      role_in_event: z.string(),
-      // ROBUSTNESS FIX: Allow company to be null, as the AI sometimes cannot determine it during synthesis.
-      company: z.string().nullable(),
-      email_suggestion: z.string().nullable(),
-    })
-  ),
-})
-
-```
-
-## 📄 src/ai/schemas/watchlistSuggestionSchema.js
-*Lines: 15, Size: 364 Bytes*
-
-```javascript
-// src/modules/ai/schemas/watchlistSuggestionSchema.js (version 1.0)
-import { z } from 'zod'
-
-export const watchlistSuggestionSchema = z.object({
-  suggestions: z.array(
-    z.object({
-      name: z.string(),
-      type: z.enum(['person', 'family', 'company']),
-      country: z.string(),
-      rationale: z.string(),
-      sourceEvent: z.string(),
-    })
-  ),
-})
 
 ```
 
@@ -1974,14 +485,44 @@ export function getConfig() {
 
 ```
 
-## 📄 src/index.js
-*Lines: 5, Size: 305 Bytes*
+## 📄 src/core.js
+*Lines: 11, Size: 514 Bytes*
 
 ```javascript
-// packages/scraper-logic/src/index.js (version 1.0)
-// This file will serve as the public API for our shared scraper logic package.
-// For now, we will leave it empty as direct imports from subdirectories are clear enough.
-// In the future, we can export key functions from here for a cleaner interface.
+// This file serves as the core, shared module for the scraper-logic package.
+// It is environment-agnostic. Environment-specific entry points (next.js, node.js)
+// will re-export from this file and add any necessary guards.
+
+// Currently, all exports are handled via subpaths (e.g., /browser, /scraper/index.js).
+// If you add a function that should be available from the root of the package,
+// export it from here.
+
+// Example of a future export:
+// export { someSharedScraperUtil } from './some-util-file.js';
+
+```
+
+## 📄 src/index.js
+*Lines: 3, Size: 76 Bytes*
+
+```javascript
+// This is the default, Node.js-safe entry point.
+export * from './core.js'
+
+```
+
+## 📄 src/next.js
+*Lines: 9, Size: 384 Bytes*
+
+```javascript
+import 'server-only'
+
+// Explicitly re-export everything from the core module
+// Since this package's index doesn't export much, we list them here.
+// Note: The main value is guarding the side-effects of importing its dependencies.
+// If core.js exports functions, they would be listed here.
+// For now, it might be empty if core.js is empty, which is fine.
+export * from './core.js'
 
 ```
 
@@ -2742,7 +1283,7 @@ export async function scrapeNewsAPI() {
 ```javascript
 // packages/scraper-logic/src/scraper/orchestrator.js (version 5.0.0)
 import pLimit from 'p-limit'
-import { sleep } from '@headlines/utils'
+import { sleep } from '@shared/utils-shared'
 import { getConfig } from '../config.js'
 import { scrapeSiteForHeadlines } from './headlineScraper.js'
 // NEWSAPI REWORK: The direct import of scrapeNewsAPI is removed as it's no longer used for proactive scraping.
@@ -3046,6 +1587,63 @@ export async function testHeadlineExtraction(sourceConfig, html) {
     }
   }
   return Array.from(new Map(articles.map((a) => [a.link, a])).values())
+}
+
+```
+
+## 📄 src/test-orchestrator.js
+*Lines: 51, Size: 1.49 KB*
+
+```javascript
+// packages/scraper-logic/src/test-orchestrator.js (NEW FILE)
+'use server'
+
+import { testHeadlineExtraction, scrapeArticleContentForTest } from './scraper/index.js'
+import { Source } from '@headlines/models'
+
+// This is the logic moved from data-access/actions/scrape.js
+export async function testScraperRecipe(sourceConfig, articleUrl = null) {
+  // Mode 1: Test a single article's content
+  if (articleUrl && sourceConfig.articleSelector) {
+    const content = await scrapeArticleContentForTest(
+      articleUrl,
+      sourceConfig.articleSelector
+    )
+    return { success: true, content: { preview: content, sourceUrl: articleUrl } }
+  }
+
+  // Mode 2: Test the full source recipe for headlines
+  if (sourceConfig && sourceConfig.sectionUrl) {
+    const headlines = await testHeadlineExtraction(sourceConfig)
+
+    // Update source analytics after the test
+    const success = headlines.length > 0
+    await Source.findByIdAndUpdate(
+      sourceConfig._id,
+      {
+        $set: {
+          lastScrapedAt: new Date(),
+          lastSuccessAt: success ? new Date() : undefined,
+        },
+        $inc: {
+          'analytics.totalRuns': 1,
+          'analytics.totalSuccesses': success ? 1 : 0,
+          'analytics.totalFailures': success ? 0 : 1,
+        },
+      },
+      { new: true }
+    ).lean()
+
+    return {
+      success: true,
+      headlines: {
+        count: headlines.length,
+        samples: headlines.slice(0, 10),
+      },
+    }
+  }
+
+  throw new Error('Invalid request payload for testScraperRecipe.')
 }
 
 ```

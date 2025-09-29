@@ -61,7 +61,7 @@ export async function deleteTodaysDocuments(confirm = false) {
 // Allow script to be run standalone
 if (import.meta.url.endsWith(process.argv[1])) {
   ;(async () => {
-    const { initializeLogger } = await import('@headlines/utils')
+    const { initializeLogger } = await import('@headlines/utils-server')
     const path = await import('path')
     initializeLogger(path.resolve(process.cwd(), 'apps/pipeline/logs'))
 

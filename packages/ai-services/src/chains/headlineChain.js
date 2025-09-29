@@ -1,4 +1,3 @@
-// packages/ai-services/src/chains/headlineChain.js (version 4.2.1 - Confirmed Final)
 import {
   ChatPromptTemplate,
   HumanMessagePromptTemplate,
@@ -11,11 +10,11 @@ import {
   instructionHeadlines,
   shotsInputHeadlines,
   shotsOutputHeadlines,
-} from '../../../prompts/src/index.js'
+} from '@headlines/prompts' // Correct: Import from the monorepo package
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { headlineAssessmentSchema } from '../schemas/index.js'
-import { settings } from '../../../config/src/server.js'
+import { settings } from '@headlines/config/node' // Correct: Import from the /node entry point
 
 const systemPrompt = [
   instructionHeadlines.whoYouAre,

@@ -1,35 +1,39 @@
-// packages/data-access/src/dbConnect.js (version 3.0.0 - Connection Only)
-import mongoose from 'mongoose';
-import { env } from '../../config/src/server.js';
+import mongoose from 'mongoose'
+import { env } from '@headlines/config/next' // Use the Next.js entry point for env vars
 
-const MONGO_URI = env.MONGO_URI;
+const MONGO_URI = env.MONGO_URI
 
-let cached = globalThis.mongoose;
-if (!cached) {
-  cached = globalThis.mongoose = { conn: null, promise: null };
+if (!MONGO_URI) {
+  throw new Error('Please define the MONGO_URI environment variable inside .env.local')
 }
 
+/**
+ * An idempotent function to connect to MongoDB.
+ * It leverages Mongoose's built-in connection state management to prevent
+ * creating multiple connections in serverless environments.
+ * If a connection is already established, it does nothing. If one is pending,
+ * Mongoose will reuse that promise internally.
+ */
 async function dbConnect() {
-  if (cached.conn) {
-    return cached.conn;
+  // readyState codes: 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
+  // If we are already connected or connecting, we can return immediately.
+  if (mongoose.connection.readyState >= 1) {
+    return
   }
-  if (!cached.promise) {
-    if (!MONGO_URI) {
-      throw new Error('MONGO_URI is not defined. Please check your .env file.');
-    }
-    cached.promise = mongoose.connect(MONGO_URI, { bufferCommands: false }).then((mongooseInstance) => {
-      console.log("[dbConnect] MongoDB connection successful.");
-      return mongooseInstance;
-    });
-  }
+
+  // If no connection is active, initiate one. Mongoose's `connect` method
+  // will not create duplicate connections if called multiple times concurrently.
+  // It returns a promise that resolves on successful connection.
   try {
-    cached.conn = await cached.promise;
+    console.log('[dbConnect] No active connection. Attempting to connect...')
+    await mongoose.connect(MONGO_URI, {
+      bufferCommands: false, // Recommended for serverless environments
+    })
+    console.log('[dbConnect] MongoDB connection successful.')
   } catch (e) {
-    cached.promise = null;
-    console.error("[dbConnect] MongoDB connection failed:", e);
-    throw e;
+    console.error('[dbConnect] MongoDB connection failed:', e)
+    throw e
   }
-  return cached.conn;
 }
 
-export default dbConnect;
+export default dbConnect

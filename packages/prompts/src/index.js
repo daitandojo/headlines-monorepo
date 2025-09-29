@@ -19,7 +19,8 @@ export * from './instructionSelectorRepair.js';
 export * from './instructionSourceDiscovery.js';
 export * from './instructionSourceName.js';
 export * from './instructionSynthesize.js';
-export * from './instructionTranslate.js'; // Added missing export
+export * from './instructionSectionClassifier.js';
+export * from './instructionTranslate.js';
 export * from './instructionWatchlistSuggestion.js';
 export * from './examples/shotsInputArticle.js';
 export * from './examples/shotsInputHeadlines.js';

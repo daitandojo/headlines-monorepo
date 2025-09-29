@@ -1,29 +1,29 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 10 files, 1 directories
+Total: 9 files, 2 directories
 
 ```
 headlines/
 ├── 📁 src/
+│   ├── 📁 data/
+│   │   ├── 📄 countries.json
+│   │   └── 📄 languages.json
 │   ├── 📄 apiCallTracker.js
-│   ├── 📄 auditLogger.js
+│   ├── 📄 countries.js
 │   ├── 📄 helpers.js
 │   ├── 📄 index.js
-│   ├── 📄 logger.js
-│   ├── 📄 mailer.js
-│   ├── 📄 pusher.js
-│   ├── 📄 redisClient.js
-│   └── 📄 tokenTracker.js
+│   ├── 📄 languages.js
+│   └── 📄 logger.js
 └── 📄 package.json
 ```
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-21T14:17:28.694Z
-**Repository Path**: /home/mark/Repos/projects/headlines/packages/utils-server
-**Total Files**: 10
-**Package**: @headlines/utils-server@3.0.0
-**Description**: Server-only utilities for the Headlines monorepo.
+**Generated**: 2025-09-29T13:20:36.418Z
+**Repository Path**: /home/mark/Repos/projects/headlines/packages/utils-shared
+**Total Files**: 9
+**Package**: @headlines/utils-shared@2.0.0
+**Description**: Isomorphic (client and server safe) utilities and hooks.
 
 
 
@@ -31,191 +31,343 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 31, Size: 862 Bytes*
+*Lines: 19, Size: 412 Bytes*
 
 ```json
 {
-  "name": "@headlines/utils-server",
-  "version": "3.0.0",
-  "description": "Server-only utilities for the Headlines monorepo.",
+  "name": "@headlines/utils-shared",
+  "version": "2.0.0",
+  "description": "Isomorphic (client and server safe) utilities and hooks.",
   "main": "src/index.js",
   "type": "module",
   "license": "ISC",
   "exports": {
     ".": "./src/index.js",
-    "./logger": "./src/logger.js",
-    "./helpers": "./src/helpers.js",
-    "./tokenTracker": "./src/tokenTracker.js",
-    "./apiCallTracker": "./src/apiCallTracker.js",
-    "./auditLogger": "./src/auditLogger.js",
-    "./redisClient": "./src/redisClient.js",
-    "./mailer": "./src/mailer.js",
-    "./pusher": "./src/pusher.js"
+    "./next": "./src/index.js"
   },
   "dependencies": {
-    "@headlines/config": "workspace:*",
-    "@headlines/utils": "workspace:*",
-    "moment": "^2.30.1",
-    "pino": "^9.2.0",
-    "pino-pretty": "^11.2.1",
-    "redis": "^4.6.15",
-    "cheerio": "^1.0.0-rc.12",
-    "nodemailer": "^6.9.14",
-    "pusher": "^5.2.0"
+    "clsx": "^2.1.1",
+    "pusher-js": "^8.4.0",
+    "sonner": "^1.5.0",
+    "tailwind-merge": "^2.3.0"
   }
 }
 
 ```
 
 ## 📄 src/apiCallTracker.js
-*Lines: 38, Size: 875 Bytes*
+*Lines: 49, Size: 1.02 KB*
 
 ```javascript
-import 'server-only'
+// packages/utils-shared/src/apiCallTracker.js (version 1.0.0)
 import { logger } from './logger.js'
 
+// Prices per 1000 calls in USD.
 const servicePricing = {
   serper_news: 2.5,
   serper_search: 2.5,
-  newsapi_search: 0,
+  newsapi_search: 0, // Developer plan is free
   wikipedia: 0,
 }
+
 class ApiCallTracker {
   constructor() {
     this.usage = {}
     this.reset()
   }
+
   reset() {
     this.usage = {}
     Object.keys(servicePricing).forEach((service) => {
       this.usage[service] = { calls: 0, cost: 0 }
     })
   }
+
   recordCall(service) {
     if (!service) return
+
     if (!this.usage[service]) {
-      logger.warn(`API call recorded for an un-priced service: ${service}.`)
+      logger.warn(
+        `API call recorded for an un-priced service: ${service}. Calls will be tracked, but cost will be $0.`
+      )
       this.usage[service] = { calls: 0, cost: 0 }
     }
+
     this.usage[service].calls += 1
+
     const pricePer1000 = servicePricing[service]
     if (pricePer1000) {
       this.usage[service].cost += pricePer1000 / 1000
     }
   }
+
   getStats() {
     return this.usage
   }
 }
+
 export const apiCallTracker = new ApiCallTracker()
 
 ```
 
-## 📄 src/auditLogger.js
-*Lines: 50, Size: 2.13 KB*
+## 📄 src/countries.js
+*Lines: 30, Size: 994 Bytes*
 
 ```javascript
-import 'server-only';
-import pino from 'pino';
-import fs from 'fs';
-import path from 'path';
-import { Transform } from 'stream';
-import { EOL } from 'os';
-import moment from 'moment';
-import { format } from 'util';
-const COLORS = { reset: '\x1b[0m', cyan: '\x1b[36m', magenta: '\x1b[35m', yellow: '\x1b[33m', grey: '\x1b[90m' };
-const humanAuditStream = new Transform({
-  transform(chunk, enc, cb) {
-    try {
-      const logObject = JSON.parse(chunk);
-      const { time, msg, context } = logObject;
-      const timestamp = moment(time).format('HH:mm:ss.SSS');
-      let output = `${COLORS.cyan}--- [${timestamp}] ${msg} ---${COLORS.reset}${EOL}`;
-      if (context) {
-        for (const [key, value] of Object.entries(context)) {
-          const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
-          output += `  ${COLORS.yellow}${formattedKey}:${COLORS.reset}${EOL}`;
-          output += `${COLORS.grey}${format(value).replace(/^/gm, '    > ')}${COLORS.reset}${EOL}${EOL}`;
-        }
-      }
-      this.push(output);
-    } catch (e) { this.push(chunk); }
-    cb();
-  },
-});
-let auditLoggerInstance;
-export function initializeAuditLogger(logDirectory) {
-  if (auditLoggerInstance) return auditLoggerInstance;
-  if (!logDirectory) { throw new Error('[AuditLogger] Initialization failed: logDirectory must be provided.'); }
-  if (!fs.existsSync(logDirectory)) fs.mkdirSync(logDirectory, { recursive: true });
-  const auditLogFile = path.join(logDirectory, 'run_audit.log');
-  try { fs.unlinkSync(auditLogFile); } catch (e) { if (e.code !== 'ENOENT') console.error('Could not clear old audit log file:', e); }
-  const fileWriteStream = fs.createWriteStream(auditLogFile, { flags: 'a' });
-  humanAuditStream.pipe(fileWriteStream);
-  auditLoggerInstance = pino({ level: 'info' }, humanAuditStream);
-  return auditLoggerInstance;
+// packages/utils-shared/src/countries.js (NEW FILE)
+import isoCountryFlags from './data/countries.json' with { type: 'json' }
+
+const defaultFlag = '🌍'
+const countryNameToIsoMap = new Map(Object.entries(isoCountryFlags))
+const isoToFlagMap = new Map()
+
+for (const [name, iso] of countryNameToIsoMap.entries()) {
+  if (iso.length === 2) {
+    const flag = iso
+      .toUpperCase()
+      .replace(/./g, (char) => String.fromCodePoint(char.charCodeAt(0) + 127397))
+    isoToFlagMap.set(iso, flag)
+  } else {
+    const specialFlags = { Global: '🌐', Europe: '🇪🇺', Scandinavia: '❄️' }
+    if (specialFlags[name]) isoToFlagMap.set(iso, specialFlags[name])
+  }
 }
-export const auditLogger = new Proxy({}, {
-  get(target, prop) {
-    if (auditLoggerInstance) { return auditLoggerInstance[prop]; }
-    if (prop === 'info' || prop === 'warn' || prop === 'error' || prop === 'fatal' || prop === 'debug' || prop === 'trace') {
-      return () => {};
+
+export function getCountryFlag(countryName) {
+  if (!countryName) return defaultFlag
+  for (const [key, value] of countryNameToIsoMap.entries()) {
+    if (key.toLowerCase() === countryName.trim().toLowerCase()) {
+      const flag = isoToFlagMap.get(value)
+      return flag || defaultFlag
     }
-    return undefined;
-  },
-});
+  }
+  return defaultFlag
+}
 
 ```
 
+## 📄 src/data/countries.json
+*Lines: 110, Size: 2.06 KB*
+
+```json
+{
+  "Global": "XX",
+  "Europe": "EU",
+  "Scandinavia": "SC",
+  "Afghanistan": "AF",
+  "Albania": "AL",
+  "Algeria": "DZ",
+  "Andorra": "AD",
+  "Angola": "AO",
+  "Argentina": "AR",
+  "Armenia": "AM",
+  "Australia": "AU",
+  "Austria": "AT",
+  "Azerbaijan": "AZ",
+  "Bahamas": "BS",
+  "Bahrain": "BH",
+  "Bangladesh": "BD",
+  "Belarus": "BY",
+  "Belgium": "BE",
+  "Benin": "BJ",
+  "Bhutan": "BT",
+  "Bolivia": "BO",
+  "Bosnia and Herzegovina": "BA",
+  "Brazil": "BR",
+  "Bulgaria": "BG",
+  "Cambodia": "KH",
+  "Canada": "CA",
+  "Chile": "CL",
+  "China": "CN",
+  "Colombia": "CO",
+  "Croatia": "HR",
+  "Cuba": "CU",
+  "Cyprus": "CY",
+  "Czech Republic": "CZ",
+  "Denmark": "DK",
+  "Egypt": "EG",
+  "Estonia": "EE",
+  "Ethiopia": "ET",
+  "Finland": "FI",
+  "France": "FR",
+  "Georgia": "GE",
+  "Germany": "DE",
+  "Ghana": "GH",
+  "Greece": "GR",
+  "Hungary": "HU",
+  "Iceland": "IS",
+  "India": "IN",
+  "Indonesia": "ID",
+  "Iran": "IR",
+  "Iraq": "IQ",
+  "Ireland": "IE",
+  "Israel": "IL",
+  "Italy": "IT",
+  "Japan": "JP",
+  "Jordan": "JO",
+  "Kazakhstan": "KZ",
+  "Kenya": "KE",
+  "Kuwait": "KW",
+  "Latvia": "LV",
+  "Lebanon": "LB",
+  "Liechtenstein": "LI",
+  "Lithuania": "LT",
+  "Luxembourg": "LU",
+  "Malaysia": "MY",
+  "Malta": "MT",
+  "Mexico": "MX",
+  "Monaco": "MC",
+  "Mongolia": "MN",
+  "Montenegro": "ME",
+  "Morocco": "MA",
+  "Nepal": "NP",
+  "Netherlands": "NL",
+  "New Zealand": "NZ",
+  "Nigeria": "NG",
+  "North Korea": "KP",
+  "North Macedonia": "MK",
+  "Norway": "NO",
+  "Oman": "OM",
+  "Pakistan": "PK",
+  "Peru": "PE",
+  "Philippines": "PH",
+  "Poland": "PL",
+  "Portugal": "PT",
+  "Qatar": "QA",
+  "Romania": "RO",
+  "Russia": "RU",
+  "Saudi Arabia": "SA",
+  "Serbia": "RS",
+  "Singapore": "SG",
+  "Slovakia": "SK",
+  "Slovenia": "SI",
+  "South Africa": "ZA",
+  "South Korea": "KR",
+  "Spain": "ES",
+  "Sri Lanka": "LK",
+  "Sweden": "SE",
+  "Switzerland": "CH",
+  "Syria": "SY",
+  "Taiwan": "TW",
+  "Thailand": "TH",
+  "Turkey": "TR",
+  "Ukraine": "UA",
+  "United Arab Emirates": "AE",
+  "United Kingdom": "GB",
+  "United States": "US",
+  "Uzbekistan": "UZ",
+  "Vietnam": "VN",
+  "Yemen": "YE"
+}
+
+```
+
+## 📄 src/data/languages.json
+*Lines: 10, Size: 167 Bytes*
+
+```json
+{
+    "English": "en",
+    "Danish": "da",
+    "Swedish": "sv",
+    "Norwegian": "no",
+    "German": "de",
+    "French": "fr",
+    "Spanish": "es",
+    "Dutch": "nl"
+}
+```
+
 ## 📄 src/helpers.js
-*Lines: 11, Size: 559 Bytes*
+*Lines: 50, Size: 1.1 KB*
 
 ```javascript
-import 'server-only';
-export async function safeExecute(asyncFn, { errorHandler } = {}) {
-  try { return await asyncFn() } catch (error) { if (errorHandler) { return errorHandler(error) } console.error('An unexpected error occurred in a safeExecute block without an error handler:', error); return null }
+// packages/utils-shared/src/helpers.js (Corrected)
+import { clsx } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+
+export function cn(...inputs) {
+  return twMerge(clsx(inputs))
 }
-export async function smartStripHtml(rawHtml) {
-  const cheerio = await import('cheerio');
-  const $ = cheerio.load(rawHtml);
-  $('script, style, link[rel="stylesheet"], noscript, svg, path, footer, header, nav').remove();
-  return $('body').html();
+
+export function truncateString(str, maxLength = 100) {
+  if (typeof str !== 'string' || str.length <= maxLength) {
+    return str
+  }
+  return str.substring(0, maxLength) + '...'
+}
+
+export function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+export function escapeHtml(str) {
+  if (str === null || str === undefined) return ''
+  return String(str).replace(/[<>&'"]/g, (c) => {
+    switch (c) {
+      case '<':
+        return '&lt;'
+      case '>':
+        return '&gt;'
+      case '&':
+        return '&amp;'
+      case "'":
+        return '&apos;'
+      case '"':
+        return '&quot;'
+    }
+  })
+}
+
+// NEW FUNCTION ADDED
+export function groupItemsByCountry(items, countryKey) {
+  if (!items) return {}
+  return items.reduce((acc, item) => {
+    const country = item[countryKey] || 'Unknown'
+    if (!acc[country]) {
+      acc[country] = []
+    }
+    acc[country].push(item)
+    return acc
+  }, {})
 }
 
 ```
 
 ## 📄 src/index.js
-*Lines: 13, Size: 462 Bytes*
+*Lines: 10, Size: 377 Bytes*
 
 ```javascript
-// packages/utils-server/src/index.js
-// This barrel file is NOT a 'use server' entry point.
-// It simply exports modules. Other packages should import directly from the subpaths.
-export * from '@headlines/utils'
-export * from './auditLogger.js'
-export * from './helpers.js'
-export * from './logger.js'
-export * from './redisClient.js'
-export * from './tokenTracker.js'
-export * from './apiCallTracker.js'
-export * from './mailer.js'
-export * from './pusher.js'
+// packages/utils-shared/src/index.js
+'use client'
+
+// DEFINITIVE FIX: Replace wildcard exports with explicit, named exports.
+export { cn, truncateString, sleep, escapeHtml, groupItemsByCountry } from './helpers.js'
+
+export { getCountryFlag } from './countries.js'
+export { languageList, languageMap } from './languages.js'
+export { apiCallTracker } from './apiCallTracker.js'
+
+```
+
+## 📄 src/languages.js
+*Lines: 6, Size: 251 Bytes*
+
+```javascript
+// packages/utils-shared/src/languages.js (NEW FILE)
+import languageData from './data/languages.json' with { type: 'json' }
+
+export const languageList = Object.keys(languageData).sort()
+export const languageMap = new Map(Object.entries(languageData))
 
 ```
 
 ## 📄 src/logger.js
-*Lines: 73, Size: 2.42 KB*
+*Lines: 42, Size: 1.15 KB*
 
 ```javascript
-import 'server-only'
-import pino from 'pino'
-import fs from 'fs'
-import path from 'path'
-import { createRequire } from 'module'
-const require = createRequire(import.meta.url)
-const LOG_LEVEL = process.env.LOG_LEVEL || 'info'
-const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 let loggerInstance
+
 const createSimpleLogger = () => {
   const simpleLogger = {}
   const levels = ['trace', 'debug', 'info', 'warn', 'error', 'fatal']
@@ -236,30 +388,6 @@ export function initializeLogger(logDirectory = null) {
     loggerInstance = createSimpleLogger()
     return loggerInstance
   }
-  console.log('Detected standard Node.js runtime. Initializing pino logger.')
-  const pinoPrettyPath = require.resolve('pino-pretty')
-  const consoleTransport = pino.transport({
-    target: pinoPrettyPath,
-    options: {
-      colorize: true,
-      translateTime: 'HH:MM:ss',
-      ignore:
-        'pid,hostname,runStats,article,assessment,event,payload,details,context,embedding,finalAssessment,watchlistHits,hits,reasoning,enrichmentSources,source_articles,key_individuals,source',
-      singleLine: true,
-      messageFormat: '{msg}',
-    },
-  })
-  const streams = [{ level: LOG_LEVEL, stream: consoleTransport }]
-  if (logDirectory && !IS_PRODUCTION) {
-    if (!fs.existsSync(logDirectory)) fs.mkdirSync(logDirectory, { recursive: true })
-    const errorLogFile = path.join(logDirectory, 'error.log')
-    streams.push({
-      level: 'warn',
-      stream: fs.createWriteStream(errorLogFile, { flags: 'w' }),
-    })
-  }
-  loggerInstance = pino({ level: 'trace' }, pino.multistream(streams))
-  return loggerInstance
 }
 export const logger = new Proxy(
   {},
@@ -279,219 +407,5 @@ export function reinitializeLogger(logDirectory, extraStreams = []) {
   loggerInstance = initializeLogger(logDirectory, extraStreams)
   return loggerInstance
 }
-
-```
-
-## 📄 src/mailer.js
-*Lines: 41, Size: 1.41 KB*
-
-```javascript
-'use server'
-
-import nodemailer from 'nodemailer'
-import { logger } from './logger.js'
-import { safeExecute } from './helpers.js'
-import { SMTP_CONFIG } from '@headlines/config/server'
-
-async function sendEmail(mailOptions, emailType) {
-  if (!SMTP_CONFIG?.auth?.user || !SMTP_CONFIG?.auth?.pass) {
-    logger.error(`❌ [${emailType} Mailer] SMTP authentication not fully configured.`)
-    return { error: 'SMTP authentication not fully configured.' }
-  }
-  const transporter = nodemailer.createTransport(SMTP_CONFIG)
-  const sendResult = await safeExecute(() => transporter.sendMail(mailOptions), {
-    errorHandler: (error) => ({ errorOccurred: true, details: error.message }),
-  })
-  if (sendResult && sendResult.errorOccurred) {
-    logger.error(`❌ [${emailType} Mailer] Nodemailer SMTP error:`, {
-      details: sendResult.details,
-    })
-    return { error: `SMTP Error: ${sendResult.details}` }
-  }
-  logger.info(`✅ [${emailType} Mailer] Email sent successfully to ${mailOptions.to}.`)
-  return { success: true }
-}
-
-export async function sendGenericEmail({ to, subject, html, emailType = 'Generic' }) {
-  if (!to) {
-    logger.error(`❌ [${emailType} Mailer] Invalid 'to' address provided.`)
-    return false
-  }
-  const mailOptions = {
-    from: `"${SMTP_CONFIG.fromName}" <${SMTP_CONFIG.fromAddress}>`,
-    to,
-    subject,
-    html,
-  }
-  const result = await sendEmail(mailOptions, emailType)
-  return result.success || false
-}
-
-```
-
-## 📄 src/pusher.js
-*Lines: 38, Size: 1.16 KB*
-
-```javascript
-import 'server-only'
-import Pusher from 'pusher'
-import { logger } from './logger.js'
-import { env } from '@headlines/config/server'
-let pusher
-let isRealtimeConfigured = false
-export function configurePusher() {
-  if (isRealtimeConfigured) return
-  const { PUSHER_APP_ID, PUSHER_KEY, PUSHER_SECRET, PUSHER_CLUSTER } = env
-  if (PUSHER_APP_ID && PUSHER_KEY && PUSHER_SECRET && PUSHER_CLUSTER) {
-    pusher = new Pusher({
-      appId: PUSHER_APP_ID,
-      key: PUSHER_KEY,
-      secret: PUSHER_SECRET,
-      cluster: PUSHER_CLUSTER,
-      useTLS: true,
-    })
-    isRealtimeConfigured = true
-    logger.info('✅ Real-time notification service (Pusher) configured.')
-  } else {
-    logger.warn(
-      'Pusher credentials not fully configured. Real-time updates will be disabled.'
-    )
-  }
-}
-export async function triggerRealtimeEvent(channel, event, data) {
-  if (!isRealtimeConfigured || !pusher) return
-  try {
-    logger.info(`📢 Streaming new item on channel '${channel}' with event '${event}'.`)
-    await pusher.trigger(channel, event, data)
-  } catch (error) {
-    logger.error(
-      { err: error, channel, event },
-      'Failed to trigger Pusher real-time event.'
-    )
-  }
-}
-
-```
-
-## 📄 src/redisClient.js
-*Lines: 64, Size: 1.86 KB*
-
-```javascript
-import 'server-only'
-import { logger } from './logger.js'
-import { env } from '@headlines/config/server'
-import { Redis } from '@upstash/redis'
-let redisClient
-let connectionState = 'idle'
-export async function getRedisClient() {
-  if (connectionState === 'ready' && redisClient) {
-    return redisClient
-  }
-  if (connectionState === 'failed' || connectionState === 'connecting') {
-    return null
-  }
-  if (connectionState === 'idle') {
-    if (!env.UPSTASH_REDIS_REST_URL || !env.UPSTASH_REDIS_REST_TOKEN) {
-      logger.warn(
-        'UPSTASH_REDIS_REST_URL and/or TOKEN not found. Caching will be disabled.'
-      )
-      connectionState = 'failed'
-      return null
-    }
-    try {
-      connectionState = 'connecting'
-      const client = new Redis({
-        url: env.UPSTASH_REDIS_REST_URL,
-        token: env.UPSTASH_REDIS_REST_TOKEN,
-      })
-      await client.ping()
-      logger.info('✅ Upstash Redis client connected successfully.')
-      connectionState = 'ready'
-      redisClient = client
-      return client
-    } catch (err) {
-      logger.error({ err: err.message }, 'Upstash Redis connection failed.')
-      connectionState = 'failed'
-      return null
-    }
-  }
-}
-export async function testRedisConnection() {
-  if (!env.UPSTASH_REDIS_REST_URL) {
-    logger.warn('Redis is not configured. Caching will be disabled.')
-    return true
-  }
-  try {
-    const client = await getRedisClient()
-    if (client) {
-      const testKey = `test:${Date.now()}`
-      await client.set(testKey, 'test-value', { ex: 10 })
-      const testValue = await client.get(testKey)
-      await client.del(testKey)
-      if (testValue === 'test-value') {
-        logger.info('✅ Redis connection and read/write test successful.')
-        return true
-      }
-      return false
-    }
-    return true
-  } catch (err) {
-    logger.warn({ err: err.message }, 'Redis pre-flight check failed.')
-    return true
-  }
-}
-
-```
-
-## 📄 src/tokenTracker.js
-*Lines: 47, Size: 1.37 KB*
-
-```javascript
-import 'server-only'
-import { logger } from './logger.js'
-
-const modelPricing = {
-  'gpt-5-nano': { input: 0.15, output: 0.4 },
-  'gpt-5-mini': { input: 0.5, output: 2.5 },
-  'gpt-4o-mini': { input: 0.15, output: 0.6 },
-}
-
-class TokenTracker {
-  constructor() {
-    this.usage = {}
-    this.reset()
-  }
-  initializeModels(modelKeys = []) {
-    this.usage = {}
-    const allKnownModels = new Set([...Object.keys(modelPricing), ...modelKeys])
-    allKnownModels.forEach((model) => {
-      this.usage[model] = { inputTokens: 0, outputTokens: 0, cost: 0 }
-    })
-  }
-  reset() {
-    this.initializeModels()
-  }
-  recordUsage(model, usageData) {
-    if (!usageData || !model) return
-    const { prompt_tokens, completion_tokens } = usageData
-    if (!this.usage[model]) {
-      logger.warn(`Token usage recorded for an un-priced model: ${model}.`)
-      this.usage[model] = { inputTokens: 0, outputTokens: 0, cost: 0 }
-    }
-    this.usage[model].inputTokens += prompt_tokens || 0
-    this.usage[model].outputTokens += completion_tokens || 0
-    const pricing = modelPricing[model]
-    if (pricing) {
-      const inputCost = ((prompt_tokens || 0) / 1000000) * pricing.input
-      const outputCost = ((completion_tokens || 0) / 1000000) * pricing.output
-      this.usage[model].cost += inputCost + outputCost
-    }
-  }
-  getStats() {
-    return this.usage
-  }
-}
-
-export const tokenTracker = new TokenTracker()
 
 ```

@@ -1,24 +1,26 @@
-// apps/pipeline/src/pipeline/submodules/processSingleArticle.js
-import { logger } from '@headlines/utils-server'
-import { articleChain, articlePreAssessmentChain } from '@headlines/ai-services'
-import { getConfig } from '@headlines/scraper-logic/config.js'
-import { scrapeArticleContent } from '@headlines/scraper-logic/scraper/contentScraper.js'
-import { settings } from '@headlines/config/server.js'
+import { logger } from '@headlines/utils-server/node'
+import {
+  articleChain,
+  articlePreAssessmentChain,
+  assessArticleContent,
+  findAlternativeSources,
+} from '@headlines/ai-services/node'
+import { scrapeArticleContent } from '@headlines/scraper-logic/scraper/index.js'
+import { settings } from '@headlines/config/node'
 import { Source } from '@headlines/models'
 
 function createLifecycleEvent(stage, status, reason) {
   return { stage, status, reason, timestamp: new Date() }
 }
 
-async function salvageHighSignalArticle(article) {
+async function salvageHighSignalArticle(article, hits) {
   logger.warn(
     { headline: article.headline },
     `SALVAGE MODE: Attempting to find alternative sources for high-signal headline.`
   )
-  const config = getConfig()
-  const searchResult = await config.utilityFunctions.findAlternativeSources(
-    article.headline
-  )
+
+  const searchResult = await findAlternativeSources(article.headline)
+
   if (!searchResult.success || searchResult.results.length === 0) {
     logger.error(
       { headline: article.headline },
@@ -40,9 +42,7 @@ async function salvageHighSignalArticle(article) {
     const contentResult = await scrapeArticleContent(tempArticle, tempSourceConfig)
 
     if (contentResult.articleContent) {
-      const finalAssessment = await articleChain({
-        article_text: contentResult.articleContent.contents.join('\n'),
-      })
+      const finalAssessment = await assessArticleContent(contentResult, hits, true)
       if (
         finalAssessment &&
         !finalAssessment.error &&
@@ -77,7 +77,7 @@ async function salvageHighSignalArticle(article) {
   }
 }
 
-export async function processSingleArticle(article) {
+export async function processSingleArticle(article, hits) {
   let transientArticle
   try {
     let source
@@ -97,7 +97,6 @@ export async function processSingleArticle(article) {
 
     if (transientArticle.articleContent) {
       const articleText = transientArticle.articleContent.contents.join('\n')
-      // DEFINITIVE FIX: Changed from .invoke to direct await
       const triageResult = await articlePreAssessmentChain({ input: articleText })
 
       if (triageResult.error || triageResult.classification !== 'private') {
@@ -112,8 +111,7 @@ export async function processSingleArticle(article) {
         }
       }
 
-      // DEFINITIVE FIX: Changed from .invoke to direct await
-      const finalAssessment = await articleChain({ article_text: articleText })
+      const finalAssessment = await assessArticleContent(transientArticle, hits)
 
       if (finalAssessment.error) {
         throw new Error(finalAssessment.error)
@@ -143,7 +141,7 @@ export async function processSingleArticle(article) {
     } else {
       if (article.relevance_headline >= settings.HIGH_SIGNAL_HEADLINE_THRESHOLD) {
         return {
-          ...(await salvageHighSignalArticle(article)),
+          ...(await salvageHighSignalArticle(article, hits)),
           contentPreview: transientArticle.contentPreview,
         }
       } else {

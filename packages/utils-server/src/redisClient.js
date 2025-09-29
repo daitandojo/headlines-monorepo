@@ -1,9 +1,11 @@
+// packages/utils-server/src/redisClient.js
 import { logger } from './logger.js'
-import { env } from '@headlines/config/server'
 import { Redis } from '@upstash/redis'
+
 let redisClient
 let connectionState = 'idle'
-export async function getRedisClient() {
+
+export async function getRedisClient(env) {
   if (connectionState === 'ready' && redisClient) {
     return redisClient
   }
@@ -11,9 +13,9 @@ export async function getRedisClient() {
     return null
   }
   if (connectionState === 'idle') {
-    if (!env.UPSTASH_REDIS_REST_URL || !env.UPSTASH_REDIS_REST_TOKEN) {
+    if (!env || !env.UPSTASH_REDIS_REST_URL || !env.UPSTASH_REDIS_REST_TOKEN) {
       logger.warn(
-        'UPSTASH_REDIS_REST_URL and/or TOKEN not found. Caching will be disabled.'
+        'UPSTASH_REDIS_REST_URL and/or TOKEN not found in provided env. Caching will be disabled.'
       )
       connectionState = 'failed'
       return null
@@ -36,13 +38,14 @@ export async function getRedisClient() {
     }
   }
 }
-export async function testRedisConnection() {
-  if (!env.UPSTASH_REDIS_REST_URL) {
+
+export async function testRedisConnection(env) {
+  if (!env || !env.UPSTASH_REDIS_REST_URL) {
     logger.warn('Redis is not configured. Caching will be disabled.')
     return true
   }
   try {
-    const client = await getRedisClient()
+    const client = await getRedisClient(env)
     if (client) {
       const testKey = `test:${Date.now()}`
       await client.set(testKey, 'test-value', { ex: 10 })

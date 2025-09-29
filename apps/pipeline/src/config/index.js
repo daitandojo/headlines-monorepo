@@ -1,9 +1,9 @@
 // apps/pipeline/src/config/index.js (version 6.0.0)
 // Use the server-safe entrypoint for all config imports in the pipeline
-import { env, settings } from '@headlines/config/server.js'
+import { env, settings } from '@headlines/config'
 
 // --- Re-export all shared env and settings for local pipeline use ---
-export * from '@headlines/config/server.js'
+export * from '@headlines/config'
 
 // --- App-Specific Static Constants (Not dynamically configurable) ---
 export const IS_REFRESH_MODE = process.env.REFRESH_MODE === 'true'

@@ -1,5 +1,5 @@
 // packages/prompts/src/instructionOpportunities.js (version 3.2)
-import { settings } from '../../config/src/server.js'
+import { settings } from '@headlines/config/node'
 
 export const getInstructionOpportunities = () => ({
   whoYouAre:

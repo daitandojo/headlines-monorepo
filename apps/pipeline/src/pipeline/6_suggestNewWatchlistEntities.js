@@ -4,8 +4,8 @@ import { watchlistSuggestionChain } from '@headlines/ai-services'
 import {
   getActiveWatchlistEntityNames,
   bulkWriteWatchlistSuggestions,
-} from '@headlines/actions'
-import { settings } from '@headlines/config/server.js'
+} from '@headlines/data-access'
+import { settings } from '@headlines/config'
 
 export async function suggestNewWatchlistEntities(pipelinePayload) {
   logger.info('--- STAGE 6: WATCHLIST SUGGESTION ---')

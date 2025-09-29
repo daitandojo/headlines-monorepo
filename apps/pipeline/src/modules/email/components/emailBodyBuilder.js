@@ -2,7 +2,7 @@
 import { logger } from '@headlines/utils-server'
 import { EMAIL_CONFIG } from '../../../config/index.js'
 import { formatEventForEmail } from './eventFormatter.js'
-import { getCountryFlag } from '@headlines/utils-server'
+import { getCountryFlag } from '@headlines/utils-shared'
 
 function createEmailWrapper(bodyContent, subject) {
   // ... (wrapper remains the same)

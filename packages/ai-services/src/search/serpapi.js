@@ -1,13 +1,19 @@
-// packages/ai-services/src/search/serpapi.js
+// File: packages/ai-services/src/search/serpapi.js (Unabridged)
+
 'use server'
 
 import { getJson } from 'serpapi'
-import { env } from '@headlines/config/server'
+import { env } from '@headlines/config'
 
 const searchCache = new Map()
 const CACHE_TTL = 1000 * 60 * 60 // 1 hour
 
 export async function getGoogleSearchResults(query) {
+  if (!env.SERPAPI_API_KEY) {
+    console.warn('[SerpAPI] SERPAPI_API_KEY is not configured. Skipping web search.')
+    return { success: true, results: [] }
+  }
+
   if (!query) {
     return { success: false, error: 'Query is required.' }
   }

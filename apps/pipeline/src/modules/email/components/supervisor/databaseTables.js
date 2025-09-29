@@ -1,9 +1,10 @@
-// apps/pipeline/src/modules/email/components/supervisor/databaseTables.js (version 2.2.0)
+// apps/pipeline/src/modules/email/components/supervisor/databaseTables.js (Corrected)
 import { SynthesizedEvent } from '@headlines/models'
-import { settings } from '@headlines/config/server.js'
-import { truncateString, escapeHtml } from '@headlines/utils-server'
+import { settings } from '@headlines/config'
+import { truncateString, escapeHtml } from '@headlines/utils-shared' // <-- CORRECTED IMPORT
 
 const sourceIcons = {
+  // ... rest of the file is unchanged ...
   rag_db: '🗄️',
   wikipedia: '🌐',
   news_api: '📰',

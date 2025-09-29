@@ -1,6 +1,6 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 29 files, 2 directories
+Total: 30 files, 2 directories
 
 ```
 headlines/
@@ -27,6 +27,7 @@ headlines/
 │   ├── 📄 instructionHeadlines.js
 │   ├── 📄 instructionJudge.js
 │   ├── 📄 instructionOpportunities.js
+│   ├── 📄 instructionSectionClassifier.js
 │   ├── 📄 instructionSelectorRepair.js
 │   ├── 📄 instructionSourceDiscovery.js
 │   ├── 📄 instructionSourceName.js
@@ -39,9 +40,9 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-21T14:17:28.678Z
+**Generated**: 2025-09-29T13:20:36.410Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/prompts
-**Total Files**: 29
+**Total Files**: 30
 **Package**: @headlines/prompts@1.0.0
 **Description**: Shared AI prompts for the Headlines monorepo.
 
@@ -51,7 +52,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 12, Size: 257 Bytes*
+*Lines: 17, Size: 367 Bytes*
 
 ```json
 {
@@ -61,6 +62,11 @@ headlines/
   "main": "src/index.js",
   "type": "module",
   "license": "ISC",
+  "exports": {
+    ".": "./src/index.js",
+    "./node": "./src/index.js",
+    "./next": "./src/index.js"
+  },
   "peerDependencies": {
     "@headlines/config": "workspace:*"
   }
@@ -428,7 +434,7 @@ export const shotsOutputHeadlines = [
 ```
 
 ## 📄 src/index.js
-*Lines: 28, Size: 1.27 KB*
+*Lines: 29, Size: 1.29 KB*
 
 ```javascript
 // packages/prompts/src/index.js (version 4.2.0)
@@ -452,7 +458,8 @@ export * from './instructionSelectorRepair.js';
 export * from './instructionSourceDiscovery.js';
 export * from './instructionSourceName.js';
 export * from './instructionSynthesize.js';
-export * from './instructionTranslate.js'; // Added missing export
+export * from './instructionSectionClassifier.js';
+export * from './instructionTranslate.js';
 export * from './instructionWatchlistSuggestion.js';
 export * from './examples/shotsInputArticle.js';
 export * from './examples/shotsInputHeadlines.js';
@@ -462,11 +469,11 @@ export * from './examples/shotsOutputHeadlines.js';
 ```
 
 ## 📄 src/instructionArticle.js
-*Lines: 47, Size: 4.81 KB*
+*Lines: 47, Size: 4.87 KB*
 
 ```javascript
-// packages/prompts/src/instructionArticle.js (version 3.2)
-import { settings } from '../../config/src/server.js'
+// Correct: Import from the Node.js-safe entry point of the config package.
+import { settings } from '@headlines/config/node'
 
 export const getInstructionArticle = () => ({
   whoYouAre: `You are a "Due Diligence" analyst for an elite, multi-billion dollar wealth advisory team. Your job is to read the full article to verify intelligence, enrich it with details, and make a final recommendation on its relevance. Your work is the final filter before it reaches advisors. A missed opportunity is a massive failure, but a false positive is a waste of time.`,
@@ -509,7 +516,7 @@ export const getInstructionArticle = () => ({
   - Score 0-49: Anything that fails verification, is below the financial threshold, or involves no identifiable private beneficiaries.
   `,
   outputFormatDescription: `Respond ONLY with a properly formatted JSON object.`,
-  reiteration: `Only respond with a properly formatted JSON object. Start with 'reasoning'. Be ruthless in verification and only extract principal, wealthy beneficiaries for 'key_individuals'. You MUST include the new 'classification' field.`,
+  reiteration: `Only respond with a properly formatted JSON object. Start with 'reasoning'. Be ruthless in verification and only extract principal, wealthy beneficiaries for 'key_individuals'. You MUST include the new 'classification' field. The score field MUST be named 'relevance_article'.`,
 })
 
 ```
@@ -902,7 +909,7 @@ export const instructionJudge = {
 
 ```javascript
 // packages/prompts/src/instructionOpportunities.js (version 3.2)
-import { settings } from '../../config/src/server.js'
+import { settings } from '@headlines/config/node'
 
 export const getInstructionOpportunities = () => ({
   whoYouAre:
@@ -925,6 +932,32 @@ export const getInstructionOpportunities = () => ({
     Each object in the array MUST contain the key "reachOutTo" as a STRING.
     IF NO CONTACTS ARE FOUND, OR IF NO CONTACTS MEET THE $${settings.MINIMUM_EVENT_AMOUNT_USD_MILLIONS}M WEALTH THRESHOLD, RETURN AN EMPTY ARRAY.`,
 })
+
+```
+
+## 📄 src/instructionSectionClassifier.js
+*Lines: 20, Size: 1.38 KB*
+
+```javascript
+// File: packages/prompts/src/instructionSectionClassifier.js
+
+export const instructionSectionClassifier = {
+  whoYouAre:
+    'You are a master website navigation analyst. Your task is to analyze a list of hyperlinks (anchor text and href) from a webpage and classify each one into one of four categories.',
+  whatYouDo: 'You will receive a JSON array of link objects and must classify each one.',
+  guidelines: [
+    '**Categories:**',
+    '1.  **"news_section"**: A link to a major category or section of news (e.g., "Business", "Technology", "World News", "/erhverv", "/økonomi"). These are typically found in main navigation bars.',
+    '2.  **"article_headline"**: A link to a specific news article or story. The text is usually a full sentence or a descriptive title.',
+    '3.  **"navigation"**: A link to a functional page on the site (e.g., "About Us", "Contact", "Login", "Subscribe").',
+    '4.  **"other"**: Any other type of link, such as advertisements, privacy policies, terms of service, or social media links.',
+    '**Instructions:**',
+    '-   You MUST return a JSON object with a single key, "classifications".',
+    '-   The "classifications" array MUST contain one classification object for EACH link in the input, in the EXACT SAME ORDER.',
+    "-   Base your decision on both the link's text and its URL structure.",
+  ],
+  outputFormatDescription: `Respond ONLY with a valid JSON object.`,
+}
 
 ```
 
@@ -992,10 +1025,10 @@ export const instructionSourceName = {
 ```
 
 ## 📄 src/instructionSynthesize.js
-*Lines: 34, Size: 3.05 KB*
+*Lines: 33, Size: 3.29 KB*
 
 ```javascript
-// packages/prompts/src/instructionSynthesize.js (version 3.2)
+// packages/prompts/src/instructionSynthesize.js
 export const instructionSynthesize = {
   whoYouAre:
     'You are an expert financial journalist working for an exclusive executive briefing service in English. Your task is to perform targeted information extraction and synthesis.',
@@ -1004,11 +1037,11 @@ export const instructionSynthesize = {
   guidelines: [
     '1. **IDENTIFY ALL CORE EVENTS:** The provided text may describe multiple distinct wealth events. Your first task is to identify every single one. An article about a company sale might also mention a recent founder dividend payment; these are two separate events.',
     '2. **RUTHLESSLY IGNORE PERIPHERAL NOISE:** For each event you identify, your synthesized headline and summary MUST focus exclusively on that event.',
-    `3. **DETERMINE COUNTRY (CRITICAL):** For each event, you MUST determine the primary country. The value MUST be a fully-written, UN-recognized sovereign country name (e.g., 'United Kingdom', 'United States of America'), or one of the special regions 'Global', 'Europe', 'Scandinavia', or 'Unknown'. You are FORBIDDEN from using abbreviations or adding extra text.`,
+    // DEFINITIVE FIX: Add a new, explicit rule for determining the country.
+    `3. **DETERMINE COUNTRY (CRITICAL):** For each event, you MUST determine the primary country. The country of the SOURCE newspaper is the most important clue. If the event text explicitly mentions another country (e.g., "French billionaires"), that is the correct country. If there's a conflict, the text's country takes precedence. The final value MUST be a fully-written, UN-recognized sovereign country name (e.g., 'United Kingdom', 'United States of America'), or one of the special regions 'Global', 'Europe', 'Scandinavia', or 'Unknown'. You are FORBIDDEN from using abbreviations or adding extra text.`,
     '4. **CONSOLIDATE KEY INDIVIDUALS:** For each event, identify and list the key individuals involved in that specific event.',
     '5. **SYNTHESIZE HEADLINE & SUMMARY:** For each event, write a new, dense, factual headline and a concise summary (max 4 sentences, under 90 words).',
     '6. **CREATE ADVISOR SUMMARY (CRITICAL):** For each event, you MUST write an `advisor_summary`. This is a single, concise sentence that directly answers "Why is this relevant to a wealth advisor?" and focuses on the event\'s implication.',
-    // DEFINITIVE FIX: Add a new guideline for event classification.
     '7. **CLASSIFY THE EVENT (CRITICAL):** For each event, you MUST provide an `eventClassification` from this exact list: ["New Wealth", "Future Wealth", "Wealth Mentioned", "Legal/Dispute", "Background", "Other"]. "New Wealth" is for direct liquidity events. "Future Wealth" is for planned IPOs or sales. "Wealth Mentioned" is for rich list profiles.',
     '8. **FORBIDDEN PHRASES:** NEVER state that "context was not available" or mention any limitations.',
   ],
@@ -1028,7 +1061,6 @@ export const instructionSynthesize = {
     }}
   `,
 }
-
 ```
 
 ## 📄 src/instructionTranslate.js

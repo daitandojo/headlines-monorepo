@@ -1,5 +1,5 @@
 // apps/pipeline/src/modules/email/components/supervisor/supervisorEmailBodyBuilder.js (version 5.2.2 - Path Fix)
-import { SUPERVISOR_EMAIL_CONFIG } from '../../../../config/index.js'
+import { SUPERVISOR_EMAIL_CONFIG } from '@headlines/config'
 import { createSupervisorEmailWrapper } from '../../templates/supervisorWrapper.js'
 import {
   createScraperHealthTable,

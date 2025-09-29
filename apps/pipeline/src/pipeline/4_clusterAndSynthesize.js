@@ -1,5 +1,5 @@
 // apps/pipeline/src/pipeline/4_clusterAndSynthesize.js
-import { truncateString } from '@headlines/utils-server'
+import { truncateString } from '@headlines/utils-shared'
 import { logger, auditLogger } from '@headlines/utils-server'
 import {
   clusteringChain,
@@ -8,12 +8,13 @@ import {
   opportunityChain,
   findSimilarArticles,
 } from '@headlines/ai-services'
-import { settings } from '@headlines/config/server.js'
+import { settings } from '@headlines/config'
 import { getConfig } from '@headlines/scraper-logic/config.js'
 
 async function synthesizeEventsFromCluster(articlesInCluster, clusterKey, runStats) {
   const config = getConfig()
   const primaryHeadline = articlesInCluster[0]?.headline || clusterKey
+  const primaryCountry = articlesInCluster[0]?.country || 'Unknown'
   logger.info(
     `--- [ Synthesizing from Cluster: "${truncateString(primaryHeadline, 60)}" ] ---`
   )
@@ -49,6 +50,7 @@ async function synthesizeEventsFromCluster(articlesInCluster, clusterKey, runSta
   const newsApiContext = newsApiResult.snippets
 
   const synthesisInput = {
+    SOURCE_COUNTRY_CONTEXT: `The source newspaper for this event is from ${primaryCountry}. Prioritize this as the event's country unless the text explicitly states otherwise.`,
     "[ TODAY'S NEWS ]": uniqueArticlesInCluster.map((a) => ({
       headline: a.headline,
       source: a.newspaper,
@@ -109,10 +111,12 @@ async function synthesizeEventsFromCluster(articlesInCluster, clusterKey, runSta
         link: a.link,
         newspaper: a.newspaper,
         imageUrl: a.imageUrl,
+        country: a.country,
       })),
       enrichmentSources,
     }
 
+    // --- DEFINITIVE FIX: Replace the incorrect variable 'x' with 'eventObject' ---
     const opportunityInput = {
       context_text: `Event Key: ${eventObject.event_key}\nSynthesized Event Headline: ${eventObject.synthesized_headline}\nSynthesized Event Summary: ${eventObject.synthesized_summary}\nKey Individuals already identified: ${JSON.stringify(eventObject.key_individuals)}\nSource Article Snippets: ${truncateString(combinedText, settings.LLM_CONTEXT_MAX_CHARS)}`,
     }

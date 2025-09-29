@@ -1,12 +1,12 @@
-// packages/ai-services/src/chains/opportunityChain.js (version 2.4 - Final)
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { getInstructionOpportunities } from '../../../prompts/src/index.js'
+import { getInstructionOpportunities } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { opportunitySchema } from '../schemas/index.js'
-import { settings } from '../../../config/src/server.js'
+// Correct: Import from the /node entry point for the pipeline/Node.js environment
+import { settings } from '@headlines/config/node'
 
 const instructions = getInstructionOpportunities(settings)
 const systemPrompt = [

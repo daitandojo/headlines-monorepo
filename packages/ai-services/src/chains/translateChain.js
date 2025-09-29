@@ -2,7 +2,7 @@
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionTranslate } from '../../../prompts/src/index.js'
+import { instructionTranslate } from '@headlines/prompts'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { translateSchema } from '../schemas/index.js'
@@ -23,6 +23,5 @@ const prompt = ChatPromptTemplate.fromMessages([
 const chain = RunnableSequence.from([prompt, getUtilityModel(), new JsonOutputParser()])
 
 export const translateChain = {
-  invoke: (input) =>
-    safeInvoke(chain, input, 'translateChain', translateSchema),
+  invoke: (input) => safeInvoke(chain, input, 'translateChain', translateSchema),
 }

@@ -1,10 +1,10 @@
 'use server';
 
 // src/lib/rag/orchestrator.js (version 4.2)
-import { retrieveContextForQuery } from './retrieval'
-import { assessContextQuality } from './validation'
-import { generateFinalResponse } from './generation'
-import { runPlannerAgent } from './planner'
+import { retrieveContextForQuery } from './retrieval.js'
+import { assessContextQuality } from './validation.js'
+import { generateFinalResponse } from './generation.js'
+import { runPlannerAgent } from './planner.js'
 
 /**
  * Main orchestrator for the Agentic RAG chat pipeline.

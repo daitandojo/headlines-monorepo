@@ -2,8 +2,8 @@
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { Opportunity } from '../../../../../packages/models/src/index.js'
-import { logger } from '../../../../../packages/utils-server'
+import { Opportunity } from '@headlines/models'
+import { logger } from '@headlines/utils-server'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)

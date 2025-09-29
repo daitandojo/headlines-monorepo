@@ -1,6 +1,6 @@
 import Pusher from 'pusher'
 import { logger } from './logger.js'
-import { env } from '@headlines/config/server'
+import { env } from '@headlines/config'
 let pusher
 let isRealtimeConfigured = false
 export function configurePusher() {

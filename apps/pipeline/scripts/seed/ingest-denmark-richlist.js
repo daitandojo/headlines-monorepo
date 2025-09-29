@@ -1,14 +1,14 @@
 // apps/pipeline/scripts/seed/ingest-denmark-richlist.js
 import mongoose from 'mongoose'
 import path from 'path'
-import { reinitializeLogger, logger } from '../../../../packages/utils-server'
+import { reinitializeLogger, logger } from '@headlines/utils-server'
 import { initializeScriptEnv } from './lib/script-init.js'
 import { loadAndPrepareDenmarkRichlist } from './lib/denmark-richlist-data-loader.js'
-import { Opportunity } from '../../../../packages/models/src/index.js'
+import { Opportunity } from '@headlines/models'
 import {
   contactFinderChain,
   performGoogleSearch,
-} from '../../../../packages/ai-services/src/index.js'
+} from '../../packages/ai-services/src/index.js'
 import colors from 'ansi-colors'
 import pLimit from 'p-limit'
 

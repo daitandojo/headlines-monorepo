@@ -1,13 +1,12 @@
 // packages/config/src/settings.js
-
 import { Setting } from '@headlines/models'
-import { logger } from '@headlines/utils-server'
+// This file must have ZERO workspace dependencies.
+// We will use console.log for this critical, low-level module.
 
-// These defaults are used ONLY if the values are not found in the database.
 const DEFAULTS = {
-  HEADLINES_RELEVANCE_THRESHOLD: 35,
-  ARTICLES_RELEVANCE_THRESHOLD: 50,
-  EVENT_RELEVANCE_THRESHOLD: 59,
+  HEADLINES_RELEVANCE_THRESHOLD: 25,
+  ARTICLES_RELEVANCE_THRESHOLD: 45,
+  EVENT_RELEVANCE_THRESHOLD: 50,
   MINIMUM_EVENT_AMOUNT_USD_MILLIONS: 20,
   HIGH_SIGNAL_HEADLINE_THRESHOLD: 90,
   AGENT_DISAGREEMENT_THRESHOLD: 50,
@@ -29,22 +28,27 @@ let isInitialized = false
 
 export async function initializeSettings() {
   if (isInitialized) return
-  logger.info('Loading pipeline settings from database...')
+  console.log('[Config] Loading pipeline settings from database...')
   try {
     const dbSettings = await Setting.find({}).lean()
     if (dbSettings.length === 0) {
-      logger.warn(
-        'No settings found in the database. The pipeline will run on default values.'
+      console.warn(
+        '[Config] No settings found in the database. The pipeline will run on default values.'
       )
     } else {
       dbSettings.forEach((setting) => {
         settings[setting.key] = setting.value
       })
-      logger.info(`Successfully loaded ${dbSettings.length} settings from the database.`)
+      console.log(
+        `[Config] Successfully loaded ${dbSettings.length} settings from the database.`
+      )
     }
     isInitialized = true
   } catch (error) {
-    logger.error('CRITICAL: Failed to load settings from database. Halting.', error)
+    console.error(
+      '[Config] CRITICAL: Failed to load settings from database. Halting.',
+      error
+    )
     throw error
   }
 }

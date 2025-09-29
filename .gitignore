@@ -2,6 +2,7 @@
 node_modules
 future
 logs
+quote.txt
 script.sh
 .DS_Store
 norway.json

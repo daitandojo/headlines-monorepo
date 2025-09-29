@@ -1,16 +1,18 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 10 files, 1 directories
+Total: 12 files, 1 directories
 
 ```
 headlines/
 ├── 📁 src/
 │   ├── 📄 apiCallTracker.js
 │   ├── 📄 auditLogger.js
+│   ├── 📄 core.js
 │   ├── 📄 helpers.js
-│   ├── 📄 index.js
 │   ├── 📄 logger.js
 │   ├── 📄 mailer.js
+│   ├── 📄 next.js
+│   ├── 📄 node.js
 │   ├── 📄 pusher.js
 │   ├── 📄 redisClient.js
 │   └── 📄 tokenTracker.js
@@ -19,9 +21,9 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-21T14:17:28.694Z
+**Generated**: 2025-09-29T13:20:36.416Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/utils-server
-**Total Files**: 10
+**Total Files**: 12
 **Package**: @headlines/utils-server@3.0.0
 **Description**: Server-only utilities for the Headlines monorepo.
 
@@ -31,7 +33,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 31, Size: 862 Bytes*
+*Lines: 37, Size: 1.02 KB*
 
 ```json
 {
@@ -42,7 +44,9 @@ headlines/
   "type": "module",
   "license": "ISC",
   "exports": {
-    ".": "./src/index.js",
+    ".": "./src/node.js",
+    "./node": "./src/node.js",
+    "./next": "./src/next.js",
     "./logger": "./src/logger.js",
     "./helpers": "./src/helpers.js",
     "./tokenTracker": "./src/tokenTracker.js",
@@ -54,24 +58,27 @@ headlines/
   },
   "dependencies": {
     "@headlines/config": "workspace:*",
-    "@headlines/utils": "workspace:*",
+    "@headlines/models": "workspace:*",
+    "@upstash/redis": "^1.35.4",
+    "cheerio": "^1.0.0-rc.12",
+    "clsx": "^2.1.1",
     "moment": "^2.30.1",
+    "nodemailer": "^6.9.14",
     "pino": "^9.2.0",
     "pino-pretty": "^11.2.1",
+    "pusher": "^5.2.0",
     "redis": "^4.6.15",
-    "cheerio": "^1.0.0-rc.12",
-    "nodemailer": "^6.9.14",
-    "pusher": "^5.2.0"
+    "server-only": "^0.0.1",
+    "tailwind-merge": "^2.3.0"
   }
 }
 
 ```
 
 ## 📄 src/apiCallTracker.js
-*Lines: 38, Size: 875 Bytes*
+*Lines: 37, Size: 854 Bytes*
 
 ```javascript
-import 'server-only'
 import { logger } from './logger.js'
 
 const servicePricing = {
@@ -112,10 +119,9 @@ export const apiCallTracker = new ApiCallTracker()
 ```
 
 ## 📄 src/auditLogger.js
-*Lines: 50, Size: 2.13 KB*
+*Lines: 49, Size: 2.11 KB*
 
 ```javascript
-import 'server-only';
 import pino from 'pino';
 import fs from 'fs';
 import path from 'path';
@@ -167,31 +173,11 @@ export const auditLogger = new Proxy({}, {
 
 ```
 
-## 📄 src/helpers.js
-*Lines: 11, Size: 559 Bytes*
+## 📄 src/core.js
+*Lines: 10, Size: 319 Bytes*
 
 ```javascript
-import 'server-only';
-export async function safeExecute(asyncFn, { errorHandler } = {}) {
-  try { return await asyncFn() } catch (error) { if (errorHandler) { return errorHandler(error) } console.error('An unexpected error occurred in a safeExecute block without an error handler:', error); return null }
-}
-export async function smartStripHtml(rawHtml) {
-  const cheerio = await import('cheerio');
-  const $ = cheerio.load(rawHtml);
-  $('script, style, link[rel="stylesheet"], noscript, svg, path, footer, header, nav').remove();
-  return $('body').html();
-}
-
-```
-
-## 📄 src/index.js
-*Lines: 13, Size: 462 Bytes*
-
-```javascript
-// packages/utils-server/src/index.js
-// This barrel file is NOT a 'use server' entry point.
-// It simply exports modules. Other packages should import directly from the subpaths.
-export * from '@headlines/utils'
+// File: packages/utils-server/src/index.js (version 3.2 - Unchanged)
 export * from './auditLogger.js'
 export * from './helpers.js'
 export * from './logger.js'
@@ -203,19 +189,88 @@ export * from './pusher.js'
 
 ```
 
-## 📄 src/logger.js
-*Lines: 73, Size: 2.42 KB*
+## 📄 src/helpers.js
+*Lines: 60, Size: 2.07 KB*
 
 ```javascript
-import 'server-only'
+// File: packages/utils-server/src/helpers.js
+
+/**
+ * Creates a promise that rejects after a specified timeout.
+ * @param {number} ms - The timeout duration in milliseconds.
+ * @param {string} [customMessage] - An optional message for the timeout error.
+ * @returns {Promise<never>} A promise that will reject.
+ */
+function promiseTimeout(ms, customMessage = 'Operation timed out.') {
+  return new Promise((_, reject) => {
+    setTimeout(() => {
+      reject(new Error(customMessage));
+    }, ms);
+  });
+}
+
+/**
+ * Wraps an async function in a try-catch block and a timeout race.
+ * @param {Function} asyncFn - The async function to execute.
+ * @param {object} [options] - Options object.
+ * @param {Function} [options.errorHandler] - An optional custom error handler.
+ * @param {number} [options.timeout=90000] - Timeout in milliseconds. Defaults to 90 seconds.
+ * @returns {Promise<any|null>} The result of the async function or null/custom error result.
+ */
+export async function safeExecute(asyncFn, { errorHandler, timeout = 90000 } = {}) {
+  try {
+    // Race the async function against a timeout promise.
+    return await Promise.race([
+      asyncFn(),
+      promiseTimeout(timeout, `safeExecute timed out after ${timeout / 1000}s`)
+    ]);
+  } catch (error) {
+    if (errorHandler) {
+      return errorHandler(error);
+    }
+    // Log the error centrally, so individual call sites don't have to.
+    console.error(
+      'An unexpected error occurred in a safeExecute block:',
+      error
+    );
+    return null; // Return null on failure
+  }
+}
+
+// ... (keep the smartStripHtml function)
+
+/**
+ * Strips scripts, styles, and other non-content tags from an HTML string.
+ * @param {string} rawHtml - The raw HTML content.
+ * @returns {Promise<string>} The cleaned body HTML.
+ */
+export async function smartStripHtml(rawHtml) {
+  // Use dynamic import for cheerio to keep it a lightweight dependency
+  const cheerio = await import('cheerio');
+  const $ = cheerio.load(rawHtml);
+  $(
+    'script, style, link[rel="stylesheet"], noscript, svg, path, footer, header, nav'
+  ).remove();
+  return $('body').html();
+}
+```
+
+## 📄 src/logger.js
+*Lines: 107, Size: 2.79 KB*
+
+```javascript
+// packages/utils-server/src/logger.js
 import pino from 'pino'
 import fs from 'fs'
 import path from 'path'
 import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
-const LOG_LEVEL = process.env.LOG_LEVEL || 'info'
+
+const LOG_LEVEL = process.env.LOG_LEVEL || 'trace'
 const IS_PRODUCTION = process.env.NODE_ENV === 'production'
+
 let loggerInstance
+
 const createSimpleLogger = () => {
   const simpleLogger = {}
   const levels = ['trace', 'debug', 'info', 'warn', 'error', 'fatal']
@@ -227,16 +282,18 @@ const createSimpleLogger = () => {
   })
   return simpleLogger
 }
-export function initializeLogger(logDirectory = null) {
+
+export function initializeLogger(logDirectory = null, extraStreams = []) {
   if (loggerInstance) {
     return loggerInstance
   }
+
   if (process.env.NEXT_RUNTIME) {
     console.log('Detected Next.js runtime. Initializing safe console logger.')
     loggerInstance = createSimpleLogger()
     return loggerInstance
   }
-  console.log('Detected standard Node.js runtime. Initializing pino logger.')
+
   const pinoPrettyPath = require.resolve('pino-pretty')
   const consoleTransport = pino.transport({
     target: pinoPrettyPath,
@@ -249,18 +306,13 @@ export function initializeLogger(logDirectory = null) {
       messageFormat: '{msg}',
     },
   })
-  const streams = [{ level: LOG_LEVEL, stream: consoleTransport }]
-  if (logDirectory && !IS_PRODUCTION) {
-    if (!fs.existsSync(logDirectory)) fs.mkdirSync(logDirectory, { recursive: true })
-    const errorLogFile = path.join(logDirectory, 'error.log')
-    streams.push({
-      level: 'warn',
-      stream: fs.createWriteStream(errorLogFile, { flags: 'w' }),
-    })
-  }
+
+  const streams = [{ level: LOG_LEVEL, stream: consoleTransport }, ...extraStreams]
+
   loggerInstance = pino({ level: 'trace' }, pino.multistream(streams))
   return loggerInstance
 }
+
 export const logger = new Proxy(
   {},
   {
@@ -268,30 +320,83 @@ export const logger = new Proxy(
       if (loggerInstance) {
         return loggerInstance[prop]
       }
-      const defaultLogPath = path.resolve(process.cwd(), 'logs')
-      initializeLogger(defaultLogPath)
-      return loggerInstance[prop]
+      return initializeLogger()[prop]
     },
   }
 )
+
 export function reinitializeLogger(logDirectory, extraStreams = []) {
-  loggerInstance = null
-  loggerInstance = initializeLogger(logDirectory, extraStreams)
+  const pinoPrettyPath = require.resolve('pino-pretty')
+
+  const consoleTransport = {
+    level: LOG_LEVEL,
+    target: pinoPrettyPath,
+    options: {
+      colorize: true,
+      translateTime: 'HH:mm:ss',
+      ignore: 'pid,hostname,context',
+      singleLine: true,
+      messageFormat: '{msg}',
+    },
+  }
+
+  const logFile = path.join(logDirectory, 'run.log')
+  const fileTransport = {
+    level: 'trace',
+    target: pinoPrettyPath,
+    options: {
+      colorize: false,
+      // DEFINITIVE FIX: Use 'mm' for minutes and 'MM' for month.
+      translateTime: 'YYYY/MM/DD HH:mm:ss',
+      ignore: 'pid,hostname',
+      destination: logFile,
+      mkdir: true,
+      append: false,
+    },
+  }
+
+  const allStreams = [
+    pino.transport(consoleTransport),
+    pino.transport(fileTransport),
+    ...extraStreams,
+  ]
+
+  loggerInstance = pino({ level: 'trace' }, pino.multistream(allStreams))
+
   return loggerInstance
 }
 
 ```
 
 ## 📄 src/mailer.js
-*Lines: 41, Size: 1.41 KB*
+*Lines: 80, Size: 2.55 KB*
 
 ```javascript
-'use server'
-
+// Full Path: headlines/packages/utils-server/src/mailer.js
 import nodemailer from 'nodemailer'
 import { logger } from './logger.js'
 import { safeExecute } from './helpers.js'
-import { SMTP_CONFIG } from '@headlines/config/server'
+import { SMTP_CONFIG } from '@headlines/config'
+import { Subscriber } from '@headlines/models'
+
+// Cache for admin emails to avoid hitting the DB for every single email sent.
+let adminEmailsCache = null
+let cacheTimestamp = 0
+const CACHE_TTL = 1000 * 60 * 5 // 5 minutes
+
+async function getAdminEmails() {
+  if (adminEmailsCache && Date.now() - cacheTimestamp < CACHE_TTL) {
+    return adminEmailsCache
+  }
+
+  const admins = await Subscriber.find({ role: 'admin', isActive: true })
+    .select('email')
+    .lean()
+  adminEmailsCache = admins.map((admin) => admin.email)
+  cacheTimestamp = Date.now()
+
+  return adminEmailsCache
+}
 
 async function sendEmail(mailOptions, emailType) {
   if (!SMTP_CONFIG?.auth?.user || !SMTP_CONFIG?.auth?.pass) {
@@ -308,7 +413,9 @@ async function sendEmail(mailOptions, emailType) {
     })
     return { error: `SMTP Error: ${sendResult.details}` }
   }
-  logger.info(`✅ [${emailType} Mailer] Email sent successfully to ${mailOptions.to}.`)
+  logger.info(
+    `✅ [${emailType} Mailer] Email sent successfully to ${mailOptions.to}. BCC: ${mailOptions.bcc || 'None'}`
+  )
   return { success: true }
 }
 
@@ -317,26 +424,78 @@ export async function sendGenericEmail({ to, subject, html, emailType = 'Generic
     logger.error(`❌ [${emailType} Mailer] Invalid 'to' address provided.`)
     return false
   }
+
   const mailOptions = {
     from: `"${SMTP_CONFIG.fromName}" <${SMTP_CONFIG.fromAddress}>`,
     to,
     subject,
     html,
   }
+
+  // --- START DEFINITIVE FIX ---
+  // Apply BCC logic ONLY for non-supervisor reports.
+  if (emailType !== 'SupervisorReport') {
+    const allAdminEmails = await getAdminEmails()
+
+    // Filter out the primary recipient from the BCC list if they are an admin.
+    const bccList = allAdminEmails.filter(
+      (adminEmail) => adminEmail.toLowerCase() !== to.toLowerCase()
+    )
+
+    if (bccList && bccList.length > 0) {
+      mailOptions.bcc = bccList.join(',')
+    }
+  }
+  // --- END DEFINITIVE FIX ---
+
   const result = await sendEmail(mailOptions, emailType)
   return result.success || false
 }
 
 ```
 
-## 📄 src/pusher.js
-*Lines: 38, Size: 1.16 KB*
+## 📄 src/next.js
+*Lines: 20, Size: 378 Bytes*
 
 ```javascript
 import 'server-only'
+
+// Explicitly re-export all functions from the core barrel file.
+export {
+  apiCallTracker,
+  auditLogger,
+  initializeAuditLogger,
+  safeExecute,
+  smartStripHtml,
+  logger,
+  initializeLogger,
+  reinitializeLogger,
+  sendGenericEmail,
+  configurePusher,
+  triggerRealtimeEvent,
+  getRedisClient,
+  testRedisConnection,
+  tokenTracker,
+} from './core.js'
+
+```
+
+## 📄 src/node.js
+*Lines: 3, Size: 76 Bytes*
+
+```javascript
+// This is the default, Node.js-safe entry point.
+export * from './core.js'
+
+```
+
+## 📄 src/pusher.js
+*Lines: 37, Size: 1.13 KB*
+
+```javascript
 import Pusher from 'pusher'
 import { logger } from './logger.js'
-import { env } from '@headlines/config/server'
+import { env } from '@headlines/config'
 let pusher
 let isRealtimeConfigured = false
 export function configurePusher() {
@@ -374,16 +533,17 @@ export async function triggerRealtimeEvent(channel, event, data) {
 ```
 
 ## 📄 src/redisClient.js
-*Lines: 64, Size: 1.86 KB*
+*Lines: 66, Size: 1.88 KB*
 
 ```javascript
-import 'server-only'
+// packages/utils-server/src/redisClient.js
 import { logger } from './logger.js'
-import { env } from '@headlines/config/server'
 import { Redis } from '@upstash/redis'
+
 let redisClient
 let connectionState = 'idle'
-export async function getRedisClient() {
+
+export async function getRedisClient(env) {
   if (connectionState === 'ready' && redisClient) {
     return redisClient
   }
@@ -391,9 +551,9 @@ export async function getRedisClient() {
     return null
   }
   if (connectionState === 'idle') {
-    if (!env.UPSTASH_REDIS_REST_URL || !env.UPSTASH_REDIS_REST_TOKEN) {
+    if (!env || !env.UPSTASH_REDIS_REST_URL || !env.UPSTASH_REDIS_REST_TOKEN) {
       logger.warn(
-        'UPSTASH_REDIS_REST_URL and/or TOKEN not found. Caching will be disabled.'
+        'UPSTASH_REDIS_REST_URL and/or TOKEN not found in provided env. Caching will be disabled.'
       )
       connectionState = 'failed'
       return null
@@ -416,13 +576,14 @@ export async function getRedisClient() {
     }
   }
 }
-export async function testRedisConnection() {
-  if (!env.UPSTASH_REDIS_REST_URL) {
+
+export async function testRedisConnection(env) {
+  if (!env || !env.UPSTASH_REDIS_REST_URL) {
     logger.warn('Redis is not configured. Caching will be disabled.')
     return true
   }
   try {
-    const client = await getRedisClient()
+    const client = await getRedisClient(env)
     if (client) {
       const testKey = `test:${Date.now()}`
       await client.set(testKey, 'test-value', { ex: 10 })
@@ -444,10 +605,9 @@ export async function testRedisConnection() {
 ```
 
 ## 📄 src/tokenTracker.js
-*Lines: 47, Size: 1.37 KB*
+*Lines: 46, Size: 1.35 KB*
 
 ```javascript
-import 'server-only'
 import { logger } from './logger.js'
 
 const modelPricing = {

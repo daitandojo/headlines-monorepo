@@ -1,12 +1,12 @@
 // apps/pipeline/scripts/results/send-last-events.js (version 2.1.0)
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
-import { initializeSettings } from '../../../../packages/config/src/server.js'
-import { logger } from '../../../../packages/utils-server'
-import { Subscriber, SynthesizedEvent } from '../../../../packages/models/src/index.js'
+import { initializeSettings } from '@headlines/config'
+import { logger } from '@headlines/utils-server'
+import { Subscriber, SynthesizedEvent } from '@headlines/models'
 import { sendNotifications } from '../../src/modules/notifications/index.js'
 import { refreshConfig } from '../../src/config/dynamicConfig.js'
-import dbConnect from '../../../../packages/data-access/src/dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect.js'
 import mongoose from 'mongoose'
 
 async function main() {

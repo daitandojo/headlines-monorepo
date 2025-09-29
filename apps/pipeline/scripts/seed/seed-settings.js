@@ -1,7 +1,7 @@
 // apps/pipeline/scripts/seed/seed-settings.js (version 1.8.0)
-import { reinitializeLogger, logger } from '../../../../packages/utils-server'
+import { reinitializeLogger, logger } from '@headlines/utils-server'
 import path from 'path'
-import { Setting } from '../../../../packages/models/src/index.js'
+import { Setting } from '@headlines/models'
 import dbConnect from '../../../../packages/data-access/src/dbConnect.js'
 import mongoose from 'mongoose'
 
@@ -124,22 +124,26 @@ const SETTINGS = [
 
 async function seedSettings() {
   await dbConnect()
-  logger.info('🚀 Seeding Pipeline Settings...')
+  logger.info('🚀 Syncing Pipeline Settings from config file...')
   try {
     const bulkOps = SETTINGS.map((setting) => ({
       updateOne: {
         filter: { key: setting.key },
-        update: { $setOnInsert: setting },
+        // Use $set to overwrite existing settings with values from the file.
+        // This ensures the file is always the source of truth.
+        update: { $set: setting },
         upsert: true,
       },
     }))
 
     const result = await Setting.bulkWrite(bulkOps)
+
+    // Improved log message to show both new and modified settings.
     logger.info(
-      `✅ Settings seeding complete. ${result.upsertedCount} new settings added.`
+      `✅ Settings sync complete. ${result.upsertedCount} new settings added, ${result.modifiedCount} settings updated.`
     )
   } catch (error) {
-    logger.fatal({ err: error }, '❌ Settings seeding failed.')
+    logger.fatal({ err: error }, '❌ Settings sync failed.')
   } finally {
     if (mongoose.connection.readyState === 1) {
       await mongoose.disconnect()

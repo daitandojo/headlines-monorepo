@@ -1,5 +1,5 @@
-// apps/pipeline/src/modules/email/components/supervisor/scraperHealth.js (version 2.0.0)
-import { escapeHtml } from '@headlines/utils-server'
+// apps/pipeline/src/modules/email/components/supervisor/scraperHealth.js (Corrected)
+import { escapeHtml } from '@headlines/utils-shared'
 
 export function createScraperFailureAlertHtml(enrichmentOutcomes) {
   if (!enrichmentOutcomes || enrichmentOutcomes.length === 0) return ''

@@ -1,7 +1,8 @@
-// packages/ai-services/src/rag/retrieval.js
+// File: packages/ai-services/src/rag/retrieval.js (Unabridged and Corrected)
+
 'use server'
 
-import OpenAI from 'openai'
+import { OpenAI } from 'openai'
 import { Pinecone } from '@pinecone-database/pinecone'
 import { generateQueryEmbeddings } from '../embeddings/embeddings.js'
 import {
@@ -9,27 +10,25 @@ import {
   validateWikipediaContent,
 } from '../search/wikipedia.js'
 import { getGoogleSearchResults } from '../search/serpapi.js'
-import { env } from '@headlines/config/server'
+import { env } from '@headlines/config'
 
-let groq, pineconeIndex
+let openAIClient, pineconeIndex
 function initializeClients() {
-  if (!groq) {
-    groq = new OpenAI({
-      apiKey: env.GROQ_API_KEY,
-      baseURL: 'https://api.groq.com/openai/v1',
-    })
+  if (!openAIClient) {
+    openAIClient = new OpenAI({ apiKey: env.OPENAI_API_KEY })
     const pc = new Pinecone({ apiKey: env.PINECONE_API_KEY })
     pineconeIndex = pc.index(env.PINECONE_INDEX_NAME)
   }
 }
 
-const ENTITY_EXTRACTOR_MODEL = 'llama3-70b-8192'
+const ENTITY_EXTRACTOR_MODEL = 'gpt-5-mini'
 const SIMILARITY_THRESHOLD = 0.38
 const ENTITY_EXTRACTOR_PROMPT_FOR_HISTORY = `You are an entity extractor. Your job is to identify all specific people and companies mentioned in a given text.
 Respond ONLY with a valid JSON object with the following structure:
 { "entities": ["Entity Name 1", "Entity Name 2"] }
 `
 
+// This function is no longer called by the main orchestrator but is kept for potential future use.
 async function extractEntitiesFromHistory(messages) {
   if (messages.length < 2) {
     return []
@@ -41,7 +40,7 @@ async function extractEntitiesFromHistory(messages) {
 
   initializeClients()
   try {
-    const entityResponse = await groq.chat.completions.create({
+    const entityResponse = await openAIClient.chat.completions.create({
       model: ENTITY_EXTRACTOR_MODEL,
       messages: [
         { role: 'system', content: ENTITY_EXTRACTOR_PROMPT_FOR_HISTORY },
@@ -78,7 +77,7 @@ async function fetchPineconeContext(queries, exclude_entities = []) {
 
   const filter =
     exclude_entities.length > 0
-      ? { key_individuals: { $nin: exclude_entities } }
+      ? { 'metadata.entities': { $nin: exclude_entities } }
       : undefined
 
   if (filter) {
@@ -144,7 +143,9 @@ async function fetchValidatedWikipediaContext(entities) {
 
 export async function retrieveContextForQuery(plan, messages, mode = 'full') {
   const { search_queries, user_query } = plan
-  const entitiesToExclude = await extractEntitiesFromHistory(messages)
+
+  const entitiesToExclude = []
+  console.log('[RAG Retrieval] History-based entity exclusion is temporarily disabled.')
 
   const pineconeResults = await fetchPineconeContext(search_queries, entitiesToExclude)
 

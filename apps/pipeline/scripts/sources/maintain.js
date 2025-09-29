@@ -1,7 +1,7 @@
 // apps/pipeline/scripts/sources/maintain.js (version 2.0.0)
-import dbConnect from '../../../../packages/data-access/src/dbConnect.js'
-import { Source } from '../../../../packages/models/src/index.js'
-import { logger } from '../../../../packages/utils-server'
+import dbConnect from '../../packages/data-access/src/dbConnect.js'
+import { Source } from '@headlines/models'
+import { logger } from '@headlines/utils-server'
 import mongoose from 'mongoose'
 import colors from 'ansi-colors'
 

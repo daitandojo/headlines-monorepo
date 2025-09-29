@@ -1,14 +1,12 @@
 // apps/pipeline/src/app.js
-process.env.IS_PIPELINE_RUN = 'true'
-
-import { env } from '@headlines/config/server.js'
+// import { env } from '@headlines/config'
 import { reinitializeLogger } from '@headlines/utils-server'
 import { initializeAuditLogger } from './utils/auditLogger.js'
 import path from 'path'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import { runPipeline } from './orchestrator.js'
-import humanLogStream from './utils/humanLogStream.js'
+// DEFINITIVE FIX: The 'humanLogStream' import is no longer needed and is removed.
 import fs from 'fs'
 import { fileURLToPath } from 'url'
 
@@ -19,21 +17,33 @@ const PROJECT_ROOT = path.resolve(__dirname, '../../..')
 const logDirectory = path.join(PROJECT_ROOT, 'apps/pipeline/logs')
 if (!fs.existsSync(logDirectory)) fs.mkdirSync(logDirectory, { recursive: true })
 
-const logFile = path.join(logDirectory, 'run.log')
-try {
-  fs.unlinkSync(logFile)
-} catch (e) {
-  if (e.code !== 'ENOENT') console.error('Could not clear old log file:', e)
-}
-const fileWriteStream = fs.createWriteStream(logFile, { flags: 'a' })
-humanLogStream.pipe(fileWriteStream)
-const extraStreams = [{ level: 'trace', stream: humanLogStream }]
-
-const logger = reinitializeLogger(logDirectory, extraStreams)
+// DEFINITIVE FIX: The logger initialization is simplified.
+// reinitializeLogger now handles both console and file logging internally.
+const logger = reinitializeLogger(logDirectory)
 initializeAuditLogger(logDirectory)
 
 async function start() {
-  const argv = yargs(hideBin(process.argv)).argv
+  const argv = yargs(hideBin(process.argv))
+    .option('source', {
+      alias: 's',
+      type: 'string',
+      description: 'Run the pipeline for a single source by name.',
+    })
+    .option('country', {
+      alias: 'c',
+      type: 'string',
+      description: 'Run the pipeline for all sources in a specific country.',
+    })
+    .option('deleteToday', {
+      type: 'boolean',
+      description: 'Delete all documents created today before running.',
+    })
+    .option('useTestPayload', {
+      type: 'boolean',
+      description: 'Use a predefined test payload instead of scraping.',
+    })
+    .help().argv
+
   const options = {
     ...argv,
     countryFilter: argv.country,

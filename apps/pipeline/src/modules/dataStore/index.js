@@ -2,14 +2,14 @@
 import { Pinecone } from '@pinecone-database/pinecone'
 import { logger } from '@headlines/utils-server'
 import { generateEmbedding } from '@headlines/ai-services'
-import { env } from '@headlines/config/server.js'
+import { env } from '@headlines/config'
 import { Opportunity } from '@headlines/models'
 import {
   bulkWriteEvents,
   bulkWriteArticles,
   findEventsByKeys,
   findArticlesByLinks,
-} from '@headlines/actions'
+} from '@headlines/data-access'
 
 const { PINECONE_API_KEY, PINECONE_INDEX_NAME } = env
 

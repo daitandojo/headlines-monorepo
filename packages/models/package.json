@@ -7,7 +7,9 @@
   "license": "ISC",
   "exports": {
     ".": "./src/index.js",
-    "./src/index.js": "./src/index.js"
+    "./node": "./src/node.js",
+    "./next": "./src/next.js",
+    "./client": "./src/client.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

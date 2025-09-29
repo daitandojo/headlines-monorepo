@@ -1,5 +1,5 @@
-// apps/pipeline/src/utils/reportSections.js (version 5.1.0)
-import { truncateString } from '@headlines/utils-server'
+// apps/pipeline/src/utils/reportSections.js (Corrected)
+import { truncateString } from '@headlines/utils-shared'
 import { logger } from '@headlines/utils-server'
 import moment from 'moment'
 import 'moment-duration-format'
