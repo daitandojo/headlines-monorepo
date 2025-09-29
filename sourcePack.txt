@@ -281,7 +281,7 @@ headlines/
 # 📋 PROJECT METADATA
 
 **Generated**: 2025-09-29T13:20:36.337Z
-**Repository Path**: /home/mark/Repos/projects/headlines/apps/copyboard
+**Repository Path**: /home/mark/Repos/projects/headlines/apps/client
 **Total Files**: 170
 **Package**: @headlines/copyboard@1.0.0
 
@@ -343,7 +343,7 @@ next-env.d.ts
 *Lines: 8, Size: 337 Bytes*
 
 ```javascript
-// File: apps/copyboard/app.config.js
+// File: apps/client/app.config.js
 
 // This file provides the minimal configuration needed by the shared
 // packages when they're used by the app's API routes.
@@ -404,7 +404,7 @@ export default eslintConfig;
 *Lines: 28, Size: 551 Bytes*
 
 ```
-// File: apps/copyboard/next.config.mjs
+// File: apps/client/next.config.mjs
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
@@ -476,7 +476,7 @@ export default nextConfig
 *Lines: 13, Size: 218 Bytes*
 
 ```
-// File: apps/copyboard/postcss.config.js
+// File: apps/client/postcss.config.js
 
 const path = require('path')
 
@@ -630,7 +630,7 @@ self.addEventListener('notificationclick', (event) => {
 *Lines: 44, Size: 1.18 KB*
 
 ```javascript
-// File: apps/copyboard/src/app/(client)/articles/page.js
+// File: apps/client/src/app/(client)/articles/page.js
 
 // 'use server'
 
@@ -680,7 +680,7 @@ export default async function ArticlesPage({ searchParams }) {
 *Lines: 8, Size: 182 Bytes*
 
 ```javascript
-// File: apps/copyboard/src/app/(client)/chat/page.js
+// File: apps/client/src/app/(client)/chat/page.js
 
 import { ChatManager } from '@/components/client/ChatManager'
 
@@ -694,7 +694,7 @@ export default function ChatPage() {
 *Lines: 11, Size: 413 Bytes*
 
 ```jsx
-// File: apps/copyboard/src/app/(client)/client-layout-wrapper.js
+// File: apps/client/src/app/(client)/client-layout-wrapper.js
 'use client'
 
 import { AppShell } from '@/app/_components/AppShell'
@@ -711,7 +711,7 @@ export function ClientLayoutWrapper({ children, serverProps }) {
 *Lines: 44, Size: 1.29 KB*
 
 ```javascript
-// File: apps/copyboard/src/app/(client)/events/page.js (Corrected)
+// File: apps/client/src/app/(client)/events/page.js (Corrected)
 
 import { DataView } from '@/components/client/DataView'
 import { getEvents } from '@headlines/data-access/next'
@@ -761,7 +761,7 @@ export default async function EventsPage({ searchParams }) {
 *Lines: 21, Size: 827 Bytes*
 
 ```javascript
-// File: apps/copyboard/src/app/(client)/layout.js (Restored)
+// File: apps/client/src/app/(client)/layout.js (Restored)
 
 import { getDashboardStats, getGlobalCountries } from '@headlines/data-access/next'
 import { ClientLayoutWrapper } from './client-layout-wrapper'
@@ -788,7 +788,7 @@ export default async function ClientLayout({ children }) {
 *Lines: 143, Size: 4.88 KB*
 
 ```javascript
-// File: apps/copyboard/src/app/(client)/opportunities/[opportunityId]/page.js
+// File: apps/client/src/app/(client)/opportunities/[opportunityId]/page.js
 
 'use server'
 
@@ -937,7 +937,7 @@ export default async function OpportunityDossierPage({ params }) {
 *Lines: 47, Size: 1.3 KB*
 
 ```javascript
-// File: apps/copyboard/src/app/(client)/opportunities/page.js
+// File: apps/client/src/app/(client)/opportunities/page.js
 
 // 'use server'
 
@@ -990,7 +990,7 @@ export default async function OpportunitiesPage({ searchParams }) {
 *Lines: 26, Size: 768 Bytes*
 
 ```javascript
-// File: apps/copyboard/src/app/(client)/settings/page.js
+// File: apps/client/src/app/(client)/settings/page.js
 
 // 'use server'
 
@@ -1022,7 +1022,7 @@ export default async function SettingsPage() {
 *Lines: 10, Size: 197 Bytes*
 
 ```javascript
-// File: apps/copyboard/src/app/(client)/upload/page.js
+// File: apps/client/src/app/(client)/upload/page.js
 
 'use client'
 
@@ -1038,7 +1038,7 @@ export default function UploadPage() {
 *Lines: 76, Size: 2.3 KB*
 
 ```jsx
-// File: apps/copyboard/src/app/_components/AppShell.jsx (With Logging)
+// File: apps/client/src/app/_components/AppShell.jsx (With Logging)
 
 'use client'
 
@@ -1120,7 +1120,7 @@ export function AppShell({ children, serverProps }) {
 *Lines: 13, Size: 438 Bytes*
 
 ```jsx
-// File: apps/copyboard/src/app/_components/AppWrapper.jsx (Corrected)
+// File: apps/client/src/app/_components/AppWrapper.jsx (Corrected)
 
 import 'server-only'
 import { verifySession } from '@/lib/auth/server'
@@ -1577,7 +1577,7 @@ export default function ArticlesPage() {
 *Lines: 191, Size: 5.84 KB*
 
 ```jsx
-// File: apps/copyboard/src/app/admin/dashboard/DashboardClientPage.jsx
+// File: apps/client/src/app/admin/dashboard/DashboardClientPage.jsx
 
 'use client'
 
@@ -1774,7 +1774,7 @@ export default function DashboardClientPage({
 *Lines: 55, Size: 1.43 KB*
 
 ```jsx
-// File: apps/copyboard/src/app/admin/dashboard/page.jsx (version 2.5 - FINAL)
+// File: apps/client/src/app/admin/dashboard/page.jsx (version 2.5 - FINAL)
 // 'use server'
 
 import {
@@ -2271,7 +2271,7 @@ export default function EventsPage() {
 *Lines: 28, Size: 856 Bytes*
 
 ```javascript
-// File: apps/copyboard/src/app/admin/layout.js (Corrected and Unabridged)
+// File: apps/client/src/app/admin/layout.js (Corrected and Unabridged)
 
 // 'use server'
 
@@ -2557,7 +2557,7 @@ export default function OpportunitiesPage() {
 *Lines: 9, Size: 269 Bytes*
 
 ```javascript
-// File: apps/copyboard/src/app/admin/page.js
+// File: apps/client/src/app/admin/page.js
 
 import { redirect } from 'next/navigation'
 
@@ -2572,7 +2572,7 @@ export default function AdminRootPage() {
 *Lines: 135, Size: 4.13 KB*
 
 ```jsx
-// File: apps/copyboard/src/app/admin/users/UsersClientPage.jsx (version 1.0 - New File)
+// File: apps/client/src/app/admin/users/UsersClientPage.jsx (version 1.0 - New File)
 'use client'
 
 import { useState, useCallback, useMemo } from 'react'
@@ -2765,7 +2765,7 @@ export async function createUserAction(userData) {
 *Lines: 169, Size: 4.76 KB*
 
 ```jsx
-// File: apps/copyboard/src/app/admin/users/columns.jsx (version 3.0 - Server Actions)
+// File: apps/client/src/app/admin/users/columns.jsx (version 3.0 - Server Actions)
 'use client'
 
 import React from 'react'
@@ -2940,7 +2940,7 @@ export const columns = (handleEdit, handleAction) => [
 *Lines: 114, Size: 3.78 KB*
 
 ```jsx
-// File: apps/copyboard/src/app/admin/users/country-subscription-manager.jsx (version 1.0 - New File)
+// File: apps/client/src/app/admin/users/country-subscription-manager.jsx (version 1.0 - New File)
 'use client'
 
 import { useState } from 'react'
@@ -3112,7 +3112,7 @@ export default async function UsersPage() {
 *Lines: 166, Size: 5.18 KB*
 
 ```jsx
-// File: apps/copyboard/src/app/admin/users/user-editor.jsx (version 2.0 - Server Actions)
+// File: apps/client/src/app/admin/users/user-editor.jsx (version 2.0 - Server Actions)
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -3941,7 +3941,7 @@ export const dynamic = 'force-dynamic'
 *Lines: 64, Size: 1.63 KB*
 
 ```javascript
-// File: apps/copyboard/src/app/api/auth/login/route.js (Corrected)
+// File: apps/client/src/app/api/auth/login/route.js (Corrected)
 
 import { NextResponse } from 'next/server'
 import { loginUser } from '@headlines/data-access/next'
@@ -4362,7 +4362,7 @@ export const dynamic = 'force-dynamic'
 *Lines: 24, Size: 852 Bytes*
 
 ```javascript
-// File: apps/copyboard/src/app/api-admin/countries/route.js (version 1.0 - New File)
+// File: apps/client/src/app/api-admin/countries/route.js (version 1.0 - New File)
 
 import { NextResponse } from 'next/server'
 import { getAllCountries } from '@headlines/data-access/next'
@@ -4573,7 +4573,7 @@ export async function POST(request) {
 *Lines: 39, Size: 1.5 KB*
 
 ```javascript
-// File: apps/copyboard/src/app/api-admin/subscribers/[subscriberId]/route.js (version 1.0 - Unchanged)
+// File: apps/client/src/app/api-admin/subscribers/[subscriberId]/route.js (version 1.0 - Unchanged)
 import { NextResponse } from 'next/server'
 import { updateSubscriber, deleteSubscriber } from '@headlines/data-access/next'
 import mongoose from 'mongoose'
@@ -4618,7 +4618,7 @@ export const DELETE = createApiHandler(handleDelete)
 *Lines: 44, Size: 1.47 KB*
 
 ```javascript
-// File: apps/copyboard/src/app/api-admin/subscribers/route.js (version 2.1 - Directive Removed)
+// File: apps/client/src/app/api-admin/subscribers/route.js (version 2.1 - Directive Removed)
 import { NextResponse } from 'next/server'
 import { getAllSubscribers, createSubscriber } from '@headlines/data-access/next'
 import { createApiHandler } from '@/lib/api-handler'
@@ -4898,7 +4898,7 @@ export const dynamic = 'force-dynamic'
 *Lines: 23, Size: 484 Bytes*
 
 ```javascript
-// File: apps/copyboard/src/app/layout.js (Corrected)
+// File: apps/client/src/app/layout.js (Corrected)
 
 import './globals.css'
 import { AppProviders } from './providers'
@@ -5210,7 +5210,7 @@ export function AdminNavTabs() {
 *Lines: 47, Size: 1.3 KB*
 
 ```jsx
-// File: apps/copyboard/src/components/admin/DesktopOnlyWrapper.jsx
+// File: apps/client/src/components/admin/DesktopOnlyWrapper.jsx
 
 'use client'
 
@@ -5436,7 +5436,7 @@ export default function ArticleAnalysisViewer({ article, open, onOpenChange }) {
 *Lines: 113, Size: 3.49 KB*
 
 ```jsx
-// File: apps/copyboard/src/components/admin/main-nav.jsx (Full file with both fixes)
+// File: apps/client/src/components/admin/main-nav.jsx (Full file with both fixes)
 
 'use client'
 
@@ -5555,7 +5555,7 @@ export default function MainNav() {
 *Lines: 62, Size: 1.86 KB*
 
 ```jsx
-// File: apps/copyboard/src/components/admin/multi-select.jsx (version 1.0 - New File)
+// File: apps/client/src/components/admin/multi-select.jsx (version 1.0 - New File)
 'use client'
 
 import * as React from 'react'
@@ -6035,7 +6035,7 @@ export function AnimatedList({ children, className }) {
 *Lines: 202, Size: 7.78 KB*
 
 ```jsx
-// File: apps/copyboard/src/components/client/ArticleCard.jsx
+// File: apps/client/src/components/client/ArticleCard.jsx
 
 'use client'
 
@@ -6243,7 +6243,7 @@ export const ArticleCard = ({ article, onDelete }) => {
 *Lines: 42, Size: 1.44 KB*
 
 ```jsx
-// File: apps/copyboard/src/components/client/ArticleListWrapper.jsx
+// File: apps/client/src/components/client/ArticleListWrapper.jsx
 
 'use client'
 
@@ -6291,7 +6291,7 @@ export function ArticleListWrapper({ items, onDelete }) {
 *Lines: 48, Size: 1.39 KB*
 
 ```jsx
-// File: apps/copyboard/src/components/client/ChatManager.jsx (Corrected and Unabridged)
+// File: apps/client/src/components/client/ChatManager.jsx (Corrected and Unabridged)
 'use client'
 
 import { useEffect } from 'react'
@@ -6345,7 +6345,7 @@ export function ChatManager() {
 *Lines: 157, Size: 5.23 KB*
 
 ```jsx
-// File: apps/copyboard/src/components/client/ChatView.jsx (Corrected and Unabridged)
+// File: apps/client/src/components/client/ChatView.jsx (Corrected and Unabridged)
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
@@ -6508,7 +6508,7 @@ export function ChatView({ chatId }) {
 *Lines: 108, Size: 3.57 KB*
 
 ```jsx
-// File: apps/copyboard/src/components/client/CountrySubscriptionEditor.jsx
+// File: apps/client/src/components/client/CountrySubscriptionEditor.jsx
 
 'use client'
 
@@ -6622,7 +6622,7 @@ export function CountrySubscriptionEditor({
 *Lines: 161, Size: 5.4 KB*
 
 ```jsx
-// File: apps/copyboard/src/components/client/DataView.jsx (Unabridged and Corrected)
+// File: apps/client/src/components/client/DataView.jsx (Unabridged and Corrected)
 
 'use client'
 
@@ -6874,7 +6874,7 @@ export function EventContextDialog({ event, open, onOpenChange }) {
 *Lines: 51, Size: 1.72 KB*
 
 ```jsx
-// File: apps/copyboard/src/components/client/EventList.jsx (Restored)
+// File: apps/client/src/components/client/EventList.jsx (Restored)
 'use client'
 import { Accordion } from '@/components/shared'
 import { SynthesizedEventCard } from './SynthesizedEventCard'
@@ -6959,7 +6959,7 @@ export function EventListWrapper({
 *Lines: 136, Size: 4.55 KB*
 
 ```jsx
-// File: apps/copyboard/src/components/client/GlobalCountrySelector.jsx (Corrected and Unabridged)
+// File: apps/client/src/components/client/GlobalCountrySelector.jsx (Corrected and Unabridged)
 
 'use client'
 import { useState, useMemo, useEffect } from 'react'
@@ -7101,7 +7101,7 @@ export function GlobalCountrySelector({ allCountries }) {
 *Lines: 98, Size: 3.4 KB*
 
 ```jsx
-// File: apps/copyboard/src/components/client/Header.jsx (Unabridged and Updated)
+// File: apps/client/src/components/client/Header.jsx (Unabridged and Updated)
 
 'use client'
 
@@ -7258,7 +7258,7 @@ export function IOSInstallInstructions({ open, onOpenChange }) {
 *Lines: 26, Size: 657 Bytes*
 
 ```jsx
-// File: apps/copyboard/src/components/client/InfiniteScrollLoader.jsx
+// File: apps/client/src/components/client/InfiniteScrollLoader.jsx
 'use client'
 
 import { useEffect } from 'react'
@@ -7599,7 +7599,7 @@ export function NotificationToggles() {
 *Lines: 188, Size: 7.01 KB*
 
 ```jsx
-// File: apps/copyboard/src/components/client/OpportunityCard.jsx
+// File: apps/client/src/components/client/OpportunityCard.jsx
 
 'use client'
 
@@ -7616,7 +7616,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { SwipeToDelete } from '../swipe/SwipeToDelete'
-import { cn, getCountryFlag } from '@/lib/utils'
+import { cn, getCountryFlag } from '@headlines/utils-shared'
 import { EventContextDialog } from './EventContextDialog'
 import Link from 'next/link'
 import useAppStore from '@/lib/store/use-app-store'
@@ -7793,7 +7793,7 @@ export function OpportunityCard({ opportunity, onDelete }) {
 *Lines: 32, Size: 924 Bytes*
 
 ```jsx
-// File: apps/copyboard/src/components/client/OpportunityListWrapper.jsx
+// File: apps/client/src/components/client/OpportunityListWrapper.jsx
 
 'use client'
 
@@ -7831,7 +7831,7 @@ export function OpportunityListWrapper({ items, onDelete }) {
 *Lines: 247, Size: 7.81 KB*
 
 ```jsx
-// File: apps/copyboard/src/components/client/SettingsForm.jsx (Unabridged and Corrected)
+// File: apps/client/src/components/client/SettingsForm.jsx (Unabridged and Corrected)
 
 'use client'
 import { useState, useEffect, useRef } from 'react'
@@ -8199,7 +8199,7 @@ export function SplashScreen() {
 *Lines: 100, Size: 3.32 KB*
 
 ```jsx
-// File: apps/copyboard/src/components/client/SynthesizedEventCard.jsx (Restored)
+// File: apps/client/src/components/client/SynthesizedEventCard.jsx (Restored)
 'use client'
 
 import { useState, useTransition } from 'react'
@@ -8305,7 +8305,7 @@ export const SynthesizedEventCard = ({
 *Lines: 227, Size: 7.59 KB*
 
 ```jsx
-// File: apps/copyboard/src/components/client/UploadView.jsx (Redesigned Version)
+// File: apps/client/src/components/client/UploadView.jsx (Redesigned Version)
 
 'use client'
 
@@ -8819,7 +8819,7 @@ export function ChatSidebar({ chats, activeChatId, createChat, selectChat }) {
 *Lines: 111, Size: 4.12 KB*
 
 ```jsx
-// File: apps/copyboard/src/components/client/events/EventCardDesktop.jsx
+// File: apps/client/src/components/client/events/EventCardDesktop.jsx
 
 'use client'
 
@@ -9011,7 +9011,7 @@ export function EventCardDetails({ event }) {
 *Lines: 105, Size: 3.79 KB*
 
 ```jsx
-// File: apps/copyboard/src/components/client/events/EventCardMobile.jsx
+// File: apps/client/src/components/client/events/EventCardMobile.jsx
 
 'use client'
 
@@ -9122,7 +9122,7 @@ export function EventCardMobile({ event, onChat, onDelete, isPending }) {
 *Lines: 39, Size: 1.19 KB*
 
 ```jsx
-// File: apps/copyboard/src/components/placeholders.jsx
+// File: apps/client/src/components/placeholders.jsx
 'use client'
 
 // Simple placeholders to make the login page render without the full UI library.
@@ -10748,7 +10748,7 @@ export * from './tooltip'
 *Lines: 22, Size: 757 Bytes*
 
 ```jsx
-// File: apps/copyboard/src/components/shared/elements/input.jsx
+// File: apps/client/src/components/shared/elements/input.jsx
 import * as React from 'react'
 
 import { cn } from '@headlines/utils-shared'
@@ -11417,7 +11417,7 @@ export {
 *Lines: 48, Size: 1.61 KB*
 
 ```jsx
-// File: apps/copyboard/src/components/shared/elements/tabs.jsx (Full Version)
+// File: apps/client/src/components/shared/elements/tabs.jsx (Full Version)
 'use client'
 
 import * as React from 'react'
@@ -11471,7 +11471,7 @@ export { Tabs, TabsList, TabsTrigger, TabsContent }
 *Lines: 21, Size: 710 Bytes*
 
 ```jsx
-// File: apps/copyboard/src/components/shared/elements/textarea.jsx (Full Version)
+// File: apps/client/src/components/shared/elements/textarea.jsx (Full Version)
 import * as React from 'react'
 
 import { cn } from '@headlines/utils-shared'
@@ -12046,7 +12046,7 @@ export function useRealtimeUpdates({ channel, event, queryKey }) {
 *Lines: 148, Size: 5.33 KB*
 
 ```javascript
-// File: apps/copyboard/src/lib/api-client.js (Unabridged and Corrected)
+// File: apps/client/src/lib/api-client.js (Unabridged and Corrected)
 
 'use client'
 
@@ -12272,7 +12272,7 @@ export function createClientApiHandler(handler) {
 *Lines: 89, Size: 2.75 KB*
 
 ```javascript
-// File: apps/copyboard/src/lib/auth/AuthProvider.js (Full Version)
+// File: apps/client/src/lib/auth/AuthProvider.js (Full Version)
 'use client'
 
 import React, { createContext, useState, useEffect, useCallback } from 'react'
@@ -12498,7 +12498,7 @@ export async function verifyAdmin() {
 *Lines: 24, Size: 1.09 KB*
 
 ```javascript
-// File: apps/copyboard/src/lib/constants.js
+// File: apps/client/src/lib/constants.js
 
 // API Routes
 export const API_ARTICLES = '/api-admin/articles'
@@ -12528,7 +12528,7 @@ export const QUERY_KEY_WATCHLIST_SUGGESTIONS = 'adminWatchlistSuggestions'
 *Lines: 20, Size: 478 Bytes*
 
 ```javascript
-// File: apps/copyboard/src/lib/init-shared-logic.js (version 2.3 - FINAL)
+// File: apps/client/src/lib/init-shared-logic.js (version 2.3 - FINAL)
 'use server'
 
 import { initializeSettings } from '@headlines/config/next'
@@ -12554,7 +12554,7 @@ export async function initializeSharedLogic() {
 *Lines: 100, Size: 2.86 KB*
 
 ```javascript
-// File: apps/copyboard/src/lib/store/use-app-store.js (Corrected Export)
+// File: apps/client/src/lib/store/use-app-store.js (Corrected Export)
 'use client'
 
 import { create } from 'zustand'
@@ -12660,7 +12660,7 @@ export default useAppStore
 *Lines: 100, Size: 3.09 KB*
 
 ```javascript
-// File: apps/copyboard/tailwind.config.js
+// File: apps/client/tailwind.config.js
 
 const { fontFamily } = require('tailwindcss/defaultTheme')
 
@@ -13136,7 +13136,7 @@ headlines/
 # 📋 PROJECT METADATA
 
 **Generated**: 2025-09-29T13:20:36.370Z
-**Repository Path**: /home/mark/Repos/projects/headlines/apps/dashboard
+**Repository Path**: /home/mark/Repos/projects/headlines/apps/client
 **Total Files**: 233
 **Package**: @headlines/dashboard@1.0.0
 
@@ -13245,7 +13245,7 @@ export const LLM_MODEL_UTILITY = process.env.LLM_MODEL_UTILITY || 'gpt-5-nano'
 *Lines: 12, Size: 461 Bytes*
 
 ```
-// Full Path: headlines/apps/dashboard/eslint.config.mjs
+// Full Path: headlines/apps/client/eslint.config.mjs
 import eslintConfigNext from 'eslint-config-next'
 
 // This is the modern, correct way to configure ESLint with Next.js
@@ -13278,7 +13278,7 @@ export default [
 *Lines: 46, Size: 1.19 KB*
 
 ```
-// File: headlines/apps/dashboard/next.config.mjs (Corrected and Simplified)
+// File: headlines/apps/client/next.config.mjs (Corrected and Simplified)
 /** @type {import('next').NextConfig} */
 
 import path from 'path'
@@ -19488,7 +19488,7 @@ export default function UploadPage() {
 *Lines: 50, Size: 1.45 KB*
 
 ```jsx
-// File: apps/copyboard/src/app/_components/AppShell.jsx
+// File: apps/client/src/app/_components/AppShell.jsx
 
 'use client'
 
@@ -19544,7 +19544,7 @@ export function AppShell({ children, serverProps }) {
 *Lines: 36, Size: 1.29 KB*
 
 ```jsx
-// File: apps/copyboard/src/app/_components/AppWrapper.jsx (Corrected)
+// File: apps/client/src/app/_components/AppWrapper.jsx (Corrected)
 
 import 'server-only'
 import { verifySession } from '@/lib/auth/server'
@@ -21589,7 +21589,7 @@ export async function POST(request) {
 *Lines: 25, Size: 895 Bytes*
 
 ```javascript
-// apps/dashboard/src/app/api-admin/scrape/test-recipe/route.js (REVISED)
+// apps/client/src/app/api-admin/scrape/test-recipe/route.js (REVISED)
 import { NextResponse } from 'next/server'
 import { initializeSharedLogic } from '@/lib/init-shared-logic'
 import { verifyAdmin } from '@headlines/auth'
@@ -22234,7 +22234,7 @@ export async function GET(request) {
 *Lines: 26, Size: 724 Bytes*
 
 ```javascript
-// File: apps/copyboard/src/app/layout.js (Corrected Provider Structure)
+// File: apps/client/src/app/layout.js (Corrected Provider Structure)
 
 import './globals.css'
 import { AppProviders } from './providers'
@@ -23586,7 +23586,7 @@ export function ArticleListWrapper({ items, onDelete }) {
 *Lines: 68, Size: 1.94 KB*
 
 ```jsx
-// File: apps/copyboard/src/components/client/ChatManager.jsx (Corrected Hydration)
+// File: apps/client/src/components/client/ChatManager.jsx (Corrected Hydration)
 'use client'
 
 import { useEffect } from 'react'
@@ -24372,7 +24372,7 @@ import {
   Input,
 } from '../shared'
 import { Check, Globe, X, Search, Save } from 'lucide-react'
-import { getCountryFlag, cn } from '@/lib/utils'
+import { getCountryFlag, cn } from '@headlines/utils-shared'
 import { useAuth } from '@/lib/auth/client.js'
 
 export function GlobalCountrySelector({ countries }) {
@@ -24956,7 +24956,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { SwipeToDelete } from './swipe/SwipeToDelete'
-import { cn, getCountryFlag } from '@/lib/utils' // Assuming local utils file
+import { cn, getCountryFlag } from '@headlines/utils-shared' // Assuming local utils file
 import { EventContextDialog } from './EventContextDialog'
 import Link from 'next/link'
 import useAppStore from '@/lib/store/use-app-store'
@@ -30406,7 +30406,7 @@ export async function startTimer(operation) {
 *Lines: 97, Size: 2.8 KB*
 
 ```javascript
-// File: apps/copyboard/src/lib/store/use-app-store.js (Simplified Hydration)
+// File: apps/client/src/lib/store/use-app-store.js (Simplified Hydration)
 'use client'
 
 import { create } from 'zustand'
