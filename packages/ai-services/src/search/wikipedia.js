@@ -1,38 +1,18 @@
-// File: packages/ai-services/src/search/wikipedia.js (Unabridged and Corrected)
-
 'use server'
 import { logger, apiCallTracker } from '@headlines/utils-server'
 import { settings } from '@headlines/config'
-import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
-import { RunnableSequence } from '@langchain/core/runnables'
-import { getUtilityModel } from '../lib/langchain.js'
+// --- START: DEFINITIVE FIX ---
+// Import the centrally defined, corrected chain instead of recreating it locally.
+import { disambiguationChain } from '../chains/index.js'
+// --- END: DEFINITIVE FIX ---
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { disambiguationSchema } from '../schemas/index.js'
-import { instructionDisambiguation } from '@headlines/prompts'
 
 const WIKI_API_ENDPOINT = 'https://en.wikipedia.org/w/api.php'
 const WIKI_SUMMARY_LENGTH = 750
 
-// --- START: DEFINITIVE FIX FOR WIKIPEDIA CHAIN ---
-const systemPrompt = [
-  instructionDisambiguation.whoYouAre,
-  instructionDisambiguation.whatYouDo,
-  ...instructionDisambiguation.guidelines,
-  instructionDisambiguation.outputFormatDescription,
-].join('\n\n')
-
-const prompt = ChatPromptTemplate.fromMessages([
-  ['system', systemPrompt],
-  ['human', '{inputText}'],
-])
-
-// Revert to the simpler, more direct chain. Our safeInvoke function will handle errors.
-const disambiguationChain = RunnableSequence.from([
-  prompt,
-  getUtilityModel(),
-  new JsonOutputParser(),
-])
+// --- START: DEFINITIVE FIX ---
+// The entire local definition of the chain is now removed.
 // --- END: DEFINITIVE FIX ---
 
 async function fetchWithRetry(url, options, maxRetries = 2) {
@@ -75,12 +55,10 @@ export async function fetchWikipediaSummary(query) {
     try {
       const userContent = `Original Query: "${query}"\n\nSearch Results:\n${JSON.stringify(searchResults.map((r) => ({ title: r.title, snippet: r.snippet })))}`
 
-      const disambiguationResponse = await safeInvoke(
-        disambiguationChain,
-        { inputText: userContent },
-        'disambiguationChain',
-        disambiguationSchema
-      )
+      // --- START: DEFINITIVE FIX ---
+      // Call the imported, corrected chain.
+      const disambiguationResponse = await disambiguationChain({ inputText: userContent })
+      // --- END: DEFINITIVE FIX ---
 
       if (
         disambiguationResponse &&

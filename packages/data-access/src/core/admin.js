@@ -9,7 +9,7 @@ import {
   SourceSuggestion,
 } from '@headlines/models'
 import { buildQuery } from '../queryBuilder.js'
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 
 export async function createSubscriber(userData) {
   try {

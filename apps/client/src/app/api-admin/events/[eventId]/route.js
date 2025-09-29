@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import dbConnect from '@headlines/data-access/dbConnect'
+import dbConnect from '@headlines/data-access/dbConnect/next'
 import { getEventDetails, updateEvent, deleteEvent } from '@headlines/data-access'
 import { createApiHandler } from '@/lib/api-handler' // We need a more flexible admin handler
 import mongoose from 'mongoose'

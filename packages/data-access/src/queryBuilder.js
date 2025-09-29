@@ -1,5 +1,5 @@
 import { Subscriber } from '@headlines/models'
-import dbConnect from './dbConnect.js'
+import dbConnect from './dbConnect.node.js'
 
 // --- START OF THE FIX ---
 // The function MUST be marked as async.

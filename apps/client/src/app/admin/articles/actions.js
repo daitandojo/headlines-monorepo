@@ -1,9 +1,12 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-// Import PURE functions from the data-access package
+// --- START OF THE FIX ---
+// Import the PURE data logic functions from the Next.js-safe entry point.
 import { updateArticle, deleteArticle } from '@headlines/data-access'
-import dbConnect from '@headlines/data-access/dbConnect.js'
+// Import the Next.js-safe version of the dbConnect utility.
+import dbConnect from '@headlines/data-access/dbConnect/next'
+// --- END OF THE FIX ---
 
 // This file defines the Server Actions. It wraps the pure data logic.
 export async function updateArticleAction(articleId, updateData) {

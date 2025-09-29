@@ -1,7 +1,7 @@
 'use server'
 
 import { Setting } from '@headlines/models'
-import dbConnect from '../dbConnect.js' // Ensure dbConnect is imported
+import dbConnect from '@headlines/data-access/dbConnect/node' // Ensure dbConnect is imported
 import { revalidatePath } from '../revalidate.js'
 
 export async function getSettings() {

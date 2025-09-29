@@ -21,7 +21,10 @@ const prompt = ChatPromptTemplate.fromMessages([
   ['human', '{headlines_json_string}'],
 ])
 
-const chain = RunnableSequence.from([prompt, getHeadlineModel(), new JsonOutputParser()])
+// --- DEFINITIVE FIX ---
+// The chain now ends with the model. The JsonOutputParser is removed.
+// The safeInvoke function will be responsible for all parsing.
+const chain = RunnableSequence.from([prompt, getHeadlineModel()])
 
 export const batchHeadlineChain = {
   invoke: (input) =>

@@ -7,7 +7,7 @@ import {
   WatchlistEntity,
   WatchlistSuggestion,
 } from '@headlines/models'
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 
 // --- Source Analytics & Status ---
 export async function updateSourceAnalyticsBatch(bulkOps) {

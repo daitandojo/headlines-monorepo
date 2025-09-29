@@ -1,6 +1,6 @@
 'use server'
 
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 import { SynthesizedEvent, Article, Opportunity } from '@headlines/models'
 import { buildQuery } from '../queryBuilder.js'
 import mongoose from 'mongoose'

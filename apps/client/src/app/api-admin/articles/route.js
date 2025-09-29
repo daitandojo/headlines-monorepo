@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getArticles } from '@headlines/data-access'
 import { createApiHandler } from '@/lib/api-handler'
-import dbConnect from '@headlines/data-access/dbConnect.js' // Import dbConnect
+import dbConnect from '@headlines/data-access/dbConnect.next'
 
 const handleGet = async (request, { user }) => {
   // --- START OF THE FIX ---

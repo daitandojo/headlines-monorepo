@@ -8,7 +8,7 @@ import {
   Opportunity,
   Country,
 } from '@headlines/models'
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 
 export async function getDashboardStats() {
   try {

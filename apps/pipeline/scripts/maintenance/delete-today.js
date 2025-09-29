@@ -1,20 +1,25 @@
 // apps/pipeline/scripts/maintenance/delete-today.js (version 2.2.0)
-undefined
+import yargs from 'yargs'
+import { hideBin } from 'yargs/helpers'
 import { logger } from '@headlines/utils-server'
 import mongoose from 'mongoose'
-import {
-  Article,
-  SynthesizedEvent,
-  Opportunity,
-  RunVerdict,
-} from '../../../../packages/models/src/index.js'
-import dbConnect from '../../../../packages/data-access/src/dbConnect.js'
+import { Article, SynthesizedEvent, Opportunity, RunVerdict } from '@headlines/models'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 
-export async function deleteTodaysDocuments(confirm = false) {
+export async function deleteRecentDocuments({ minutes, confirm = false } = {}) {
   try {
-    const today = new Date()
-    today.setUTCHours(0, 0, 0, 0)
-    const query = { createdAt: { $gte: today } }
+    let cutoff
+    let timeDescription
+    if (minutes) {
+      cutoff = new Date(Date.now() - minutes * 60 * 1000)
+      timeDescription = `in the last ${minutes} minutes`
+    } else {
+      cutoff = new Date()
+      cutoff.setUTCHours(0, 0, 0, 0)
+      timeDescription = 'today'
+    }
+
+    const query = { createdAt: { $gte: cutoff } }
     const modelsToDelete = {
       Articles: Article,
       'Synthesized Events': SynthesizedEvent,
@@ -23,7 +28,6 @@ export async function deleteTodaysDocuments(confirm = false) {
     }
     let totalCount = 0
 
-    // [[ Log All Deleted Documents ]] - First, count documents for each model
     const counts = {}
     for (const [modelName, model] of Object.entries(modelsToDelete)) {
       const count = await model.countDocuments(query)
@@ -34,18 +38,18 @@ export async function deleteTodaysDocuments(confirm = false) {
     }
 
     if (totalCount === 0) {
-      logger.info('✅ No documents created today were found to delete.')
+      logger.info(`✅ No documents created ${timeDescription} were found to delete.`)
       return
     }
 
     if (!confirm) {
       logger.warn(
-        `${totalCount} documents found from today. Run with --delete-today or --yes to delete.`
+        `${totalCount} documents found from ${timeDescription}. Run with --yes to delete.`
       )
       return
     }
 
-    logger.info(`Deleting ${totalCount} documents from today...`)
+    logger.info(`Deleting ${totalCount} documents from ${timeDescription}...`)
     for (const [modelName, model] of Object.entries(modelsToDelete)) {
       if (counts[modelName] > 0) {
         const { deletedCount } = await model.deleteMany(query)
@@ -65,9 +69,17 @@ if (import.meta.url.endsWith(process.argv[1])) {
     const path = await import('path')
     initializeLogger(path.resolve(process.cwd(), 'apps/pipeline/logs'))
 
+    const argv = yargs(hideBin(process.argv))
+      .option('minutes', {
+        alias: 'm',
+        type: 'number',
+        description: 'Specify the lookback window in minutes.',
+      })
+      .option('yes', { type: 'boolean', description: 'Skip confirmation prompt.' })
+      .help().argv
+
     await dbConnect()
-    const confirm = process.argv.includes('--yes')
-    await deleteTodaysDocuments(confirm)
+    await deleteRecentDocuments({ minutes: argv.minutes, confirm: argv.yes })
     if (mongoose.connection.readyState === 1) await mongoose.disconnect()
   })()
 }

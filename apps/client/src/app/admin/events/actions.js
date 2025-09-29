@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import dbConnect from '@headlines/data-access/dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/next'
 import { deleteEvent, updateEvent, getEventDetails } from '@headlines/data-access'
 
 // These actions will be called by the client component.

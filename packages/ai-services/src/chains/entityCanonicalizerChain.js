@@ -19,7 +19,9 @@ const prompt = ChatPromptTemplate.fromMessages([
   ['human', '{entity_name}'],
 ])
 
-const chain = RunnableSequence.from([prompt, getUtilityModel(), new JsonOutputParser()])
+// --- DEFINITIVE FIX ---
+// The chain now ends with the model. The JsonOutputParser is removed.
+const chain = RunnableSequence.from([prompt, getUtilityModel()])
 
 export const entityCanonicalizerChain = {
   invoke: (input) =>

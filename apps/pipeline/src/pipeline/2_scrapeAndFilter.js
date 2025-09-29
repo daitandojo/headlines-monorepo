@@ -196,39 +196,15 @@ export async function runScrapeAndFilter(pipelinePayload) {
   runStats.freshHeadlinesFound = validatedArticles.length
 
   if (validatedArticles.length > 0) {
-    const bulkOps = validatedArticles.map((article) => ({
-      updateOne: {
-        filter: { link: article.link },
-        update: {
-          $setOnInsert: {
-            _id: new mongoose.Types.ObjectId(),
-            headline: article.headline,
-            newspaper: article.newspaper,
-            source: article.source,
-            country: article.country,
-            status: 'scraped',
-          },
-        },
-        upsert: true,
-      },
+    // --- START LOGIC FIX ---
+    // Instead of saving to DB, create in-memory objects with synthetic IDs.
+    // These will be passed through the pipeline and saved only at the end.
+    pipelinePayload.articlesForPipeline = validatedArticles.map((article) => ({
+      ...article,
+      _id: new mongoose.Types.ObjectId(), // Assign a temporary ID for tracking
+      status: 'scraped',
     }))
-
-    const result = await Article.bulkWrite(bulkOps, { ordered: false })
-    if (result.hasWriteErrors()) {
-      logger.warn(
-        { details: result.getWriteErrors() },
-        'Non-fatal errors occurred during bulk article save.'
-      )
-    }
-
-    logger.info(
-      `Successfully saved/upserted ${validatedArticles.length} fresh & validated articles to the database.`
-    )
-
-    const savedArticleLinks = validatedArticles.map((a) => a.link)
-    pipelinePayload.articlesForPipeline = await Article.find({
-      link: { $in: savedArticleLinks },
-    }).lean()
+    // --- END LOGIC FIX ---
   } else {
     logger.info('No new, validated articles to process. Ending run early.')
     pipelinePayload.articlesForPipeline = []

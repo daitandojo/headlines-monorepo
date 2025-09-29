@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import dbConnect from '@headlines/data-access/dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/next'
 import { updateOpportunity, deleteOpportunity } from '@headlines/data-access'
 
 export async function updateOpportunityAction(opportunityId, updateData) {

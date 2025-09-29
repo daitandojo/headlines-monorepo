@@ -7,7 +7,11 @@
   "license": "ISC",
   "exports": {
     ".": "./src/index.js",
-    "./dbConnect.js": "./src/dbConnect.js",
+    "./node": "./src/index.js",
+    "./next": "./src/next.js",
+    "./dbConnect": "./src/dbConnect.node.js",
+    "./dbConnect/node": "./src/dbConnect.node.js",
+    "./dbConnect/next": "./src/dbConnect.next.js",
     "./seed/dev-user.js": "./src/seed/dev-user.js"
   },
   "dependencies": {

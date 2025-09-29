@@ -20,7 +20,9 @@ const prompt = ChatPromptTemplate.fromMessages([
   ['human', 'Data for review: {payload_json_string}'],
 ])
 
-const chain = RunnableSequence.from([prompt, getHighPowerModel(), new JsonOutputParser()])
+// --- DEFINITIVE FIX ---
+// The chain now ends with the model. The JsonOutputParser is removed.
+const chain = RunnableSequence.from([prompt, getHighPowerModel()])
 
 export const judgeChain = {
   invoke: (input) => safeInvoke(chain, input, 'judgeChain', judgeSchema),

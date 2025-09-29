@@ -1,6 +1,6 @@
 // packages/data-access/src/actions/userSettings.js (Corrected)
 import { Subscriber } from '@headlines/models'
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 
 export async function clearDiscardedItems(userId) {
   if (!userId) {

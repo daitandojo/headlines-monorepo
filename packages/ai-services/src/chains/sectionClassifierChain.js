@@ -25,7 +25,9 @@ const INSTRUCTION = {
 const systemPrompt = [INSTRUCTION.whoYouAre, ...INSTRUCTION.guidelines].join('\n\n')
 const fullPrompt = `${systemPrompt}\n\nUser Input:\n{links_json_string}`
 const prompt = ChatPromptTemplate.fromTemplate(fullPrompt)
-const chain = RunnableSequence.from([prompt, getUtilityModel(), new JsonOutputParser()]) // Call the getter function
+// --- DEFINITIVE FIX ---
+// The chain now ends with the model. The JsonOutputParser is removed.
+const chain = RunnableSequence.from([prompt, getUtilityModel()]) // Call the getter function
 
 export const sectionClassifierChain = {
   invoke: (input) =>

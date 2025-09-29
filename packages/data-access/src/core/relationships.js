@@ -1,6 +1,6 @@
 // packages/data-access/src/actions/relationships.js (version 2.0.0)
 import { SynthesizedEvent, Opportunity } from '@headlines/models'
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 import { revalidatePath } from '../revalidate.js'
 import mongoose from 'mongoose'
 

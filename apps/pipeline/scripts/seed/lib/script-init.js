@@ -4,7 +4,7 @@ import { configure as configureScraperLogic } from '@headlines/scraper-logic/con
 import * as appConfig from '@headlines/config'
 import { refreshConfig, configStore } from '../../../src/config/dynamicConfig.js'
 import { initializeSettings, settings } from '@headlines/config'
-import dbConnect from '@headlines/data-access/dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 import * as aiServices from '@headlines/ai-services'
 
 let isInitialized = false

@@ -14,8 +14,7 @@ const nextConfig = {
       'sharp',
       'mongodb-client-encryption',
       'aws4',
-      'undici',
-      'playwright' // <-- ADD THIS LINE
+      'undici'
     )
 
     if (isServer) {

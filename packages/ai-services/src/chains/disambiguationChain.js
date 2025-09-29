@@ -19,7 +19,7 @@ const prompt = ChatPromptTemplate.fromMessages([
   ['human', '{inputText}'],
 ])
 
-const chain = RunnableSequence.from([prompt, getUtilityModel(), new JsonOutputParser()])
+const chain = RunnableSequence.from([prompt, getUtilityModel()])
 
 export const disambiguationChain = {
   invoke: (input) =>

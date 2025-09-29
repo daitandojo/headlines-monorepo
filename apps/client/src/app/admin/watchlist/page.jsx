@@ -1,7 +1,7 @@
 'use server'
 
 import { PageHeader, Button } from '@/components/shared'
-import dbConnect from '@headlines/data-access/dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/next'
 import {
   getAllWatchlistEntities,
   getSuggestions,

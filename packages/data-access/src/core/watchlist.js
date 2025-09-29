@@ -1,6 +1,6 @@
 // packages/data-access/src/actions/watchlist.js (Corrected)
 import { WatchlistEntity, Article, WatchlistSuggestion } from '@headlines/models'
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 
 export async function createWatchlistEntity(entityData) {
   try {

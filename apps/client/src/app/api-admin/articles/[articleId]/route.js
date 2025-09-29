@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import dbConnect from '@headlines/data-access/dbConnect'
+import dbConnect from '@headlines/data-access/dbConnect/next'
 import { updateArticle, deleteArticle } from '@headlines/data-access'
 import { Article } from '@headlines/models' // Import the model for GET
 import { createApiHandler } from '@/lib/api-handler'

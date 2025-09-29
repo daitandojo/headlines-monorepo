@@ -94,7 +94,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-29T13:20:36.398Z
+**Generated**: 2025-09-29T22:40:44.828Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/ai-services
 **Total Files**: 78
 **Package**: @headlines/ai-services@1.0.0
@@ -2685,23 +2685,22 @@ export async function callLanguageModel({
 ```
 
 ## 📄 src/lib/safeInvoke.js
-*Lines: 94, Size: 2.96 KB*
+*Lines: 94, Size: 3.06 KB*
 
 ```javascript
-// File: packages/ai-services/src/lib/safeInvoke.js
-
 'use server'
-import { logger } from '@headlines/utils-server/logger'
-import { getRedisClient } from '@headlines/utils-server/redisClient'
+
+import { logger } from '@headlines/utils-server/node'
+import { getRedisClient } from '@headlines/utils-server/node'
 import { createHash } from 'crypto'
-// REMOVED: StringOutputParser is no longer needed.
+import { StringOutputParser } from '@langchain/core/output_parsers'
 
 const MAX_RETRIES = 1
 const CACHE_TTL_SECONDS = 60 * 60 * 24
 const inMemoryCache = new Map()
 
 function createCacheKey(agentName, input) {
-  const hash = createHash('sha256') // FIX 1: Corrected hashing algorithm from 'sha269' to 'sha256'
+  const hash = createHash('sha256')
   hash.update(JSON.stringify(input))
   return `ai_cache:${agentName}:${hash.digest('hex')}`
 }
@@ -2718,10 +2717,7 @@ export async function safeInvoke(chain, input, agentName, zodSchema) {
         return JSON.parse(cachedResult)
       }
     } catch (err) {
-      logger.error(
-        { err, agent: agentName, key: cacheKey },
-        `Redis GET or PARSE failed for ${agentName}.`
-      )
+      logger.error({ err, agent: agentName, key: cacheKey }, `Redis GET or PARSE failed.`)
     }
   } else if (inMemoryCache.has(cacheKey)) {
     logger.trace({ agent: agentName }, `[In-Memory Cache HIT] for ${agentName}.`)
@@ -2730,23 +2726,31 @@ export async function safeInvoke(chain, input, agentName, zodSchema) {
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      // FIX 2: Invoke the chain directly. It already has a JsonOutputParser.
-      // This eliminates the TypeError by not piping a JS object into a StringOutputParser.
-      const result = await chain.invoke(input)
+      const stringParser = new StringOutputParser()
+      const stringResult = await chain.pipe(stringParser).invoke(input)
+
+      // --- START OF THE FIX ---
+      // Check if the AI returned a valid string before trying to parse it.
+      if (typeof stringResult !== 'string' || stringResult.trim() === '') {
+        throw new Error('LLM returned an empty or non-string response.')
+      }
+      // --- END OF THE FIX ---
+
+      const jsonMatch = stringResult.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) {
+        throw new Error("No valid JSON object found in the LLM's string response.")
+      }
+      const result = JSON.parse(jsonMatch[0])
 
       const validation = zodSchema.safeParse(result)
       if (!validation.success) {
         logger.error(
-          {
-            details: validation.error.flatten(),
-            agent: agentName,
-            input,
-            output: result,
-          },
+          { details: validation.error.flatten(), agent: agentName, output: result },
           `Zod validation failed for ${agentName}.`
         )
         throw new Error('Zod validation failed')
       }
+
       const dataToCache = validation.data
 
       if (redis) {
@@ -2762,14 +2766,10 @@ export async function safeInvoke(chain, input, agentName, zodSchema) {
       }
       return dataToCache
     } catch (error) {
-      if (
-        (error.message.includes('JSON') ||
-          error.message.includes('Zod validation failed')) &&
-        attempt < MAX_RETRIES
-      ) {
+      if (attempt < MAX_RETRIES) {
         logger.warn(
-          { agent: agentName, attempt: attempt + 1 },
-          `LLM output validation failed for ${agentName}. Retrying...`
+          { agent: agentName, attempt: attempt + 1, error: error.message },
+          `Invocation failed for ${agentName}. Retrying...`
         )
         continue
       }

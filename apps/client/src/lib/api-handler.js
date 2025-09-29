@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifySession, verifyAdmin } from '@/lib/auth/server'
-import dbConnect from '@headlines/data-access/dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/next'
 
 /**
  * A higher-order function for ADMIN API routes.

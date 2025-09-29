@@ -3,7 +3,7 @@
 
 import mongoose from 'mongoose'
 import { Article } from '@headlines/models'
-import dbConnect from '@headlines/data-access/dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 import { logger } from '@headlines/utils-server'
 import colors from 'ansi-colors'
 

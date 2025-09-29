@@ -22,16 +22,16 @@ const systemPrompt = `You are a data cleaning expert. Your sole task is to analy
 12. anything starting with "Unknown" should simply be "Unknown"
 13.  If a valid country name can be determined, return it.
 14.  If the input is ambiguous or does not contain a clear country, you MUST return null.
-15.  You MUST respond ONLY with a valid JSON object in this format: {{"country": "Correct Country Name"}} or {{"country": null}}`;
+15.  You MUST respond ONLY with a valid JSON object in this format: {{"country": "Correct Country Name"}} or {{"country": null}}`
 
-// DEFINITIVE FIX: The template variable must match the key used in the input object.
-// Langchain expects the input variable to be directly in the template string.
 const prompt = ChatPromptTemplate.fromMessages([
   ['system', systemPrompt],
   ['human', 'Location String: "{location_string}"'],
 ])
 
-const chain = RunnableSequence.from([prompt, getUtilityModel(), new JsonOutputParser()])
+// --- DEFINITIVE FIX ---
+// The chain now ends with the model. The JsonOutputParser is removed.
+const chain = RunnableSequence.from([prompt, getUtilityModel()])
 
 export const countryCorrectionChain = {
   invoke: (input) =>

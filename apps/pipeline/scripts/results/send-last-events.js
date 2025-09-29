@@ -6,7 +6,7 @@ import { logger } from '@headlines/utils-server'
 import { Subscriber, SynthesizedEvent } from '@headlines/models'
 import { sendNotifications } from '../../src/modules/notifications/index.js'
 import { refreshConfig } from '../../src/config/dynamicConfig.js'
-import dbConnect from '@headlines/data-access/dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 import mongoose from 'mongoose'
 
 async function main() {

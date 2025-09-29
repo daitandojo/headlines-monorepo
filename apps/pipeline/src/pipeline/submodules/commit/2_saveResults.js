@@ -10,7 +10,18 @@ export async function saveResultsToDb(
   finalOpportunitiesToSave
 ) {
   const { assessedCandidates, isDryRun, runStats } = pipelinePayload
-  const articlesToSave = assessedCandidates || []
+
+  // --- START LOGIC FIX ---
+  // The articles to be saved are no longer just 'assessedCandidates'.
+  // We need to find the specific articles that were successfully processed
+  // into the final, approved events.
+  const finalEventArticleLinks = new Set(
+    finalEventsToSave.flatMap((event) => event.source_articles.map((a) => a.link))
+  )
+  const articlesToSave = (pipelinePayload.enrichedArticles || []).filter((article) =>
+    finalEventArticleLinks.has(article.link)
+  )
+  // --- END LOGIC FIX ---
 
   if (isDryRun) {
     logger.warn('DRY RUN: Simulating database save.')
@@ -34,11 +45,11 @@ export async function saveResultsToDb(
         finalOpportunitiesToSave,
         savedEvents
       )
-      // DEFINITIVE FIX: Ensure the returned objects are plain JS objects (.lean())
-      // The `savePipelineResults` already returns lean objects, so this is a confirmation of that contract.
+      // The `savePipelineResults` and `enrichAndLinkOpportunities` functions
+      // already return lean objects, so no need for JSON stringify/parse.
       return {
-        savedEvents: JSON.parse(JSON.stringify(savedEvents)),
-        savedOpportunities: JSON.parse(JSON.stringify(savedOpportunities)),
+        savedEvents,
+        savedOpportunities,
         articlesSavedCount: articlesToSave.length,
       }
     } catch (error) {
@@ -48,7 +59,7 @@ export async function saveResultsToDb(
       )
       runStats.errors.push('CRITICAL: Opportunity processing failed: ' + error.message)
       return {
-        savedEvents: JSON.parse(JSON.stringify(savedEvents)),
+        savedEvents,
         savedOpportunities: [],
         articlesSavedCount: articlesToSave.length,
       }

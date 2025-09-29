@@ -36,21 +36,19 @@ export async function safeInvoke(chain, input, agentName, zodSchema) {
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
+      // --- START OF THE DEFINITIVE FIX ---
+      // The chain now outputs a raw BaseMessage. We pipe it to a StringOutputParser
+      // here to get the raw string content from the AI.
       const stringParser = new StringOutputParser()
       const stringResult = await chain.pipe(stringParser).invoke(input)
 
-      // --- START OF THE FIX ---
-      // Check if the AI returned a valid string before trying to parse it.
-      if (typeof stringResult !== 'string' || stringResult.trim() === '') {
-        throw new Error('LLM returned an empty or non-string response.')
-      }
-      // --- END OF THE FIX ---
-
+      // This is more robust because it finds the JSON even if the AI adds extra text.
       const jsonMatch = stringResult.match(/\{[\s\S]*\}/)
       if (!jsonMatch) {
         throw new Error("No valid JSON object found in the LLM's string response.")
       }
       const result = JSON.parse(jsonMatch[0])
+      // --- END OF THE DEFINITIVE FIX ---
 
       const validation = zodSchema.safeParse(result)
       if (!validation.success) {

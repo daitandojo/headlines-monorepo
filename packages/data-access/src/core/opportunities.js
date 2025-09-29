@@ -1,6 +1,6 @@
 // File: packages/data-access/src/actions/opportunities.js (Corrected Sorting)
 
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 import { Opportunity } from '@headlines/models'
 import { buildQuery } from '../queryBuilder.js'
 import mongoose from 'mongoose'

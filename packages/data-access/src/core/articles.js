@@ -2,7 +2,7 @@
 
 import { Article } from '@headlines/models'
 import { buildQuery } from '../queryBuilder.js'
-import dbConnect from '../dbConnect.js' // Make sure this is imported
+import dbConnect from '@headlines/data-access/dbConnect/node' // Make sure this is imported
 import mongoose from 'mongoose'
 
 const ARTICLES_PER_PAGE = 50

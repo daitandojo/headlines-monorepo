@@ -38,7 +38,10 @@ const messages = [
 ]
 
 const prompt = ChatPromptTemplate.fromMessages(messages)
-const chain = RunnableSequence.from([prompt, getHighPowerModel(), new JsonOutputParser()])
+// --- DEFINITIVE FIX ---
+// The chain now ends with the model. The JsonOutputParser is removed.
+// The safeInvoke function will be responsible for all parsing.
+const chain = RunnableSequence.from([prompt, getHighPowerModel()])
 
 async function invoke(input) {
   const result = await safeInvoke(chain, input, 'articleChain', articleAssessmentSchema)

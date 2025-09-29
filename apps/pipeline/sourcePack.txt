@@ -1,6 +1,6 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 106 files, 31 directories
+Total: 107 files, 31 directories
 
 ```
 headlines/
@@ -31,6 +31,7 @@ headlines/
 │   │   └── 📄 send-test-push.js
 │   ├── 📁 results/
 │   │   ├── 📄 list-events.js
+│   │   ├── 📄 resend-todays-events.js
 │   │   └── 📄 send-last-events.js
 │   ├── 📁 scripts/
 │   │   └── 📄 list.js
@@ -145,9 +146,9 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-29T13:20:36.387Z
+**Generated**: 2025-09-29T22:40:44.817Z
 **Repository Path**: /home/mark/Repos/projects/headlines/apps/pipeline
-**Total Files**: 106
+**Total Files**: 107
 **Package**: @headlines/pipeline@1.0.0
 
 
@@ -311,7 +312,7 @@ export default config;
 ```
 
 ## 📄 package.json
-*Lines: 57, Size: 2.54 KB*
+*Lines: 58, Size: 2.62 KB*
 
 ```json
 {
@@ -332,6 +333,7 @@ export default config;
     "maintenance:fix-countries": "./run.sh scripts/maintenance/fix-event-countries.js",
     "maintenance:backfill-countries": "./run.sh scripts/maintenance/backfill-event-article-countries.js",
     "results:list-events": "./run.sh scripts/results/list-events.js",
+    "results:resend-today": "./run.sh scripts/results/resend-todays-events.js",
     "results:send-last-events": "./run.sh scripts/results/send-last-events.js --",
     "subscribers:list": "./run.sh scripts/subscribers/list.js",
     "subscribers:update": "./run.sh scripts/subscribers/update.js --",
@@ -925,7 +927,7 @@ cleanE24Headlines()
 ```
 
 ## 📄 scripts/maintenance/delete-today.js
-*Lines: 74, Size: 2.19 KB*
+*Lines: 74, Size: 2.16 KB*
 
 ```javascript
 // apps/pipeline/scripts/maintenance/delete-today.js (version 2.2.0)
@@ -937,8 +939,8 @@ import {
   SynthesizedEvent,
   Opportunity,
   RunVerdict,
-} from '../../../../packages/models/src/index.js'
-import dbConnect from '../../../../packages/data-access/src/dbConnect.js'
+} from '@headlines/models'
+import { dbConnect } from '@headlines/data-access/dbConnect/node'
 
 export async function deleteTodaysDocuments(confirm = false) {
   try {
@@ -2109,6 +2111,58 @@ main()
 
 ```
 
+## 📄 scripts/results/resend-todays-events.js
+*Lines: 46, Size: 1.24 KB*
+
+```javascript
+// File: apps/pipeline/scripts/maintenance/resend-todays-events.js
+'use server'
+
+import mongoose from 'mongoose'
+import { SynthesizedEvent } from '@headlines/models'
+import { initializeScriptEnv } from '../seed/lib/script-init.js'
+import { logger } from '@headlines/utils-server'
+import colors from 'ansi-colors'
+
+async function main() {
+  await initializeScriptEnv()
+  logger.info('🚀 Starting script to reset "emailed" status for today\'s events...')
+
+  try {
+    const today = new Date()
+    today.setUTCHours(0, 0, 0, 0)
+
+    const filter = { createdAt: { $gte: today } }
+
+    const result = await SynthesizedEvent.updateMany(filter, {
+      $set: { emailed: false },
+    })
+
+    if (result.matchedCount === 0) {
+      logger.info('✅ No events found from today. Nothing to reset.')
+    } else {
+      logger.info(
+        colors.green(
+          `✅ Successfully reset ${result.modifiedCount} of ${result.matchedCount} events from today to "unsent". They are now ready to be dispatched.`
+        )
+      )
+    }
+  } catch (error) {
+    logger.error(
+      { err: error },
+      'A critical error occurred during the event reset script.'
+    )
+  } finally {
+    if (mongoose.connection.readyState === 1) {
+      await mongoose.disconnect()
+    }
+  }
+}
+
+main()
+
+```
+
 ## 📄 scripts/results/send-last-events.js
 *Lines: 58, Size: 1.83 KB*
 
@@ -2121,7 +2175,7 @@ import { logger } from '@headlines/utils-server'
 import { Subscriber, SynthesizedEvent } from '@headlines/models'
 import { sendNotifications } from '../../src/modules/notifications/index.js'
 import { refreshConfig } from '../../src/config/dynamicConfig.js'
-import dbConnect from '@headlines/data-access/dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 import mongoose from 'mongoose'
 
 async function main() {
@@ -5113,7 +5167,7 @@ import { configure as configureScraperLogic } from '@headlines/scraper-logic/con
 import * as appConfig from '@headlines/config'
 import { refreshConfig, configStore } from '../../../src/config/dynamicConfig.js'
 import { initializeSettings, settings } from '@headlines/config'
-import dbConnect from '@headlines/data-access/dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 import * as aiServices from '@headlines/ai-services'
 
 let isInitialized = false
@@ -7036,7 +7090,7 @@ calculateHits()
 ```
 
 ## 📄 scripts/tools/diagnose-stuck-articles.js
-*Lines: 64, Size: 1.87 KB*
+*Lines: 64, Size: 1.88 KB*
 
 ```javascript
 // apps/pipeline/scripts/tools/diagnose-stuck-articles.js
@@ -7044,7 +7098,7 @@ calculateHits()
 
 import mongoose from 'mongoose'
 import { Article } from '@headlines/models'
-import dbConnect from '@headlines/data-access/dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 import { logger } from '@headlines/utils-server'
 import colors from 'ansi-colors'
 
@@ -9033,12 +9087,12 @@ export function createSupervisorEmailWrapper(bodyContent, subject) {
 ```
 
 ## 📄 src/modules/notifications/emailDispatcher.js
-*Lines: 135, Size: 4.31 KB*
+*Lines: 131, Size: 4.34 KB*
 
 ```javascript
-// apps/pipeline/src/modules/notifications/emailDispatcher.js
+// apps/pipeline/src/modules/notifications/emailDispatcher.js (version 4.0.1)
 import { groupItemsByCountry, getCountryFlag } from '@headlines/utils-shared'
-import { logger, auditLogger } from '@headlines/utils-server'
+import { logger } from '@headlines/utils-server'
 import { createPersonalizedEmailBody } from '../email/components/emailBodyBuilder.js'
 import { sendGenericEmail as sendWealthEventsEmail } from '@headlines/utils-server'
 import {
@@ -9079,6 +9133,7 @@ export async function sendBulkEmails(emailQueue) {
         continue
       }
 
+      // --- AI-Powered Subject and Intro Generation ---
       const eventsByCountry = groupItemsByCountry(events, 'country')
       const primaryCountry = Object.keys(eventsByCountry)[0]
       const countryFlag = getCountryFlag(primaryCountry)
@@ -9088,6 +9143,7 @@ export async function sendBulkEmails(emailQueue) {
         summary: e.synthesized_summary,
       }))
 
+      // DEFINITIVE FIX: Use direct await calls instead of
       const [subjectResult, introResult] = await Promise.all([
         emailSubjectChain({
           events_json_string: JSON.stringify(eventPayloadForAI),
@@ -9135,6 +9191,7 @@ export async function sendBulkEmails(emailQueue) {
 
       if (targetLanguage !== 'English') {
         logger.info(`Translating email for ${user.email} into ${targetLanguage}...`)
+        // DEFINITIVE FIX: Use direct await calls instead of
         const translationResult = await translateChain({
           language: targetLanguage,
           html_content: htmlBody,
@@ -9150,15 +9207,8 @@ export async function sendBulkEmails(emailQueue) {
         }
       }
 
-      auditLogger.info(
-        { context: { recipient: user.email, subject, event_count: events.length } },
-        'Preparing to Send User Email'
-      )
-      const wasSent = await sendWealthEventsEmail({
-        to: user.email,
-        subject,
-        html: finalHtmlBody,
-      })
+      const mailOptions = { to: user.email, subject, html: finalHtmlBody }
+      const wasSent = await sendWealthEventsEmail(mailOptions)
       if (wasSent) successCount++
     } catch (error) {
       logger.error(
@@ -9553,7 +9603,7 @@ import { logger } from '@headlines/utils-server'
 import { configure as configureScraperLogic } from '@headlines/scraper-logic/config.js'
 import { env, initializeSettings, settings } from '@headlines/config'
 import { refreshConfig, configStore } from '../config/dynamicConfig.js'
-import dbConnect from '@headlines/data-access/dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 import { deleteTodaysDocuments } from '../../scripts/maintenance/delete-today.js'
 import * as aiServices from '@headlines/ai-services'
 import { performDatabaseHousekeeping } from '../utils/housekeeping.js'

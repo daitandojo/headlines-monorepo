@@ -1,7 +1,7 @@
 // src/actions/knowledge.js (Corrected)
 import { Pinecone } from '@pinecone-database/pinecone'
 import mongoose from 'mongoose'
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 import { Article } from '@headlines/models'
 import { generateEmbedding } from '@headlines/ai-services'
 import { env } from '@headlines/config'

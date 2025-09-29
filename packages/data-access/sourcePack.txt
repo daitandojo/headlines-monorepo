@@ -1,6 +1,6 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 25 files, 3 directories
+Total: 27 files, 3 directories
 
 ```
 headlines/
@@ -27,7 +27,9 @@ headlines/
 │   │   └── 📄 watchlist.js
 │   ├── 📁 seed/
 │   │   └── 📄 dev-user.js
-│   ├── 📄 dbConnect.js
+│   ├── 📄 dbConnect.core.js
+│   ├── 📄 dbConnect.next.js
+│   ├── 📄 dbConnect.node.js
 │   ├── 📄 index.js
 │   ├── 📄 queryBuilder.js
 │   └── 📄 revalidate.js
@@ -36,9 +38,9 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-29T13:20:36.405Z
+**Generated**: 2025-09-29T22:40:44.835Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/data-access
-**Total Files**: 25
+**Total Files**: 27
 **Package**: @headlines/data-access@1.0.0
 **Description**: Shared, server-only data access logic for the Headlines monorepo.
 
@@ -48,7 +50,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 23, Size: 627 Bytes*
+*Lines: 27, Size: 794 Bytes*
 
 ```json
 {
@@ -60,7 +62,11 @@ headlines/
   "license": "ISC",
   "exports": {
     ".": "./src/index.js",
-    "./dbConnect.js": "./src/dbConnect.js",
+    "./node": "./src/index.js",
+    "./next": "./src/next.js",
+    "./dbConnect": "./src/dbConnect.node.js",
+    "./dbConnect/node": "./src/dbConnect.node.js",
+    "./dbConnect/next": "./src/dbConnect.next.js",
     "./seed/dev-user.js": "./src/seed/dev-user.js"
   },
   "dependencies": {
@@ -77,7 +83,7 @@ headlines/
 ```
 
 ## 📄 src/core/admin.js
-*Lines: 232, Size: 6.72 KB*
+*Lines: 240, Size: 7.17 KB*
 
 ```javascript
 'use server'
@@ -91,10 +97,11 @@ import {
   SourceSuggestion,
 } from '@headlines/models'
 import { buildQuery } from '../queryBuilder.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 
 export async function createSubscriber(userData) {
   try {
-    await dbConnect();
+    await dbConnect()
     const newUser = new Subscriber(userData)
     await newUser.save()
     return { success: true, subscriber: JSON.parse(JSON.stringify(newUser)) }
@@ -107,7 +114,7 @@ export async function createSubscriber(userData) {
 
 export async function updateSubscriber(userId, updateData) {
   try {
-    await dbConnect();
+    await dbConnect()
     if (updateData.password === '') delete updateData.password
     const user = await Subscriber.findByIdAndUpdate(
       userId,
@@ -124,7 +131,7 @@ export async function updateSubscriber(userId, updateData) {
 
 export async function deleteSubscriber(userId) {
   try {
-    await dbConnect();
+    await dbConnect()
     const result = await Subscriber.findByIdAndDelete(userId)
     if (!result) return { success: false, error: 'User not found.' }
     return { success: true }
@@ -136,7 +143,7 @@ export async function deleteSubscriber(userId) {
 
 export async function createCountry(countryData) {
   try {
-    await dbConnect();
+    await dbConnect()
     const newCountry = new Country(countryData)
     await newCountry.save()
     return { success: true, country: JSON.parse(JSON.stringify(newCountry)) }
@@ -148,7 +155,7 @@ export async function createCountry(countryData) {
 
 export async function updateCountry(countryId, updateData) {
   try {
-    await dbConnect();
+    await dbConnect()
     const country = await Country.findByIdAndUpdate(
       countryId,
       { $set: updateData },
@@ -163,7 +170,7 @@ export async function updateCountry(countryId, updateData) {
 
 export async function createSource(sourceData) {
   try {
-    await dbConnect();
+    await dbConnect()
     const newSource = new Source(sourceData)
     await newSource.save()
     return { success: true, source: JSON.parse(JSON.stringify(newSource)) }
@@ -176,7 +183,7 @@ export async function createSource(sourceData) {
 
 export async function updateSource(sourceId, updateData) {
   try {
-    await dbConnect();
+    await dbConnect()
     const updatedSource = await Source.findByIdAndUpdate(
       sourceId,
       { $set: updateData },
@@ -191,7 +198,7 @@ export async function updateSource(sourceId, updateData) {
 
 export const getAllCountries = async () => {
   try {
-    await dbConnect();
+    // await dbConnect(); // Intentionally left out, handled by caller
     const countries = await Country.aggregate([
       { $match: {} },
       {
@@ -231,6 +238,7 @@ export const getAllCountries = async () => {
     ])
     return { success: true, data: JSON.parse(JSON.stringify(countries)) }
   } catch (e) {
+    console.error('[getAllCountries Error]', e)
     return { success: false, error: 'Failed to fetch countries.' }
   }
 }
@@ -241,7 +249,7 @@ export const getAllSubscribers = async ({
   sort = 'createdAt_desc',
 }) => {
   try {
-    await dbConnect();
+    // await dbConnect(); // Intentionally left out, handled by caller
     const { queryFilter, sortOptions } = await buildQuery(Subscriber, { filters, sort })
     const SUBSCRIBERS_PER_PAGE = 50
     const skipAmount = (page - 1) * SUBSCRIBERS_PER_PAGE
@@ -260,12 +268,16 @@ export const getAllSubscribers = async ({
   }
 }
 
-export const getAllSources = async () => {
+export const getAllSources = async ({ country = null } = {}) => {
   try {
-    await dbConnect();
-    const sources = await Source.find({}).sort({ country: 1, name: 1 }).lean()
+    const filter = {}
+    if (country) {
+      filter.country = country
+    }
+    const sources = await Source.find(filter).sort({ name: 1 }).lean()
     return { success: true, data: JSON.parse(JSON.stringify(sources)) }
   } catch (e) {
+    console.error('[getAllSources Error]', e)
     return { success: false, error: 'Failed to fetch sources.' }
   }
 }
@@ -276,11 +288,12 @@ export const getAllWatchlistEntities = async ({
   sort = 'name_asc',
 } = {}) => {
   try {
+    // await dbConnect(); // Intentionally left out, handled by caller
     const { queryFilter, sortOptions } = await buildQuery(WatchlistEntity, {
       filters,
       sort,
     })
-    const ITEMS_PER_PAGE = 50 // A reasonable default
+    const ITEMS_PER_PAGE = 50
     const skipAmount = (page - 1) * ITEMS_PER_PAGE
 
     const [entities, total] = await Promise.all([
@@ -301,13 +314,14 @@ export const getAllWatchlistEntities = async ({
 
 export const getSuggestions = async () => {
   try {
-    await dbConnect();
+    // await dbConnect(); // Intentionally left out, handled by caller
     const [watchlistSuggestions, sourceSuggestions] = await Promise.all([
       WatchlistSuggestion.find({ status: 'candidate' }).sort({ createdAt: -1 }).lean(),
       SourceSuggestion.find({ status: 'pending' }).sort({ createdAt: -1 }).lean(),
     ])
     return { success: true, data: { watchlistSuggestions, sourceSuggestions } }
   } catch (e) {
+    console.error('[getSuggestions Error]', e)
     return { success: false, error: 'Failed to fetch suggestions.' }
   }
 }
@@ -356,14 +370,14 @@ export async function suggestSelector(url, targetType) {
 ```
 
 ## 📄 src/core/articles.js
-*Lines: 71, Size: 2.14 KB*
+*Lines: 71, Size: 2.16 KB*
 
 ```javascript
 'use server'
 
 import { Article } from '@headlines/models'
 import { buildQuery } from '../queryBuilder.js'
-import dbConnect from '../dbConnect.js' // Make sure this is imported
+import dbConnect from '@headlines/data-access/dbConnect/node' // Make sure this is imported
 import mongoose from 'mongoose'
 
 const ARTICLES_PER_PAGE = 50
@@ -508,7 +522,7 @@ export async function generateChatTitle(messages) {
 ```
 
 ## 📄 src/core/dashboard.js
-*Lines: 105, Size: 2.77 KB*
+*Lines: 105, Size: 2.79 KB*
 
 ```javascript
 // File: packages/data-access/src/actions/dashboard.js
@@ -521,7 +535,7 @@ import {
   Opportunity,
   Country,
 } from '@headlines/models'
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 
 export async function getDashboardStats() {
   try {
@@ -619,12 +633,12 @@ export async function getGlobalCountries() {
 ```
 
 ## 📄 src/core/email.js
-*Lines: 46, Size: 1.57 KB*
+*Lines: 46, Size: 1.6 KB*
 
 ```javascript
 // packages/data-access/src/actions/email.js (version 1.0)
 import { SynthesizedEvent, Opportunity, Article } from '@headlines/models'
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 // This import will need a proper mailer service setup, for now we mock it.
 // import { sendSingleItemEmail } from '@/lib/mailer';
 
@@ -671,12 +685,12 @@ export { sendItemByEmail }
 ```
 
 ## 📄 src/core/events.js
-*Lines: 75, Size: 2.41 KB*
+*Lines: 75, Size: 2.43 KB*
 
 ```javascript
 'use server'
 
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 import { SynthesizedEvent, Article, Opportunity } from '@headlines/models'
 import { buildQuery } from '../queryBuilder.js'
 import mongoose from 'mongoose'
@@ -689,7 +703,7 @@ export async function getEvents({
   sort = 'createdAt_desc',
   userId = null,
 }) {
-  await dbConnect() // <-- ADD THIS LINE
+  await dbConnect() // <-- ADD THIS BACK
   const { queryFilter, sortOptions } = await buildQuery(SynthesizedEvent, {
     filters,
     sort,
@@ -710,7 +724,7 @@ export async function getEvents({
 }
 
 export async function getEventDetails(eventId) {
-  await dbConnect() // <-- ADD THIS LINE
+  await dbConnect() // <-- ADD THIS BACK
   if (!mongoose.Types.ObjectId.isValid(eventId))
     return { success: false, error: 'Invalid event ID' }
   const event = await SynthesizedEvent.findById(eventId)
@@ -721,7 +735,7 @@ export async function getEventDetails(eventId) {
 }
 
 export async function updateEvent(eventId, updateData) {
-  await dbConnect() // <-- ADD THIS LINE
+  await dbConnect() // <-- ADD THIS BACK
   if (!mongoose.Types.ObjectId.isValid(eventId))
     return { success: false, error: 'Invalid event ID' }
   const event = await SynthesizedEvent.findByIdAndUpdate(
@@ -734,7 +748,7 @@ export async function updateEvent(eventId, updateData) {
 }
 
 export async function deleteEvent(eventId) {
-  await dbConnect() // <-- ADD THIS LINE
+  await dbConnect() // <-- ADD THIS BACK
   if (!mongoose.Types.ObjectId.isValid(eventId))
     return { success: false, error: 'Invalid event ID' }
   const result = await SynthesizedEvent.findByIdAndDelete(eventId)
@@ -752,13 +766,12 @@ export async function deleteEvent(eventId) {
 ```
 
 ## 📄 src/core/export.js
-*Lines: 262, Size: 8.07 KB*
+*Lines: 165, Size: 5.59 KB*
 
 ```javascript
-// packages/data-access/src/actions/export.js
 import { Opportunity, Subscriber, SynthesizedEvent, Article } from '@headlines/models'
 import { buildQuery } from '../queryBuilder.js'
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 
 // --- Helper Functions ---
 
@@ -804,48 +817,91 @@ function convertToCSV(data, columns) {
 }
 
 function convertToExcelXML(data, columns) {
-  let xml = `<?xml version="1.0"?>
-    <?mso-application progid="Excel.Sheet"?>
-    <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
-     xmlns:o="urn:schemas-microsoft-com:office:office"
-     xmlns:x="urn:schemas-microsoft-com:office:excel"
-     xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
-     xmlns:html="http://www.w3.org/TR/REC-html40">
-     <Worksheet ss:Name="Export">
-      <Table>`
-
+  let xml = `<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" xmlns:html="http://www.w3.org/TR/REC-html40"><Worksheet ss:Name="Export"><Table>`
   xml += '<Row>'
   columns.forEach((col) => {
     xml += `<Cell ss:StyleID="s1"><Data ss:Type="String">${escapeXml(col.header)}</Data></Cell>`
   })
   xml += '</Row>'
-
   data.forEach((row) => {
     xml += '<Row>'
     columns.forEach((col) => {
       let value = col.key.split('.').reduce((o, i) => (o ? o[i] : ''), row)
       if (value === null || value === undefined) value = ''
       if (Array.isArray(value)) value = value.join('; ')
-
       let type = typeof value === 'number' ? 'Number' : 'String'
       if (value instanceof Date) {
         type = 'DateTime'
         value = value.toISOString()
       }
-
       xml += `<Cell><Data ss:Type="${type}">${escapeXml(value)}</Data></Cell>`
     })
     xml += '</Row>'
   })
-
   xml += `</Table><Styles><Style ss:ID="s1"><Font ss:Bold="1"/></Style></Styles></Worksheet></Workbook>`
   return xml
 }
 
-// --- Generic Exporter ---
-async function genericExporter({ model, columns, filters, sort, fileType }) {
+// --- START OF THE FIX ---
+// Consolidate all logic into a single, robust generateExport function.
+const entityConfig = {
+  opportunities: {
+    model: Opportunity,
+    columns: [
+      { header: 'Country', key: 'basedIn' },
+      { header: 'City', key: 'city' },
+      { header: 'Contact', key: 'reachOutTo' },
+      { header: 'Wealth ($M)', key: 'likelyMMDollarWealth' },
+      { header: 'Email', key: 'contactDetails.email' },
+      { header: 'Reason', key: 'whyContact' },
+      { header: 'Created', key: 'createdAt' },
+    ],
+  },
+  users: {
+    model: Subscriber,
+    columns: [
+      { header: 'Email', key: 'email' },
+      { header: 'FirstName', key: 'firstName' },
+      { header: 'LastName', key: 'lastName' },
+      { header: 'IsActive', key: 'isActive' },
+      { header: 'Role', key: 'role' },
+      { header: 'Tier', key: 'subscriptionTier' },
+      { header: 'Created', key: 'createdAt' },
+    ],
+  },
+  events: {
+    model: SynthesizedEvent,
+    columns: [
+      { header: 'Headline', key: 'synthesized_headline' },
+      { header: 'Summary', key: 'synthesized_summary' },
+      { header: 'Score', key: 'highest_relevance_score' },
+      { header: 'Country', key: 'country' },
+      { header: 'Created', key: 'createdAt' },
+    ],
+  },
+  articles: {
+    model: Article,
+    columns: [
+      { header: 'Headline', key: 'headline' },
+      { header: 'Newspaper', key: 'newspaper' },
+      { header: 'Country', key: 'country' },
+      { header: 'Headline Score', key: 'relevance_headline' },
+      { header: 'Article Score', key: 'relevance_article' },
+      { header: 'Link', key: 'link' },
+      { header: 'Created', key: 'createdAt' },
+    ],
+  },
+}
+
+export async function generateExport({ entity, fileType, filters, sort }) {
   try {
     await dbConnect()
+    const config = entityConfig[entity]
+    if (!config) {
+      return { success: false, error: `Invalid entity type for export: ${entity}` }
+    }
+
+    const { model, columns } = config
     const { queryFilter, sortOptions } = await buildQuery(model, {
       filters,
       sort,
@@ -855,178 +911,39 @@ async function genericExporter({ model, columns, filters, sort, fileType }) {
 
     if (fileType === 'csv') {
       const csv = convertToCSV(dataToExport, columns)
-      return { success: true, data: csv, contentType: 'text/csv' }
+      return { success: true, data: csv, contentType: 'text/csv', extension: 'csv' }
     } else if (fileType === 'xlsx') {
       const xml = convertToExcelXML(dataToExport, columns)
-      return { success: true, data: xml, contentType: 'application/vnd.ms-excel' }
+      // The extension for this XML-based format is typically .xls
+      return {
+        success: true,
+        data: xml,
+        contentType: 'application/vnd.ms-excel',
+        extension: 'xls',
+      }
     }
-    return { success: false, error: 'Invalid file type.' }
+
+    return { success: false, error: `Invalid file type: ${fileType}` }
   } catch (e) {
+    console.error('[generateExport Error]', e)
     return { success: false, error: `Failed to generate export: ${e.message}` }
   }
 }
+// --- END OF THE FIX ---
 
-// --- Specific Implementations ---
-
-export const exportOpportunitiesToCSV = async (params) =>
-  genericExporter({
-    ...params,
-    model: Opportunity,
-    columns: [
-      { header: 'Country', key: 'basedIn' },
-      { header: 'City', key: 'city' },
-      { header: 'Contact', key: 'reachOutTo' },
-      { header: 'Wealth ($M)', key: 'likelyMMDollarWealth' },
-      { header: 'Email', key: 'contactDetails.email' },
-      { header: 'Reason', key: 'whyContact' },
-      { header: 'Created', key: 'createdAt' },
-    ],
-    fileType: 'csv',
-  })
-
-export const exportOpportunitiesToXLSX = async (params) =>
-  genericExporter({
-    ...params,
-    model: Opportunity,
-    columns: [
-      { header: 'Country', key: 'basedIn' },
-      { header: 'City', key: 'city' },
-      { header: 'Contact', key: 'reachOutTo' },
-      { header: 'Wealth ($M)', key: 'likelyMMDollarWealth' },
-      { header: 'Email', key: 'contactDetails.email' },
-      { header: 'Reason', key: 'whyContact' },
-      { header: 'Created', key: 'createdAt' },
-    ],
-    fileType: 'xlsx',
-  })
-
-export const exportUsersToCSV = async (params) =>
-  genericExporter({
-    ...params,
-    model: Subscriber,
-    columns: [
-      { header: 'Email', key: 'email' },
-      { header: 'FirstName', key: 'firstName' },
-      { header: 'LastName', key: 'lastName' },
-      { header: 'IsActive', key: 'isActive' },
-      { header: 'Role', key: 'role' },
-      { header: 'Tier', key: 'subscriptionTier' },
-      { header: 'Created', key: 'createdAt' },
-    ],
-    fileType: 'csv',
-  })
-
-export const exportUsersToXLSX = async (params) =>
-  genericExporter({
-    ...params,
-    model: Subscriber,
-    columns: [
-      { header: 'Email', key: 'email' },
-      { header: 'FirstName', key: 'firstName' },
-      { header: 'LastName', key: 'lastName' },
-      { header: 'IsActive', key: 'isActive' },
-      { header: 'Role', key: 'role' },
-      { header: 'Tier', key: 'subscriptionTier' },
-      { header: 'Created', key: 'createdAt' },
-    ],
-    fileType: 'xlsx',
-  })
-
-export const exportEventsToCSV = async (params) =>
-  genericExporter({
-    ...params,
-    model: SynthesizedEvent,
-    columns: [
-      { header: 'Headline', key: 'synthesized_headline' },
-      { header: 'Summary', key: 'synthesized_summary' },
-      { header: 'Score', key: 'highest_relevance_score' },
-      { header: 'Country', key: 'country' },
-      { header: 'Created', key: 'createdAt' },
-    ],
-    fileType: 'csv',
-  })
-
-export const exportEventsToXLSX = async (params) =>
-  genericExporter({
-    ...params,
-    model: SynthesizedEvent,
-    columns: [
-      { header: 'Headline', key: 'synthesized_headline' },
-      { header: 'Summary', key: 'synthesized_summary' },
-      { header: 'Score', key: 'highest_relevance_score' },
-      { header: 'Country', key: 'country' },
-      { header: 'Created', key: 'createdAt' },
-    ],
-    fileType: 'xlsx',
-  })
-
-export const exportArticlesToCSV = async (params) =>
-  genericExporter({
-    ...params,
-    model: Article,
-    columns: [
-      { header: 'Headline', key: 'headline' },
-      { header: 'Newspaper', key: 'newspaper' },
-      { header: 'Country', key: 'country' },
-      { header: 'Headline Score', key: 'relevance_headline' },
-      { header: 'Article Score', key: 'relevance_article' },
-      { header: 'Link', key: 'link' },
-      { header: 'Created', key: 'createdAt' },
-    ],
-    fileType: 'csv',
-  })
-
-export const exportArticlesToXLSX = async (params) =>
-  genericExporter({
-    ...params,
-    model: Article,
-    columns: [
-      { header: 'Headline', key: 'headline' },
-      { header: 'Newspaper', key: 'newspaper' },
-      { header: 'Country', key: 'country' },
-      { header: 'Headline Score', key: 'relevance_headline' },
-      { header: 'Article Score', key: 'relevance_article' },
-      { header: 'Link', key: 'link' },
-      { header: 'Created', key: 'createdAt' },
-    ],
-    fileType: 'xlsx',
-  })
-
-// --- Generic Exporter ---
-export async function generateExport({ model, columns, filters, sort, fileType }) {
-  await dbConnect()
-  const { queryFilter, sortOptions } = await buildQuery(model, {
-    filters,
-    sort,
-    baseQuery: {},
-  })
-  const dataToExport = await model.find(queryFilter).sort(sortOptions).lean()
-
-  if (fileType === 'csv') {
-    const csv = convertToCSV(dataToExport, columns)
-    return { success: true, data: csv, contentType: 'text/csv', extension: 'csv' }
-  } else if (fileType === 'xlsx') {
-    const xml = convertToExcelXML(dataToExport, columns)
-    return {
-      success: true,
-      data: xml,
-      contentType: 'application/vnd.ms-excel',
-      extension: 'xls',
-    }
-  }
-  throw new Error('Invalid file type specified for export.')
-}
+// Remove all the individual export functions like exportOpportunitiesToCSV, etc.
+// They are now replaced by the single generic function above.
 
 ```
 
 ## 📄 src/core/knowledge.js
-*Lines: 81, Size: 2.63 KB*
+*Lines: 81, Size: 2.65 KB*
 
 ```javascript
 // src/actions/knowledge.js (Corrected)
 import { Pinecone } from '@pinecone-database/pinecone'
 import mongoose from 'mongoose'
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 import { Article } from '@headlines/models'
 import { generateEmbedding } from '@headlines/ai-services'
 import { env } from '@headlines/config'
@@ -1107,12 +1024,12 @@ export async function addKnowledge(data) {
 ```
 
 ## 📄 src/core/opportunities.js
-*Lines: 86, Size: 2.89 KB*
+*Lines: 86, Size: 2.91 KB*
 
 ```javascript
 // File: packages/data-access/src/actions/opportunities.js (Corrected Sorting)
 
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 import { Opportunity } from '@headlines/models'
 import { buildQuery } from '../queryBuilder.js'
 import mongoose from 'mongoose'
@@ -1199,7 +1116,7 @@ export async function deleteOpportunity(oppId) {
 ```
 
 ## 📄 src/core/pipeline.js
-*Lines: 116, Size: 3.37 KB*
+*Lines: 116, Size: 3.4 KB*
 
 ```javascript
 // packages/data-access/src/actions/pipeline.js (version 1.0.0)
@@ -1211,7 +1128,7 @@ import {
   WatchlistEntity,
   WatchlistSuggestion,
 } from '@headlines/models'
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 
 // --- Source Analytics & Status ---
 export async function updateSourceAnalyticsBatch(bulkOps) {
@@ -1321,12 +1238,12 @@ export async function bulkWriteWatchlistSuggestions(bulkOps) {
 ```
 
 ## 📄 src/core/relationships.js
-*Lines: 52, Size: 1.74 KB*
+*Lines: 52, Size: 1.76 KB*
 
 ```javascript
 // packages/data-access/src/actions/relationships.js (version 2.0.0)
 import { SynthesizedEvent, Opportunity } from '@headlines/models'
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 import { revalidatePath } from '../revalidate.js'
 import mongoose from 'mongoose'
 
@@ -1379,44 +1296,57 @@ export async function unlinkOpportunityFromEvent(eventId, opportunityId) {
 ```
 
 ## 📄 src/core/settings.js
-*Lines: 39, Size: 1.22 KB*
+*Lines: 52, Size: 1.68 KB*
 
 ```javascript
-// packages/data-access/src/actions/settings.js (version 2.0.1)
+'use server'
+
 import { Setting } from '@headlines/models'
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node' // Ensure dbConnect is imported
 import { revalidatePath } from '../revalidate.js'
 
 export async function getSettings() {
   try {
-    await dbConnect()
+    await dbConnect() // <-- ADD THIS LINE
     const settings = await Setting.find({}).sort({ key: 1 }).lean()
     return { success: true, data: JSON.parse(JSON.stringify(settings)) }
   } catch (e) {
+    console.error('[getSettings Error]', e) // Add more specific logging
     return { success: false, error: 'Failed to fetch settings.' }
   }
 }
 
 export async function updateSettings(settingsData) {
   try {
-    await dbConnect()
+    await dbConnect() // <-- ADD THIS LINE
     const bulkOps = settingsData.map((setting) => {
       let castValue = setting.value
       if (setting.type === 'number') castValue = Number(setting.value)
       if (setting.type === 'boolean') castValue = Boolean(setting.value)
       return {
         updateOne: {
-          filter: { _id: setting._id },
-          update: { $set: { value: castValue } },
+          filter: { key: setting.key },
+          // Use $set to ensure the entire setting object is updated, not just the value
+          update: {
+            $set: {
+              value: castValue,
+              description: setting.description,
+              type: setting.type,
+            },
+          },
+          upsert: true, // Use upsert to be safe
         },
       }
     })
+
     if (bulkOps.length > 0) {
       await Setting.bulkWrite(bulkOps)
     }
+
     await revalidatePath('/admin/settings')
     return { success: true, message: `${bulkOps.length} settings updated.` }
   } catch (e) {
+    console.error('[updateSettings Error]', e) // Add more specific logging
     return { success: false, error: 'Failed to update settings.' }
   }
 }
@@ -1424,12 +1354,12 @@ export async function updateSettings(settingsData) {
 ```
 
 ## 📄 src/core/subscriber.js
-*Lines: 53, Size: 1.82 KB*
+*Lines: 53, Size: 1.84 KB*
 
 ```javascript
 // packages/data-access/src/actions/subscriber.js (Corrected)
 import { Subscriber, PushSubscription } from '@headlines/models'
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 
 export async function getCurrentSubscriber(userId) {
   if (!userId) return { success: false, error: 'User ID is required' }
@@ -1544,12 +1474,12 @@ export async function processUploadedArticle(item, userId) {
 ```
 
 ## 📄 src/core/userSettings.js
-*Lines: 25, Size: 745 Bytes*
+*Lines: 25, Size: 767 Bytes*
 
 ```javascript
 // packages/data-access/src/actions/userSettings.js (Corrected)
 import { Subscriber } from '@headlines/models'
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 
 export async function clearDiscardedItems(userId) {
   if (!userId) {
@@ -1575,19 +1505,17 @@ export async function clearDiscardedItems(userId) {
 ```
 
 ## 📄 src/core/verdicts.js
-*Lines: 38, Size: 1.4 KB*
+*Lines: 36, Size: 1.29 KB*
 
 ```javascript
-// packages/data-access/src/actions/verdicts.js (version 1.1.0)
 import { RunVerdict, SynthesizedEvent, Opportunity } from '@headlines/models'
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
+import mongoose from 'mongoose'
 
+// This function now assumes authentication has already been handled by the caller.
 export async function getRecentRunVerdicts() {
   try {
     await dbConnect()
-    // MODIFICATION: Select the entire 'runStats' object instead of individual fields.
-    // This provides the detailed data needed for the new dashboard view, including
-    // relevantHeadlines and enrichmentOutcomes for funnel analysis.
     const verdicts = await RunVerdict.find({})
       .sort({ createdAt: -1 })
       .limit(5)
@@ -1595,14 +1523,13 @@ export async function getRecentRunVerdicts() {
       .lean()
     return { success: true, data: JSON.parse(JSON.stringify(verdicts)) }
   } catch (e) {
+    console.error('[getRecentRunVerdicts Error]', e)
     return { success: false, error: 'Failed to fetch run verdicts.' }
   }
 }
 
+// This function is now purely for data retrieval.
 export async function getRunVerdictById(runId) {
-  const { isAdmin, error } = await verifyAdmin()
-  if (!isAdmin) return { success: false, error }
-
   try {
     await dbConnect()
     const verdict = await RunVerdict.findById(runId)
@@ -1612,6 +1539,7 @@ export async function getRunVerdictById(runId) {
     if (!verdict) return { success: false, error: 'Verdict not found.' }
     return { success: true, data: JSON.parse(JSON.stringify(verdict)) }
   } catch (e) {
+    console.error('[getRunVerdictById Error]', e)
     return { success: false, error: 'Failed to fetch verdict details.' }
   }
 }
@@ -1619,12 +1547,12 @@ export async function getRunVerdictById(runId) {
 ```
 
 ## 📄 src/core/watchlist.js
-*Lines: 113, Size: 3.69 KB*
+*Lines: 113, Size: 3.71 KB*
 
 ```javascript
 // packages/data-access/src/actions/watchlist.js (Corrected)
 import { WatchlistEntity, Article, WatchlistSuggestion } from '@headlines/models'
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 
 export async function createWatchlistEntity(entityData) {
   try {
@@ -1737,47 +1665,52 @@ export async function processWatchlistSuggestion({ suggestionId, action }) {
 
 ```
 
-## 📄 src/dbConnect.js
-*Lines: 38, Size: 1.26 KB*
+## 📄 src/dbConnect.core.js
+*Lines: 17, Size: 396 Bytes*
 
 ```javascript
-// File: packages/data-access/src/dbConnect.js (Final, Robust Version)
 import mongoose from 'mongoose'
-import { env } from '@headlines/config/next' // Use the Next.js entry point
 
-const MONGO_URI = env.MONGO_URI
-
-if (!MONGO_URI) {
-  throw new Error('Please define the MONGO_URI environment variable inside .env.local')
-}
-
-/**
- * An idempotent function to connect to MongoDB.
- * It relies on Mongoose's built-in connection management to avoid creating multiple connections.
- * If a connection is already established or pending, Mongoose will reuse it.
- */
-async function dbConnect() {
-  // Check if we have a connection to the database
-  // readyState 1 means connected.
+export async function dbConnect(MONGO_URI) {
+  if (!MONGO_URI) {
+    throw new Error('MONGO_URI must be provided to dbConnect.')
+  }
   if (mongoose.connection.readyState >= 1) {
     return
   }
-
-  // If no connection is active, create one. Mongoose handles pooling and prevents duplicates.
-  // This will return a promise that resolves on successful connection.
   try {
-    console.log('[dbConnect] No active connection. Attempting to connect...')
-    await mongoose.connect(MONGO_URI, {
-      bufferCommands: false, // Recommended for serverless environments
-    })
-    console.log('[dbConnect] MongoDB connection successful.')
+    await mongoose.connect(MONGO_URI, { bufferCommands: false })
   } catch (e) {
     console.error('[dbConnect] MongoDB connection failed:', e)
     throw e
   }
 }
 
-export default dbConnect
+```
+
+## 📄 src/dbConnect.next.js
+*Lines: 7, Size: 189 Bytes*
+
+```javascript
+import { env } from '@headlines/config/next'
+import { dbConnect as coreDbConnect } from './dbConnect.core.js'
+
+export default function dbConnect() {
+  return coreDbConnect(env.MONGO_URI)
+}
+
+```
+
+## 📄 src/dbConnect.node.js
+*Lines: 7, Size: 189 Bytes*
+
+```javascript
+import { env } from '@headlines/config/node'
+import { dbConnect as coreDbConnect } from './dbConnect.core.js'
+
+export default function dbConnect() {
+  return coreDbConnect(env.MONGO_URI)
+}
 
 ```
 
@@ -1813,34 +1746,33 @@ export * from './revalidate.js'
 ```
 
 ## 📄 src/queryBuilder.js
-*Lines: 98, Size: 2.96 KB*
+*Lines: 96, Size: 2.89 KB*
 
 ```javascript
-'use server'
-
 import { Subscriber } from '@headlines/models'
-import dbConnect from './dbConnect.js' // Import dbConnect
+import dbConnect from './dbConnect.node.js'
 
+// --- START OF THE FIX ---
+// The function MUST be marked as async.
 export async function buildQuery(
+  // --- END OF THE FIX ---
   model,
   { filters = {}, sort = 'date_desc', baseQuery = {}, userId = null }
 ) {
+  // This dbConnect call is now crucial for robustness
   await dbConnect()
+
   const andConditions = [{ ...baseQuery }]
   let user = null
 
-  // --- START OF THE FIX ---
-  // Only attempt to fetch the user if a valid userId is provided.
   if (userId) {
     user = await Subscriber.findById(userId)
       .select('discardedItems favoritedItems countries role')
       .lean()
   }
-  // --- END OF THE FIX ---
 
   const countryField = model.schema.paths.basedIn ? 'basedIn' : 'country'
 
-  // --- HIERARCHICAL FILTERING LOGIC ---
   if (user) {
     if (user.role === 'admin') {
       if (filters.country) {
@@ -1868,7 +1800,6 @@ export async function buildQuery(
     andConditions.push({ [countryField]: { $in: filters.country.split(',') } })
   }
 
-  // --- Other Filters ---
   if (filters.q) {
     const searchRegex = { $regex: filters.q, $options: 'i' }
     const orConditions = [
@@ -1947,12 +1878,12 @@ export async function revalidatePath(path, type) {
 ```
 
 ## 📄 src/seed/dev-user.js
-*Lines: 59, Size: 1.91 KB*
+*Lines: 62, Size: 1.91 KB*
 
 ```javascript
 // packages/data-access/src/seed/dev-user.js (version 2.0.0 - Standalone Safe)
 import { Subscriber } from '../../../models/src/index.js'
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 import mongoose from 'mongoose'
 // We cannot use a logger here as this might be called before initialization
 // import { logger } from '../../../utils/src/server.js';
@@ -1994,19 +1925,22 @@ export async function seedDevUser() {
     console.error('[Seed] ❌ Failed to seed development user:', error)
     // Close connection on error if it's open and this is a standalone script run
     if (mongoose.connection.readyState === 1 && import.meta.url.startsWith('file:')) {
-        await mongoose.disconnect();
+      await mongoose.disconnect()
     }
     return { success: false, error: error.message }
   }
 }
 
 // Allow script to be run directly from the command line
-if (import.meta.url.startsWith('file://') && process.argv[1] === import.meta.url.substring(7)) {
-    seedDevUser().finally(() => {
-        if (mongoose.connection.readyState === 1) {
-            mongoose.disconnect();
-        }
-    });
+if (
+  import.meta.url.startsWith('file://') &&
+  process.argv[1] === import.meta.url.substring(7)
+) {
+  seedDevUser().finally(() => {
+    if (mongoose.connection.readyState === 1) {
+      mongoose.disconnect()
+    }
+  })
 }
 
 ```

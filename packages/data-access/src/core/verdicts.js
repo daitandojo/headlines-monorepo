@@ -1,5 +1,5 @@
 import { RunVerdict, SynthesizedEvent, Opportunity } from '@headlines/models'
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 import mongoose from 'mongoose'
 
 // This function now assumes authentication has already been handled by the caller.

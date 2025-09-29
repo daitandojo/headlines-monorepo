@@ -1,6 +1,6 @@
 // packages/data-access/src/actions/subscriber.js (Corrected)
 import { Subscriber, PushSubscription } from '@headlines/models'
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 
 export async function getCurrentSubscriber(userId) {
   if (!userId) return { success: false, error: 'User ID is required' }

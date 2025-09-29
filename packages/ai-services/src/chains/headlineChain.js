@@ -34,7 +34,9 @@ const messages = [
 ]
 
 const prompt = ChatPromptTemplate.fromMessages(messages)
-const chain = RunnableSequence.from([prompt, getHighPowerModel(), new JsonOutputParser()])
+// --- DEFINITIVE FIX ---
+// The chain now ends with the model. The JsonOutputParser is removed.
+const chain = RunnableSequence.from([prompt, getHighPowerModel()])
 
 function prepareInput({ article, hits }) {
   let headlineWithContext = `[COUNTRY CONTEXT: ${article.country}] ${article.headline}`

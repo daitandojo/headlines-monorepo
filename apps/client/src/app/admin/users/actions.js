@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import dbConnect from '@headlines/data-access/dbConnect.js' // <-- Import dbConnect
+import dbConnect from '@headlines/data-access/dbConnect/next'
 import {
   updateSubscriber,
   deleteSubscriber,

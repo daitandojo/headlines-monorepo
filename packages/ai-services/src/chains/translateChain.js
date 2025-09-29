@@ -20,7 +20,9 @@ const prompt = ChatPromptTemplate.fromMessages([
   ['human', 'Target Language: {language}\\n\\nHTML Content:\\n```{html_content}```'],
 ])
 
-const chain = RunnableSequence.from([prompt, getUtilityModel(), new JsonOutputParser()])
+// --- DEFINITIVE FIX ---
+// The chain now ends with the model. The JsonOutputParser is removed.
+const chain = RunnableSequence.from([prompt, getUtilityModel()])
 
 export const translateChain = {
   invoke: (input) => safeInvoke(chain, input, 'translateChain', translateSchema),

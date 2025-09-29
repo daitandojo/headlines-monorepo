@@ -1,6 +1,6 @@
 // packages/data-access/src/actions/email.js (version 1.0)
 import { SynthesizedEvent, Opportunity, Article } from '@headlines/models'
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 // This import will need a proper mailer service setup, for now we mock it.
 // import { sendSingleItemEmail } from '@/lib/mailer';
 

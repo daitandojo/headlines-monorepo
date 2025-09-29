@@ -1,6 +1,6 @@
 // packages/data-access/src/seed/dev-user.js (version 2.0.0 - Standalone Safe)
 import { Subscriber } from '../../../models/src/index.js'
-import dbConnect from '../dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
 import mongoose from 'mongoose'
 // We cannot use a logger here as this might be called before initialization
 // import { logger } from '../../../utils/src/server.js';
@@ -42,17 +42,20 @@ export async function seedDevUser() {
     console.error('[Seed] ❌ Failed to seed development user:', error)
     // Close connection on error if it's open and this is a standalone script run
     if (mongoose.connection.readyState === 1 && import.meta.url.startsWith('file:')) {
-        await mongoose.disconnect();
+      await mongoose.disconnect()
     }
     return { success: false, error: error.message }
   }
 }
 
 // Allow script to be run directly from the command line
-if (import.meta.url.startsWith('file://') && process.argv[1] === import.meta.url.substring(7)) {
-    seedDevUser().finally(() => {
-        if (mongoose.connection.readyState === 1) {
-            mongoose.disconnect();
-        }
-    });
+if (
+  import.meta.url.startsWith('file://') &&
+  process.argv[1] === import.meta.url.substring(7)
+) {
+  seedDevUser().finally(() => {
+    if (mongoose.connection.readyState === 1) {
+      mongoose.disconnect()
+    }
+  })
 }

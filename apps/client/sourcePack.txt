@@ -1,6 +1,6 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 182 files, 63 directories
+Total: 195 files, 75 directories
 
 ```
 headlines/
@@ -62,6 +62,16 @@ headlines/
 │   │   │   │   ├── 📄 actions.js
 │   │   │   │   ├── 📄 columns.jsx
 │   │   │   │   └── 📄 page.jsx
+│   │   │   ├── 📁 runs/
+│   │   │   │   └── 📁 [runId]/
+│   │   │   │       └── 📄 page.jsx
+│   │   │   ├── 📁 scraper-ide/
+│   │   │   │   ├── 📄 page.jsx
+│   │   │   │   ├── 📄 useCountries.js
+│   │   │   │   └── 📄 useSources.js
+│   │   │   ├── 📁 settings/
+│   │   │   │   ├── 📄 page.jsx
+│   │   │   │   └── 📄 settings-form.jsx
 │   │   │   ├── 📁 users/
 │   │   │   │   ├── 📄 actions.js
 │   │   │   │   ├── 📄 columns.jsx
@@ -102,6 +112,9 @@ headlines/
 │   │   │           └── 📁 clear-discarded/
 │   │   │               └── 📄 route.js
 │   │   ├── 📁 api-admin/
+│   │   │   ├── 📁 ai-admin/
+│   │   │   │   └── 📁 executive-summary/
+│   │   │   │       └── 📄 route.js
 │   │   │   ├── 📁 articles/
 │   │   │   │   ├── 📁 [articleId]/
 │   │   │   │   │   └── 📄 route.js
@@ -112,6 +125,8 @@ headlines/
 │   │   │   │   ├── 📁 [eventId]/
 │   │   │   │   │   └── 📄 route.js
 │   │   │   │   └── 📄 route.js
+│   │   │   ├── 📁 export/
+│   │   │   │   └── 📄 route.js
 │   │   │   ├── 📁 opportunities/
 │   │   │   │   ├── 📁 [opportunityId]/
 │   │   │   │   └── 📄 route.js
@@ -120,6 +135,15 @@ headlines/
 │   │   │   │   │   └── 📄 route.js
 │   │   │   │   └── 📁 unlink/
 │   │   │   │       └── 📄 route.js
+│   │   │   ├── 📁 run-verdicts/
+│   │   │   │   └── 📁 [runId]/
+│   │   │   │       └── 📄 route.jsx
+│   │   │   ├── 📁 scrape/
+│   │   │   │   └── 📄 route.js
+│   │   │   ├── 📁 settings/
+│   │   │   │   └── 📄 route.js
+│   │   │   ├── 📁 sources/
+│   │   │   │   └── 📄 route.js
 │   │   │   ├── 📁 subscribers/
 │   │   │   │   ├── 📁 [subscriberId]/
 │   │   │   │   │   └── 📄 route.js
@@ -132,6 +156,7 @@ headlines/
 │   │   │   └── 📄 page.jsx
 │   │   ├── 📄 globals.css
 │   │   ├── 📄 layout.js
+│   │   ├── 📄 not-found.jsx
 │   │   ├── 📄 page.js
 │   │   └── 📄 providers.jsx
 │   ├── 📁 components/
@@ -253,10 +278,10 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-29T13:20:36.337Z
+**Generated**: 2025-09-29T22:40:44.794Z
 **Repository Path**: /home/mark/Repos/projects/headlines/apps/client
-**Total Files**: 170
-**Package**: @headlines/copyboard@1.0.0
+**Total Files**: 183
+**Package**: @headlines/client@1.0.0
 
 
 
@@ -313,7 +338,7 @@ next-env.d.ts
 ```
 
 ## 📄 app.config.js
-*Lines: 8, Size: 337 Bytes*
+*Lines: 9, Size: 332 Bytes*
 
 ```javascript
 // File: apps/client/app.config.js
@@ -321,9 +346,10 @@ next-env.d.ts
 // This file provides the minimal configuration needed by the shared
 // packages when they're used by the app's API routes.
 
-export const CONCURRENCY_LIMIT = 2;
-export const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-export const LLM_MODEL_UTILITY = process.env.LLM_MODEL_UTILITY || 'gpt-5-nano';
+export const CONCURRENCY_LIMIT = 2
+export const OPENAI_API_KEY = process.env.OPENAI_API_KEY
+export const LLM_MODEL_UTILITY = process.env.LLM_MODEL_UTILITY || 'gpt-5-nano'
+
 ```
 
 ## 📄 eslint.config.mjs
@@ -374,7 +400,7 @@ export default eslintConfig;
 ```
 
 ## 📄 next.config.mjs
-*Lines: 28, Size: 551 Bytes*
+*Lines: 29, Size: 584 Bytes*
 
 ```
 // File: apps/client/next.config.mjs
@@ -383,7 +409,7 @@ export default eslintConfig;
 const nextConfig = {
   transpilePackages: [
     '@headlines/config/next',
-    '@headlines/data-access/next',
+    '@headlines/data-access',
     '@headlines/models',
     '@headlines/utils-shared/next',
   ],
@@ -393,7 +419,8 @@ const nextConfig = {
       'sharp',
       'mongodb-client-encryption',
       'aws4',
-      'undici'
+      'undici',
+      'playwright' // <-- ADD THIS LINE
     )
 
     if (isServer) {
@@ -408,11 +435,11 @@ export default nextConfig
 ```
 
 ## 📄 package.json
-*Lines: 32, Size: 903 Bytes*
+*Lines: 50, Size: 1.55 KB*
 
 ```json
 {
-  "name": "@headlines/copyboard",
+  "name": "@headlines/client",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -426,27 +453,45 @@ export default nextConfig
     "@headlines/data-access": "workspace:*",
     "@headlines/models": "workspace:*",
     "@headlines/utils-shared": "workspace:*",
+    "@radix-ui/react-accordion": "^1.2.12",
+    "@radix-ui/react-alert-dialog": "^1.1.15",
+    "@radix-ui/react-checkbox": "^1.3.3",
+    "@radix-ui/react-dropdown-menu": "^2.1.16",
+    "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-popover": "^1.1.15",
+    "@radix-ui/react-scroll-area": "^1.2.10",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slot": "^1.1.0",
-    "class-variance-authority": "^0.7.0",
+    "@radix-ui/react-switch": "^1.2.6",
+    "@radix-ui/react-tabs": "^1.1.13",
+    "@radix-ui/react-tooltip": "^1.2.8",
+    "@tailwindcss/typography": "^0.5.13",
     "@tanstack/react-query": "^5.45.1",
     "@tanstack/react-query-devtools": "^5.45.1",
-    "react-intersection-observer": "^9.10.3",
+    "@tanstack/react-table": "^8.21.3",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
+    "framer-motion": "^12.23.22",
+    "jose": "^6.1.0",
     "lucide-react": "^0.379.0",
-    "tailwind-merge": "^2.3.0",
-    "tailwindcss-animate": "^1.0.7",
-    "@tailwindcss/typography": "^0.5.13",
+    "next-themes": "^0.4.6",
+    "react-intersection-observer": "^9.10.3",
     "react-markdown": "^9.0.1",
     "react-textarea-autosize": "^8.5.3",
     "rehype-raw": "^7.0.0",
-    "remark-gfm": "^4.0.0"
+    "remark-gfm": "^4.0.0",
+    "tailwind-merge": "^2.3.0",
+    "tailwindcss-animate": "^1.0.7",
+    "zustand": "^5.0.8"
   }
 }
 
 ```
 
 ## 📄 postcss.config.cjs
-*Lines: 13, Size: 218 Bytes*
+*Lines: 13, Size: 215 Bytes*
 
 ```
 // File: apps/client/postcss.config.js
@@ -499,22 +544,17 @@ module.exports = {
 ```
 
 ## 📄 public/sw.js
-*Lines: 95, Size: 2.8 KB*
+*Lines: 90, Size: 2.48 KB*
 
 ```javascript
-// public/sw.js (version 5.0)
-// This service worker is designed for reliability and immediate activation.
-
 self.addEventListener('install', (event) => {
   console.log('[Service Worker] Install event fired. New worker installing.')
-  // Force the waiting service worker to become the active service worker.
   event.waitUntil(self.skipWaiting())
   console.log('[Service Worker] skipWaiting() called.')
 })
 
 self.addEventListener('activate', (event) => {
   console.log('[Service Worker] Activate event fired. New worker activating.')
-  // Take control of all pages under this scope immediately.
   event.waitUntil(self.clients.claim())
   console.log('[Service Worker] clients.claim() called.')
 })
@@ -543,10 +583,10 @@ self.addEventListener('push', (event) => {
   const options = {
     body: data.body || 'New content has been added.',
     icon: data.icon || '/icons/icon-192x192.png',
-    badge: '/icons/icon-96x96.png', // A smaller badge icon for some platforms
+    badge: '/icons/icon-96x96.png',
     vibrate: [100, 50, 100],
     data: {
-      url: data.url || '/', // Ensure URL is always present in data
+      url: data.url || '/',
     },
     actions: [
       { action: 'view_event', title: 'View Event' },
@@ -600,7 +640,7 @@ self.addEventListener('notificationclick', (event) => {
 ```
 
 ## 📄 src/app/(client)/articles/page.js
-*Lines: 44, Size: 1.18 KB*
+*Lines: 44, Size: 1.17 KB*
 
 ```javascript
 // File: apps/client/src/app/(client)/articles/page.js
@@ -608,7 +648,7 @@ self.addEventListener('notificationclick', (event) => {
 // 'use server'
 
 import { DataView } from '@/components/client/DataView'
-import { getArticles } from '@headlines/data-access/next'
+import { getArticles } from '@headlines/data-access'
 import { getUserIdFromSession } from '@/lib/auth/server'
 
 export const dynamic = 'force-dynamic'
@@ -650,7 +690,7 @@ export default async function ArticlesPage({ searchParams }) {
 ```
 
 ## 📄 src/app/(client)/chat/page.js
-*Lines: 8, Size: 182 Bytes*
+*Lines: 8, Size: 179 Bytes*
 
 ```javascript
 // File: apps/client/src/app/(client)/chat/page.js
@@ -664,30 +704,36 @@ export default function ChatPage() {
 ```
 
 ## 📄 src/app/(client)/client-layout-wrapper.jsx
-*Lines: 11, Size: 413 Bytes*
+*Lines: 17, Size: 501 Bytes*
 
 ```jsx
-// File: apps/client/src/app/(client)/client-layout-wrapper.js
 'use client'
 
-import { AppShell } from '@/app/_components/AppShell'
+import { Header } from '@/components/client/Header'
+import { MainNavTabs } from '@/components/client/MainNavTabs'
 
 export function ClientLayoutWrapper({ children, serverProps }) {
-  // This is a Client Component that receives server-fetched props
-  // and passes them to the AppShell, which can now safely use client hooks.
-  return <AppShell serverProps={serverProps}>{children}</AppShell>
+  return (
+    <div className="container mx-auto p-4 md:p-8 flex flex-col min-h-screen">
+      <Header {...serverProps} />
+      <div className="sticky top-[5px] z-30 my-4">
+        <MainNavTabs />
+      </div>
+      <main className="flex-grow flex flex-col mt-0 min-h-0">{children}</main>
+    </div>
+  )
 }
 
 ```
 
 ## 📄 src/app/(client)/events/page.js
-*Lines: 44, Size: 1.29 KB*
+*Lines: 44, Size: 1.28 KB*
 
 ```javascript
 // File: apps/client/src/app/(client)/events/page.js (Corrected)
 
 import { DataView } from '@/components/client/DataView'
-import { getEvents } from '@headlines/data-access/next'
+import { getEvents } from '@headlines/data-access'
 import { getUserIdFromSession } from '@/lib/auth/server'
 
 export const dynamic = 'force-dynamic'
@@ -731,12 +777,12 @@ export default async function EventsPage({ searchParams }) {
 ```
 
 ## 📄 src/app/(client)/layout.js
-*Lines: 21, Size: 827 Bytes*
+*Lines: 21, Size: 773 Bytes*
 
 ```javascript
-// File: apps/client/src/app/(client)/layout.js (Restored)
+'use server'
 
-import { getDashboardStats, getGlobalCountries } from '@headlines/data-access/next'
+import { getDashboardStats, getGlobalCountries } from '@headlines/data-access'
 import { ClientLayoutWrapper } from './client-layout-wrapper'
 
 export default async function ClientLayout({ children }) {
@@ -765,7 +811,7 @@ export default async function ClientLayout({ children }) {
 
 'use server'
 
-import { getOpportunityDetails } from '@headlines/data-access/next'
+import { getOpportunityDetails } from '@headlines/data-access'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -907,7 +953,7 @@ export default async function OpportunityDossierPage({ params }) {
 ```
 
 ## 📄 src/app/(client)/opportunities/page.js
-*Lines: 47, Size: 1.3 KB*
+*Lines: 47, Size: 1.29 KB*
 
 ```javascript
 // File: apps/client/src/app/(client)/opportunities/page.js
@@ -915,7 +961,7 @@ export default async function OpportunityDossierPage({ params }) {
 // 'use server'
 
 import { DataView } from '@/components/client/DataView'
-import { getOpportunities } from '@headlines/data-access/next'
+import { getOpportunities } from '@headlines/data-access'
 import { getUserIdFromSession } from '@/lib/auth/server'
 
 export const dynamic = 'force-dynamic'
@@ -960,14 +1006,14 @@ export default async function OpportunitiesPage({ searchParams }) {
 ```
 
 ## 📄 src/app/(client)/settings/page.js
-*Lines: 26, Size: 768 Bytes*
+*Lines: 26, Size: 760 Bytes*
 
 ```javascript
 // File: apps/client/src/app/(client)/settings/page.js
 
 // 'use server'
 
-import { getGlobalCountries } from '@headlines/data-access/next'
+import { getGlobalCountries } from '@headlines/data-access'
 import { SettingsForm } from '@/components/client/SettingsForm'
 
 export const dynamic = 'force-dynamic'
@@ -992,7 +1038,7 @@ export default async function SettingsPage() {
 ```
 
 ## 📄 src/app/(client)/upload/page.js
-*Lines: 10, Size: 197 Bytes*
+*Lines: 10, Size: 194 Bytes*
 
 ```javascript
 // File: apps/client/src/app/(client)/upload/page.js
@@ -1008,30 +1054,22 @@ export default function UploadPage() {
 ```
 
 ## 📄 src/app/_components/AppShell.jsx
-*Lines: 76, Size: 2.3 KB*
+*Lines: 38, Size: 1.04 KB*
 
 ```jsx
-// File: apps/client/src/app/_components/AppShell.jsx (With Logging)
-
 'use client'
 
 import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { AnimatePresence } from 'framer-motion'
-import { Header } from '@/components/client/Header'
-import { MainNavTabs } from '@/components/client/MainNavTabs'
 import { SplashScreen } from '@/components/client/SplashScreen'
-import AdminNav from '@/components/admin/main-nav'
 
-export function AppShell({ children, serverProps }) {
+export function AppShell({ children }) {
   const pathname = usePathname()
-
-  // --- START: THE CRITICAL LOG ---
-  console.log('[AppShell DEBUG] Current pathname:', pathname)
-  // --- END: THE CRITICAL LOG ---
-
   const [isAppLoading, setIsAppLoading] = useState(true)
+
   useEffect(() => {
+    // Basic loading splash screen logic
     if (pathname.startsWith('/login')) {
       setIsAppLoading(false)
     } else {
@@ -1041,12 +1079,6 @@ export function AppShell({ children, serverProps }) {
   }, [pathname])
 
   const isLoginPage = pathname.startsWith('/login')
-  const isAdminPage = pathname.startsWith('/admin')
-  const isClientPage = !isLoginPage && !isAdminPage
-
-  console.log(
-    `[AppShell DEBUG] isLoginPage: ${isLoginPage}, isAdminPage: ${isAdminPage}, isClientPage: ${isClientPage}`
-  )
 
   if (isLoginPage) {
     return <>{children}</>
@@ -1055,33 +1087,9 @@ export function AppShell({ children, serverProps }) {
   return (
     <>
       <AnimatePresence>{isAppLoading && <SplashScreen />}</AnimatePresence>
-
       <div style={{ visibility: isAppLoading ? 'hidden' : 'visible' }}>
-        {isAdminPage && (
-          <div className="flex h-screen bg-background">
-            <AdminNav />
-            <main className="flex-1 overflow-y-auto p-6">{children}</main>
-          </div>
-        )}
-
-        {isClientPage && (
-          <div className="container mx-auto p-4 md:p-8 flex flex-col min-h-screen">
-            <Header {...serverProps} />
-            <div className="sticky top-[5px] z-30 my-4">
-              <MainNavTabs />
-            </div>
-            <main className="flex-grow flex flex-col mt-0 min-h-0">{children}</main>
-          </div>
-        )}
-
-        {/* ADD A FALLBACK RENDER FOR DEBUGGING */}
-        {!isClientPage && !isAdminPage && !isLoginPage && (
-          <div>
-            <h1>Fallback Render</h1>
-            <p>Pathname: {pathname}</p>
-            <div>{children}</div>
-          </div>
-        )}
+        {/* The AppShell no longer makes layout decisions. It just provides the splash screen and renders its children. */}
+        {children}
       </div>
     </>
   )
@@ -1090,20 +1098,24 @@ export function AppShell({ children, serverProps }) {
 ```
 
 ## 📄 src/app/_components/AppWrapper.jsx
-*Lines: 13, Size: 438 Bytes*
+*Lines: 17, Size: 418 Bytes*
 
 ```jsx
-// File: apps/client/src/app/_components/AppWrapper.jsx (Corrected)
+// File: apps/client/src/app/_components/AppWrapper.jsx
+'use server'
 
-import 'server-only'
 import { verifySession } from '@/lib/auth/server'
 import { AuthProvider } from '@/lib/auth/AuthProvider'
+import { AppShell } from './AppShell'
 
 export async function AppWrapper({ children }) {
-  // This Server Component ONLY fetches the user and provides the AuthContext
   const { user } = await verifySession()
 
-  return <AuthProvider initialUser={user}>{children}</AuthProvider>
+  return (
+    <AuthProvider initialUser={user}>
+      <AppShell>{children}</AppShell>
+    </AuthProvider>
+  )
 }
 
 ```
@@ -1267,17 +1279,22 @@ export default async function ArticleDetailPage({ params }) {
 ```
 
 ## 📄 src/app/admin/articles/actions.js
-*Lines: 24, Size: 628 Bytes*
+*Lines: 29, Size: 961 Bytes*
 
 ```javascript
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import dbConnect from '@headlines/data-access/dbConnect.js'
+// --- START OF THE FIX ---
+// Import the PURE data logic functions from the Next.js-safe entry point.
 import { updateArticle, deleteArticle } from '@headlines/data-access'
+// Import the Next.js-safe version of the dbConnect utility.
+import dbConnect from '@headlines/data-access/dbConnect/next'
+// --- END OF THE FIX ---
 
+// This file defines the Server Actions. It wraps the pure data logic.
 export async function updateArticleAction(articleId, updateData) {
-  await dbConnect()
+  await dbConnect() // Connect to DB within the action
   const result = await updateArticle(articleId, updateData)
   if (result.success) {
     revalidatePath('/admin/articles')
@@ -1286,7 +1303,7 @@ export async function updateArticleAction(articleId, updateData) {
 }
 
 export async function deleteArticleAction(articleId) {
-  await dbConnect()
+  await dbConnect() // Connect to DB within the action
   const result = await deleteArticle(articleId)
   if (result.success) {
     revalidatePath('/admin/articles')
@@ -1438,17 +1455,23 @@ export const columns = (onUpdate, onDelete) => [
 ```
 
 ## 📄 src/app/admin/articles/page.js
-*Lines: 103, Size: 3.02 KB*
+*Lines: 115, Size: 3.24 KB*
 
 ```javascript
 'use client'
 
-import { PageHeader, DataTable, ConfirmationDialog } from '@/components/shared'
+import {
+  PageHeader,
+  DataTable,
+  ConfirmationDialog,
+  ExportButton,
+} from '@/components/shared'
 import { columns } from './columns'
 import { useEntityManager } from '@/hooks/use-entity-manager'
 import { toast } from 'sonner'
 import { useCallback, useMemo, useState } from 'react'
 import { updateArticleAction, deleteArticleAction } from './actions'
+import { handleExport } from '@/lib/api-client'
 
 export default function ArticlesPage() {
   const {
@@ -1500,13 +1523,17 @@ export default function ArticlesPage() {
     }
   }, [confirmState, refetch])
 
-  // --- START OF THE FIX ---
-  // Pass BOTH handleUpdate and handleDeleteRequest to the columns function.
   const tableColumns = useMemo(
     () => columns(handleUpdate, handleDeleteRequest),
     [handleUpdate, handleDeleteRequest]
   )
-  // --- END OF THE FIX ---
+
+  const onExport = (fileType) => {
+    const sort = sorting[0]
+      ? `${sorting[0].id}_${sorting[0].desc ? 'desc' : 'asc'}`
+      : null
+    return handleExport('articles', fileType, columnFilters, sort)
+  }
 
   return (
     <>
@@ -1514,10 +1541,12 @@ export default function ArticlesPage() {
         <PageHeader
           title="Article Management"
           description={`Review and manage all ${total.toLocaleString()} raw articles.`}
-        />
+        >
+          <ExportButton hasData={data && data.length > 0} onExport={onExport} />
+        </PageHeader>
         <div className="mt-8 flex-grow min-h-0">
           <DataTable
-            columns={tableColumns} // Use the memoized columns
+            columns={tableColumns}
             data={data}
             isLoading={isLoading}
             page={page}
@@ -1547,7 +1576,7 @@ export default function ArticlesPage() {
 ```
 
 ## 📄 src/app/admin/dashboard/DashboardClientPage.jsx
-*Lines: 191, Size: 5.84 KB*
+*Lines: 192, Size: 5.84 KB*
 
 ```jsx
 // File: apps/client/src/app/admin/dashboard/DashboardClientPage.jsx
@@ -1741,10 +1770,11 @@ export default function DashboardClientPage({
     </motion.div>
   )
 }
+
 ```
 
 ## 📄 src/app/admin/dashboard/page.jsx
-*Lines: 55, Size: 1.43 KB*
+*Lines: 55, Size: 1.42 KB*
 
 ```jsx
 // File: apps/client/src/app/admin/dashboard/page.jsx (version 2.5 - FINAL)
@@ -1754,7 +1784,7 @@ import {
   getDashboardStats,
   getRecentRunVerdicts,
   getAllSources,
-} from '@headlines/data-access/next'
+} from '@headlines/data-access'
 import DashboardClientPage from './DashboardClientPage'
 // The explicit initializer is no longer needed.
 
@@ -1805,13 +1835,13 @@ export default async function AdminDashboardPage() {
 ```
 
 ## 📄 src/app/admin/events/actions.js
-*Lines: 33, Size: 925 Bytes*
+*Lines: 33, Size: 927 Bytes*
 
 ```javascript
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import dbConnect from '@headlines/data-access/dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/next'
 import { deleteEvent, updateEvent, getEventDetails } from '@headlines/data-access'
 
 // These actions will be called by the client component.
@@ -2095,7 +2125,7 @@ export const ListHeader = ({ sorting, setSorting }) => {
 ```
 
 ## 📄 src/app/admin/events/page.jsx
-*Lines: 140, Size: 4.35 KB*
+*Lines: 152, Size: 4.72 KB*
 
 ```jsx
 'use client'
@@ -2106,17 +2136,19 @@ import {
   LoadingOverlay,
   Button,
   ConfirmationDialog,
+  ExportButton,
 } from '@/components/shared'
 import { EventListItem, ListHeader } from './columns'
 import { useEntityManager } from '@/hooks/use-entity-manager'
 import { toast } from 'sonner'
 import { useCallback, useState } from 'react'
+import { handleExport } from '@/lib/api-client'
 import { deleteEventAction, updateEventAction, getEventDetailsAction } from './actions'
 
 export default function EventsPage() {
   const {
     data: events,
-    setData, // <-- Let's use the original name for clarity
+    setData,
     total,
     isLoading,
     refetch,
@@ -2141,7 +2173,7 @@ export default function EventsPage() {
       }
     },
     [setData]
-  ) // <-- Dependency is now the stable 'setData'
+  )
 
   const handleUpdate = useCallback(
     async (event, updateData) => {
@@ -2178,12 +2210,22 @@ export default function EventsPage() {
     }
   }, [confirmState, refetch])
 
+  const onExport = (fileType) => {
+    const sort = sorting[0]
+      ? `${sorting[0].id}_${sorting[0].desc ? 'desc' : 'asc'}`
+      : null
+    // The custom list view for events doesn't support columnFilters from the header, so we pass an empty array.
+    return handleExport('events', fileType, [], sort)
+  }
+
   const description = `Review, audit, and manage all ${total.toLocaleString()} synthesized events.`
   const totalPages = Math.ceil(total / 50) || 1
 
   return (
     <div className="flex flex-col h-full">
-      <PageHeader title="Event Management" description={description} />
+      <PageHeader title="Event Management" description={description}>
+        <ExportButton hasData={events && events.length > 0} onExport={onExport} />
+      </PageHeader>
       <div className="mt-8 flex-grow min-h-0 flex flex-col">
         <div className="flex items-center py-4 justify-end">
           <Button
@@ -2241,33 +2283,32 @@ export default function EventsPage() {
 ```
 
 ## 📄 src/app/admin/layout.js
-*Lines: 28, Size: 856 Bytes*
+*Lines: 27, Size: 776 Bytes*
 
 ```javascript
-// File: apps/client/src/app/admin/layout.js (Corrected and Unabridged)
-
 // 'use server'
 
-import { verifyAdmin } from '@/lib/auth/server' // <-- THE FIX IS HERE
+import { verifyAdmin } from '@/lib/auth/server'
 import { redirect } from 'next/navigation'
 import { DesktopOnlyWrapper } from '@/components/admin/DesktopOnlyWrapper'
-import { AppShell } from '@/app/_components/AppShell'
+import AdminNav from '@/components/admin/main-nav' // Import the nav component here
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminLayout({ children }) {
-  // This server-side function checks the user's JWT cookie.
   const { isAdmin } = await verifyAdmin()
 
-  // If the user is not an admin, redirect them away.
   if (!isAdmin) {
-    redirect('/events') // Redirect to a safe, non-admin page
+    redirect('/events') // Redirect non-admins away
   }
 
-  // The AppShell will detect the /admin path and render the correct UI
+  // This Server Component now defines the admin layout structure.
   return (
     <DesktopOnlyWrapper>
-      <AppShell>{children}</AppShell>
+      <div className="flex h-screen bg-background">
+        <AdminNav />
+        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+      </div>
     </DesktopOnlyWrapper>
   )
 }
@@ -2275,13 +2316,13 @@ export default async function AdminLayout({ children }) {
 ```
 
 ## 📄 src/app/admin/opportunities/actions.js
-*Lines: 24, Size: 678 Bytes*
+*Lines: 24, Size: 680 Bytes*
 
 ```javascript
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import dbConnect from '@headlines/data-access/dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/next'
 import { updateOpportunity, deleteOpportunity } from '@headlines/data-access'
 
 export async function updateOpportunityAction(opportunityId, updateData) {
@@ -2420,17 +2461,23 @@ export const columns = (onUpdate, onDelete) => [
 ```
 
 ## 📄 src/app/admin/opportunities/page.jsx
-*Lines: 101, Size: 3.01 KB*
+*Lines: 118, Size: 3.41 KB*
 
 ```jsx
 'use client'
 
-import { PageHeader, DataTable, ConfirmationDialog } from '@/components/shared'
+import {
+  PageHeader,
+  DataTable,
+  ConfirmationDialog,
+  ExportButton,
+} from '@/components/shared'
 import { columns } from './columns'
 import { useEntityManager } from '@/hooks/use-entity-manager'
 import { toast } from 'sonner'
 import { useCallback, useMemo, useState } from 'react'
 import { updateOpportunityAction, deleteOpportunityAction } from './actions'
+import { handleExport } from '@/lib/api-client'
 
 export default function OpportunitiesPage() {
   const {
@@ -2451,7 +2498,6 @@ export default function OpportunitiesPage() {
 
   const handleUpdate = useCallback(
     async (opportunity, updateData) => {
-      // Optimistic UI update
       setData((currentData) =>
         currentData.map((o) => (o._id === opportunity._id ? { ...o, ...updateData } : o))
       )
@@ -2488,13 +2534,25 @@ export default function OpportunitiesPage() {
     [handleUpdate, handleDeleteRequest]
   )
 
+  const onExport = (fileType) => {
+    const sort = sorting[0]
+      ? `${sorting[0].id}_${sorting[0].desc ? 'desc' : 'asc'}`
+      : null
+    return handleExport('opportunities', fileType, columnFilters, sort)
+  }
+
   return (
     <>
       <div className="flex flex-col h-full">
         <PageHeader
           title="Opportunity Management"
           description={`Review and manage all ${total.toLocaleString()} actionable opportunities.`}
-        />
+        >
+          <ExportButton
+            hasData={opportunities && opportunities.length > 0}
+            onExport={onExport}
+          />
+        </PageHeader>
         <div className="mt-8 flex-grow min-h-0">
           <DataTable
             columns={tableColumns}
@@ -2527,7 +2585,7 @@ export default function OpportunitiesPage() {
 ```
 
 ## 📄 src/app/admin/page.js
-*Lines: 9, Size: 269 Bytes*
+*Lines: 10, Size: 267 Bytes*
 
 ```javascript
 // File: apps/client/src/app/admin/page.js
@@ -2539,6 +2597,816 @@ export default function AdminRootPage() {
   // sent to the main dashboard page.
   redirect('/admin/dashboard')
 }
+
+```
+
+## 📄 src/app/admin/runs/[runId]/page.jsx
+*Lines: 250, Size: 8.05 KB*
+
+```jsx
+'use client'
+
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { motion } from 'framer-motion'
+import {
+  Loader2,
+  ServerCrash,
+  CheckCircle2,
+  AlertTriangle,
+  BotMessageSquare,
+  Newspaper,
+  Users,
+  Rss,
+  ArrowLeft,
+  Database,
+  Globe,
+  BookOpen,
+} from 'lucide-react'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  Button,
+  Badge,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/shared'
+import { format } from 'date-fns'
+
+const StatCard = ({ title, value, icon }) => (
+  <Card>
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+      {icon}
+    </CardHeader>
+    <CardContent>
+      <div className="text-2xl font-bold">{value}</div>
+    </CardContent>
+  </Card>
+)
+
+const EnrichmentSourceIcons = ({ sources = [] }) => {
+  const iconMap = {
+    rag_db: { icon: Database, tooltip: 'RAG / Historical DB' },
+    wikipedia: { icon: Globe, tooltip: 'Wikipedia' },
+    news_api: { icon: BookOpen, tooltip: 'NewsAPI' },
+  }
+  return (
+    <div className="flex items-center gap-2">
+      <TooltipProvider>
+        {sources.map((sourceKey) => {
+          const IconComponent = iconMap[sourceKey]?.icon
+          if (!IconComponent) return null
+          return (
+            <Tooltip key={sourceKey}>
+              <TooltipTrigger>
+                <IconComponent className="h-4 w-4 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Enriched with {iconMap[sourceKey].tooltip}</p>
+              </TooltipContent>
+            </Tooltip>
+          )
+        })}
+      </TooltipProvider>
+    </div>
+  )
+}
+
+const VerdictCard = ({ items, title }) => (
+  <Card>
+    <CardHeader>
+      <CardTitle>{title}</CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-3">
+      {items && items.length > 0 ? (
+        items.map((item, index) => {
+          const quality = item.quality?.toLowerCase() || 'n/a'
+          let colorClass = 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+          if (quality === 'excellent' || quality === 'good')
+            colorClass = 'bg-green-500/20 text-green-400 border-green-500/30'
+          if (quality === 'poor' || quality === 'irrelevant')
+            colorClass = 'bg-red-500/20 text-red-400 border-red-500/30'
+          return (
+            <div key={index} className="text-sm p-3 rounded-md bg-secondary">
+              <div className="flex justify-between items-start">
+                <p className="font-semibold pr-4">{item.identifier}</p>
+                <Badge className={`capitalize ${colorClass}`}>{item.quality}</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1 italic">
+                `{item.commentary}`
+              </p>
+              {item.enrichmentSources && (
+                <div className="mt-2 pt-2 border-t border-border">
+                  <EnrichmentSourceIcons sources={item.enrichmentSources} />
+                </div>
+              )}
+            </div>
+          )
+        })
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          No {title.toLowerCase()} were judged in this run.
+        </p>
+      )}
+    </CardContent>
+  </Card>
+)
+
+export default function RunDetailsPage({ params }) {
+  const { runId } = params
+  const [verdict, setVerdict] = useState(null)
+  const [summary, setSummary] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    if (!runId) return
+
+    async function fetchData() {
+      try {
+        const verdictRes = await fetch(`/api-admin/run-verdicts/${runId}`)
+        if (!verdictRes.ok)
+          throw new Error(`API Error: ${verdictRes.status} ${verdictRes.statusText}`)
+        const verdictData = await verdictRes.json()
+        if (verdictData.error) throw new Error(verdictData.error)
+        setVerdict(verdictData.verdict)
+
+        if (!verdictData.verdict.judgeVerdict) {
+          setSummary('No judge verdict was generated for this run.')
+          return
+        }
+
+        const summaryRes = await fetch('/api-admin/ai-admin/executive-summary', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            judgeVerdict: verdictData.verdict.judgeVerdict,
+            freshHeadlinesFound: verdictData.verdict.runStats.freshHeadlinesFound,
+          }),
+        })
+        const summaryData = await summaryRes.json()
+        if (summaryData.summary) setSummary(summaryData.summary)
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [runId])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+      </div>
+    )
+  }
+  if (error) {
+    return (
+      <div className="p-8 rounded-lg bg-destructive/10 border border-destructive/50 text-center">
+        <ServerCrash className="w-12 h-12 mx-auto text-destructive mb-4" />
+        <h1 className="text-2xl font-bold">Failed to Load Run Details</h1>
+        <p className="text-destructive-foreground/80 mt-2">{error}</p>
+      </div>
+    )
+  }
+
+  const runDate = new Date(verdict.createdAt).toLocaleString()
+  const isSuccess = !verdict.runStats.errors || verdict.runStats.errors.length === 0
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <Button asChild variant="ghost" className="mb-4">
+        <Link href="/admin/dashboard">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
+        </Link>
+      </Button>
+      <Card className="mb-8">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl">Pipeline Run Details</CardTitle>
+              <CardDescription>{runDate}</CardDescription>
+            </div>
+            {isSuccess ? (
+              <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-base">
+                <CheckCircle2 className="mr-2 h-4 w-4" /> Success
+              </Badge>
+            ) : (
+              <Badge variant="destructive" className="text-base">
+                <AlertTriangle className="mr-2 h-4 w-4" /> Failed
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="Headlines Found"
+            value={verdict.runStats.freshHeadlinesFound}
+            icon={<Newspaper className="h-5 w-5 text-muted-foreground" />}
+          />
+          <StatCard
+            title="Events Synthesized"
+            value={verdict.runStats.eventsSynthesized}
+            icon={<Rss className="h-5 w-5 text-muted-foreground" />}
+          />
+          <StatCard
+            title="Opportunities Generated"
+            value={(verdict.generatedOpportunities || []).length}
+            icon={<Users className="h-5 w-5 text-muted-foreground" />}
+          />
+          <StatCard
+            title="Errors"
+            value={verdict.runStats.errors?.length || 0}
+            icon={<AlertTriangle className="h-5 w-5 text-muted-foreground" />}
+          />
+        </CardContent>
+      </Card>
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BotMessageSquare className="h-6 w-6 text-primary" /> AI Executive Summary
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-muted-foreground italic">
+          {summary ? `"${summary}"` : <Loader2 className="h-5 w-5 animate-spin" />}
+        </CardContent>
+      </Card>
+      <div className="grid gap-8 md:grid-cols-2">
+        <VerdictCard
+          items={verdict.judgeVerdict?.event_judgements || []}
+          title="Judged Events"
+        />
+        <VerdictCard
+          items={verdict.judgeVerdict?.opportunity_judgements || []}
+          title="Judged Opportunities"
+        />
+      </div>
+    </motion.div>
+  )
+}
+
+```
+
+## 📄 src/app/admin/scraper-ide/page.jsx
+*Lines: 220, Size: 7.42 KB*
+
+```jsx
+'use client'
+
+import { useState, useMemo, useCallback } from 'react'
+import {
+  PageHeader,
+  Button,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  ScrollArea,
+  Textarea,
+} from '@/components/shared'
+import { Loader2, TestTube2, Newspaper, FileText } from 'lucide-react'
+import { toast } from 'sonner'
+import { useSources } from './useSources'
+// We need a hook to get the list of all countries for the first dropdown
+import { useCountries } from './useCountries'
+
+async function performScrape(payload) {
+  const res = await fetch('/api-admin/scrape', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const errorData = await res.json()
+    throw new Error(errorData.error || 'Scraping failed on the server.')
+  }
+  return res.json()
+}
+
+export default function ScraperIdePage() {
+  const { countries, isLoading: isLoadingCountries } = useCountries()
+  const [selectedCountry, setSelectedCountry] = useState('')
+  const [selectedSourceId, setSelectedSourceId] = useState('')
+
+  // The useSources hook is now dependent on the selected country
+  const { sources, isLoading: isLoadingSources } = useSources(selectedCountry)
+
+  const [isScraping, setIsScraping] = useState(false)
+  const [scrapeResults, setScrapeResults] = useState({ headlines: [], content: '' })
+
+  const selectedSource = useMemo(
+    () => sources.find((s) => s._id === selectedSourceId),
+    [sources, selectedSourceId]
+  )
+
+  const handleCountryChange = (country) => {
+    setSelectedCountry(country)
+    setSelectedSourceId('') // Reset source selection when country changes
+    setScrapeResults({ headlines: [], content: '' }) // Clear results
+  }
+
+  const handleScrapeHeadlines = useCallback(async () => {
+    if (!selectedSourceId || !selectedSource) return
+    setIsScraping(true)
+    setScrapeResults({ headlines: [], content: '' })
+    const toastId = toast.loading(`Scraping headlines for ${selectedSource.name}...`)
+    try {
+      const result = await performScrape({ sourceId: selectedSourceId })
+      if (result.success) {
+        toast.success(`Found ${result.resultCount} headlines.`, { id: toastId })
+        setScrapeResults({ headlines: result.articles, content: '' })
+      } else {
+        throw new Error(result.error)
+      }
+    } catch (error) {
+      toast.error('Scrape failed', { id: toastId, description: error.message })
+    } finally {
+      setIsScraping(false)
+    }
+  }, [selectedSourceId, selectedSource])
+
+  const handleScrapeContent = useCallback(
+    async (articleLink) => {
+      if (!selectedSourceId) return
+      setIsScraping(true)
+      setScrapeResults((prev) => ({ ...prev, content: 'Loading...' }))
+      const toastId = toast.loading(`Scraping content for article...`)
+      try {
+        const result = await performScrape({ sourceId: selectedSourceId, articleLink })
+        if (result.success) {
+          toast.success(`Content scrape successful.`, { id: toastId })
+          setScrapeResults((prev) => ({ ...prev, content: result.content }))
+        } else {
+          throw new Error(result.content)
+        }
+      } catch (error) {
+        toast.error('Content scrape failed', { id: toastId, description: error.message })
+        setScrapeResults((prev) => ({ ...prev, content: `Error: ${error.message}` }))
+      } finally {
+        setIsScraping(false)
+      }
+    },
+    [selectedSourceId]
+  )
+
+  return (
+    <div className="flex flex-col h-full">
+      <PageHeader
+        title="Scraper IDE"
+        description="A live testing environment to scrape headlines and article content from any configured source."
+      />
+
+      <Card className="mt-8">
+        <CardContent className="p-4 flex flex-col sm:flex-row items-center gap-4">
+          <Select
+            value={selectedCountry}
+            onValueChange={handleCountryChange}
+            disabled={isScraping}
+          >
+            <SelectTrigger className="w-full sm:w-[250px]">
+              <SelectValue placeholder="Step 1: Select a Country..." />
+            </SelectTrigger>
+            <SelectContent>
+              {isLoadingCountries ? (
+                <SelectItem value="loading" disabled>
+                  Loading countries...
+                </SelectItem>
+              ) : (
+                countries.map((country) => (
+                  <SelectItem key={country._id} value={country.name}>
+                    {country.name}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={selectedSourceId}
+            onValueChange={setSelectedSourceId}
+            disabled={isScraping || !selectedCountry}
+          >
+            <SelectTrigger className="w-full sm:w-[350px]">
+              <SelectValue placeholder="Step 2: Select a Source..." />
+            </SelectTrigger>
+            <SelectContent>
+              {isLoadingSources ? (
+                <SelectItem value="loading" disabled>
+                  Loading sources...
+                </SelectItem>
+              ) : (
+                sources.map((source) => (
+                  <SelectItem key={source._id} value={source._id}>
+                    {source.name}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+
+          <Button
+            onClick={handleScrapeHeadlines}
+            disabled={!selectedSourceId || isScraping}
+          >
+            {isScraping ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <TestTube2 className="mr-2 h-4 w-4" />
+            )}
+            Scrape Headlines
+          </Button>
+        </CardContent>
+      </Card>
+
+      <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4 flex-grow min-h-0">
+        {/* ... The rest of the component (Headlines and Content cards) remains the same ... */}
+        <Card className="flex flex-col">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Newspaper className="h-5 w-5" /> Scraped Headlines (
+              {scrapeResults.headlines.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex-grow overflow-hidden">
+            <ScrollArea className="h-full">
+              <ul className="space-y-2 pr-4">
+                {scrapeResults.headlines.map((article, i) => (
+                  <li key={article.link || i}>
+                    <Button
+                      variant="ghost"
+                      className="w-full h-auto text-left justify-start p-2 hover:bg-accent"
+                      onClick={() => handleScrapeContent(article.link)}
+                    >
+                      {article.headline}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+
+        <Card className="flex flex-col">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" /> Article Content
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex-grow">
+            <Textarea
+              readOnly
+              value={scrapeResults.content}
+              placeholder="Click a headline on the left to scrape and display its content here."
+              className="h-full resize-none bg-muted/50"
+            />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}
+
+```
+
+## 📄 src/app/admin/scraper-ide/useCountries.js
+*Lines: 30, Size: 662 Bytes*
+
+```javascript
+'use client'
+
+import { useQuery } from '@tanstack/react-query'
+import { toast } from 'sonner'
+
+async function fetchCountries() {
+  const res = await fetch('/api-admin/countries')
+  if (!res.ok) {
+    const errorData = await res.json()
+    throw new Error(errorData.error || 'Failed to fetch countries from API')
+  }
+  return res.json()
+}
+
+export function useCountries() {
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ['admin-countries'],
+    queryFn: fetchCountries,
+  })
+
+  if (isError) {
+    toast.error('Could not load countries', { description: error.message })
+  }
+
+  return {
+    countries: data?.data || [],
+    isLoading,
+  }
+}
+
+```
+
+## 📄 src/app/admin/scraper-ide/useSources.js
+*Lines: 33, Size: 957 Bytes*
+
+```javascript
+'use client'
+
+import { useQuery } from '@tanstack/react-query'
+import { toast } from 'sonner'
+
+// The fetcher function now accepts a country parameter
+async function fetchSources(country) {
+  const res = await fetch(`/api-admin/sources?country=${encodeURIComponent(country)}`)
+  if (!res.ok) {
+    const errorData = await res.json()
+    throw new Error(errorData.error || 'Failed to fetch sources from API')
+  }
+  return res.json()
+}
+
+export function useSources(country) {
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ['admin-sources', country], // The country is now part of the query key
+    queryFn: () => fetchSources(country),
+    enabled: !!country, // CRITICAL: Only run the query if a country is selected
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  })
+
+  if (isError) {
+    toast.error('Could not load sources', { description: error.message })
+  }
+
+  return {
+    sources: data?.data || [],
+    isLoading,
+  }
+}
+
+```
+
+## 📄 src/app/admin/settings/page.jsx
+*Lines: 85, Size: 2.46 KB*
+
+```jsx
+'use client' // This page needs client-side state management for the form
+
+import { useState, useEffect, useCallback } from 'react'
+import { motion } from 'framer-motion'
+import { PageHeader } from '@/components/shared'
+import SettingsForm from './settings-form'
+import { Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+
+// Client-side API functions
+async function getSettingsClient() {
+  const res = await fetch('/api-admin/settings')
+  if (!res.ok) throw new Error('Failed to fetch settings')
+  return res.json()
+}
+
+async function updateSettingsClient(updatedSettings) {
+  const res = await fetch('/api-admin/settings', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updatedSettings),
+  })
+  if (!res.ok) {
+    const errorData = await res.json()
+    throw new Error(errorData.error || 'Failed to update settings')
+  }
+  return res.json()
+}
+
+export default function SettingsPage() {
+  const [settings, setSettings] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    getSettingsClient()
+      .then((result) => {
+        if (result.success) {
+          setSettings(result.data)
+        } else {
+          toast.error('Failed to load settings: ' + result.error)
+          setSettings([])
+        }
+      })
+      .catch((err) => toast.error('Failed to load settings: ' + err.message))
+      .finally(() => setIsLoading(false))
+  }, [])
+
+  const handleSave = useCallback(async (updatedSettings) => {
+    const toastId = toast.loading('Saving settings...')
+    try {
+      await updateSettingsClient(updatedSettings)
+      setSettings(updatedSettings) // Update local state with the saved data
+      toast.success('Settings saved successfully.', { id: toastId })
+      return true
+    } catch (error) {
+      toast.error(`Error: ${error.message}`, { id: toastId })
+      return false
+    }
+  }, [])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <PageHeader
+        title="Pipeline Settings"
+        description="Dynamically adjust thresholds and parameters for the backend scraper pipeline."
+      />
+      <div className="mt-8">
+        <SettingsForm initialSettings={settings} onSave={handleSave} />
+      </div>
+    </motion.div>
+  )
+}
+
+```
+
+## 📄 src/app/admin/settings/settings-form.jsx
+*Lines: 155, Size: 4.37 KB*
+
+```jsx
+'use client'
+
+import { useState, useMemo } from 'react'
+import { motion } from 'framer-motion'
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Label,
+  Input,
+  Switch,
+  Button,
+} from '@/components/shared'
+import { Save, Loader2 } from 'lucide-react'
+
+const SettingInput = ({ setting, onChange }) => {
+  const { type, key, value } = setting
+  switch (type) {
+    case 'number':
+      return (
+        <Input
+          type="number"
+          id={key}
+          value={value}
+          onChange={(e) => onChange(key, parseFloat(e.target.value))}
+          className="bg-secondary"
+        />
+      )
+    case 'boolean':
+      return (
+        <Switch
+          id={key}
+          checked={value}
+          onCheckedChange={(checked) => onChange(key, checked)}
+        />
+      )
+    default:
+      return (
+        <Input
+          type="text"
+          id={key}
+          value={value}
+          onChange={(e) => onChange(key, e.target.value)}
+          className="bg-secondary"
+        />
+      )
+  }
+}
+
+const SettingRow = ({ setting, onChange }) => (
+  <div key={setting.key} className="grid grid-cols-3 items-center gap-4 py-2">
+    <div className="col-span-2">
+      <Label htmlFor={setting.key} className="font-mono text-sm">
+        {setting.key.replace(/_/g, ' ')}
+      </Label>
+      <p className="text-sm text-muted-foreground">{setting.description}</p>
+    </div>
+    <SettingInput setting={setting} onChange={onChange} />
+  </div>
+)
+
+export default function SettingsForm({ initialSettings = [], onSave }) {
+  const [settings, setSettings] = useState(initialSettings)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isDirty, setIsDirty] = useState(false)
+
+  const { thresholdSettings, modelSettings, promptSettings } = useMemo(() => {
+    const thresholds = [],
+      models = [],
+      prompts = []
+    ;(settings || []).forEach((s) => {
+      if (s.key.includes('_THRESHOLD') || s.key.includes('MIN_')) {
+        thresholds.push(s)
+      } else if (s.key.includes('LLM_MODEL')) {
+        models.push(s)
+      } else {
+        prompts.push(s)
+      }
+    })
+    return {
+      thresholdSettings: thresholds,
+      modelSettings: models,
+      promptSettings: prompts,
+    }
+  }, [settings])
+
+  const handleChange = (key, value) => {
+    setSettings((prev) => prev.map((s) => (s.key === key ? { ...s, value } : s)))
+    setIsDirty(true)
+  }
+
+  const handleSaveClick = async () => {
+    setIsSaving(true)
+    const success = await onSave(settings)
+    if (success) {
+      setIsDirty(false)
+    }
+    setIsSaving(false)
+  }
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+      <Card>
+        <CardContent className="pt-6">
+          <Tabs defaultValue="thresholds">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="thresholds">Thresholds</TabsTrigger>
+              <TabsTrigger value="ai_models">AI Models</TabsTrigger>
+              <TabsTrigger value="prompt_params">Prompt Parameters</TabsTrigger>
+            </TabsList>
+            <TabsContent
+              value="thresholds"
+              className="mt-6 space-y-2 divide-y divide-border"
+            >
+              {thresholdSettings.map((setting) => (
+                <SettingRow key={setting.key} setting={setting} onChange={handleChange} />
+              ))}
+            </TabsContent>
+            <TabsContent
+              value="ai_models"
+              className="mt-6 space-y-2 divide-y divide-border"
+            >
+              {modelSettings.map((setting) => (
+                <SettingRow key={setting.key} setting={setting} onChange={handleChange} />
+              ))}
+            </TabsContent>
+            <TabsContent
+              value="prompt_params"
+              className="mt-6 space-y-2 divide-y divide-border"
+            >
+              {promptSettings.map((setting) => (
+                <SettingRow key={setting.key} setting={setting} onChange={handleChange} />
+              ))}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+        <CardFooter>
+          <Button onClick={handleSaveClick} disabled={isSaving || !isDirty}>
+            {isSaving ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
+            Save Settings
+          </Button>
+        </CardFooter>
+      </Card>
+    </motion.div>
+  )
+}
+
 ```
 
 ## 📄 src/app/admin/users/UsersClientPage.jsx
@@ -2683,13 +3551,13 @@ export default function UsersClientPage({ initialUsers, initialTotal, allCountri
 ```
 
 ## 📄 src/app/admin/users/actions.js
-*Lines: 46, Size: 1.14 KB*
+*Lines: 46, Size: 1.12 KB*
 
 ```javascript
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import dbConnect from '@headlines/data-access/dbConnect.js' // <-- Import dbConnect
+import dbConnect from '@headlines/data-access/dbConnect/next'
 import {
   updateSubscriber,
   deleteSubscriber,
@@ -2760,7 +3628,7 @@ export const columns = (handleEdit, handleAction) => [
     accessorKey: 'email',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Email" />,
     cell: ({ row }) => {
-      const user = row.original;
+      const user = row.original
       return (
         <div className="flex flex-col">
           <span className="font-medium">{user.email}</span>
@@ -2783,7 +3651,7 @@ export const columns = (handleEdit, handleAction) => [
           </div>
           {/* --- END OF THE FIX --- */}
         </div>
-      );
+      )
     },
   },
   {
@@ -2910,7 +3778,7 @@ export const columns = (handleEdit, handleAction) => [
 ```
 
 ## 📄 src/app/admin/users/country-subscription-manager.jsx
-*Lines: 114, Size: 3.78 KB*
+*Lines: 114, Size: 3.77 KB*
 
 ```jsx
 // File: apps/client/src/app/admin/users/country-subscription-manager.jsx (version 1.0 - New File)
@@ -3038,7 +3906,7 @@ export default function CountrySubscriptionManager({
 import { PageHeader } from '@/components/shared'
 import { getAllSubscribers, getAllCountries } from '@headlines/data-access'
 import UsersClientPage from './UsersClientPage'
-import dbConnect from '@headlines/data-access/dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export default async function UsersPage() {
   // Establish the database connection ONCE at the start of the page render.
@@ -3082,7 +3950,7 @@ export default async function UsersPage() {
 ```
 
 ## 📄 src/app/admin/users/user-editor.jsx
-*Lines: 166, Size: 5.18 KB*
+*Lines: 166, Size: 5.17 KB*
 
 ```jsx
 // File: apps/client/src/app/admin/users/user-editor.jsx (version 2.0 - Server Actions)
@@ -3448,7 +4316,7 @@ export default function WatchlistClientPage({
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import dbConnect from '@headlines/data-access/dbConnect.js';
+import dbConnect from '@headlines/data-access/dbConnect/next';
 import {
   createWatchlistEntity,
   updateWatchlistEntity,
@@ -3657,7 +4525,7 @@ export const suggestionColumns = (onAction, onUpdate) => [
 'use server'
 
 import { PageHeader, Button } from '@/components/shared'
-import dbConnect from '@headlines/data-access/dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/next'
 import {
   getAllWatchlistEntities,
   getSuggestions,
@@ -3911,13 +4779,13 @@ export const dynamic = 'force-dynamic'
 ```
 
 ## 📄 src/app/api/auth/login/route.js
-*Lines: 64, Size: 1.63 KB*
+*Lines: 64, Size: 1.62 KB*
 
 ```javascript
 // File: apps/client/src/app/api/auth/login/route.js (Corrected)
 
 import { NextResponse } from 'next/server'
-import { loginUser } from '@headlines/data-access/next'
+import { loginUser } from '@headlines/data-access'
 import * as jose from 'jose'
 import { env } from '@headlines/config/next'
 import { initializeSharedLogic } from '@/lib/init-shared-logic' // <-- Import initialization
@@ -4206,12 +5074,12 @@ export const POST = createClientApiHandler(handlePost)
 ```
 
 ## 📄 src/app/api-admin/actions.js
-*Lines: 30, Size: 885 Bytes*
+*Lines: 30, Size: 887 Bytes*
 
 ```javascript
 'use server'
 
-import dbConnect from '@headlines/data-access/dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/next'
 import {
   linkOpportunityToEvent,
   unlinkOpportunityFromEvent,
@@ -4241,12 +5109,57 @@ export async function unlinkOpportunityFromEventAction(eventId, opportunityId) {
 
 ```
 
-## 📄 src/app/api-admin/articles/[articleId]/route.js
-*Lines: 45, Size: 1.51 KB*
+## 📄 src/app/api-admin/ai-admin/executive-summary/route.js
+*Lines: 39, Size: 1.15 KB*
 
 ```javascript
 import { NextResponse } from 'next/server'
-import dbConnect from '@headlines/data-access/dbConnect'
+import { createApiHandler } from '@/lib/api-handler'
+import { executiveSummaryChain } from '@headlines/ai-services/next'
+
+const handlePost = async (request) => {
+  const { judgeVerdict, freshHeadlinesFound } = await request.json()
+
+  const hasEvents = judgeVerdict?.event_judgements?.length > 0
+  const hasOpps = judgeVerdict?.opportunity_judgements?.length > 0
+
+  if (!judgeVerdict || (!hasEvents && !hasOpps)) {
+    return NextResponse.json({
+      success: true,
+      summary: 'No new events or opportunities were generated in this run to summarize.',
+    })
+  }
+
+  const payload = {
+    freshHeadlinesFound: freshHeadlinesFound || 0,
+    judgeVerdict,
+  }
+
+  const result = await executiveSummaryChain({
+    payload_json_string: JSON.stringify(payload),
+  })
+
+  if (result.error || !result.summary) {
+    console.error('Executive Summary Chain failed:', result.error)
+    return NextResponse.json({
+      success: true,
+      summary: 'The AI was unable to generate a summary for this run.',
+    })
+  }
+
+  return NextResponse.json({ success: true, summary: result.summary })
+}
+
+export const POST = createApiHandler(handlePost)
+
+```
+
+## 📄 src/app/api-admin/articles/[articleId]/route.js
+*Lines: 45, Size: 1.52 KB*
+
+```javascript
+import { NextResponse } from 'next/server'
+import dbConnect from '@headlines/data-access/dbConnect/next'
 import { updateArticle, deleteArticle } from '@headlines/data-access'
 import { Article } from '@headlines/models' // Import the model for GET
 import { createApiHandler } from '@/lib/api-handler'
@@ -4293,13 +5206,13 @@ export const dynamic = 'force-dynamic'
 ```
 
 ## 📄 src/app/api-admin/articles/route.js
-*Lines: 33, Size: 1.09 KB*
+*Lines: 33, Size: 1.07 KB*
 
 ```javascript
 import { NextResponse } from 'next/server'
 import { getArticles } from '@headlines/data-access'
 import { createApiHandler } from '@/lib/api-handler'
-import dbConnect from '@headlines/data-access/dbConnect.js' // Import dbConnect
+import dbConnect from '@headlines/data-access/dbConnect.next'
 
 const handleGet = async (request, { user }) => {
   // --- START OF THE FIX ---
@@ -4332,28 +5245,18 @@ export const dynamic = 'force-dynamic'
 ```
 
 ## 📄 src/app/api-admin/countries/route.js
-*Lines: 24, Size: 852 Bytes*
+*Lines: 14, Size: 412 Bytes*
 
 ```javascript
-// File: apps/client/src/app/api-admin/countries/route.js (version 1.0 - New File)
-
 import { NextResponse } from 'next/server'
-import { getAllCountries } from '@headlines/data-access/next'
+import { getAllCountries } from '@headlines/data-access'
 import { createApiHandler } from '@/lib/api-handler'
 
 const handleGet = async (request) => {
-  // This function is now guaranteed to run after the DB connection is established.
   const result = await getAllCountries()
-  if (!result.success) {
-    throw new Error(result.error)
-  }
-  // The data structure from data-access is { success: true, data: [...] }
-  // useEntityManager expects { data: [...], total: X }
-  // We will adapt the response to match what the client hook expects.
-  return NextResponse.json({
-    data: result.data,
-    total: result.data.length,
-  })
+  if (!result.success) throw new Error(result.error)
+
+  return NextResponse.json(result)
 }
 
 export const GET = createApiHandler(handleGet)
@@ -4366,7 +5269,7 @@ export const dynamic = 'force-dynamic'
 
 ```javascript
 import { NextResponse } from 'next/server'
-import dbConnect from '@headlines/data-access/dbConnect'
+import dbConnect from '@headlines/data-access/dbConnect/next'
 import { getEventDetails, updateEvent, deleteEvent } from '@headlines/data-access'
 import { createApiHandler } from '@/lib/api-handler' // We need a more flexible admin handler
 import mongoose from 'mongoose'
@@ -4463,6 +5366,43 @@ export const dynamic = 'force-dynamic'
 
 ```
 
+## 📄 src/app/api-admin/export/route.js
+*Lines: 31, Size: 943 Bytes*
+
+```javascript
+import { NextResponse } from 'next/server'
+import { createApiHandler } from '@/lib/api-handler'
+// --- START OF THE FIX ---
+// Import the single, generic export function
+import { generateExport } from '@headlines/data-access'
+// --- END OF THE FIX ---
+
+const handlePost = async (request) => {
+  const { entity, fileType, filters, sort } = await request.json()
+
+  // --- START OF THE FIX ---
+  // Call the single generic function with all the necessary parameters
+  const result = await generateExport({ entity, fileType, filters, sort })
+  // --- END OF THE FIX ---
+
+  if (!result.success) {
+    throw new Error(result.error)
+  }
+
+  const filename = `export_${entity}_${new Date().toISOString()}.${result.extension}`
+
+  return new Response(result.data, {
+    headers: {
+      'Content-Type': result.contentType,
+      'Content-Disposition': `attachment; filename="${filename}"`,
+    },
+  })
+}
+
+export const POST = createApiHandler(handlePost)
+
+```
+
 ## 📄 src/app/api-admin/opportunities/route.js
 *Lines: 27, Size: 902 Bytes*
 
@@ -4542,13 +5482,151 @@ export async function POST(request) {
 
 ```
 
+## 📄 src/app/api-admin/run-verdicts/[runId]/route.jsx
+*Lines: 23, Size: 747 Bytes*
+
+```jsx
+import { NextResponse } from 'next/server'
+import { getRunVerdictById } from '@headlines/data-access'
+import { createApiHandler } from '@/lib/api-handler'
+import mongoose from 'mongoose'
+
+const handleGet = async (request, { params }) => {
+  const { runId } = params
+  if (!mongoose.Types.ObjectId.isValid(runId)) {
+    return NextResponse.json({ error: 'Invalid Run ID' }, { status: 400 })
+  }
+
+  const result = await getRunVerdictById(runId)
+  if (!result.success) {
+    const status = result.error.includes('not found') ? 404 : 500
+    return NextResponse.json({ error: result.error }, { status })
+  }
+
+  return NextResponse.json({ verdict: result.data })
+}
+
+export const GET = createApiHandler(handleGet)
+export const dynamic = 'force-dynamic'
+
+```
+
+## 📄 src/app/api-admin/scrape/route.js
+*Lines: 47, Size: 1.41 KB*
+
+```javascript
+import { NextResponse } from 'next/server'
+import { createApiHandler } from '@/lib/api-handler'
+import { Source } from '@headlines/models'
+
+// --- START OF THE FIX ---
+// Import the scraper functions from their correct subpath export, not the root.
+import {
+  scrapeSiteForHeadlines,
+  scrapeArticleContent,
+} from '@headlines/scraper-logic/scraper/index.js'
+// --- END OF THE FIX ---
+
+const handlePost = async (request) => {
+  const { sourceId, articleLink } = await request.json()
+
+  if (!sourceId) {
+    return NextResponse.json({ error: 'Source ID is required.' }, { status: 400 })
+  }
+
+  const source = await Source.findById(sourceId).lean()
+  if (!source) {
+    return NextResponse.json({ error: 'Source not found.' }, { status: 404 })
+  }
+
+  // Mode 1: Scrape a single article's content
+  if (articleLink) {
+    const articleStub = {
+      link: articleLink,
+      source: source.name,
+      newspaper: source.name,
+      country: source.country,
+    }
+    const result = await scrapeArticleContent(articleStub, source)
+    return NextResponse.json({
+      success: !!result.articleContent,
+      content: result.articleContent?.contents?.join('\n\n') || result.enrichment_error,
+    })
+  }
+
+  // Mode 2: Scrape headlines for the source's main section URL
+  const result = await scrapeSiteForHeadlines(source)
+  return NextResponse.json(result)
+}
+
+export const POST = createApiHandler(handlePost)
+export const dynamic = 'force-dynamic'
+
+```
+
+## 📄 src/app/api-admin/settings/route.js
+*Lines: 25, Size: 724 Bytes*
+
+```javascript
+import { NextResponse } from 'next/server'
+import { getSettings, updateSettings } from '@headlines/data-access'
+import { createApiHandler } from '@/lib/api-handler'
+
+const handleGet = async (request) => {
+  const result = await getSettings()
+  if (!result.success) {
+    throw new Error(result.error)
+  }
+  return NextResponse.json(result)
+}
+
+const handlePatch = async (request) => {
+  const updatedSettings = await request.json()
+  const result = await updateSettings(updatedSettings)
+  if (!result.success) {
+    throw new Error(result.error)
+  }
+  return NextResponse.json(result)
+}
+
+export const GET = createApiHandler(handleGet)
+export const PATCH = createApiHandler(handlePatch)
+export const dynamic = 'force-dynamic'
+
+```
+
+## 📄 src/app/api-admin/sources/route.js
+*Lines: 19, Size: 622 Bytes*
+
+```javascript
+import { NextResponse } from 'next/server'
+import { getAllSources } from '@headlines/data-access'
+import { createApiHandler } from '@/lib/api-handler'
+
+const handleGet = async (request) => {
+  const { searchParams } = new URL(request.url)
+  const country = searchParams.get('country') // Get the country from the query string
+
+  // Pass the filter to the data-access function
+  const result = await getAllSources({ country: country || null })
+
+  if (!result.success) throw new Error(result.error)
+
+  return NextResponse.json(result)
+}
+
+export const GET = createApiHandler(handleGet)
+export const dynamic = 'force-dynamic'
+
+```
+
 ## 📄 src/app/api-admin/subscribers/[subscriberId]/route.js
-*Lines: 39, Size: 1.5 KB*
+*Lines: 39, Size: 1.49 KB*
 
 ```javascript
 // File: apps/client/src/app/api-admin/subscribers/[subscriberId]/route.js (version 1.0 - Unchanged)
 import { NextResponse } from 'next/server'
-import { updateSubscriber, deleteSubscriber } from '@headlines/data-access/next'
+import { updateSubscriber, deleteSubscriber } from '@headlines/data-access'
 import mongoose from 'mongoose'
 import { createApiHandler } from '@/lib/api-handler'
 
@@ -4588,12 +5666,12 @@ export const DELETE = createApiHandler(handleDelete)
 ```
 
 ## 📄 src/app/api-admin/subscribers/route.js
-*Lines: 44, Size: 1.47 KB*
+*Lines: 44, Size: 1.46 KB*
 
 ```javascript
 // File: apps/client/src/app/api-admin/subscribers/route.js (version 2.1 - Directive Removed)
 import { NextResponse } from 'next/server'
-import { getAllSubscribers, createSubscriber } from '@headlines/data-access/next'
+import { getAllSubscribers, createSubscriber } from '@headlines/data-access'
 import { createApiHandler } from '@/lib/api-handler'
 
 // 'use server'; // <--- THIS LINE HAS BEEN REMOVED.
@@ -4868,19 +5946,14 @@ export const dynamic = 'force-dynamic'
 ```
 
 ## 📄 src/app/layout.js
-*Lines: 23, Size: 484 Bytes*
+*Lines: 17, Size: 385 Bytes*
 
 ```javascript
-// File: apps/client/src/app/layout.js (Corrected)
+import './globals.css';
+import { AppProviders } from './providers';
+import { AppWrapper } from './_components/AppWrapper';
 
-import './globals.css'
-import { AppProviders } from './providers'
-import { AppWrapper } from './_components/AppWrapper'
-
-export const metadata = {
-  title: 'Copyboard App',
-  description: 'A fresh start',
-}
+export const metadata = { /* ... */ };
 
 export default function RootLayout({ children }) {
   return (
@@ -4891,9 +5964,8 @@ export default function RootLayout({ children }) {
         </AppProviders>
       </body>
     </html>
-  )
+  );
 }
-
 ```
 
 ## 📄 src/app/login/layout.js
@@ -5048,6 +6120,27 @@ export default function LoginPage() {
 
 ```
 
+## 📄 src/app/not-found.jsx
+*Lines: 15, Size: 390 Bytes*
+
+```jsx
+export default function NotFound() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen">
+      <h1 className="text-4xl font-bold mb-4">404</h1>
+      <p className="text-lg">Page not found</p>
+      <a
+        href="/"
+        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+      >
+        Go Home
+      </a>
+    </div>
+  )
+}
+
+```
+
 ## 📄 src/app/page.js
 *Lines: 6, Size: 105 Bytes*
 
@@ -5180,7 +6273,7 @@ export function AdminNavTabs() {
 ```
 
 ## 📄 src/components/admin/DesktopOnlyWrapper.jsx
-*Lines: 47, Size: 1.3 KB*
+*Lines: 47, Size: 1.29 KB*
 
 ```jsx
 // File: apps/client/src/components/admin/DesktopOnlyWrapper.jsx
@@ -5406,11 +6499,9 @@ export default function ArticleAnalysisViewer({ article, open, onOpenChange }) {
 ```
 
 ## 📄 src/components/admin/main-nav.jsx
-*Lines: 113, Size: 3.49 KB*
+*Lines: 105, Size: 3.17 KB*
 
 ```jsx
-// File: apps/client/src/components/admin/main-nav.jsx (Full file with both fixes)
-
 'use client'
 
 import Link from 'next/link'
@@ -5418,12 +6509,10 @@ import { usePathname } from 'next/navigation'
 import React from 'react'
 import {
   BotMessageSquare,
-  Newspaper,
   Users,
   Rss,
   Gauge,
   Settings,
-  Globe,
   Zap,
   Target,
   FileText,
@@ -5452,7 +6541,7 @@ const navSections = [
   },
   {
     items: [
-      { name: 'Countries', href: '/admin/countries', icon: Globe },
+      // The "Countries" item has been removed from this section.
       { name: 'Settings', href: '/admin/settings', icon: Settings },
     ],
   },
@@ -5461,16 +6550,12 @@ const navSections = [
 export default function MainNav() {
   const pathname = usePathname()
 
-  // --- START: CORRECTED ACTIVE STATE LOGIC ---
   const isCurrent = (href) => {
-    // Use an exact match for the dashboard link.
     if (href === '/admin/dashboard') {
       return pathname === '/admin/dashboard'
     }
-    // For all other links, use startsWith to handle nested pages.
     return pathname.startsWith(href)
   }
-  // --- END: CORRECTED ACTIVE STATE LOGIC ---
 
   return (
     <nav className="hidden lg:flex w-[280px] bg-card border-r flex-col flex-shrink-0">
@@ -6213,7 +7298,7 @@ export const ArticleCard = ({ article, onDelete }) => {
 ```
 
 ## 📄 src/components/client/ArticleListWrapper.jsx
-*Lines: 42, Size: 1.44 KB*
+*Lines: 42, Size: 1.43 KB*
 
 ```jsx
 // File: apps/client/src/components/client/ArticleListWrapper.jsx
@@ -6844,7 +7929,7 @@ export function EventContextDialog({ event, open, onOpenChange }) {
 ```
 
 ## 📄 src/components/client/EventList.jsx
-*Lines: 51, Size: 1.72 KB*
+*Lines: 51, Size: 1.71 KB*
 
 ```jsx
 // File: apps/client/src/components/client/EventList.jsx (Restored)
@@ -7071,7 +8156,7 @@ export function GlobalCountrySelector({ allCountries }) {
 ```
 
 ## 📄 src/components/client/Header.jsx
-*Lines: 98, Size: 3.4 KB*
+*Lines: 98, Size: 3.39 KB*
 
 ```jsx
 // File: apps/client/src/components/client/Header.jsx (Unabridged and Updated)
@@ -7228,7 +8313,7 @@ export function IOSInstallInstructions({ open, onOpenChange }) {
 ```
 
 ## 📄 src/components/client/InfiniteScrollLoader.jsx
-*Lines: 26, Size: 657 Bytes*
+*Lines: 26, Size: 654 Bytes*
 
 ```jsx
 // File: apps/client/src/components/client/InfiniteScrollLoader.jsx
@@ -7569,7 +8654,7 @@ export function NotificationToggles() {
 ```
 
 ## 📄 src/components/client/OpportunityCard.jsx
-*Lines: 188, Size: 7.01 KB*
+*Lines: 188, Size: 7.02 KB*
 
 ```jsx
 // File: apps/client/src/components/client/OpportunityCard.jsx
@@ -7763,7 +8848,7 @@ export function OpportunityCard({ opportunity, onDelete }) {
 ```
 
 ## 📄 src/components/client/OpportunityListWrapper.jsx
-*Lines: 32, Size: 924 Bytes*
+*Lines: 32, Size: 921 Bytes*
 
 ```jsx
 // File: apps/client/src/components/client/OpportunityListWrapper.jsx
@@ -9137,7 +10222,7 @@ export const LoadingOverlay = ({ text }) => (
 ```
 
 ## 📄 src/components/shared/ConfirmationDialog.jsx
-*Lines: 49, Size: 1.45 KB*
+*Lines: 49, Size: 1.44 KB*
 
 ```jsx
 // packages/ui/src/ConfirmationDialog.jsx (version 1.0.0)
@@ -9152,8 +10237,8 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogCancel,
-  Button
-} from '../shared'
+  Button,
+} from '.'
 import { AlertTriangle, Loader2 } from 'lucide-react'
 
 export function ConfirmationDialog({
@@ -9192,7 +10277,7 @@ export function ConfirmationDialog({
 ```
 
 ## 📄 src/components/shared/DataTableColumnHeader.jsx
-*Lines: 69, Size: 2.25 KB*
+*Lines: 69, Size: 2.24 KB*
 
 ```jsx
 // packages/ui/src/DataTableColumnHeader.jsx (version 2.0.0 - With Filtering)
@@ -9207,8 +10292,8 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  Input
-} from '../shared'
+  Input,
+} from '.'
 
 export function DataTableColumnHeader({ column, title, className }) {
   if (!column.getCanSort() && !column.getCanFilter()) {
@@ -9350,7 +10435,7 @@ export const EditableCell = ({
 ```
 
 ## 📄 src/components/shared/ExportButton.jsx
-*Lines: 61, Size: 1.51 KB*
+*Lines: 61, Size: 1.5 KB*
 
 ```jsx
 // packages/ui/src/ExportButton.jsx (version 2.0.0)
@@ -9363,7 +10448,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '../shared'
+} from '.'
 import { Download, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -9559,13 +10644,13 @@ export { Skeleton }
 ```
 
 ## 📄 src/components/shared/SkeletonCard.jsx
-*Lines: 30, Size: 1.12 KB*
+*Lines: 30, Size: 1.11 KB*
 
 ```jsx
 // packages/ui/src/SkeletonCard.jsx
 'use client'
 
-import { Card, CardContent } from '../shared'
+import { Card, CardContent } from '.'
 // DEFINITIVE FIX: Use the package name for imports between packages.
 import { cn } from '@headlines/utils-shared'
 
@@ -9595,7 +10680,7 @@ export const SkeletonCard = ({ className }) => {
 ```
 
 ## 📄 src/components/shared/ViewHeader.jsx
-*Lines: 149, Size: 5.2 KB*
+*Lines: 149, Size: 5.19 KB*
 
 ```jsx
 // packages/ui/src/ViewHeader.jsx
@@ -9618,7 +10703,7 @@ import {
   SelectTrigger,
   SelectValue,
   ScrollArea,
-} from '../shared'
+} from '.'
 import { Search, Clock, BarChart, ArrowDownUp, Mail, Star, X } from 'lucide-react'
 import { cn } from '@headlines/utils-shared'
 
@@ -10718,7 +11803,7 @@ export * from './tooltip'
 ```
 
 ## 📄 src/components/shared/elements/input.jsx
-*Lines: 22, Size: 757 Bytes*
+*Lines: 22, Size: 754 Bytes*
 
 ```jsx
 // File: apps/client/src/components/shared/elements/input.jsx
@@ -11387,7 +12472,7 @@ export {
 ```
 
 ## 📄 src/components/shared/elements/tabs.jsx
-*Lines: 48, Size: 1.61 KB*
+*Lines: 48, Size: 1.6 KB*
 
 ```jsx
 // File: apps/client/src/components/shared/elements/tabs.jsx (Full Version)
@@ -11441,7 +12526,7 @@ export { Tabs, TabsList, TabsTrigger, TabsContent }
 ```
 
 ## 📄 src/components/shared/elements/textarea.jsx
-*Lines: 21, Size: 710 Bytes*
+*Lines: 21, Size: 707 Bytes*
 
 ```jsx
 // File: apps/client/src/components/shared/elements/textarea.jsx (Full Version)
@@ -12016,11 +13101,9 @@ export function useRealtimeUpdates({ channel, event, queryKey }) {
 ```
 
 ## 📄 src/lib/api-client.js
-*Lines: 148, Size: 5.33 KB*
+*Lines: 89, Size: 2.91 KB*
 
 ```javascript
-// File: apps/client/src/lib/api-client.js (Unabridged and Corrected)
-
 'use client'
 
 import { toast } from 'sonner'
@@ -12036,9 +13119,10 @@ async function fetchApi(
       body: body ? JSON.stringify(body) : undefined,
     })
 
+    // Handle file downloads
     if (
       response.headers.get('content-type')?.includes('csv') ||
-      response.headers.get('content-type')?.includes('excel')
+      response.headers.get('content-type')?.includes('application/vnd.ms-excel')
     ) {
       return response
     }
@@ -12054,82 +13138,24 @@ async function fetchApi(
   }
 }
 
-// === CLIENT-FACING FUNCTIONS ===
 export const generateChatTitle = (messages) =>
   fetchApi('/api/chat/title', { body: { messages } })
 export const savePushSubscription = (subscription) =>
   fetchApi('/api/push/subscribe', { body: subscription })
+export const saveSubscription = savePushSubscription // Alias
 export const updateUserInteraction = (interactionData) =>
   fetchApi('/api/user/interactions', { body: interactionData })
 export const clearDiscardedItems = () =>
   fetchApi('/api/user/settings/clear-discarded', { method: 'POST' })
 export const processUploadedArticle = (item) =>
-  fetchApi('/api/upload/process-article', { body: { item } })
-
-// --- START: THE FIX ---
-// The NotificationToggles component specifically imports 'saveSubscription'.
-// We will add it here as an alias to the correctly named 'savePushSubscription'.
-export const saveSubscription = savePushSubscription
-// --- END: THE FIX ---
-
-// === ADMIN-FACING FUNCTIONS ===
-
-// SUBSCRIBERS (USERS)
-export const createSubscriber = (data) =>
-  fetchApi('/api-admin/subscribers', { body: data })
-export const updateSubscriber = (id, data) =>
-  fetchApi(`/api-admin/subscribers/${id}`, { body: data, method: 'PATCH' })
-export const deleteSubscriber = (id) =>
-  fetchApi(`/api-admin/subscribers/${id}`, { method: 'DELETE' })
-
-// COUNTRIES
-export const createCountry = (data) => fetchApi('/api-admin/countries', { body: data })
-export const updateCountry = (id, data) =>
-  fetchApi(`/api-admin/countries/${id}`, { body: data, method: 'PATCH' })
-
-// ARTICLES, EVENTS, OPPORTUNITIES (Admin CRUD)
-export const updateArticle = (id, data) =>
-  fetchApi(`/api-admin/articles/${id}`, { body: data, method: 'PATCH' })
-export const deleteArticle = (id) =>
-  fetchApi(`/api-admin/articles/${id}`, { method: 'DELETE' })
-
-export const updateEvent = (id, data) =>
-  fetchApi(`/api-admin/events/${id}`, { body: data, method: 'PATCH' })
-export const deleteEvent = (id) =>
-  fetchApi(`/api-admin/events/${id}`, { method: 'DELETE' })
-
-export const updateOpportunity = (id, data) =>
-  fetchApi(`/api-admin/opportunities/${id}`, { body: data, method: 'PATCH' })
-export const deleteOpportunity = (id) =>
-  fetchApi(`/api-admin/opportunities/${id}`, { method: 'DELETE' })
-
+  fetchApi('/api/upload-article', { body: { item } })
 
 export const linkOpportunityToEventClient = (eventId, opportunityId) =>
-  fetchApi('/api-admin/relationships/link', { body: { eventId, opportunityId } });
+  fetchApi('/api-admin/relationships/link', { body: { eventId, opportunityId } })
 
 export const unlinkOpportunityFromEventClient = (eventId, opportunityId) =>
-  fetchApi('/api-admin/relationships/unlink', { body: { eventId, opportunityId } });
+  fetchApi('/api-admin/relationships/unlink', { body: { eventId, opportunityId } })
 
-// SETTINGS
-export const getSettings = () => fetchApi('/api-admin/settings', { method: 'GET' })
-export const updateSettings = (data) =>
-  fetchApi('/api-admin/settings', { body: data, method: 'PATCH' })
-
-// WATCHLIST
-export const createWatchlistEntity = (data) =>
-  fetchApi('/api-admin/watchlist', { body: data })
-export const updateWatchlistEntity = (id, data) =>
-  fetchApi(`/api-admin/watchlist/${id}`, { body: data, method: 'PATCH' })
-export const deleteWatchlistEntity = (id) =>
-  fetchApi(`/api-admin/watchlist/${id}`, { method: 'DELETE' })
-
-// SUGGESTIONS
-export const processSuggestion = (suggestionId, suggestionType, action) =>
-  fetchApi('/api-admin/suggestions', { body: { suggestionId, suggestionType, action } })
-export const updateWatchlistSuggestion = (id, data) =>
-  fetchApi(`/api-admin/watchlist/suggestions/${id}`, { body: data, method: 'PATCH' })
-
-// --- EXPORT ACTIONS ---
 export async function handleExport(entity, fileType, filters, sort) {
   try {
     const response = await fetch('/api-admin/export', {
@@ -12175,7 +13201,7 @@ export async function handleExport(entity, fileType, filters, sort) {
 ```javascript
 import { NextResponse } from 'next/server'
 import { verifySession, verifyAdmin } from '@/lib/auth/server'
-import dbConnect from '@headlines/data-access/dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/next'
 
 /**
  * A higher-order function for ADMIN API routes.
@@ -12468,7 +13494,7 @@ export async function verifyAdmin() {
 ```
 
 ## 📄 src/lib/constants.js
-*Lines: 24, Size: 1.09 KB*
+*Lines: 24, Size: 1.08 KB*
 
 ```javascript
 // File: apps/client/src/lib/constants.js
@@ -12498,7 +13524,7 @@ export const QUERY_KEY_WATCHLIST_SUGGESTIONS = 'adminWatchlistSuggestions'
 ```
 
 ## 📄 src/lib/init-shared-logic.js
-*Lines: 20, Size: 478 Bytes*
+*Lines: 20, Size: 475 Bytes*
 
 ```javascript
 // File: apps/client/src/lib/init-shared-logic.js (version 2.3 - FINAL)
@@ -12630,7 +13656,7 @@ export default useAppStore
 ```
 
 ## 📄 tailwind.config.js
-*Lines: 100, Size: 3.09 KB*
+*Lines: 101, Size: 3.09 KB*
 
 ```javascript
 // File: apps/client/tailwind.config.js
@@ -12733,4 +13759,5 @@ module.exports = {
   },
   plugins: [require('tailwindcss-animate'), require('@tailwindcss/typography')],
 }
+
 ```

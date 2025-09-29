@@ -1,6 +1,6 @@
 'use server'
 
-import dbConnect from '@headlines/data-access/dbConnect.js'
+import dbConnect from '@headlines/data-access/dbConnect/next'
 import {
   linkOpportunityToEvent,
   unlinkOpportunityFromEvent,

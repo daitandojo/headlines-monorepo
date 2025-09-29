@@ -3,8 +3,8 @@ import { logger } from '@headlines/utils-server'
 import { configure as configureScraperLogic } from '@headlines/scraper-logic/config.js'
 import { env, initializeSettings, settings } from '@headlines/config'
 import { refreshConfig, configStore } from '../config/dynamicConfig.js'
-import dbConnect from '@headlines/data-access/dbConnect.js'
-import { deleteTodaysDocuments } from '../../scripts/maintenance/delete-today.js'
+import dbConnect from '@headlines/data-access/dbConnect/node'
+import { deleteRecentDocuments } from '../../scripts/maintenance/delete-today.js'
 import * as aiServices from '@headlines/ai-services'
 import { performDatabaseHousekeeping } from '../utils/housekeeping.js'
 import { configurePush } from '@headlines/scraper-logic/push/client.js'
@@ -18,7 +18,7 @@ export async function runPreFlightChecks(pipelinePayload) {
 
   if (pipelinePayload.deleteToday) {
     logger.warn('--- DELETE TODAY MODE ENABLED ---')
-    await deleteTodaysDocuments(true)
+    await deleteRecentDocuments({ confirm: true })
   }
 
   await initializeSettings()
