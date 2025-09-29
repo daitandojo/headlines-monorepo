@@ -1,13 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createApiHandler } from '@/lib/api-handler'
 import { Source } from '@headlines/models'
-
 // --- START OF THE FIX ---
-// Import the scraper functions from their correct subpath export, not the root.
-import {
-  scrapeSiteForHeadlines,
-  scrapeArticleContent,
-} from '@headlines/scraper-logic/scraper/index.js'
+// Import the high-level test orchestrator instead of low-level scraper functions.
+import { testScraperRecipe } from '@headlines/scraper-logic/test-orchestrator'
 // --- END OF THE FIX ---
 
 const handlePost = async (request) => {
@@ -22,24 +18,30 @@ const handlePost = async (request) => {
     return NextResponse.json({ error: 'Source not found.' }, { status: 404 })
   }
 
-  // Mode 1: Scrape a single article's content
-  if (articleLink) {
-    const articleStub = {
-      link: articleLink,
-      source: source.name,
-      newspaper: source.name,
-      country: source.country,
-    }
-    const result = await scrapeArticleContent(articleStub, source)
+  // --- START OF THE FIX ---
+  // Delegate all complex scraping logic to the orchestrator function.
+  // This abstracts away the direct dependency on Playwright.
+  const result = await testScraperRecipe(source, articleLink)
+
+  // Adapt the response based on the orchestrator's output.
+  if (result.content) {
     return NextResponse.json({
-      success: !!result.articleContent,
-      content: result.articleContent?.contents?.join('\n\n') || result.enrichment_error,
+      success: !!result.content.preview && !result.content.preview.startsWith('Error'),
+      content: result.content.preview,
+    })
+  } else if (result.headlines) {
+    return NextResponse.json({
+      success: result.headlines.count > 0,
+      articles: result.headlines.samples,
+      resultCount: result.headlines.count,
     })
   }
 
-  // Mode 2: Scrape headlines for the source's main section URL
-  const result = await scrapeSiteForHeadlines(source)
-  return NextResponse.json(result)
+  return NextResponse.json(
+    { success: false, error: 'Scraping test failed.' },
+    { status: 500 }
+  )
+  // --- END OF THE FIX ---
 }
 
 export const POST = createApiHandler(handlePost)

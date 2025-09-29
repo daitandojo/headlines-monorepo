@@ -1,7 +1,10 @@
 // packages/scraper-logic/src/test-orchestrator.js (NEW FILE)
 'use server'
 
+// --- START OF THE FIX ---
+// Import the high-level scraper functions, not playwright directly.
 import { testHeadlineExtraction, scrapeArticleContentForTest } from './scraper/index.js'
+// --- END OF THE FIX ---
 import { Source } from '@headlines/models'
 
 // This is the logic moved from data-access/actions/scrape.js
