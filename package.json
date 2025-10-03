@@ -10,6 +10,7 @@
     "//--- PRIMARY APPS ---//": "---",
     "dev": "pnpm --filter @headlines/client dev",
     "build": "pnpm --filter @headlines/client build",
+    "build:local": "pnpm --filter @headlines/client build:local",
     "start": "pnpm --filter @headlines/client start",
     "server": "pnpm --filter @headlines/server dev",
     "//--- PIPELINE EXECUTION ---//": "---",

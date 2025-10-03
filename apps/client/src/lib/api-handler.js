@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server'
 import { verifySession, verifyAdmin } from '@/lib/auth/server'
 import dbConnect from '@headlines/data-access/dbConnect/next'
-import { sendErrorAlert } from '@headlines/utils-server/next' // Use Next.js-safe import
+import { sendErrorAlert } from '@headlines/utils-server/next'
 
 export function createApiHandler(handler) {
   return async (request, context) => {
@@ -45,7 +45,7 @@ export function createClientApiHandler(handler) {
           { status: 401 }
         )
       }
-      userPayload = user // Store user for error context
+      userPayload = user
       return await handler(request, { ...context, user })
     } catch (error) {
       const errorContext = {
