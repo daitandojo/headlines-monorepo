@@ -11,15 +11,20 @@ const nextConfig = {
     // as "external" and not to bundle them into the server-side lambda functions.
     // This is necessary for large packages with native binaries that Vercel's
     // bundler might otherwise exclude.
-    if (isServer) {
-      config.externals.push(
-        'onnxruntime-node',
-        '@xenova/transformers',
-        'sharp',
-        'bcrypt',
-        'mongodb-client-encryption',
-        'aws4'
-      )
+    config.externals.push(
+      'onnxruntime-node',
+      '@xenova/transformers',
+      'sharp',
+      'bcrypt',
+      'mongodb-client-encryption',
+      'aws4'
+    )
+
+    // This part is sometimes needed to prevent client-side bundling attempts of server-only packages.
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'onnxruntime-node': false,
+      '@xenova/transformers': false,
     }
 
     return config
