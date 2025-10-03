@@ -1,6 +1,6 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 194 files, 85 directories
+Total: 198 files, 87 directories
 
 ```
 headlines/
@@ -96,11 +96,15 @@ headlines/
 │   │   │   ├── 📁 auth/
 │   │   │   │   ├── 📁 login/
 │   │   │   │   │   └── 📄 route.js
-│   │   │   │   └── 📁 logout/
+│   │   │   │   ├── 📁 logout/
+│   │   │   │   │   └── 📄 route.js
+│   │   │   │   └── 📁 session/
 │   │   │   │       └── 📄 route.js
 │   │   │   ├── 📁 chat/
 │   │   │   │   ├── 📁 title/
 │   │   │   │   │   └── 📄 route.js
+│   │   │   │   └── 📄 route.js
+│   │   │   ├── 📁 events/
 │   │   │   │   └── 📄 route.js
 │   │   │   ├── 📁 opportunities/
 │   │   │   │   └── 📄 route.js
@@ -199,6 +203,7 @@ headlines/
 │   │   │   │   └── 📄 SettingsForm.jsx
 │   │   │   ├── 📁 shared/
 │   │   │   │   ├── 📄 AnimatedList.jsx
+│   │   │   │   ├── 📄 ClientRedirect.jsx
 │   │   │   │   ├── 📄 DataView.jsx
 │   │   │   │   ├── 📄 Header.jsx
 │   │   │   │   ├── 📄 MainNavTabs.jsx
@@ -282,14 +287,15 @@ headlines/
 ├── 📄 next.config.mjs
 ├── 📄 package.json
 ├── 📄 postcss.config.cjs
-└── 📄 tailwind.config.js
+├── 📄 tailwind.config.js
+└── 📄 vercel.j_s_o_n
 ```
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-02T23:22:35.353Z
+**Generated**: 2025-10-03T20:17:04.564Z
 **Repository Path**: /home/mark/Repos/projects/headlines/apps/client
-**Total Files**: 182
+**Total Files**: 186
 **Package**: @headlines/client@1.0.0
 
 
@@ -413,12 +419,10 @@ export default eslintConfig;
 ```
 
 ## 📄 next.config.mjs
-*Lines: 33, Size: 724 Bytes*
+*Lines: 47, Size: 1.4 KB*
 
 ```
-// File: apps/client/next.config.mjs
 /** @type {import('next').NextConfig} */
-
 const nextConfig = {
   transpilePackages: [
     '@headlines/config',
@@ -426,33 +430,49 @@ const nextConfig = {
     '@headlines/models',
     '@headlines/utils-shared',
   ],
+  experimental: {
+    // Tell Next.js these packages should NOT be bundled into serverless functions
+    serverComponentsExternalPackages: [
+      '@xenova/transformers',
+      'sharp',
+      'onnxruntime-node',
+    ],
+  },
   webpack: (config, { isServer }) => {
-      config.externals.push(
-        'onnxruntime-node',
-        '@xenova/transformers',
-        'sharp',
-        'bcrypt',
-        'mongodb-client-encryption',
-        'aws4'
-      )
-
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      'onnxruntime-node': false,
-      '@xenova/transformers': false,
-    }
     if (isServer) {
-      config.externals.push('onnxruntime-node')
+      // Mark these as external so they're loaded from node_modules at runtime
+      // This prevents webpack from trying to bundle them
+      config.externals.push({
+        '@xenova/transformers': '@xenova/transformers',
+        'onnxruntime-node': 'commonjs onnxruntime-node',
+        sharp: 'commonjs sharp',
+        bcrypt: 'commonjs bcrypt',
+        'mongodb-client-encryption': 'commonjs mongodb-client-encryption',
+        aws4: 'commonjs aws4',
+      })
+    } else {
+      // Prevent client-side bundling of server-only packages
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@xenova/transformers': false,
+        'onnxruntime-node': false,
+        sharp: false,
+        bcrypt: false,
+      }
     }
+
     return config
   },
+  // Disable minification for problematic packages or configure terser to handle async
+  swcMinify: true, // Use SWC instead of Terser (better async support)
 }
 
 export default nextConfig
+
 ```
 
 ## 📄 package.json
-*Lines: 55, Size: 1.7 KB*
+*Lines: 62, Size: 1.91 KB*
 
 ```json
 {
@@ -461,8 +481,9 @@ export default nextConfig
   "private": true,
   "scripts": {
     "dev": "dotenv -e ../../.env -- next dev",
-    "build": "dotenv -e ../../.env -- next build",
-    "start": "next start",
+    "build": "next build",
+    "build:local": "dotenv -e ../../.env -- next build",
+    "start": "dotenv -e ../../.env -- next start",
     "lint": "next lint"
   },
   "dependencies": {
@@ -488,13 +509,17 @@ export default nextConfig
     "@tanstack/react-query-devtools": "^5.45.1",
     "@tanstack/react-table": "^8.21.3",
     "class-variance-authority": "^0.7.1",
+    "@xenova/transformers": "^2.17.2",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "date-fns": "^3.6.0",
     "framer-motion": "^12.23.22",
     "jose": "^6.1.0",
     "lucide-react": "^0.379.0",
     "next": "14.2.4",
     "next-themes": "^0.3.0",
+    "react": "^18",
+    "react-dom": "^18",
     "react-intersection-observer": "^9.10.3",
     "react-markdown": "^9.0.1",
     "react-textarea-autosize": "^8.5.3",
@@ -506,7 +531,9 @@ export default nextConfig
   },
   "devDependencies": {
     "eslint": "^8.57.0",
-    "eslint-config-next": "14.2.4"
+    "eslint-config-next": "14.2.4",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1"
   }
 }
 
@@ -662,13 +689,13 @@ self.addEventListener('notificationclick', (event) => {
 ```
 
 ## 📄 src/app/(client)/articles/page.js
-*Lines: 43, Size: 1.24 KB*
+*Lines: 43, Size: 1.28 KB*
 
 ```javascript
 // apps/client/src/app/(client)/articles/page.js
 import { DataView } from '@/components/client/shared/DataView'
-import { getArticles } from '@headlines/data-access'
-import { getUserIdFromSession } from '@/lib/auth/server'
+import { getArticles } from '@headlines/data-access/next' // CORRECTED IMPORT
+import { getUserIdFromSession } from '@/lib/auth/server' // CORRECTED IMPORT
 import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
@@ -749,14 +776,14 @@ export function ClientLayoutWrapper({ children, serverProps }) {
 ```
 
 ## 📄 src/app/(client)/events/page.js
-*Lines: 43, Size: 1.3 KB*
+*Lines: 43, Size: 1.28 KB*
 
 ```javascript
 // apps/client/src/app/(client)/events/page.js
 import { DataView } from '@/components/client/shared/DataView'
-import { getEvents } from '@headlines/data-access'
-import { getUserIdFromSession } from '@/lib/auth/server'
-import dbConnect from '@headlines/data-access/dbConnect/next' // Import dbConnect
+import { getEvents } from '@headlines/data-access/next' // CORRECTED IMPORT
+import { getUserIdFromSession } from '@/lib/auth/server' // CORRECTED IMPORT
+import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
 
@@ -766,7 +793,7 @@ const sortOptions = [
 ]
 
 export default async function EventsPage({ searchParams }) {
-  await dbConnect() // Ensure database connection is established
+  await dbConnect()
   const userId = await getUserIdFromSession()
   let initialEvents = []
 
@@ -798,12 +825,12 @@ export default async function EventsPage({ searchParams }) {
 ```
 
 ## 📄 src/app/(client)/layout.js
-*Lines: 21, Size: 773 Bytes*
+*Lines: 21, Size: 798 Bytes*
 
 ```javascript
 'use server'
 
-import { getDashboardStats, getGlobalCountries } from '@headlines/data-access'
+import { getDashboardStats, getGlobalCountries } from '@headlines/data-access/next' // CORRECTED IMPORT
 import { ClientLayoutWrapper } from './client-layout-wrapper'
 
 export default async function ClientLayout({ children }) {
@@ -975,12 +1002,12 @@ export default async function OpportunityDossierPage({ params }) {
 ```
 
 ## 📄 src/app/(client)/opportunities/page.js
-*Lines: 43, Size: 1.32 KB*
+*Lines: 44, Size: 1.34 KB*
 
 ```javascript
 // apps/client/src/app/(client)/opportunities/page.js
 import { DataView } from '@/components/client/shared/DataView'
-import { getOpportunities } from '@headlines/data-access'
+import { getOpportunities } from '@headlines/data-access/next' // CORRECTED
 import { getUserIdFromSession } from '@/lib/auth/server'
 import dbConnect from '@headlines/data-access/dbConnect/next'
 
@@ -1021,17 +1048,18 @@ export default async function OpportunitiesPage({ searchParams }) {
     />
   )
 }
+
 ```
 
 ## 📄 src/app/(client)/settings/page.js
-*Lines: 26, Size: 769 Bytes*
+*Lines: 26, Size: 787 Bytes*
 
 ```javascript
 // File: apps/client/src/app/(client)/settings/page.js
 
 // 'use server'
 
-import { getGlobalCountries } from '@headlines/data-access'
+import { getGlobalCountries } from '@headlines/data-access/next' // CORRECTED
 import { SettingsForm } from '@/components/client/settings/SettingsForm'
 
 export const dynamic = 'force-dynamic'
@@ -1122,11 +1150,12 @@ export function AppShell({ children }) {
 ```
 
 ## 📄 src/app/_components/AppWrapper.jsx
-*Lines: 28, Size: 702 Bytes*
+*Lines: 29, Size: 741 Bytes*
 
 ```jsx
 // File: apps/client/src/app/_components/AppWrapper.jsx
 import { cookies } from 'next/headers'
+import { verifySession } from '@/lib/auth/server'
 import { AuthProvider } from '@/lib/auth/AuthProvider'
 import { AppShell } from './AppShell'
 
@@ -1134,7 +1163,7 @@ async function getUser() {
   try {
     const cookieStore = await cookies()
     // Your verifySession logic here
-    const { user } = await verifySession(cookieStore)
+    const { user } = await verifySession()
     return user
   } catch (error) {
     // During static generation, cookies() will fail
@@ -1431,12 +1460,12 @@ export default function ArticleEditor({ initialArticle }) {
 ```
 
 ## 📄 src/app/admin/articles/[articleId]/page.jsx
-*Lines: 17, Size: 482 Bytes*
+*Lines: 17, Size: 500 Bytes*
 
 ```jsx
 'use server'
 
-import { getArticleDetails } from '@headlines/data-access'
+import { getArticleDetails } from '@headlines/data-access/next' // CORRECTED
 import { notFound } from 'next/navigation'
 import ArticleEditor from './ArticleEditor' // We will create this next
 
@@ -1630,12 +1659,12 @@ export const columns = (onUpdate, onDelete) => [
 ```
 
 ## 📄 src/app/admin/articles/page.js
-*Lines: 31, Size: 963 Bytes*
+*Lines: 31, Size: 957 Bytes*
 
 ```javascript
 // apps/client/src/app/admin/articles/page.js
-import { getArticles } from '@headlines/data-access'
-import ArticlesClientPage from './ArticlesClientPage' // New client component
+import { getArticles } from '@headlines/data-access/next' // CORRECTED
+import ArticlesClientPage from './ArticlesClientPage'
 import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
@@ -1865,7 +1894,7 @@ export default function DashboardClientPage({
 ```
 
 ## 📄 src/app/admin/dashboard/page.jsx
-*Lines: 54, Size: 1.44 KB*
+*Lines: 54, Size: 1.46 KB*
 
 ```jsx
 // File: apps/client/src/app/admin/dashboard/page.jsx (version 2.5 - FINAL)
@@ -1873,7 +1902,7 @@ import {
   getDashboardStats,
   getRecentRunVerdicts,
   getAllSources,
-} from '@headlines/data-access'
+} from '@headlines/data-access/next' // CORRECTED
 import DashboardClientPage from './DashboardClientPage'
 import dbConnect from '@headlines/data-access/dbConnect/next'
 
@@ -2411,26 +2440,28 @@ export default async function EventsPage({ searchParams }) {
 ```
 
 ## 📄 src/app/admin/layout.js
-*Lines: 27, Size: 784 Bytes*
+*Lines: 29, Size: 906 Bytes*
 
 ```javascript
 // 'use server'
 
 import { verifyAdmin } from '@/lib/auth/server'
-import { redirect } from 'next/navigation'
 import { DesktopOnlyWrapper } from '@/components/shared/screen/DesktopOnlyWrapper'
-import AdminNav from '@/components/admin/main-nav' // Import the nav component here
+import AdminNav from '@/components/admin/main-nav'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminLayout({ children }) {
+  // We can still verify admin here to be extra safe, but the redirect is now handled client-side
+  // by the AuthProvider, which prevents the rendering error.
   const { isAdmin } = await verifyAdmin()
 
   if (!isAdmin) {
-    redirect('/events') // Redirect non-admins away
+    // Instead of redirecting, we can return null or a loading/access-denied state.
+    // The AuthProvider will handle the redirect anyway.
+    return null
   }
 
-  // This Server Component now defines the admin layout structure.
   return (
     <DesktopOnlyWrapper>
       <div className="flex h-screen bg-background">
@@ -5068,7 +5099,7 @@ export const dynamic = 'force-dynamic'
 ```
 
 ## 📄 src/app/api/auth/login/route.js
-*Lines: 75, Size: 2.08 KB*
+*Lines: 76, Size: 2.1 KB*
 
 ```javascript
 // apps/client/src/app/api/auth/login/route.js
@@ -5076,11 +5107,12 @@ import { NextResponse } from 'next/server'
 import { loginUser } from '@headlines/data-access/next'
 import * as jose from 'jose'
 import { env } from '@headlines/config/next'
-import dbConnect from '@headlines/data-access/dbConnect/next'
+import dbConnect from '@headlines/data-access/dbConnect/next' // This import is now valid
 import { loginSchema } from '@headlines/models/schemas'
 import { sendErrorAlert } from '@headlines/utils-server/next'
 import { logger } from '@headlines/utils-shared'
 
+// ... rest of the file
 const JWT_COOKIE_NAME = 'headlines-jwt'
 
 export async function POST(request) {
@@ -5097,7 +5129,7 @@ export async function POST(request) {
     }
 
     const { email, password } = validation.data
-    logger.info(`Login attempt for user: ${email}`) // Use logger instead of console.log
+    logger.info(`Login attempt for user: ${email}`)
     const result = await loginUser({ email, password })
 
     if (!result.success) {
@@ -5168,6 +5200,45 @@ export async function POST() {
     maxAge: 0,
   })
   return response
+}
+
+```
+
+## 📄 src/app/api/auth/session/route.js
+*Lines: 33, Size: 999 Bytes*
+
+```javascript
+// apps/client/src/app/api/auth/session/route.js
+import { NextResponse } from 'next/server'
+import { verifySession } from '@/lib/auth/server'
+import { Subscriber } from '@headlines/models/next'
+import dbConnect from '@headlines/data-access/dbConnect/next'
+
+export const dynamic = 'force-dynamic'
+
+export async function GET(request) {
+  await dbConnect()
+
+  const { user, error } = await verifySession()
+
+  if (error) {
+    return NextResponse.json({ error: 'No active session' }, { status: 401 })
+  }
+
+  try {
+    // Re-fetch the user from the database to get the latest data
+    const freshUser = await Subscriber.findById(user.userId).lean()
+    if (!freshUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 401 })
+    }
+
+    // Don't send back the password hash
+    const { password, ...userPayload } = freshUser
+
+    return NextResponse.json({ user: userPayload })
+  } catch (e) {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }
 
 ```
@@ -5247,6 +5318,47 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+```
+
+## 📄 src/app/api/events/route.js
+*Lines: 35, Size: 1.3 KB*
+
+```javascript
+// apps/client/src/app/api/events/route.js
+import { NextResponse } from 'next/server'
+import { getEvents, getTotalEventCount } from '@headlines/data-access'
+import { createClientApiHandler } from '@/lib/api-handler'
+
+// This is the handler for GET requests to /api/events
+const handleGet = async (request, { user }) => {
+  const { searchParams } = new URL(request.url)
+  const page = parseInt(searchParams.get('page') || '1', 10)
+  const sort = searchParams.get('sort') || 'date_desc'
+  const filters = {
+    q: searchParams.get('q') || '',
+    country: searchParams.get('country') || '',
+    favoritesOnly: searchParams.get('favorites') === 'true',
+  }
+
+  // The user object is passed in from our createClientApiHandler wrapper
+  const [eventsResult, totalResult] = await Promise.all([
+    getEvents({ page, filters, sort, userId: user.userId }),
+    getTotalEventCount({ filters, userId: user.userId }),
+  ])
+
+  if (!eventsResult.success || !totalResult.success) {
+    throw new Error(
+      eventsResult.error || totalResult.error || 'Failed to fetch event data'
+    )
+  }
+
+  return NextResponse.json({ data: eventsResult.data, total: totalResult.total })
+}
+
+// We wrap our handler with the authentication and error handling middleware
+export const GET = createClientApiHandler(handleGet)
+export const dynamic = 'force-dynamic'
 
 ```
 
@@ -5978,27 +6090,26 @@ export const dynamic = 'force-dynamic'
 ```
 
 ## 📄 src/app/global-error.jsx
-*Lines: 21, Size: 533 Bytes*
+*Lines: 20, Size: 668 Bytes*
 
 ```jsx
 // apps/client/src/app/global-error.jsx
 'use client'
 
 export default function GlobalError({ error, reset }) {
+  // Although Next.js docs suggest this component needs its own <html> and <body> tags,
+  // the build process throws an error indicating it's being wrapped by the root layout anyway.
+  // Removing them resolves the build failure.
   return (
-    <html lang="en">
-      <body>
-        <div className="flex flex-col items-center justify-center min-h-screen">
-          <h2 className="text-4xl font-bold">Something went wrong!</h2>
-          <button
-            onClick={() => reset()}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
-          >
-            Try again
-          </button>
-        </div>
-      </body>
-    </html>
+    <div className="flex flex-col items-center justify-center min-h-screen">
+      <h2 className="text-4xl font-bold">Something went wrong!</h2>
+      <button
+        onClick={() => reset()}
+        className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+      >
+        Try again
+      </button>
+    </div>
   )
 }
 
@@ -6201,29 +6312,22 @@ export default function GlobalError({ error, reset }) {
 ```
 
 ## 📄 src/app/layout.js
-*Lines: 25, Size: 672 Bytes*
+*Lines: 18, Size: 397 Bytes*
 
 ```javascript
-// File: apps/client/src/app/layout.js
 import './globals.css'
 import { AppProviders } from './providers'
-import { AppWrapper } from './_components/AppWrapper'
-
-export const dynamic = 'force-dynamic'
-export const dynamicParams = true
 
 export const metadata = {
-  title: 'Headlines Intelligence',
-  description: 'An interface to browse, search, and filter wealth event articles.',
+  title: 'Headlines Client',
+  description: 'A stable foundation for the Headlines app.',
 }
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className="dark">
-      <body className="bg-background font-sans text-foreground">
-        <AppProviders>
-          <AppWrapper>{children}</AppWrapper>
-        </AppProviders>
+    <html lang="en">
+      <body className="bg-zinc-900 text-white">
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   )
@@ -6386,22 +6490,20 @@ export default function LoginPage() {
 ```
 
 ## 📄 src/app/not-found.jsx
-*Lines: 16, Size: 402 Bytes*
+*Lines: 14, Size: 435 Bytes*
 
 ```jsx
 // apps/client/src/app/not-found.jsx
 export default function NotFound() {
+  // The not-found component renders within the root layout,
+  // so it does not need its own <html> or <body> tags.
   return (
-    <html lang="en">
-      <body>
-        <div className="flex flex-col items-center justify-center min-h-screen">
-          <h1 className="text-4xl font-bold">404 - Not Found</h1>
-          <a href="/" className="mt-4 text-blue-500">
-            Go Home
-          </a>
-        </div>
-      </body>
-    </html>
+    <div className="flex flex-col items-center justify-center min-h-screen">
+      <h1 className="text-4xl font-bold">404 - Not Found</h1>
+      <a href="/" className="mt-4 text-blue-500">
+        Go Home
+      </a>
+    </div>
   )
 }
 
@@ -6422,22 +6524,28 @@ export default function RootPage() {
 ```
 
 ## 📄 src/app/providers.jsx
-*Lines: 13, Size: 367 Bytes*
+*Lines: 19, Size: 614 Bytes*
 
 ```jsx
-// apps/client/src/app/providers.jsx
 'use client'
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { AuthProvider } from '@/lib/auth/AuthProvider'
 import { useState } from 'react'
+import { Toaster } from 'sonner' // Assuming you have this component for toast notifications
 
 export function AppProviders({ children }) {
   const [queryClient] = useState(() => new QueryClient())
+
   return (
+    // QueryClientProvider MUST be the outermost provider for TanStack Query to work.
     <QueryClientProvider client={queryClient}>
-      {children}
+      <AuthProvider>{children}</AuthProvider>
+      <Toaster />
     </QueryClientProvider>
   )
 }
+
 ```
 
 ## 📄 src/components/admin/AdminHeader.jsx
@@ -9300,6 +9408,30 @@ export function AnimatedList({ children, className }) {
       {children}
     </motion.div>
   )
+}
+
+```
+
+## 📄 src/components/client/shared/ClientRedirect.jsx
+*Lines: 18, Size: 476 Bytes*
+
+```jsx
+'use client'
+
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+
+// This component performs a client-side redirect, avoiding the server-side
+// NEXT_REDIRECT error that can be intercepted by browser security features.
+export function ClientRedirect({ destination }) {
+  const router = useRouter()
+
+  useEffect(() => {
+    router.replace(destination)
+  }, [router, destination])
+
+  // Render nothing while the redirect is happening.
+  return null
 }
 
 ```
@@ -13368,14 +13500,14 @@ export async function handleExport(entity, fileType, filters, sort) {
 ```
 
 ## 📄 src/lib/api-handler.js
-*Lines: 72, Size: 2.07 KB*
+*Lines: 72, Size: 2.02 KB*
 
 ```javascript
 // apps/client/src/lib/api-handler.js
 import { NextResponse } from 'next/server'
 import { verifySession, verifyAdmin } from '@/lib/auth/server'
 import dbConnect from '@headlines/data-access/dbConnect/next'
-import { sendErrorAlert } from '@headlines/utils-server/next' // Use Next.js-safe import
+import { sendErrorAlert } from '@headlines/utils-server/next'
 
 export function createApiHandler(handler) {
   return async (request, context) => {
@@ -13418,7 +13550,7 @@ export function createClientApiHandler(handler) {
           { status: 401 }
         )
       }
-      userPayload = user // Store user for error context
+      userPayload = user
       return await handler(request, { ...context, user })
     } catch (error) {
       const errorContext = {
@@ -13446,42 +13578,60 @@ export function createClientApiHandler(handler) {
 ```
 
 ## 📄 src/lib/auth/AuthProvider.js
-*Lines: 89, Size: 2.75 KB*
+*Lines: 122, Size: 3.82 KB*
 
 ```javascript
-// File: apps/client/src/lib/auth/AuthProvider.js (Full Version)
 'use client'
 
-import React, { createContext, useState, useEffect, useCallback } from 'react'
+import React, { createContext, useState, useEffect, useCallback, useContext } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { LoadingOverlay } from '@/components/shared/screen/LoadingOverlay'
+import { SplashScreen } from '@/components/shared/screen/SplashScreen'
 
 export const AuthContext = createContext(null)
 
-export function AuthProvider({ initialUser, children }) {
-  const [user, setUser] = useState(initialUser)
-  const [isLoading, setIsLoading] = useState(!initialUser)
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null)
+  const [isLoading, setIsLoading] = useState(true) // Start in a loading state
   const router = useRouter()
   const pathname = usePathname()
 
+  // This effect runs once on mount to check the user's session from the API
   useEffect(() => {
-    if (!initialUser) {
-      setIsLoading(false)
+    async function checkSession() {
+      try {
+        const response = await fetch('/api/auth/session')
+        if (!response.ok) {
+          throw new Error('No active session')
+        }
+        const data = await response.json()
+        setUser(data.user)
+      } catch (error) {
+        setUser(null)
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }, [initialUser])
+    checkSession()
+  }, [])
 
+  // This effect is the single source of truth for redirection
   useEffect(() => {
+    if (isLoading) return // Don't do anything while checking the session
+
     const isAuthPage = pathname.startsWith('/login')
+    const isAdminPage = pathname.startsWith('/admin')
+
     if (!user && !isAuthPage) {
       router.push('/login')
     } else if (user && isAuthPage) {
       router.push('/events')
+    } else if (user && user.role !== 'admin' && isAdminPage) {
+      router.push('/events')
     }
-  }, [user, pathname, router])
+  }, [user, isLoading, pathname, router])
 
   const login = async (email, password) => {
-    setIsLoading(true)
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -13491,7 +13641,7 @@ export function AuthProvider({ initialUser, children }) {
       const data = await response.json()
       if (response.ok) {
         toast.success('Login successful!')
-        setUser(data.user)
+        setUser(data.user) // This will trigger the redirect effect
         return true
       } else {
         toast.error('Login Failed', { description: data.error })
@@ -13500,19 +13650,18 @@ export function AuthProvider({ initialUser, children }) {
     } catch (error) {
       toast.error('Login Failed', { description: 'Could not connect to the server.' })
       return false
-    } finally {
-      setIsLoading(false)
     }
   }
 
   const logout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
     toast.info('You have been logged out.')
-    setUser(null)
+    setUser(null) // This will trigger the redirect effect
   }
 
   const updateUserPreferences = useCallback(async (updateData) => {
-    setUser((prevUser) => ({ ...prevUser, ...updateData })) // Optimistic update
+    // This is an optimistic update for a better UX
+    setUser((prevUser) => ({ ...prevUser, ...updateData }))
     try {
       const response = await fetch('/api/user/profile', {
         method: 'PATCH',
@@ -13521,21 +13670,37 @@ export function AuthProvider({ initialUser, children }) {
       })
       const updatedUser = await response.json()
       if (!response.ok) throw new Error(updatedUser.error)
-      setUser(updatedUser) // Sync with server response
+      setUser(updatedUser) // Sync with the server's response
       toast.success('Preferences saved.')
     } catch (error) {
       toast.error('Failed to save preferences', { description: error.message })
-      // Here you might want to re-fetch the user to revert the optimistic update
+      // In a real app, you might want to re-fetch the user to revert the optimistic update
     }
   }, [])
 
   const value = { user, isLoading, login, logout, updateUserPreferences }
 
-  if (isLoading && !user) {
-    return <LoadingOverlay isLoading={true} text="Authorizing..." />
+  if (isLoading) {
+    return <SplashScreen />
   }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  const isAuthPage = pathname.startsWith('/login')
+
+  if (isAuthPage || user) {
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  }
+
+  // If not authenticated and on a protected page, show the splash screen
+  // while the redirect effect navigates them to /login.
+  return <SplashScreen />
+}
+
+export const useAuth = () => {
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
 }
 
 ```
@@ -13605,23 +13770,13 @@ export async function getCookies() {
 ```
 
 ## 📄 src/lib/auth/server.js
-*Lines: 5, Size: 286 Bytes*
+*Lines: 48, Size: 1.27 KB*
 
 ```javascript
-// Full Path: headlines/src/lib/auth/server.js
-// This file is the designated server-side entry point for auth utilities.
-// It re-exports functions from other modules to create a clean API boundary.
-export { verifySession, verifyAdmin, getUserIdFromSession } from './verifySession.js'
-
-```
-
-## 📄 src/lib/auth/verifySession.js
-*Lines: 50, Size: 1.43 KB*
-
-```javascript
+// apps/client/src/lib/auth/server.js
 'use server'
 
-import { getCookies } from './getCookies.js'
+import { cookies } from 'next/headers'
 import * as jose from 'jose'
 import { env } from '@headlines/config/next'
 
@@ -13639,7 +13794,7 @@ async function verifyToken(token) {
 }
 
 export async function verifySession() {
-  const cookieStore = await getCookies()
+  const cookieStore = cookies()
   const token = cookieStore.get(JWT_COOKIE_NAME)?.value
   return await verifyToken(token)
 }
@@ -13649,12 +13804,63 @@ export async function getUserIdFromSession() {
   return user ? user.userId : null
 }
 
-// This function is now simplified and has no database side-effects.
-// It relies on a user having been seeded manually.
 export async function verifyAdmin() {
   const { user, error } = await verifySession()
 
-  // A simple check for a known dev user email can be a convenience.
+  if (process.env.NODE_ENV === 'development' && user?.email === 'dev@headlines.dev') {
+    return { isAdmin: true, user, error: null }
+  }
+
+  if (error || user?.role !== 'admin') {
+    return {
+      isAdmin: false,
+      error: error || 'Administrator access required.',
+      user: null,
+    }
+  }
+  return { isAdmin: true, user, error: null }
+}
+
+```
+
+## 📄 src/lib/auth/verifySession.js
+*Lines: 48, Size: 1.3 KB*
+
+```javascript
+// apps/client/src/lib/auth/verifySession.js
+'use server'
+
+import { cookies } from 'next/headers' // Direct, explicit import
+import * as jose from 'jose'
+import { env } from '@headlines/config/next'
+
+const JWT_COOKIE_NAME = 'headlines-jwt'
+
+async function verifyToken(token) {
+  if (!token) return { user: null, error: 'No token provided.' }
+  try {
+    const secret = new TextEncoder().encode(env.JWT_SECRET)
+    const { payload } = await jose.jwtVerify(token, secret)
+    return { user: payload, error: null }
+  } catch (e) {
+    return { user: null, error: 'Invalid or expired session token.' }
+  }
+}
+
+export async function verifySession() {
+  const cookieStore = cookies()
+  const token = cookieStore.get(JWT_COOKIE_NAME)?.value
+  return await verifyToken(token)
+}
+
+export async function getUserIdFromSession() {
+  const { user } = await verifySession()
+  return user ? user.userId : null
+}
+
+export async function verifyAdmin() {
+  const { user, error } = await verifySession()
+
   if (process.env.NODE_ENV === 'development' && user?.email === 'dev@headlines.dev') {
     return { isAdmin: true, user, error: null }
   }
@@ -13947,6 +14153,19 @@ module.exports = {
     },
   },
   plugins: [require('tailwindcss-animate'), require('@tailwindcss/typography')],
+}
+
+```
+
+## 📄 vercel.j_s_o_n
+*Lines: 7, Size: 154 Bytes*
+
+```
+{
+  "buildCommand": "pnpm build --filter=client",
+  "installCommand": "pnpm install",
+  "framework": "nextjs",
+  "outputDirectory": "apps/client/.next"
 }
 
 ```

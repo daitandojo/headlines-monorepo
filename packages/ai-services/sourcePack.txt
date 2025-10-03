@@ -72,7 +72,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-02T23:22:35.385Z
+**Generated**: 2025-10-03T20:17:04.602Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/ai-services
 **Total Files**: 54
 **Package**: @headlines/ai-services@1.0.0
@@ -1042,11 +1042,10 @@ export const watchlistSuggestionChain = {
 ```
 
 ## 📄 src/embeddings/embeddings.js
-*Lines: 234, Size: 7.97 KB*
+*Lines: 233, Size: 7.92 KB*
 
 ```javascript
 // src/lib/embeddings.js (Enhanced version with query expansion and caching)
-import { pipeline } from '@xenova/transformers';
 
 // In-memory cache for embeddings (consider Redis for production)
 const embeddingCache = new Map();
@@ -2485,7 +2484,7 @@ export async function processChatRequest(messages) {
 ```
 
 ## 📄 src/rag/planner.js
-*Lines: 36, Size: 1.06 KB*
+*Lines: 46, Size: 1.26 KB*
 
 ```javascript
 // packages/ai-services/src/rag/planner.js
@@ -2514,12 +2513,22 @@ export async function runPlannerAgent(messages) {
     throw new Error(`Planner Agent failed: ${response.error}`)
   }
 
-  logger.groupCollapsed('[Planner Agent] Plan Generated')
-  logger.trace('User Query:', response.user_query)
-  logger.trace('Reasoning:', response.reasoning)
-  logger.trace('Plan Steps:', response.plan)
-  logger.trace('Search Queries:', response.search_queries)
-  logger.groupEnd()
+  // --- START OF THE FIX ---
+  // Replaced browser-specific logger.groupCollapsed with a single structured log object.
+  // This is safe to run on the server.
+  logger.trace(
+    {
+      agent: 'Planner Agent',
+      planDetails: {
+        userQuery: response.user_query,
+        reasoning: response.reasoning,
+        planSteps: response.plan,
+        searchQueries: response.search_queries,
+      },
+    },
+    '[Planner Agent] Plan Generated'
+  )
+  // --- END OF THE FIX ---
 
   return response
 }

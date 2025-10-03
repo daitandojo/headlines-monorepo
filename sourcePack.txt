@@ -1,20 +1,20 @@
 # 🎯 MONOREPO SOURCE PACK
 
-**Generated**: 2025-10-02T23:22:35.405Z
+**Generated**: 2025-10-03T20:17:04.627Z
 **Packages**: 11
-**Total Files**: 510
-**Total Lines**: 33,439
+**Total Files**: 513
+**Total Lines**: 33,666
 
 ---
 
 ## 📚 TABLE OF CONTENTS
 
-1. **client** (182 files, 12,561 lines)
+1. **client** (186 files, 12,750 lines)
 2. **pipeline** (106 files, 10,813 lines)
 3. **server** (4 files, 141 lines)
-4. **ai-services** (54 files, 3,188 lines)
+4. **ai-services** (54 files, 3,197 lines)
 5. **config** (6 files, 205 lines)
-6. **data-access** (30 files, 2,158 lines)
+6. **data-access** (29 files, 2,187 lines)
 7. **models** (45 files, 1,028 lines)
 8. **prompts** (31 files, 1,009 lines)
 9. **scraper-logic** (29 files, 1,484 lines)
@@ -27,7 +27,7 @@
 
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 194 files, 85 directories
+Total: 198 files, 87 directories
 
 ```
 headlines/
@@ -123,11 +123,15 @@ headlines/
 │   │   │   ├── 📁 auth/
 │   │   │   │   ├── 📁 login/
 │   │   │   │   │   └── 📄 route.js
-│   │   │   │   └── 📁 logout/
+│   │   │   │   ├── 📁 logout/
+│   │   │   │   │   └── 📄 route.js
+│   │   │   │   └── 📁 session/
 │   │   │   │       └── 📄 route.js
 │   │   │   ├── 📁 chat/
 │   │   │   │   ├── 📁 title/
 │   │   │   │   │   └── 📄 route.js
+│   │   │   │   └── 📄 route.js
+│   │   │   ├── 📁 events/
 │   │   │   │   └── 📄 route.js
 │   │   │   ├── 📁 opportunities/
 │   │   │   │   └── 📄 route.js
@@ -226,6 +230,7 @@ headlines/
 │   │   │   │   └── 📄 SettingsForm.jsx
 │   │   │   ├── 📁 shared/
 │   │   │   │   ├── 📄 AnimatedList.jsx
+│   │   │   │   ├── 📄 ClientRedirect.jsx
 │   │   │   │   ├── 📄 DataView.jsx
 │   │   │   │   ├── 📄 Header.jsx
 │   │   │   │   ├── 📄 MainNavTabs.jsx
@@ -309,14 +314,15 @@ headlines/
 ├── 📄 next.config.mjs
 ├── 📄 package.json
 ├── 📄 postcss.config.cjs
-└── 📄 tailwind.config.js
+├── 📄 tailwind.config.js
+└── 📄 vercel.j_s_o_n
 ```
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-02T23:22:35.353Z
+**Generated**: 2025-10-03T20:17:04.564Z
 **Repository Path**: /home/mark/Repos/projects/headlines/apps/client
-**Total Files**: 182
+**Total Files**: 186
 **Package**: @headlines/client@1.0.0
 
 
@@ -440,12 +446,10 @@ export default eslintConfig;
 ```
 
 ## 📄 next.config.mjs
-*Lines: 33, Size: 724 Bytes*
+*Lines: 47, Size: 1.4 KB*
 
 ```
-// File: apps/client/next.config.mjs
 /** @type {import('next').NextConfig} */
-
 const nextConfig = {
   transpilePackages: [
     '@headlines/config',
@@ -453,33 +457,49 @@ const nextConfig = {
     '@headlines/models',
     '@headlines/utils-shared',
   ],
+  experimental: {
+    // Tell Next.js these packages should NOT be bundled into serverless functions
+    serverComponentsExternalPackages: [
+      '@xenova/transformers',
+      'sharp',
+      'onnxruntime-node',
+    ],
+  },
   webpack: (config, { isServer }) => {
-      config.externals.push(
-        'onnxruntime-node',
-        '@xenova/transformers',
-        'sharp',
-        'bcrypt',
-        'mongodb-client-encryption',
-        'aws4'
-      )
-
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      'onnxruntime-node': false,
-      '@xenova/transformers': false,
-    }
     if (isServer) {
-      config.externals.push('onnxruntime-node')
+      // Mark these as external so they're loaded from node_modules at runtime
+      // This prevents webpack from trying to bundle them
+      config.externals.push({
+        '@xenova/transformers': '@xenova/transformers',
+        'onnxruntime-node': 'commonjs onnxruntime-node',
+        sharp: 'commonjs sharp',
+        bcrypt: 'commonjs bcrypt',
+        'mongodb-client-encryption': 'commonjs mongodb-client-encryption',
+        aws4: 'commonjs aws4',
+      })
+    } else {
+      // Prevent client-side bundling of server-only packages
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@xenova/transformers': false,
+        'onnxruntime-node': false,
+        sharp: false,
+        bcrypt: false,
+      }
     }
+
     return config
   },
+  // Disable minification for problematic packages or configure terser to handle async
+  swcMinify: true, // Use SWC instead of Terser (better async support)
 }
 
 export default nextConfig
+
 ```
 
 ## 📄 package.json
-*Lines: 55, Size: 1.7 KB*
+*Lines: 62, Size: 1.91 KB*
 
 ```json
 {
@@ -488,8 +508,9 @@ export default nextConfig
   "private": true,
   "scripts": {
     "dev": "dotenv -e ../../.env -- next dev",
-    "build": "dotenv -e ../../.env -- next build",
-    "start": "next start",
+    "build": "next build",
+    "build:local": "dotenv -e ../../.env -- next build",
+    "start": "dotenv -e ../../.env -- next start",
     "lint": "next lint"
   },
   "dependencies": {
@@ -515,13 +536,17 @@ export default nextConfig
     "@tanstack/react-query-devtools": "^5.45.1",
     "@tanstack/react-table": "^8.21.3",
     "class-variance-authority": "^0.7.1",
+    "@xenova/transformers": "^2.17.2",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "date-fns": "^3.6.0",
     "framer-motion": "^12.23.22",
     "jose": "^6.1.0",
     "lucide-react": "^0.379.0",
     "next": "14.2.4",
     "next-themes": "^0.3.0",
+    "react": "^18",
+    "react-dom": "^18",
     "react-intersection-observer": "^9.10.3",
     "react-markdown": "^9.0.1",
     "react-textarea-autosize": "^8.5.3",
@@ -533,7 +558,9 @@ export default nextConfig
   },
   "devDependencies": {
     "eslint": "^8.57.0",
-    "eslint-config-next": "14.2.4"
+    "eslint-config-next": "14.2.4",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1"
   }
 }
 
@@ -689,13 +716,13 @@ self.addEventListener('notificationclick', (event) => {
 ```
 
 ## 📄 src/app/(client)/articles/page.js
-*Lines: 43, Size: 1.24 KB*
+*Lines: 43, Size: 1.28 KB*
 
 ```javascript
 // apps/client/src/app/(client)/articles/page.js
 import { DataView } from '@/components/client/shared/DataView'
-import { getArticles } from '@headlines/data-access'
-import { getUserIdFromSession } from '@/lib/auth/server'
+import { getArticles } from '@headlines/data-access/next' // CORRECTED IMPORT
+import { getUserIdFromSession } from '@/lib/auth/server' // CORRECTED IMPORT
 import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
@@ -776,14 +803,14 @@ export function ClientLayoutWrapper({ children, serverProps }) {
 ```
 
 ## 📄 src/app/(client)/events/page.js
-*Lines: 43, Size: 1.3 KB*
+*Lines: 43, Size: 1.28 KB*
 
 ```javascript
 // apps/client/src/app/(client)/events/page.js
 import { DataView } from '@/components/client/shared/DataView'
-import { getEvents } from '@headlines/data-access'
-import { getUserIdFromSession } from '@/lib/auth/server'
-import dbConnect from '@headlines/data-access/dbConnect/next' // Import dbConnect
+import { getEvents } from '@headlines/data-access/next' // CORRECTED IMPORT
+import { getUserIdFromSession } from '@/lib/auth/server' // CORRECTED IMPORT
+import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
 
@@ -793,7 +820,7 @@ const sortOptions = [
 ]
 
 export default async function EventsPage({ searchParams }) {
-  await dbConnect() // Ensure database connection is established
+  await dbConnect()
   const userId = await getUserIdFromSession()
   let initialEvents = []
 
@@ -825,12 +852,12 @@ export default async function EventsPage({ searchParams }) {
 ```
 
 ## 📄 src/app/(client)/layout.js
-*Lines: 21, Size: 773 Bytes*
+*Lines: 21, Size: 798 Bytes*
 
 ```javascript
 'use server'
 
-import { getDashboardStats, getGlobalCountries } from '@headlines/data-access'
+import { getDashboardStats, getGlobalCountries } from '@headlines/data-access/next' // CORRECTED IMPORT
 import { ClientLayoutWrapper } from './client-layout-wrapper'
 
 export default async function ClientLayout({ children }) {
@@ -1002,12 +1029,12 @@ export default async function OpportunityDossierPage({ params }) {
 ```
 
 ## 📄 src/app/(client)/opportunities/page.js
-*Lines: 43, Size: 1.32 KB*
+*Lines: 44, Size: 1.34 KB*
 
 ```javascript
 // apps/client/src/app/(client)/opportunities/page.js
 import { DataView } from '@/components/client/shared/DataView'
-import { getOpportunities } from '@headlines/data-access'
+import { getOpportunities } from '@headlines/data-access/next' // CORRECTED
 import { getUserIdFromSession } from '@/lib/auth/server'
 import dbConnect from '@headlines/data-access/dbConnect/next'
 
@@ -1048,17 +1075,18 @@ export default async function OpportunitiesPage({ searchParams }) {
     />
   )
 }
+
 ```
 
 ## 📄 src/app/(client)/settings/page.js
-*Lines: 26, Size: 769 Bytes*
+*Lines: 26, Size: 787 Bytes*
 
 ```javascript
 // File: apps/client/src/app/(client)/settings/page.js
 
 // 'use server'
 
-import { getGlobalCountries } from '@headlines/data-access'
+import { getGlobalCountries } from '@headlines/data-access/next' // CORRECTED
 import { SettingsForm } from '@/components/client/settings/SettingsForm'
 
 export const dynamic = 'force-dynamic'
@@ -1149,11 +1177,12 @@ export function AppShell({ children }) {
 ```
 
 ## 📄 src/app/_components/AppWrapper.jsx
-*Lines: 28, Size: 702 Bytes*
+*Lines: 29, Size: 741 Bytes*
 
 ```jsx
 // File: apps/client/src/app/_components/AppWrapper.jsx
 import { cookies } from 'next/headers'
+import { verifySession } from '@/lib/auth/server'
 import { AuthProvider } from '@/lib/auth/AuthProvider'
 import { AppShell } from './AppShell'
 
@@ -1161,7 +1190,7 @@ async function getUser() {
   try {
     const cookieStore = await cookies()
     // Your verifySession logic here
-    const { user } = await verifySession(cookieStore)
+    const { user } = await verifySession()
     return user
   } catch (error) {
     // During static generation, cookies() will fail
@@ -1458,12 +1487,12 @@ export default function ArticleEditor({ initialArticle }) {
 ```
 
 ## 📄 src/app/admin/articles/[articleId]/page.jsx
-*Lines: 17, Size: 482 Bytes*
+*Lines: 17, Size: 500 Bytes*
 
 ```jsx
 'use server'
 
-import { getArticleDetails } from '@headlines/data-access'
+import { getArticleDetails } from '@headlines/data-access/next' // CORRECTED
 import { notFound } from 'next/navigation'
 import ArticleEditor from './ArticleEditor' // We will create this next
 
@@ -1657,12 +1686,12 @@ export const columns = (onUpdate, onDelete) => [
 ```
 
 ## 📄 src/app/admin/articles/page.js
-*Lines: 31, Size: 963 Bytes*
+*Lines: 31, Size: 957 Bytes*
 
 ```javascript
 // apps/client/src/app/admin/articles/page.js
-import { getArticles } from '@headlines/data-access'
-import ArticlesClientPage from './ArticlesClientPage' // New client component
+import { getArticles } from '@headlines/data-access/next' // CORRECTED
+import ArticlesClientPage from './ArticlesClientPage'
 import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
@@ -1892,7 +1921,7 @@ export default function DashboardClientPage({
 ```
 
 ## 📄 src/app/admin/dashboard/page.jsx
-*Lines: 54, Size: 1.44 KB*
+*Lines: 54, Size: 1.46 KB*
 
 ```jsx
 // File: apps/client/src/app/admin/dashboard/page.jsx (version 2.5 - FINAL)
@@ -1900,7 +1929,7 @@ import {
   getDashboardStats,
   getRecentRunVerdicts,
   getAllSources,
-} from '@headlines/data-access'
+} from '@headlines/data-access/next' // CORRECTED
 import DashboardClientPage from './DashboardClientPage'
 import dbConnect from '@headlines/data-access/dbConnect/next'
 
@@ -2438,26 +2467,28 @@ export default async function EventsPage({ searchParams }) {
 ```
 
 ## 📄 src/app/admin/layout.js
-*Lines: 27, Size: 784 Bytes*
+*Lines: 29, Size: 906 Bytes*
 
 ```javascript
 // 'use server'
 
 import { verifyAdmin } from '@/lib/auth/server'
-import { redirect } from 'next/navigation'
 import { DesktopOnlyWrapper } from '@/components/shared/screen/DesktopOnlyWrapper'
-import AdminNav from '@/components/admin/main-nav' // Import the nav component here
+import AdminNav from '@/components/admin/main-nav'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminLayout({ children }) {
+  // We can still verify admin here to be extra safe, but the redirect is now handled client-side
+  // by the AuthProvider, which prevents the rendering error.
   const { isAdmin } = await verifyAdmin()
 
   if (!isAdmin) {
-    redirect('/events') // Redirect non-admins away
+    // Instead of redirecting, we can return null or a loading/access-denied state.
+    // The AuthProvider will handle the redirect anyway.
+    return null
   }
 
-  // This Server Component now defines the admin layout structure.
   return (
     <DesktopOnlyWrapper>
       <div className="flex h-screen bg-background">
@@ -5095,7 +5126,7 @@ export const dynamic = 'force-dynamic'
 ```
 
 ## 📄 src/app/api/auth/login/route.js
-*Lines: 75, Size: 2.08 KB*
+*Lines: 76, Size: 2.1 KB*
 
 ```javascript
 // apps/client/src/app/api/auth/login/route.js
@@ -5103,11 +5134,12 @@ import { NextResponse } from 'next/server'
 import { loginUser } from '@headlines/data-access/next'
 import * as jose from 'jose'
 import { env } from '@headlines/config/next'
-import dbConnect from '@headlines/data-access/dbConnect/next'
+import dbConnect from '@headlines/data-access/dbConnect/next' // This import is now valid
 import { loginSchema } from '@headlines/models/schemas'
 import { sendErrorAlert } from '@headlines/utils-server/next'
 import { logger } from '@headlines/utils-shared'
 
+// ... rest of the file
 const JWT_COOKIE_NAME = 'headlines-jwt'
 
 export async function POST(request) {
@@ -5124,7 +5156,7 @@ export async function POST(request) {
     }
 
     const { email, password } = validation.data
-    logger.info(`Login attempt for user: ${email}`) // Use logger instead of console.log
+    logger.info(`Login attempt for user: ${email}`)
     const result = await loginUser({ email, password })
 
     if (!result.success) {
@@ -5195,6 +5227,45 @@ export async function POST() {
     maxAge: 0,
   })
   return response
+}
+
+```
+
+## 📄 src/app/api/auth/session/route.js
+*Lines: 33, Size: 999 Bytes*
+
+```javascript
+// apps/client/src/app/api/auth/session/route.js
+import { NextResponse } from 'next/server'
+import { verifySession } from '@/lib/auth/server'
+import { Subscriber } from '@headlines/models/next'
+import dbConnect from '@headlines/data-access/dbConnect/next'
+
+export const dynamic = 'force-dynamic'
+
+export async function GET(request) {
+  await dbConnect()
+
+  const { user, error } = await verifySession()
+
+  if (error) {
+    return NextResponse.json({ error: 'No active session' }, { status: 401 })
+  }
+
+  try {
+    // Re-fetch the user from the database to get the latest data
+    const freshUser = await Subscriber.findById(user.userId).lean()
+    if (!freshUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 401 })
+    }
+
+    // Don't send back the password hash
+    const { password, ...userPayload } = freshUser
+
+    return NextResponse.json({ user: userPayload })
+  } catch (e) {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }
 
 ```
@@ -5274,6 +5345,47 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+```
+
+## 📄 src/app/api/events/route.js
+*Lines: 35, Size: 1.3 KB*
+
+```javascript
+// apps/client/src/app/api/events/route.js
+import { NextResponse } from 'next/server'
+import { getEvents, getTotalEventCount } from '@headlines/data-access'
+import { createClientApiHandler } from '@/lib/api-handler'
+
+// This is the handler for GET requests to /api/events
+const handleGet = async (request, { user }) => {
+  const { searchParams } = new URL(request.url)
+  const page = parseInt(searchParams.get('page') || '1', 10)
+  const sort = searchParams.get('sort') || 'date_desc'
+  const filters = {
+    q: searchParams.get('q') || '',
+    country: searchParams.get('country') || '',
+    favoritesOnly: searchParams.get('favorites') === 'true',
+  }
+
+  // The user object is passed in from our createClientApiHandler wrapper
+  const [eventsResult, totalResult] = await Promise.all([
+    getEvents({ page, filters, sort, userId: user.userId }),
+    getTotalEventCount({ filters, userId: user.userId }),
+  ])
+
+  if (!eventsResult.success || !totalResult.success) {
+    throw new Error(
+      eventsResult.error || totalResult.error || 'Failed to fetch event data'
+    )
+  }
+
+  return NextResponse.json({ data: eventsResult.data, total: totalResult.total })
+}
+
+// We wrap our handler with the authentication and error handling middleware
+export const GET = createClientApiHandler(handleGet)
+export const dynamic = 'force-dynamic'
 
 ```
 
@@ -6005,27 +6117,26 @@ export const dynamic = 'force-dynamic'
 ```
 
 ## 📄 src/app/global-error.jsx
-*Lines: 21, Size: 533 Bytes*
+*Lines: 20, Size: 668 Bytes*
 
 ```jsx
 // apps/client/src/app/global-error.jsx
 'use client'
 
 export default function GlobalError({ error, reset }) {
+  // Although Next.js docs suggest this component needs its own <html> and <body> tags,
+  // the build process throws an error indicating it's being wrapped by the root layout anyway.
+  // Removing them resolves the build failure.
   return (
-    <html lang="en">
-      <body>
-        <div className="flex flex-col items-center justify-center min-h-screen">
-          <h2 className="text-4xl font-bold">Something went wrong!</h2>
-          <button
-            onClick={() => reset()}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
-          >
-            Try again
-          </button>
-        </div>
-      </body>
-    </html>
+    <div className="flex flex-col items-center justify-center min-h-screen">
+      <h2 className="text-4xl font-bold">Something went wrong!</h2>
+      <button
+        onClick={() => reset()}
+        className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+      >
+        Try again
+      </button>
+    </div>
   )
 }
 
@@ -6228,29 +6339,22 @@ export default function GlobalError({ error, reset }) {
 ```
 
 ## 📄 src/app/layout.js
-*Lines: 25, Size: 672 Bytes*
+*Lines: 18, Size: 397 Bytes*
 
 ```javascript
-// File: apps/client/src/app/layout.js
 import './globals.css'
 import { AppProviders } from './providers'
-import { AppWrapper } from './_components/AppWrapper'
-
-export const dynamic = 'force-dynamic'
-export const dynamicParams = true
 
 export const metadata = {
-  title: 'Headlines Intelligence',
-  description: 'An interface to browse, search, and filter wealth event articles.',
+  title: 'Headlines Client',
+  description: 'A stable foundation for the Headlines app.',
 }
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className="dark">
-      <body className="bg-background font-sans text-foreground">
-        <AppProviders>
-          <AppWrapper>{children}</AppWrapper>
-        </AppProviders>
+    <html lang="en">
+      <body className="bg-zinc-900 text-white">
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   )
@@ -6413,22 +6517,20 @@ export default function LoginPage() {
 ```
 
 ## 📄 src/app/not-found.jsx
-*Lines: 16, Size: 402 Bytes*
+*Lines: 14, Size: 435 Bytes*
 
 ```jsx
 // apps/client/src/app/not-found.jsx
 export default function NotFound() {
+  // The not-found component renders within the root layout,
+  // so it does not need its own <html> or <body> tags.
   return (
-    <html lang="en">
-      <body>
-        <div className="flex flex-col items-center justify-center min-h-screen">
-          <h1 className="text-4xl font-bold">404 - Not Found</h1>
-          <a href="/" className="mt-4 text-blue-500">
-            Go Home
-          </a>
-        </div>
-      </body>
-    </html>
+    <div className="flex flex-col items-center justify-center min-h-screen">
+      <h1 className="text-4xl font-bold">404 - Not Found</h1>
+      <a href="/" className="mt-4 text-blue-500">
+        Go Home
+      </a>
+    </div>
   )
 }
 
@@ -6449,22 +6551,28 @@ export default function RootPage() {
 ```
 
 ## 📄 src/app/providers.jsx
-*Lines: 13, Size: 367 Bytes*
+*Lines: 19, Size: 614 Bytes*
 
 ```jsx
-// apps/client/src/app/providers.jsx
 'use client'
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { AuthProvider } from '@/lib/auth/AuthProvider'
 import { useState } from 'react'
+import { Toaster } from 'sonner' // Assuming you have this component for toast notifications
 
 export function AppProviders({ children }) {
   const [queryClient] = useState(() => new QueryClient())
+
   return (
+    // QueryClientProvider MUST be the outermost provider for TanStack Query to work.
     <QueryClientProvider client={queryClient}>
-      {children}
+      <AuthProvider>{children}</AuthProvider>
+      <Toaster />
     </QueryClientProvider>
   )
 }
+
 ```
 
 ## 📄 src/components/admin/AdminHeader.jsx
@@ -9327,6 +9435,30 @@ export function AnimatedList({ children, className }) {
       {children}
     </motion.div>
   )
+}
+
+```
+
+## 📄 src/components/client/shared/ClientRedirect.jsx
+*Lines: 18, Size: 476 Bytes*
+
+```jsx
+'use client'
+
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+
+// This component performs a client-side redirect, avoiding the server-side
+// NEXT_REDIRECT error that can be intercepted by browser security features.
+export function ClientRedirect({ destination }) {
+  const router = useRouter()
+
+  useEffect(() => {
+    router.replace(destination)
+  }, [router, destination])
+
+  // Render nothing while the redirect is happening.
+  return null
 }
 
 ```
@@ -13395,14 +13527,14 @@ export async function handleExport(entity, fileType, filters, sort) {
 ```
 
 ## 📄 src/lib/api-handler.js
-*Lines: 72, Size: 2.07 KB*
+*Lines: 72, Size: 2.02 KB*
 
 ```javascript
 // apps/client/src/lib/api-handler.js
 import { NextResponse } from 'next/server'
 import { verifySession, verifyAdmin } from '@/lib/auth/server'
 import dbConnect from '@headlines/data-access/dbConnect/next'
-import { sendErrorAlert } from '@headlines/utils-server/next' // Use Next.js-safe import
+import { sendErrorAlert } from '@headlines/utils-server/next'
 
 export function createApiHandler(handler) {
   return async (request, context) => {
@@ -13445,7 +13577,7 @@ export function createClientApiHandler(handler) {
           { status: 401 }
         )
       }
-      userPayload = user // Store user for error context
+      userPayload = user
       return await handler(request, { ...context, user })
     } catch (error) {
       const errorContext = {
@@ -13473,42 +13605,60 @@ export function createClientApiHandler(handler) {
 ```
 
 ## 📄 src/lib/auth/AuthProvider.js
-*Lines: 89, Size: 2.75 KB*
+*Lines: 122, Size: 3.82 KB*
 
 ```javascript
-// File: apps/client/src/lib/auth/AuthProvider.js (Full Version)
 'use client'
 
-import React, { createContext, useState, useEffect, useCallback } from 'react'
+import React, { createContext, useState, useEffect, useCallback, useContext } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { LoadingOverlay } from '@/components/shared/screen/LoadingOverlay'
+import { SplashScreen } from '@/components/shared/screen/SplashScreen'
 
 export const AuthContext = createContext(null)
 
-export function AuthProvider({ initialUser, children }) {
-  const [user, setUser] = useState(initialUser)
-  const [isLoading, setIsLoading] = useState(!initialUser)
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null)
+  const [isLoading, setIsLoading] = useState(true) // Start in a loading state
   const router = useRouter()
   const pathname = usePathname()
 
+  // This effect runs once on mount to check the user's session from the API
   useEffect(() => {
-    if (!initialUser) {
-      setIsLoading(false)
+    async function checkSession() {
+      try {
+        const response = await fetch('/api/auth/session')
+        if (!response.ok) {
+          throw new Error('No active session')
+        }
+        const data = await response.json()
+        setUser(data.user)
+      } catch (error) {
+        setUser(null)
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }, [initialUser])
+    checkSession()
+  }, [])
 
+  // This effect is the single source of truth for redirection
   useEffect(() => {
+    if (isLoading) return // Don't do anything while checking the session
+
     const isAuthPage = pathname.startsWith('/login')
+    const isAdminPage = pathname.startsWith('/admin')
+
     if (!user && !isAuthPage) {
       router.push('/login')
     } else if (user && isAuthPage) {
       router.push('/events')
+    } else if (user && user.role !== 'admin' && isAdminPage) {
+      router.push('/events')
     }
-  }, [user, pathname, router])
+  }, [user, isLoading, pathname, router])
 
   const login = async (email, password) => {
-    setIsLoading(true)
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -13518,7 +13668,7 @@ export function AuthProvider({ initialUser, children }) {
       const data = await response.json()
       if (response.ok) {
         toast.success('Login successful!')
-        setUser(data.user)
+        setUser(data.user) // This will trigger the redirect effect
         return true
       } else {
         toast.error('Login Failed', { description: data.error })
@@ -13527,19 +13677,18 @@ export function AuthProvider({ initialUser, children }) {
     } catch (error) {
       toast.error('Login Failed', { description: 'Could not connect to the server.' })
       return false
-    } finally {
-      setIsLoading(false)
     }
   }
 
   const logout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
     toast.info('You have been logged out.')
-    setUser(null)
+    setUser(null) // This will trigger the redirect effect
   }
 
   const updateUserPreferences = useCallback(async (updateData) => {
-    setUser((prevUser) => ({ ...prevUser, ...updateData })) // Optimistic update
+    // This is an optimistic update for a better UX
+    setUser((prevUser) => ({ ...prevUser, ...updateData }))
     try {
       const response = await fetch('/api/user/profile', {
         method: 'PATCH',
@@ -13548,21 +13697,37 @@ export function AuthProvider({ initialUser, children }) {
       })
       const updatedUser = await response.json()
       if (!response.ok) throw new Error(updatedUser.error)
-      setUser(updatedUser) // Sync with server response
+      setUser(updatedUser) // Sync with the server's response
       toast.success('Preferences saved.')
     } catch (error) {
       toast.error('Failed to save preferences', { description: error.message })
-      // Here you might want to re-fetch the user to revert the optimistic update
+      // In a real app, you might want to re-fetch the user to revert the optimistic update
     }
   }, [])
 
   const value = { user, isLoading, login, logout, updateUserPreferences }
 
-  if (isLoading && !user) {
-    return <LoadingOverlay isLoading={true} text="Authorizing..." />
+  if (isLoading) {
+    return <SplashScreen />
   }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  const isAuthPage = pathname.startsWith('/login')
+
+  if (isAuthPage || user) {
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  }
+
+  // If not authenticated and on a protected page, show the splash screen
+  // while the redirect effect navigates them to /login.
+  return <SplashScreen />
+}
+
+export const useAuth = () => {
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
 }
 
 ```
@@ -13632,23 +13797,13 @@ export async function getCookies() {
 ```
 
 ## 📄 src/lib/auth/server.js
-*Lines: 5, Size: 286 Bytes*
+*Lines: 48, Size: 1.27 KB*
 
 ```javascript
-// Full Path: headlines/src/lib/auth/server.js
-// This file is the designated server-side entry point for auth utilities.
-// It re-exports functions from other modules to create a clean API boundary.
-export { verifySession, verifyAdmin, getUserIdFromSession } from './verifySession.js'
-
-```
-
-## 📄 src/lib/auth/verifySession.js
-*Lines: 50, Size: 1.43 KB*
-
-```javascript
+// apps/client/src/lib/auth/server.js
 'use server'
 
-import { getCookies } from './getCookies.js'
+import { cookies } from 'next/headers'
 import * as jose from 'jose'
 import { env } from '@headlines/config/next'
 
@@ -13666,7 +13821,7 @@ async function verifyToken(token) {
 }
 
 export async function verifySession() {
-  const cookieStore = await getCookies()
+  const cookieStore = cookies()
   const token = cookieStore.get(JWT_COOKIE_NAME)?.value
   return await verifyToken(token)
 }
@@ -13676,12 +13831,63 @@ export async function getUserIdFromSession() {
   return user ? user.userId : null
 }
 
-// This function is now simplified and has no database side-effects.
-// It relies on a user having been seeded manually.
 export async function verifyAdmin() {
   const { user, error } = await verifySession()
 
-  // A simple check for a known dev user email can be a convenience.
+  if (process.env.NODE_ENV === 'development' && user?.email === 'dev@headlines.dev') {
+    return { isAdmin: true, user, error: null }
+  }
+
+  if (error || user?.role !== 'admin') {
+    return {
+      isAdmin: false,
+      error: error || 'Administrator access required.',
+      user: null,
+    }
+  }
+  return { isAdmin: true, user, error: null }
+}
+
+```
+
+## 📄 src/lib/auth/verifySession.js
+*Lines: 48, Size: 1.3 KB*
+
+```javascript
+// apps/client/src/lib/auth/verifySession.js
+'use server'
+
+import { cookies } from 'next/headers' // Direct, explicit import
+import * as jose from 'jose'
+import { env } from '@headlines/config/next'
+
+const JWT_COOKIE_NAME = 'headlines-jwt'
+
+async function verifyToken(token) {
+  if (!token) return { user: null, error: 'No token provided.' }
+  try {
+    const secret = new TextEncoder().encode(env.JWT_SECRET)
+    const { payload } = await jose.jwtVerify(token, secret)
+    return { user: payload, error: null }
+  } catch (e) {
+    return { user: null, error: 'Invalid or expired session token.' }
+  }
+}
+
+export async function verifySession() {
+  const cookieStore = cookies()
+  const token = cookieStore.get(JWT_COOKIE_NAME)?.value
+  return await verifyToken(token)
+}
+
+export async function getUserIdFromSession() {
+  const { user } = await verifySession()
+  return user ? user.userId : null
+}
+
+export async function verifyAdmin() {
+  const { user, error } = await verifySession()
+
   if (process.env.NODE_ENV === 'development' && user?.email === 'dev@headlines.dev') {
     return { isAdmin: true, user, error: null }
   }
@@ -13978,6 +14184,19 @@ module.exports = {
 
 ```
 
+## 📄 vercel.j_s_o_n
+*Lines: 7, Size: 154 Bytes*
+
+```
+{
+  "buildCommand": "pnpm build --filter=client",
+  "installCommand": "pnpm install",
+  "framework": "nextjs",
+  "outputDirectory": "apps/client/.next"
+}
+
+```
+
 
 ================================================================================
 
@@ -14130,7 +14349,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-02T23:22:35.374Z
+**Generated**: 2025-10-03T20:17:04.590Z
 **Repository Path**: /home/mark/Repos/projects/headlines/apps/pipeline
 **Total Files**: 106
 **Package**: @headlines/pipeline@1.0.0
@@ -25612,7 +25831,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-02T23:22:35.382Z
+**Generated**: 2025-10-03T20:17:04.598Z
 **Repository Path**: /home/mark/Repos/projects/headlines/apps/server
 **Total Files**: 4
 **Package**: @headlines/server@1.0.0
@@ -25867,7 +26086,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-02T23:22:35.385Z
+**Generated**: 2025-10-03T20:17:04.602Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/ai-services
 **Total Files**: 54
 **Package**: @headlines/ai-services@1.0.0
@@ -26837,11 +27056,10 @@ export const watchlistSuggestionChain = {
 ```
 
 ## 📄 src/embeddings/embeddings.js
-*Lines: 234, Size: 7.97 KB*
+*Lines: 233, Size: 7.92 KB*
 
 ```javascript
 // src/lib/embeddings.js (Enhanced version with query expansion and caching)
-import { pipeline } from '@xenova/transformers';
 
 // In-memory cache for embeddings (consider Redis for production)
 const embeddingCache = new Map();
@@ -28280,7 +28498,7 @@ export async function processChatRequest(messages) {
 ```
 
 ## 📄 src/rag/planner.js
-*Lines: 36, Size: 1.06 KB*
+*Lines: 46, Size: 1.26 KB*
 
 ```javascript
 // packages/ai-services/src/rag/planner.js
@@ -28309,12 +28527,22 @@ export async function runPlannerAgent(messages) {
     throw new Error(`Planner Agent failed: ${response.error}`)
   }
 
-  logger.groupCollapsed('[Planner Agent] Plan Generated')
-  logger.trace('User Query:', response.user_query)
-  logger.trace('Reasoning:', response.reasoning)
-  logger.trace('Plan Steps:', response.plan)
-  logger.trace('Search Queries:', response.search_queries)
-  logger.groupEnd()
+  // --- START OF THE FIX ---
+  // Replaced browser-specific logger.groupCollapsed with a single structured log object.
+  // This is safe to run on the server.
+  logger.trace(
+    {
+      agent: 'Planner Agent',
+      planDetails: {
+        userQuery: response.user_query,
+        reasoning: response.reasoning,
+        planSteps: response.plan,
+        searchQueries: response.search_queries,
+      },
+    },
+    '[Planner Agent] Plan Generated'
+  )
+  // --- END OF THE FIX ---
 
   return response
 }
@@ -29412,7 +29640,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-02T23:22:35.389Z
+**Generated**: 2025-10-03T20:17:04.607Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/config
 **Total Files**: 6
 **Package**: @headlines/config@3.0.0
@@ -29671,7 +29899,7 @@ export function populateSettings(dbSettings) {
 
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 30 files, 3 directories
+Total: 29 files, 3 directories
 
 ```
 headlines/
@@ -29700,9 +29928,8 @@ headlines/
 │   │   └── 📄 watchlist.js
 │   ├── 📁 seed/
 │   │   └── 📄 dev-user.js
-│   ├── 📄 dbConnect.core.js
+│   ├── 📄 dbConnect.js
 │   ├── 📄 dbConnect.next.js
-│   ├── 📄 dbConnect.node.js
 │   ├── 📄 index.js
 │   ├── 📄 next.js
 │   ├── 📄 queryBuilder.js
@@ -29712,9 +29939,9 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-02T23:22:35.391Z
+**Generated**: 2025-10-03T20:17:04.609Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/data-access
-**Total Files**: 30
+**Total Files**: 29
 **Package**: @headlines/data-access@1.0.0
 **Description**: Shared, server-only data access logic for the Headlines monorepo.
 
@@ -29724,7 +29951,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 29, Size: 876 Bytes*
+*Lines: 26, Size: 769 Bytes*
 
 ```json
 {
@@ -29738,28 +29965,25 @@ headlines/
     ".": "./src/index.js",
     "./node": "./src/index.js",
     "./next": "./src/next.js",
-    "./dbConnect": "./src/dbConnect.js",
-    "./dbConnect/next": "./src/dbConnect.next.js",
-    "./dbConnect/node": "./src/dbConnect.node.js",
-    "./seed/dev-user.js": "./src/seed/dev-user.js"
+    "./dbConnect/next": "./src/dbConnect.next.js"
   },
   "dependencies": {
+    "@xenova/transformers": "^2.17.2",
     "@headlines/utils-shared": "workspace:*",
     "@headlines/ai-services": "workspace:*",
     "@headlines/config": "workspace:*",
     "@headlines/prompts": "workspace:*",
     "@headlines/models": "workspace:*",
-    "@pinecone-database/pinecone": "^6.1.2",
-    "bcryptjs": "^3.0.2",
-    "mongoose": "^8.18.1",
-    "openai": "^5.22.0"
+    "@pinecone-database/pinecone": "^2.2.2",
+    "bcryptjs": "^2.4.3",
+    "mongoose": "^8.4.1",
+    "openai": "^4.29.2"
   }
 }
-
 ```
 
 ## 📄 src/core/admin.js
-*Lines: 240, Size: 7.28 KB*
+*Lines: 245, Size: 7.36 KB*
 
 ```javascript
 // packages/data-access/src/core/admin.js
@@ -29772,15 +29996,20 @@ import {
   SourceSuggestion,
 } from '@headlines/models'
 import { buildQuery } from '../queryBuilder.js'
-import { createSubscriberWithPassword } from './auth.js'
+// We can no longer import createSubscriberWithPassword as it's environment-specific
+// import { createSubscriberWithPassword } from './auth.js'
 
 export async function createSubscriber(userData) {
-  // Delegate user creation with a password to the specialized function
+  // This function is now simplified. Password creation MUST be handled by
+  // an environment-specific function that can perform hashing.
   if (userData.password) {
-    return createSubscriberWithPassword(userData)
+    return {
+      success: false,
+      error:
+        'Password creation must be handled by a specific auth function, not the generic createSubscriber.',
+    }
   }
 
-  // Handle cases where a user might be created without a password initially (e.g., invites)
   try {
     const newUser = new Subscriber(userData)
     await newUser.save()
@@ -29794,7 +30023,6 @@ export async function createSubscriber(userData) {
 
 export async function updateSubscriber(userId, updateData) {
   try {
-    // Explicitly remove password from general updates. It must be updated via its own function.
     if (updateData.password) {
       delete updateData.password
     }
@@ -30002,6 +30230,7 @@ export const getSuggestions = async () => {
     return { success: false, error: 'Failed to fetch suggestions.' }
   }
 }
+
 ```
 
 ## 📄 src/core/aiSourceDiscovery.js
@@ -30145,27 +30374,22 @@ export async function getArticleDetails(articleId) {
 ```
 
 ## 📄 src/core/auth.js
-*Lines: 85, Size: 2.79 KB*
+*Lines: 74, Size: 2.3 KB*
 
 ```javascript
 // packages/data-access/src/core/auth.js
 import { Subscriber } from '@headlines/models'
-import bcrypt from 'bcryptjs'
+import bcryptjs from 'bcryptjs'
 
 const SALT_WORK_FACTOR = 10
 
-/**
- * Creates a new subscriber with a securely hashed password.
- * @param {object} userData - The user data, including a plain-text password.
- * @returns {Promise<object>} The result of the creation operation.
- */
 export async function createSubscriberWithPassword(userData) {
   if (!userData.password) {
     return { success: false, error: 'Password is required to create a user.' }
   }
   try {
-    const salt = await bcrypt.genSalt(SALT_WORK_FACTOR)
-    userData.password = await bcrypt.hash(userData.password, salt)
+    const salt = await bcryptjs.genSalt(SALT_WORK_FACTOR)
+    userData.password = await bcryptjs.hash(userData.password, salt)
     const newUser = new Subscriber(userData)
     await newUser.save()
     const { password, ...userPayload } = newUser.toObject()
@@ -30178,19 +30402,13 @@ export async function createSubscriberWithPassword(userData) {
   }
 }
 
-/**
- * Updates a subscriber's password, ensuring it is properly hashed.
- * @param {string} userId - The ID of the user to update.
- * @param {string} newPassword - The new plain-text password.
- * @returns {Promise<object>} The result of the update operation.
- */
 export async function updateSubscriberPassword(userId, newPassword) {
   if (!newPassword) {
     return { success: false, error: 'New password cannot be empty.' }
   }
   try {
-    const salt = await bcrypt.genSalt(SALT_WORK_FACTOR)
-    const hashedPassword = await bcrypt.hash(newPassword, salt)
+    const salt = await bcryptjs.genSalt(SALT_WORK_FACTOR)
+    const hashedPassword = await bcryptjs.hash(newPassword, salt)
     const result = await Subscriber.updateOne(
       { _id: userId },
       { password: hashedPassword }
@@ -30213,13 +30431,13 @@ export async function loginUser({ email, password }) {
     const user = await Subscriber.findOne({
       email: email.toLowerCase().trim(),
       isActive: true,
-    }).select('+password') // No .lean() here, we need the Mongoose method
+    }).select('+password')
 
     if (!user) {
       return { success: false, error: 'Invalid credentials or inactive account.' }
     }
 
-    const isPasswordMatch = await user.comparePassword(password)
+    const isPasswordMatch = await bcryptjs.compare(password, user.password)
 
     if (!isPasswordMatch) {
       return { success: false, error: 'Invalid credentials or inactive account.' }
@@ -31160,12 +31378,13 @@ export async function unlinkOpportunityFromEvent(eventId, opportunityId) {
 ```
 
 ## 📄 src/core/settings.js
-*Lines: 47, Size: 1.36 KB*
+*Lines: 49, Size: 1.49 KB*
 
 ```javascript
 // packages/data-access/src/core/settings.js
 import { Setting } from '@headlines/models'
-import { revalidatePath } from '../revalidate.js'
+// The environment-specific import has been removed.
+// import { revalidatePath } from '../revalidate.js'
 
 export async function getSettings() {
   try {
@@ -31202,7 +31421,8 @@ export async function updateSettings(settingsData) {
       await Setting.bulkWrite(bulkOps)
     }
 
-    await revalidatePath('/admin/settings')
+    // Revalidation is now handled by the environment-specific wrapper.
+    // await revalidatePath('/admin/settings')
     return { success: true, message: `${bulkOps.length} settings updated.` }
   } catch (e) {
     console.error('[updateSettings Error]', e)
@@ -31596,25 +31816,41 @@ export async function processWatchlistSuggestion({ suggestionId, action }) {
 
 ```
 
-## 📄 src/dbConnect.core.js
-*Lines: 19, Size: 499 Bytes*
+## 📄 src/dbConnect.js
+*Lines: 35, Size: 942 Bytes*
 
 ```javascript
-// packages/data-access/src/dbConnect.core.js
+// packages/data-access/src/dbConnect.js
 import mongoose from 'mongoose'
-import { logger } from '@headlines/utils-shared'
 
-export async function dbConnect(MONGO_URI) {
+// A weak map to cache the connection promise per URI
+const connectionCache = new WeakMap()
+
+// This is the core, environment-agnostic connection logic.
+export default async function dbConnect(MONGO_URI, logger) {
   if (!MONGO_URI) {
     throw new Error('MONGO_URI must be provided to dbConnect.')
   }
+
   if (mongoose.connection.readyState >= 1) {
     return
   }
+
+  // Use a cache to prevent multiple concurrent connection attempts
+  let connPromise = connectionCache.get(mongoose)
+  if (!connPromise) {
+    connPromise = mongoose.connect(MONGO_URI, { bufferCommands: false })
+    connectionCache.set(mongoose, connPromise)
+  }
+
   try {
-    await mongoose.connect(MONGO_URI, { bufferCommands: false })
+    await connPromise
   } catch (e) {
-    logger.error({ err: e }, '[dbConnect] MongoDB connection failed.')
+    if (logger) {
+      logger.error({ err: e }, '[dbConnect] MongoDB connection failed.')
+    } else {
+      console.error('[dbConnect] MongoDB connection failed.', e)
+    }
     throw e
   }
 }
@@ -31622,39 +31858,36 @@ export async function dbConnect(MONGO_URI) {
 ```
 
 ## 📄 src/dbConnect.next.js
-*Lines: 8, Size: 235 Bytes*
+*Lines: 12, Size: 443 Bytes*
 
 ```javascript
 // packages/data-access/src/dbConnect.next.js
+import 'server-only'
 import { env } from '@headlines/config/next'
-import { dbConnect as coreDbConnect } from './dbConnect.core.js'
+import dbConnectCore from './dbConnect.js'
+import { logger } from '@headlines/utils-shared'
 
+// This is the Next.js-specific implementation of dbConnect.
+// It uses the core logic but provides the environment variables from the Next.js context.
 export default function dbConnect() {
-  return coreDbConnect(env.MONGO_URI)
+  return dbConnectCore(env.MONGO_URI, logger)
 }
 
-```
-
-## 📄 src/dbConnect.node.js
-*Lines: 7, Size: 234 Bytes*
-
-```javascript
-// packages/data-access/src/dbConnect.node.js
-import { env } from '@headlines/config/node'
-import { dbConnect as coreDbConnect } from './dbConnect.core.js'
-
-export default function dbConnect() {
-  return coreDbConnect(env.MONGO_URI)
-}
 ```
 
 ## 📄 src/index.js
-*Lines: 100, Size: 5.73 KB*
+*Lines: 105, Size: 2.25 KB*
 
 ```javascript
-// packages/data-access/src/index.js (Node.js Entry Point)
-import dbConnect from './dbConnect.node.js'
+// packages/data-access/src/index.js
+import { env } from '@headlines/config/node'
+import dbConnectCore from './dbConnect.js'
 import * as core from './core/index.js'
+import { buildQuery } from './queryBuilder.js'
+
+function dbConnect() {
+  return dbConnectCore(env.MONGO_URI)
+}
 
 function withDbConnect(fn) {
   return async (...args) => {
@@ -31663,105 +31896,111 @@ function withDbConnect(fn) {
   }
 }
 
-export const createSubscriber = withDbConnect(core.createSubscriber)
-export const updateSubscriber = withDbConnect(core.updateSubscriber)
-export const deleteSubscriber = withDbConnect(core.deleteSubscriber)
-export const createCountry = withDbConnect(core.createCountry)
-export const updateCountry = withDbConnect(core.updateCountry)
-export const createSource = withDbConnect(core.createSource)
-export const updateSource = withDbConnect(core.updateSource)
-export const getAllCountries = withDbConnect(core.getAllCountries)
-export const findSubscribers = withDbConnect(core.findSubscribers)
-export const getAllSubscribers = withDbConnect(core.getAllSubscribers)
-export const getAllSources = withDbConnect(core.getAllSources)
-export const getAllWatchlistEntities = withDbConnect(core.getAllWatchlistEntities)
-export const getSuggestions = withDbConnect(core.getSuggestions)
-export const getArticles = withDbConnect(core.getArticles)
-export const findArticles = withDbConnect(core.findArticles)
-export const updateArticles = withDbConnect(core.updateArticles)
-export const getTotalArticleCount = withDbConnect(core.getTotalArticleCount)
-export const updateArticle = withDbConnect(core.updateArticle)
-export const deleteArticle = withDbConnect(core.deleteArticle)
-export const getArticleDetails = withDbConnect(core.getArticleDetails)
-export const createSubscriberWithPassword = withDbConnect(
-  core.createSubscriberWithPassword
-)
-export const updateSubscriberPassword = withDbConnect(core.updateSubscriberPassword)
-export const loginUser = withDbConnect(core.loginUser)
-export const generateChatTitle = withDbConnect(core.generateChatTitle)
-export const getDashboardStats = withDbConnect(core.getDashboardStats)
-export const getGlobalCountries = withDbConnect(core.getGlobalCountries)
-export const getEvents = withDbConnect(core.getEvents)
-export const findEvents = withDbConnect(core.findEvents)
-export const updateEvents = withDbConnect(core.updateEvents)
-export const getEventDetails = withDbConnect(core.getEventDetails)
-export const updateEvent = withDbConnect(core.updateEvent)
-export const deleteEvent = withDbConnect(core.deleteEvent)
-export const getTotalEventCount = withDbConnect(core.getTotalEventCount)
-export const generateExport = withDbConnect(core.generateExport)
-export const getDistinctOpportunityFields = withDbConnect(
-  core.getDistinctOpportunityFields
-)
-export const updateOpportunities = withDbConnect(core.updateOpportunities)
-export const getTotalOpportunitiesCount = withDbConnect(core.getTotalOpportunitiesCount)
-export const getOpportunities = withDbConnect(core.getOpportunities)
-export const getOpportunityDetails = withDbConnect(core.getOpportunityDetails)
-export const updateOpportunity = withDbConnect(core.updateOpportunity)
-export const deleteOpportunity = withDbConnect(core.deleteOpportunity)
-export const updateSourceAnalyticsBatch = withDbConnect(core.updateSourceAnalyticsBatch)
-export const findSourcesForScraping = withDbConnect(core.findSourcesForScraping)
-export const performHousekeeping = withDbConnect(core.performHousekeeping)
-export const bulkWriteEvents = withDbConnect(core.bulkWriteEvents)
-export const bulkWriteArticles = withDbConnect(core.bulkWriteArticles)
-export const findEventsByKeys = withDbConnect(core.findEventsByKeys)
-export const findArticlesByLinks = withDbConnect(core.findArticlesByLinks)
-export const getActiveWatchlistEntityNames = withDbConnect(
-  core.getActiveWatchlistEntityNames
-)
-export const bulkWriteWatchlistSuggestions = withDbConnect(
-  core.bulkWriteWatchlistSuggestions
-)
-export const linkOpportunityToEvent = withDbConnect(core.linkOpportunityToEvent)
-export const unlinkOpportunityFromEvent = withDbConnect(core.unlinkOpportunityFromEvent)
-export const getSettings = withDbConnect(core.getSettings)
-export const updateSettings = withDbConnect(core.updateSettings)
-export const upsertSubscriber = withDbConnect(core.upsertSubscriber)
-export const getAllPushSubscriptions = withDbConnect(core.getAllPushSubscriptions)
-export const deletePushSubscription = withDbConnect(core.deletePushSubscription)
-export const getCurrentSubscriber = withDbConnect(core.getCurrentSubscriber)
-export const savePushSubscription = withDbConnect(core.savePushSubscription)
-export const updateUserProfile = withDbConnect(core.updateUserProfile)
-export const updateUserInteraction = withDbConnect(core.updateUserInteraction)
-export const processUploadedArticle = withDbConnect(core.processUploadedArticle)
-export const clearDiscardedItems = withDbConnect(core.clearDiscardedItems)
-export const getRecentRunVerdicts = withDbConnect(core.getRecentRunVerdicts)
-export const getRunVerdictById = withDbConnect(core.getRunVerdictById)
-export const findWatchlistEntities = withDbConnect(core.findWatchlistEntities)
-export const updateWatchlistEntities = withDbConnect(core.updateWatchlistEntities)
-export const createWatchlistEntity = withDbConnect(core.createWatchlistEntity)
-export const updateWatchlistEntity = withDbConnect(core.updateWatchlistEntity)
-export const deleteWatchlistEntity = withDbConnect(core.deleteWatchlistEntity)
-export const updateWatchlistSuggestion = withDbConnect(core.updateWatchlistSuggestion)
-export const processWatchlistSuggestion = withDbConnect(core.processWatchlistSuggestion)
-export const deleteAllSince = withDbConnect(core.deleteAllSince)
-export const resetAllSourceAnalytics = withDbConnect(core.resetAllSourceAnalytics)
-export const resetEventsEmailedStatusSince = withDbConnect(
-  core.resetEventsEmailedStatusSince
-)
+// Wrap and export all core functions for Node.js environment
+const nodeExports = {}
+for (const key in core) {
+  if (typeof core[key] === 'function') {
+    nodeExports[key] = withDbConnect(core[key])
+  }
+}
 
-export { buildQuery } from './queryBuilder.js'
-export { revalidatePath } from './revalidate.js'
+export const {
+  createSubscriber,
+  updateSubscriber,
+  deleteSubscriber,
+  createCountry,
+  updateCountry,
+  createSource,
+  updateSource,
+  getAllCountries,
+  findSubscribers,
+  getAllSubscribers,
+  getAllSources,
+  getAllWatchlistEntities,
+  getSuggestions,
+  getArticles,
+  findArticles,
+  updateArticles,
+  getTotalArticleCount,
+  updateArticle,
+  deleteArticle,
+  getArticleDetails,
+  createSubscriberWithPassword,
+  updateSubscriberPassword,
+  loginUser,
+  generateChatTitle,
+  getDashboardStats,
+  getGlobalCountries,
+  getEvents,
+  findEvents,
+  updateEvents,
+  getEventDetails,
+  updateEvent,
+  deleteEvent,
+  getTotalEventCount,
+  generateExport,
+  getDistinctOpportunityFields,
+  updateOpportunities,
+  getTotalOpportunitiesCount,
+  getOpportunities,
+  getOpportunityDetails,
+  updateOpportunity,
+  deleteOpportunity,
+  updateSourceAnalyticsBatch,
+  findSourcesForScraping,
+  performHousekeeping,
+  bulkWriteEvents,
+  bulkWriteArticles,
+  findEventsByKeys,
+  findArticlesByLinks,
+  getActiveWatchlistEntityNames,
+  bulkWriteWatchlistSuggestions,
+  linkOpportunityToEvent,
+  unlinkOpportunityFromEvent,
+  getSettings,
+  updateSettings,
+  upsertSubscriber,
+  getAllPushSubscriptions,
+  deletePushSubscription,
+  getCurrentSubscriber,
+  savePushSubscription,
+  updateUserProfile,
+  updateUserInteraction,
+  processUploadedArticle,
+  clearDiscardedItems,
+  getRecentRunVerdicts,
+  getRunVerdictById,
+  findWatchlistEntities,
+  updateWatchlistEntities,
+  createWatchlistEntity,
+  updateWatchlistEntity,
+  deleteWatchlistEntity,
+  updateWatchlistSuggestion,
+  processWatchlistSuggestion,
+  deleteAllSince,
+  resetAllSourceAnalytics,
+  resetEventsEmailedStatusSince,
+} = nodeExports
+
+export { buildQuery }
 
 ```
 
 ## 📄 src/next.js
-*Lines: 101, Size: 5.75 KB*
+*Lines: 120, Size: 2.78 KB*
 
 ```javascript
-// packages/data-access/src/next.js (Next.js Entry Point)
+// packages/data-access/src/next.js
 import 'server-only'
-import dbConnect from './dbConnect.next.js'
+import { env } from '@headlines/config/next'
+import dbConnectCore from './dbConnect.js'
 import * as core from './core/index.js'
+import { buildQuery } from './queryBuilder.js'
+import { revalidatePath } from './revalidate.js'
+
+function dbConnect() {
+  return dbConnectCore(env.MONGO_URI)
+}
 
 function withDbConnect(fn) {
   return async (...args) => {
@@ -31770,94 +32009,106 @@ function withDbConnect(fn) {
   }
 }
 
-export const createSubscriber = withDbConnect(core.createSubscriber)
-export const updateSubscriber = withDbConnect(core.updateSubscriber)
-export const deleteSubscriber = withDbConnect(core.deleteSubscriber)
-export const createCountry = withDbConnect(core.createCountry)
-export const updateCountry = withDbConnect(core.updateCountry)
-export const createSource = withDbConnect(core.createSource)
-export const updateSource = withDbConnect(core.updateSource)
-export const getAllCountries = withDbConnect(core.getAllCountries)
-export const findSubscribers = withDbConnect(core.findSubscribers)
-export const getAllSubscribers = withDbConnect(core.getAllSubscribers)
-export const getAllSources = withDbConnect(core.getAllSources)
-export const getAllWatchlistEntities = withDbConnect(core.getAllWatchlistEntities)
-export const getSuggestions = withDbConnect(core.getSuggestions)
-export const getArticles = withDbConnect(core.getArticles)
-export const findArticles = withDbConnect(core.findArticles)
-export const updateArticles = withDbConnect(core.updateArticles)
-export const getTotalArticleCount = withDbConnect(core.getTotalArticleCount)
-export const updateArticle = withDbConnect(core.updateArticle)
-export const deleteArticle = withDbConnect(core.deleteArticle)
-export const getArticleDetails = withDbConnect(core.getArticleDetails)
-export const createSubscriberWithPassword = withDbConnect(
-  core.createSubscriberWithPassword
-)
-export const updateSubscriberPassword = withDbConnect(core.updateSubscriberPassword)
-export const loginUser = withDbConnect(core.loginUser)
-export const generateChatTitle = withDbConnect(core.generateChatTitle)
-export const getDashboardStats = withDbConnect(core.getDashboardStats)
-export const getGlobalCountries = withDbConnect(core.getGlobalCountries)
-export const getEvents = withDbConnect(core.getEvents)
-export const findEvents = withDbConnect(core.findEvents)
-export const updateEvents = withDbConnect(core.updateEvents)
-export const getEventDetails = withDbConnect(core.getEventDetails)
-export const updateEvent = withDbConnect(core.updateEvent)
-export const deleteEvent = withDbConnect(core.deleteEvent)
-export const getTotalEventCount = withDbConnect(core.getTotalEventCount)
-export const generateExport = withDbConnect(core.generateExport)
-export const getDistinctOpportunityFields = withDbConnect(
-  core.getDistinctOpportunityFields
-)
-export const updateOpportunities = withDbConnect(core.updateOpportunities)
-export const getTotalOpportunitiesCount = withDbConnect(core.getTotalOpportunitiesCount)
-export const getOpportunities = withDbConnect(core.getOpportunities)
-export const getOpportunityDetails = withDbConnect(core.getOpportunityDetails)
-export const updateOpportunity = withDbConnect(core.updateOpportunity)
-export const deleteOpportunity = withDbConnect(core.deleteOpportunity)
-export const updateSourceAnalyticsBatch = withDbConnect(core.updateSourceAnalyticsBatch)
-export const findSourcesForScraping = withDbConnect(core.findSourcesForScraping)
-export const performHousekeeping = withDbConnect(core.performHousekeeping)
-export const bulkWriteEvents = withDbConnect(core.bulkWriteEvents)
-export const bulkWriteArticles = withDbConnect(core.bulkWriteArticles)
-export const findEventsByKeys = withDbConnect(core.findEventsByKeys)
-export const findArticlesByLinks = withDbConnect(core.findArticlesByLinks)
-export const getActiveWatchlistEntityNames = withDbConnect(
-  core.getActiveWatchlistEntityNames
-)
-export const bulkWriteWatchlistSuggestions = withDbConnect(
-  core.bulkWriteWatchlistSuggestions
-)
-export const linkOpportunityToEvent = withDbConnect(core.linkOpportunityToEvent)
-export const unlinkOpportunityFromEvent = withDbConnect(core.unlinkOpportunityFromEvent)
-export const getSettings = withDbConnect(core.getSettings)
-export const updateSettings = withDbConnect(core.updateSettings)
-export const upsertSubscriber = withDbConnect(core.upsertSubscriber)
-export const getAllPushSubscriptions = withDbConnect(core.getAllPushSubscriptions)
-export const deletePushSubscription = withDbConnect(core.deletePushSubscription)
-export const getCurrentSubscriber = withDbConnect(core.getCurrentSubscriber)
-export const savePushSubscription = withDbConnect(core.savePushSubscription)
-export const updateUserProfile = withDbConnect(core.updateUserProfile)
-export const updateUserInteraction = withDbConnect(core.updateUserInteraction)
-export const processUploadedArticle = withDbConnect(core.processUploadedArticle)
-export const clearDiscardedItems = withDbConnect(core.clearDiscardedItems)
-export const getRecentRunVerdicts = withDbConnect(core.getRecentRunVerdicts)
-export const getRunVerdictById = withDbConnect(core.getRunVerdictById)
-export const findWatchlistEntities = withDbConnect(core.findWatchlistEntities)
-export const updateWatchlistEntities = withDbConnect(core.updateWatchlistEntities)
-export const createWatchlistEntity = withDbConnect(core.createWatchlistEntity)
-export const updateWatchlistEntity = withDbConnect(core.updateWatchlistEntity)
-export const deleteWatchlistEntity = withDbConnect(core.deleteWatchlistEntity)
-export const updateWatchlistSuggestion = withDbConnect(core.updateWatchlistSuggestion)
-export const processWatchlistSuggestion = withDbConnect(core.processWatchlistSuggestion)
-export const deleteAllSince = withDbConnect(core.deleteAllSince)
-export const resetAllSourceAnalytics = withDbConnect(core.resetAllSourceAnalytics)
-export const resetEventsEmailedStatusSince = withDbConnect(
-  core.resetEventsEmailedStatusSince
-)
+// Wrap all core functions
+const wrappedCore = {}
+for (const key in core) {
+  if (typeof core[key] === 'function') {
+    wrappedCore[key] = withDbConnect(core[key])
+  }
+}
 
-export { buildQuery } from './queryBuilder.js'
-export { revalidatePath } from './revalidate.js'
+// --- START OF THE FIX ---
+// Create a special wrapper for updateSettings that adds revalidation
+const originalUpdateSettings = wrappedCore.updateSettings
+wrappedCore.updateSettings = async (...args) => {
+  const result = await originalUpdateSettings(...args)
+  if (result.success) {
+    await revalidatePath('/admin/settings')
+  }
+  return result
+}
+// --- END OF THE FIX ---
+
+// Explicitly export everything to avoid issues with module systems
+export const {
+  createSubscriber,
+  updateSubscriber,
+  deleteSubscriber,
+  createCountry,
+  updateCountry,
+  createSource,
+  updateSource,
+  getAllCountries,
+  findSubscribers,
+  getAllSubscribers,
+  getAllSources,
+  getAllWatchlistEntities,
+  getSuggestions,
+  getArticles,
+  findArticles,
+  updateArticles,
+  getTotalArticleCount,
+  updateArticle,
+  deleteArticle,
+  getArticleDetails,
+  createSubscriberWithPassword,
+  updateSubscriberPassword,
+  loginUser,
+  generateChatTitle,
+  getDashboardStats,
+  getGlobalCountries,
+  getEvents,
+  findEvents,
+  updateEvents,
+  getEventDetails,
+  updateEvent,
+  deleteEvent,
+  getTotalEventCount,
+  generateExport,
+  getDistinctOpportunityFields,
+  updateOpportunities,
+  getTotalOpportunitiesCount,
+  getOpportunities,
+  getOpportunityDetails,
+  updateOpportunity,
+  deleteOpportunity,
+  updateSourceAnalyticsBatch,
+  findSourcesForScraping,
+  performHousekeeping,
+  bulkWriteEvents,
+  bulkWriteArticles,
+  findEventsByKeys,
+  findArticlesByLinks,
+  getActiveWatchlistEntityNames,
+  bulkWriteWatchlistSuggestions,
+  linkOpportunityToEvent,
+  unlinkOpportunityFromEvent,
+  getSettings,
+  updateSettings, // This now exports the wrapped version
+  upsertSubscriber,
+  getAllPushSubscriptions,
+  deletePushSubscription,
+  getCurrentSubscriber,
+  savePushSubscription,
+  updateUserProfile,
+  updateUserInteraction,
+  processUploadedArticle,
+  clearDiscardedItems,
+  getRecentRunVerdicts,
+  getRunVerdictById,
+  findWatchlistEntities,
+  updateWatchlistEntities,
+  createWatchlistEntity,
+  updateWatchlistEntity,
+  deleteWatchlistEntity,
+  updateWatchlistSuggestion,
+  processWatchlistSuggestion,
+  deleteAllSince,
+  resetAllSourceAnalytics,
+  resetEventsEmailedStatusSince,
+} = wrappedCore
+
+export { buildQuery, revalidatePath }
 
 ```
 
@@ -31964,10 +32215,10 @@ export async function buildQuery(
 ```
 
 ## 📄 src/revalidate.js
-*Lines: 24, Size: 929 Bytes*
+*Lines: 23, Size: 833 Bytes*
 
 ```javascript
-// packages/data-access/src/revalidate.js (version 2.0.0)
+// packages/data-access/src/revalidate.js
 /**
  * An environment-aware revalidation function.
  * This function is now async to handle the dynamic import safely.
@@ -31982,7 +32233,6 @@ export async function revalidatePath(path, type) {
 
   try {
     // This dynamic import will only succeed in a Next.js environment.
-    // By placing it inside an async function, we avoid top-level await issues.
     const { revalidatePath: nextRevalidate } = await import('next/cache')
     return nextRevalidate(path, type)
   } catch (e) {
@@ -32123,7 +32373,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-02T23:22:35.394Z
+**Generated**: 2025-10-03T20:17:04.613Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/models
 **Total Files**: 45
 **Package**: @headlines/models@2.0.0
@@ -33481,7 +33731,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-02T23:22:35.397Z
+**Generated**: 2025-10-03T20:17:04.616Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/prompts
 **Total Files**: 31
 **Package**: @headlines/prompts@1.0.0
@@ -34738,7 +34988,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-02T23:22:35.400Z
+**Generated**: 2025-10-03T20:17:04.621Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/scraper-logic
 **Total Files**: 29
 **Package**: @headlines/scraper-logic@2.0.0
@@ -36436,7 +36686,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-02T23:22:35.403Z
+**Generated**: 2025-10-03T20:17:04.624Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/utils-server
 **Total Files**: 13
 **Package**: @headlines/utils-server@5.0.0
@@ -37061,7 +37311,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-02T23:22:35.404Z
+**Generated**: 2025-10-03T20:17:04.626Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/utils-shared
 **Total Files**: 10
 **Package**: @headlines/utils-shared@2.0.0

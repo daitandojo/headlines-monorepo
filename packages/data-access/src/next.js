@@ -65,6 +65,7 @@ export const {
   generateChatTitle,
   getDashboardStats,
   getGlobalCountries,
+  getPublicTickerEvents, // <-- EXPORT NEW FUNCTION
   getEvents,
   findEvents,
   updateEvents,

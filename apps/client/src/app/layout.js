@@ -1,3 +1,4 @@
+// apps/client/src/app/layout.js
 import './globals.css'
 import { AppProviders } from './providers'
 
@@ -8,8 +9,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body className="bg-zinc-900 text-white">
+    <html lang="en" suppressHydrationWarning>
+      <body>
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

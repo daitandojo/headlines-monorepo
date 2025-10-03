@@ -1,6 +1,6 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 30 files, 3 directories
+Total: 29 files, 3 directories
 
 ```
 headlines/
@@ -29,9 +29,8 @@ headlines/
 │   │   └── 📄 watchlist.js
 │   ├── 📁 seed/
 │   │   └── 📄 dev-user.js
-│   ├── 📄 dbConnect.core.js
+│   ├── 📄 dbConnect.js
 │   ├── 📄 dbConnect.next.js
-│   ├── 📄 dbConnect.node.js
 │   ├── 📄 index.js
 │   ├── 📄 next.js
 │   ├── 📄 queryBuilder.js
@@ -41,9 +40,9 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-02T23:22:35.391Z
+**Generated**: 2025-10-03T20:17:04.609Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/data-access
-**Total Files**: 30
+**Total Files**: 29
 **Package**: @headlines/data-access@1.0.0
 **Description**: Shared, server-only data access logic for the Headlines monorepo.
 
@@ -53,7 +52,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 29, Size: 876 Bytes*
+*Lines: 26, Size: 769 Bytes*
 
 ```json
 {
@@ -67,28 +66,25 @@ headlines/
     ".": "./src/index.js",
     "./node": "./src/index.js",
     "./next": "./src/next.js",
-    "./dbConnect": "./src/dbConnect.js",
-    "./dbConnect/next": "./src/dbConnect.next.js",
-    "./dbConnect/node": "./src/dbConnect.node.js",
-    "./seed/dev-user.js": "./src/seed/dev-user.js"
+    "./dbConnect/next": "./src/dbConnect.next.js"
   },
   "dependencies": {
+    "@xenova/transformers": "^2.17.2",
     "@headlines/utils-shared": "workspace:*",
     "@headlines/ai-services": "workspace:*",
     "@headlines/config": "workspace:*",
     "@headlines/prompts": "workspace:*",
     "@headlines/models": "workspace:*",
-    "@pinecone-database/pinecone": "^6.1.2",
-    "bcryptjs": "^3.0.2",
-    "mongoose": "^8.18.1",
-    "openai": "^5.22.0"
+    "@pinecone-database/pinecone": "^2.2.2",
+    "bcryptjs": "^2.4.3",
+    "mongoose": "^8.4.1",
+    "openai": "^4.29.2"
   }
 }
-
 ```
 
 ## 📄 src/core/admin.js
-*Lines: 240, Size: 7.28 KB*
+*Lines: 245, Size: 7.36 KB*
 
 ```javascript
 // packages/data-access/src/core/admin.js
@@ -101,15 +97,20 @@ import {
   SourceSuggestion,
 } from '@headlines/models'
 import { buildQuery } from '../queryBuilder.js'
-import { createSubscriberWithPassword } from './auth.js'
+// We can no longer import createSubscriberWithPassword as it's environment-specific
+// import { createSubscriberWithPassword } from './auth.js'
 
 export async function createSubscriber(userData) {
-  // Delegate user creation with a password to the specialized function
+  // This function is now simplified. Password creation MUST be handled by
+  // an environment-specific function that can perform hashing.
   if (userData.password) {
-    return createSubscriberWithPassword(userData)
+    return {
+      success: false,
+      error:
+        'Password creation must be handled by a specific auth function, not the generic createSubscriber.',
+    }
   }
 
-  // Handle cases where a user might be created without a password initially (e.g., invites)
   try {
     const newUser = new Subscriber(userData)
     await newUser.save()
@@ -123,7 +124,6 @@ export async function createSubscriber(userData) {
 
 export async function updateSubscriber(userId, updateData) {
   try {
-    // Explicitly remove password from general updates. It must be updated via its own function.
     if (updateData.password) {
       delete updateData.password
     }
@@ -331,6 +331,7 @@ export const getSuggestions = async () => {
     return { success: false, error: 'Failed to fetch suggestions.' }
   }
 }
+
 ```
 
 ## 📄 src/core/aiSourceDiscovery.js
@@ -474,27 +475,22 @@ export async function getArticleDetails(articleId) {
 ```
 
 ## 📄 src/core/auth.js
-*Lines: 85, Size: 2.79 KB*
+*Lines: 74, Size: 2.3 KB*
 
 ```javascript
 // packages/data-access/src/core/auth.js
 import { Subscriber } from '@headlines/models'
-import bcrypt from 'bcryptjs'
+import bcryptjs from 'bcryptjs'
 
 const SALT_WORK_FACTOR = 10
 
-/**
- * Creates a new subscriber with a securely hashed password.
- * @param {object} userData - The user data, including a plain-text password.
- * @returns {Promise<object>} The result of the creation operation.
- */
 export async function createSubscriberWithPassword(userData) {
   if (!userData.password) {
     return { success: false, error: 'Password is required to create a user.' }
   }
   try {
-    const salt = await bcrypt.genSalt(SALT_WORK_FACTOR)
-    userData.password = await bcrypt.hash(userData.password, salt)
+    const salt = await bcryptjs.genSalt(SALT_WORK_FACTOR)
+    userData.password = await bcryptjs.hash(userData.password, salt)
     const newUser = new Subscriber(userData)
     await newUser.save()
     const { password, ...userPayload } = newUser.toObject()
@@ -507,19 +503,13 @@ export async function createSubscriberWithPassword(userData) {
   }
 }
 
-/**
- * Updates a subscriber's password, ensuring it is properly hashed.
- * @param {string} userId - The ID of the user to update.
- * @param {string} newPassword - The new plain-text password.
- * @returns {Promise<object>} The result of the update operation.
- */
 export async function updateSubscriberPassword(userId, newPassword) {
   if (!newPassword) {
     return { success: false, error: 'New password cannot be empty.' }
   }
   try {
-    const salt = await bcrypt.genSalt(SALT_WORK_FACTOR)
-    const hashedPassword = await bcrypt.hash(newPassword, salt)
+    const salt = await bcryptjs.genSalt(SALT_WORK_FACTOR)
+    const hashedPassword = await bcryptjs.hash(newPassword, salt)
     const result = await Subscriber.updateOne(
       { _id: userId },
       { password: hashedPassword }
@@ -542,13 +532,13 @@ export async function loginUser({ email, password }) {
     const user = await Subscriber.findOne({
       email: email.toLowerCase().trim(),
       isActive: true,
-    }).select('+password') // No .lean() here, we need the Mongoose method
+    }).select('+password')
 
     if (!user) {
       return { success: false, error: 'Invalid credentials or inactive account.' }
     }
 
-    const isPasswordMatch = await user.comparePassword(password)
+    const isPasswordMatch = await bcryptjs.compare(password, user.password)
 
     if (!isPasswordMatch) {
       return { success: false, error: 'Invalid credentials or inactive account.' }
@@ -1489,12 +1479,13 @@ export async function unlinkOpportunityFromEvent(eventId, opportunityId) {
 ```
 
 ## 📄 src/core/settings.js
-*Lines: 47, Size: 1.36 KB*
+*Lines: 49, Size: 1.49 KB*
 
 ```javascript
 // packages/data-access/src/core/settings.js
 import { Setting } from '@headlines/models'
-import { revalidatePath } from '../revalidate.js'
+// The environment-specific import has been removed.
+// import { revalidatePath } from '../revalidate.js'
 
 export async function getSettings() {
   try {
@@ -1531,7 +1522,8 @@ export async function updateSettings(settingsData) {
       await Setting.bulkWrite(bulkOps)
     }
 
-    await revalidatePath('/admin/settings')
+    // Revalidation is now handled by the environment-specific wrapper.
+    // await revalidatePath('/admin/settings')
     return { success: true, message: `${bulkOps.length} settings updated.` }
   } catch (e) {
     console.error('[updateSettings Error]', e)
@@ -1925,25 +1917,41 @@ export async function processWatchlistSuggestion({ suggestionId, action }) {
 
 ```
 
-## 📄 src/dbConnect.core.js
-*Lines: 19, Size: 499 Bytes*
+## 📄 src/dbConnect.js
+*Lines: 35, Size: 942 Bytes*
 
 ```javascript
-// packages/data-access/src/dbConnect.core.js
+// packages/data-access/src/dbConnect.js
 import mongoose from 'mongoose'
-import { logger } from '@headlines/utils-shared'
 
-export async function dbConnect(MONGO_URI) {
+// A weak map to cache the connection promise per URI
+const connectionCache = new WeakMap()
+
+// This is the core, environment-agnostic connection logic.
+export default async function dbConnect(MONGO_URI, logger) {
   if (!MONGO_URI) {
     throw new Error('MONGO_URI must be provided to dbConnect.')
   }
+
   if (mongoose.connection.readyState >= 1) {
     return
   }
+
+  // Use a cache to prevent multiple concurrent connection attempts
+  let connPromise = connectionCache.get(mongoose)
+  if (!connPromise) {
+    connPromise = mongoose.connect(MONGO_URI, { bufferCommands: false })
+    connectionCache.set(mongoose, connPromise)
+  }
+
   try {
-    await mongoose.connect(MONGO_URI, { bufferCommands: false })
+    await connPromise
   } catch (e) {
-    logger.error({ err: e }, '[dbConnect] MongoDB connection failed.')
+    if (logger) {
+      logger.error({ err: e }, '[dbConnect] MongoDB connection failed.')
+    } else {
+      console.error('[dbConnect] MongoDB connection failed.', e)
+    }
     throw e
   }
 }
@@ -1951,39 +1959,36 @@ export async function dbConnect(MONGO_URI) {
 ```
 
 ## 📄 src/dbConnect.next.js
-*Lines: 8, Size: 235 Bytes*
+*Lines: 12, Size: 443 Bytes*
 
 ```javascript
 // packages/data-access/src/dbConnect.next.js
+import 'server-only'
 import { env } from '@headlines/config/next'
-import { dbConnect as coreDbConnect } from './dbConnect.core.js'
+import dbConnectCore from './dbConnect.js'
+import { logger } from '@headlines/utils-shared'
 
+// This is the Next.js-specific implementation of dbConnect.
+// It uses the core logic but provides the environment variables from the Next.js context.
 export default function dbConnect() {
-  return coreDbConnect(env.MONGO_URI)
+  return dbConnectCore(env.MONGO_URI, logger)
 }
 
-```
-
-## 📄 src/dbConnect.node.js
-*Lines: 7, Size: 234 Bytes*
-
-```javascript
-// packages/data-access/src/dbConnect.node.js
-import { env } from '@headlines/config/node'
-import { dbConnect as coreDbConnect } from './dbConnect.core.js'
-
-export default function dbConnect() {
-  return coreDbConnect(env.MONGO_URI)
-}
 ```
 
 ## 📄 src/index.js
-*Lines: 100, Size: 5.73 KB*
+*Lines: 105, Size: 2.25 KB*
 
 ```javascript
-// packages/data-access/src/index.js (Node.js Entry Point)
-import dbConnect from './dbConnect.node.js'
+// packages/data-access/src/index.js
+import { env } from '@headlines/config/node'
+import dbConnectCore from './dbConnect.js'
 import * as core from './core/index.js'
+import { buildQuery } from './queryBuilder.js'
+
+function dbConnect() {
+  return dbConnectCore(env.MONGO_URI)
+}
 
 function withDbConnect(fn) {
   return async (...args) => {
@@ -1992,105 +1997,111 @@ function withDbConnect(fn) {
   }
 }
 
-export const createSubscriber = withDbConnect(core.createSubscriber)
-export const updateSubscriber = withDbConnect(core.updateSubscriber)
-export const deleteSubscriber = withDbConnect(core.deleteSubscriber)
-export const createCountry = withDbConnect(core.createCountry)
-export const updateCountry = withDbConnect(core.updateCountry)
-export const createSource = withDbConnect(core.createSource)
-export const updateSource = withDbConnect(core.updateSource)
-export const getAllCountries = withDbConnect(core.getAllCountries)
-export const findSubscribers = withDbConnect(core.findSubscribers)
-export const getAllSubscribers = withDbConnect(core.getAllSubscribers)
-export const getAllSources = withDbConnect(core.getAllSources)
-export const getAllWatchlistEntities = withDbConnect(core.getAllWatchlistEntities)
-export const getSuggestions = withDbConnect(core.getSuggestions)
-export const getArticles = withDbConnect(core.getArticles)
-export const findArticles = withDbConnect(core.findArticles)
-export const updateArticles = withDbConnect(core.updateArticles)
-export const getTotalArticleCount = withDbConnect(core.getTotalArticleCount)
-export const updateArticle = withDbConnect(core.updateArticle)
-export const deleteArticle = withDbConnect(core.deleteArticle)
-export const getArticleDetails = withDbConnect(core.getArticleDetails)
-export const createSubscriberWithPassword = withDbConnect(
-  core.createSubscriberWithPassword
-)
-export const updateSubscriberPassword = withDbConnect(core.updateSubscriberPassword)
-export const loginUser = withDbConnect(core.loginUser)
-export const generateChatTitle = withDbConnect(core.generateChatTitle)
-export const getDashboardStats = withDbConnect(core.getDashboardStats)
-export const getGlobalCountries = withDbConnect(core.getGlobalCountries)
-export const getEvents = withDbConnect(core.getEvents)
-export const findEvents = withDbConnect(core.findEvents)
-export const updateEvents = withDbConnect(core.updateEvents)
-export const getEventDetails = withDbConnect(core.getEventDetails)
-export const updateEvent = withDbConnect(core.updateEvent)
-export const deleteEvent = withDbConnect(core.deleteEvent)
-export const getTotalEventCount = withDbConnect(core.getTotalEventCount)
-export const generateExport = withDbConnect(core.generateExport)
-export const getDistinctOpportunityFields = withDbConnect(
-  core.getDistinctOpportunityFields
-)
-export const updateOpportunities = withDbConnect(core.updateOpportunities)
-export const getTotalOpportunitiesCount = withDbConnect(core.getTotalOpportunitiesCount)
-export const getOpportunities = withDbConnect(core.getOpportunities)
-export const getOpportunityDetails = withDbConnect(core.getOpportunityDetails)
-export const updateOpportunity = withDbConnect(core.updateOpportunity)
-export const deleteOpportunity = withDbConnect(core.deleteOpportunity)
-export const updateSourceAnalyticsBatch = withDbConnect(core.updateSourceAnalyticsBatch)
-export const findSourcesForScraping = withDbConnect(core.findSourcesForScraping)
-export const performHousekeeping = withDbConnect(core.performHousekeeping)
-export const bulkWriteEvents = withDbConnect(core.bulkWriteEvents)
-export const bulkWriteArticles = withDbConnect(core.bulkWriteArticles)
-export const findEventsByKeys = withDbConnect(core.findEventsByKeys)
-export const findArticlesByLinks = withDbConnect(core.findArticlesByLinks)
-export const getActiveWatchlistEntityNames = withDbConnect(
-  core.getActiveWatchlistEntityNames
-)
-export const bulkWriteWatchlistSuggestions = withDbConnect(
-  core.bulkWriteWatchlistSuggestions
-)
-export const linkOpportunityToEvent = withDbConnect(core.linkOpportunityToEvent)
-export const unlinkOpportunityFromEvent = withDbConnect(core.unlinkOpportunityFromEvent)
-export const getSettings = withDbConnect(core.getSettings)
-export const updateSettings = withDbConnect(core.updateSettings)
-export const upsertSubscriber = withDbConnect(core.upsertSubscriber)
-export const getAllPushSubscriptions = withDbConnect(core.getAllPushSubscriptions)
-export const deletePushSubscription = withDbConnect(core.deletePushSubscription)
-export const getCurrentSubscriber = withDbConnect(core.getCurrentSubscriber)
-export const savePushSubscription = withDbConnect(core.savePushSubscription)
-export const updateUserProfile = withDbConnect(core.updateUserProfile)
-export const updateUserInteraction = withDbConnect(core.updateUserInteraction)
-export const processUploadedArticle = withDbConnect(core.processUploadedArticle)
-export const clearDiscardedItems = withDbConnect(core.clearDiscardedItems)
-export const getRecentRunVerdicts = withDbConnect(core.getRecentRunVerdicts)
-export const getRunVerdictById = withDbConnect(core.getRunVerdictById)
-export const findWatchlistEntities = withDbConnect(core.findWatchlistEntities)
-export const updateWatchlistEntities = withDbConnect(core.updateWatchlistEntities)
-export const createWatchlistEntity = withDbConnect(core.createWatchlistEntity)
-export const updateWatchlistEntity = withDbConnect(core.updateWatchlistEntity)
-export const deleteWatchlistEntity = withDbConnect(core.deleteWatchlistEntity)
-export const updateWatchlistSuggestion = withDbConnect(core.updateWatchlistSuggestion)
-export const processWatchlistSuggestion = withDbConnect(core.processWatchlistSuggestion)
-export const deleteAllSince = withDbConnect(core.deleteAllSince)
-export const resetAllSourceAnalytics = withDbConnect(core.resetAllSourceAnalytics)
-export const resetEventsEmailedStatusSince = withDbConnect(
-  core.resetEventsEmailedStatusSince
-)
+// Wrap and export all core functions for Node.js environment
+const nodeExports = {}
+for (const key in core) {
+  if (typeof core[key] === 'function') {
+    nodeExports[key] = withDbConnect(core[key])
+  }
+}
 
-export { buildQuery } from './queryBuilder.js'
-export { revalidatePath } from './revalidate.js'
+export const {
+  createSubscriber,
+  updateSubscriber,
+  deleteSubscriber,
+  createCountry,
+  updateCountry,
+  createSource,
+  updateSource,
+  getAllCountries,
+  findSubscribers,
+  getAllSubscribers,
+  getAllSources,
+  getAllWatchlistEntities,
+  getSuggestions,
+  getArticles,
+  findArticles,
+  updateArticles,
+  getTotalArticleCount,
+  updateArticle,
+  deleteArticle,
+  getArticleDetails,
+  createSubscriberWithPassword,
+  updateSubscriberPassword,
+  loginUser,
+  generateChatTitle,
+  getDashboardStats,
+  getGlobalCountries,
+  getEvents,
+  findEvents,
+  updateEvents,
+  getEventDetails,
+  updateEvent,
+  deleteEvent,
+  getTotalEventCount,
+  generateExport,
+  getDistinctOpportunityFields,
+  updateOpportunities,
+  getTotalOpportunitiesCount,
+  getOpportunities,
+  getOpportunityDetails,
+  updateOpportunity,
+  deleteOpportunity,
+  updateSourceAnalyticsBatch,
+  findSourcesForScraping,
+  performHousekeeping,
+  bulkWriteEvents,
+  bulkWriteArticles,
+  findEventsByKeys,
+  findArticlesByLinks,
+  getActiveWatchlistEntityNames,
+  bulkWriteWatchlistSuggestions,
+  linkOpportunityToEvent,
+  unlinkOpportunityFromEvent,
+  getSettings,
+  updateSettings,
+  upsertSubscriber,
+  getAllPushSubscriptions,
+  deletePushSubscription,
+  getCurrentSubscriber,
+  savePushSubscription,
+  updateUserProfile,
+  updateUserInteraction,
+  processUploadedArticle,
+  clearDiscardedItems,
+  getRecentRunVerdicts,
+  getRunVerdictById,
+  findWatchlistEntities,
+  updateWatchlistEntities,
+  createWatchlistEntity,
+  updateWatchlistEntity,
+  deleteWatchlistEntity,
+  updateWatchlistSuggestion,
+  processWatchlistSuggestion,
+  deleteAllSince,
+  resetAllSourceAnalytics,
+  resetEventsEmailedStatusSince,
+} = nodeExports
+
+export { buildQuery }
 
 ```
 
 ## 📄 src/next.js
-*Lines: 101, Size: 5.75 KB*
+*Lines: 120, Size: 2.78 KB*
 
 ```javascript
-// packages/data-access/src/next.js (Next.js Entry Point)
+// packages/data-access/src/next.js
 import 'server-only'
-import dbConnect from './dbConnect.next.js'
+import { env } from '@headlines/config/next'
+import dbConnectCore from './dbConnect.js'
 import * as core from './core/index.js'
+import { buildQuery } from './queryBuilder.js'
+import { revalidatePath } from './revalidate.js'
+
+function dbConnect() {
+  return dbConnectCore(env.MONGO_URI)
+}
 
 function withDbConnect(fn) {
   return async (...args) => {
@@ -2099,94 +2110,106 @@ function withDbConnect(fn) {
   }
 }
 
-export const createSubscriber = withDbConnect(core.createSubscriber)
-export const updateSubscriber = withDbConnect(core.updateSubscriber)
-export const deleteSubscriber = withDbConnect(core.deleteSubscriber)
-export const createCountry = withDbConnect(core.createCountry)
-export const updateCountry = withDbConnect(core.updateCountry)
-export const createSource = withDbConnect(core.createSource)
-export const updateSource = withDbConnect(core.updateSource)
-export const getAllCountries = withDbConnect(core.getAllCountries)
-export const findSubscribers = withDbConnect(core.findSubscribers)
-export const getAllSubscribers = withDbConnect(core.getAllSubscribers)
-export const getAllSources = withDbConnect(core.getAllSources)
-export const getAllWatchlistEntities = withDbConnect(core.getAllWatchlistEntities)
-export const getSuggestions = withDbConnect(core.getSuggestions)
-export const getArticles = withDbConnect(core.getArticles)
-export const findArticles = withDbConnect(core.findArticles)
-export const updateArticles = withDbConnect(core.updateArticles)
-export const getTotalArticleCount = withDbConnect(core.getTotalArticleCount)
-export const updateArticle = withDbConnect(core.updateArticle)
-export const deleteArticle = withDbConnect(core.deleteArticle)
-export const getArticleDetails = withDbConnect(core.getArticleDetails)
-export const createSubscriberWithPassword = withDbConnect(
-  core.createSubscriberWithPassword
-)
-export const updateSubscriberPassword = withDbConnect(core.updateSubscriberPassword)
-export const loginUser = withDbConnect(core.loginUser)
-export const generateChatTitle = withDbConnect(core.generateChatTitle)
-export const getDashboardStats = withDbConnect(core.getDashboardStats)
-export const getGlobalCountries = withDbConnect(core.getGlobalCountries)
-export const getEvents = withDbConnect(core.getEvents)
-export const findEvents = withDbConnect(core.findEvents)
-export const updateEvents = withDbConnect(core.updateEvents)
-export const getEventDetails = withDbConnect(core.getEventDetails)
-export const updateEvent = withDbConnect(core.updateEvent)
-export const deleteEvent = withDbConnect(core.deleteEvent)
-export const getTotalEventCount = withDbConnect(core.getTotalEventCount)
-export const generateExport = withDbConnect(core.generateExport)
-export const getDistinctOpportunityFields = withDbConnect(
-  core.getDistinctOpportunityFields
-)
-export const updateOpportunities = withDbConnect(core.updateOpportunities)
-export const getTotalOpportunitiesCount = withDbConnect(core.getTotalOpportunitiesCount)
-export const getOpportunities = withDbConnect(core.getOpportunities)
-export const getOpportunityDetails = withDbConnect(core.getOpportunityDetails)
-export const updateOpportunity = withDbConnect(core.updateOpportunity)
-export const deleteOpportunity = withDbConnect(core.deleteOpportunity)
-export const updateSourceAnalyticsBatch = withDbConnect(core.updateSourceAnalyticsBatch)
-export const findSourcesForScraping = withDbConnect(core.findSourcesForScraping)
-export const performHousekeeping = withDbConnect(core.performHousekeeping)
-export const bulkWriteEvents = withDbConnect(core.bulkWriteEvents)
-export const bulkWriteArticles = withDbConnect(core.bulkWriteArticles)
-export const findEventsByKeys = withDbConnect(core.findEventsByKeys)
-export const findArticlesByLinks = withDbConnect(core.findArticlesByLinks)
-export const getActiveWatchlistEntityNames = withDbConnect(
-  core.getActiveWatchlistEntityNames
-)
-export const bulkWriteWatchlistSuggestions = withDbConnect(
-  core.bulkWriteWatchlistSuggestions
-)
-export const linkOpportunityToEvent = withDbConnect(core.linkOpportunityToEvent)
-export const unlinkOpportunityFromEvent = withDbConnect(core.unlinkOpportunityFromEvent)
-export const getSettings = withDbConnect(core.getSettings)
-export const updateSettings = withDbConnect(core.updateSettings)
-export const upsertSubscriber = withDbConnect(core.upsertSubscriber)
-export const getAllPushSubscriptions = withDbConnect(core.getAllPushSubscriptions)
-export const deletePushSubscription = withDbConnect(core.deletePushSubscription)
-export const getCurrentSubscriber = withDbConnect(core.getCurrentSubscriber)
-export const savePushSubscription = withDbConnect(core.savePushSubscription)
-export const updateUserProfile = withDbConnect(core.updateUserProfile)
-export const updateUserInteraction = withDbConnect(core.updateUserInteraction)
-export const processUploadedArticle = withDbConnect(core.processUploadedArticle)
-export const clearDiscardedItems = withDbConnect(core.clearDiscardedItems)
-export const getRecentRunVerdicts = withDbConnect(core.getRecentRunVerdicts)
-export const getRunVerdictById = withDbConnect(core.getRunVerdictById)
-export const findWatchlistEntities = withDbConnect(core.findWatchlistEntities)
-export const updateWatchlistEntities = withDbConnect(core.updateWatchlistEntities)
-export const createWatchlistEntity = withDbConnect(core.createWatchlistEntity)
-export const updateWatchlistEntity = withDbConnect(core.updateWatchlistEntity)
-export const deleteWatchlistEntity = withDbConnect(core.deleteWatchlistEntity)
-export const updateWatchlistSuggestion = withDbConnect(core.updateWatchlistSuggestion)
-export const processWatchlistSuggestion = withDbConnect(core.processWatchlistSuggestion)
-export const deleteAllSince = withDbConnect(core.deleteAllSince)
-export const resetAllSourceAnalytics = withDbConnect(core.resetAllSourceAnalytics)
-export const resetEventsEmailedStatusSince = withDbConnect(
-  core.resetEventsEmailedStatusSince
-)
+// Wrap all core functions
+const wrappedCore = {}
+for (const key in core) {
+  if (typeof core[key] === 'function') {
+    wrappedCore[key] = withDbConnect(core[key])
+  }
+}
 
-export { buildQuery } from './queryBuilder.js'
-export { revalidatePath } from './revalidate.js'
+// --- START OF THE FIX ---
+// Create a special wrapper for updateSettings that adds revalidation
+const originalUpdateSettings = wrappedCore.updateSettings
+wrappedCore.updateSettings = async (...args) => {
+  const result = await originalUpdateSettings(...args)
+  if (result.success) {
+    await revalidatePath('/admin/settings')
+  }
+  return result
+}
+// --- END OF THE FIX ---
+
+// Explicitly export everything to avoid issues with module systems
+export const {
+  createSubscriber,
+  updateSubscriber,
+  deleteSubscriber,
+  createCountry,
+  updateCountry,
+  createSource,
+  updateSource,
+  getAllCountries,
+  findSubscribers,
+  getAllSubscribers,
+  getAllSources,
+  getAllWatchlistEntities,
+  getSuggestions,
+  getArticles,
+  findArticles,
+  updateArticles,
+  getTotalArticleCount,
+  updateArticle,
+  deleteArticle,
+  getArticleDetails,
+  createSubscriberWithPassword,
+  updateSubscriberPassword,
+  loginUser,
+  generateChatTitle,
+  getDashboardStats,
+  getGlobalCountries,
+  getEvents,
+  findEvents,
+  updateEvents,
+  getEventDetails,
+  updateEvent,
+  deleteEvent,
+  getTotalEventCount,
+  generateExport,
+  getDistinctOpportunityFields,
+  updateOpportunities,
+  getTotalOpportunitiesCount,
+  getOpportunities,
+  getOpportunityDetails,
+  updateOpportunity,
+  deleteOpportunity,
+  updateSourceAnalyticsBatch,
+  findSourcesForScraping,
+  performHousekeeping,
+  bulkWriteEvents,
+  bulkWriteArticles,
+  findEventsByKeys,
+  findArticlesByLinks,
+  getActiveWatchlistEntityNames,
+  bulkWriteWatchlistSuggestions,
+  linkOpportunityToEvent,
+  unlinkOpportunityFromEvent,
+  getSettings,
+  updateSettings, // This now exports the wrapped version
+  upsertSubscriber,
+  getAllPushSubscriptions,
+  deletePushSubscription,
+  getCurrentSubscriber,
+  savePushSubscription,
+  updateUserProfile,
+  updateUserInteraction,
+  processUploadedArticle,
+  clearDiscardedItems,
+  getRecentRunVerdicts,
+  getRunVerdictById,
+  findWatchlistEntities,
+  updateWatchlistEntities,
+  createWatchlistEntity,
+  updateWatchlistEntity,
+  deleteWatchlistEntity,
+  updateWatchlistSuggestion,
+  processWatchlistSuggestion,
+  deleteAllSince,
+  resetAllSourceAnalytics,
+  resetEventsEmailedStatusSince,
+} = wrappedCore
+
+export { buildQuery, revalidatePath }
 
 ```
 
@@ -2293,10 +2316,10 @@ export async function buildQuery(
 ```
 
 ## 📄 src/revalidate.js
-*Lines: 24, Size: 929 Bytes*
+*Lines: 23, Size: 833 Bytes*
 
 ```javascript
-// packages/data-access/src/revalidate.js (version 2.0.0)
+// packages/data-access/src/revalidate.js
 /**
  * An environment-aware revalidation function.
  * This function is now async to handle the dynamic import safely.
@@ -2311,7 +2334,6 @@ export async function revalidatePath(path, type) {
 
   try {
     // This dynamic import will only succeed in a Next.js environment.
-    // By placing it inside an async function, we avoid top-level await issues.
     const { revalidatePath: nextRevalidate } = await import('next/cache')
     return nextRevalidate(path, type)
   } catch (e) {

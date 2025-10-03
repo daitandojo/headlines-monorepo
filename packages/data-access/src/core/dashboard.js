@@ -96,3 +96,39 @@ export async function getGlobalCountries() {
     return { success: false, error: 'Failed to fetch global countries.' }
   }
 }
+
+export async function getPublicTickerEvents() {
+  try {
+    const events = await SynthesizedEvent.find({
+      highest_relevance_score: { $gte: 85 },
+      eventClassification: 'New Wealth',
+    })
+      .sort({ createdAt: -1 })
+      .limit(15)
+      .select('country synthesized_headline')
+      .lean()
+
+    // Anonymize and format for the ticker
+    const formattedEvents = events.map((event) => {
+      let headline = event.synthesized_headline
+      // Replace specific names with generic roles
+      headline = headline.replace(
+        /\b([A-Z][a-z]+(?: [A-Z][a-z]+)+)\b/g,
+        'A private investor'
+      )
+      headline = headline.replace(
+        /\b([A-Z][A-Z\s-]+[A-Z])\b/g,
+        'a privately-held company'
+      )
+      return {
+        _id: event._id,
+        country: event.country,
+        headline: headline,
+      }
+    })
+
+    return { success: true, data: JSON.parse(JSON.stringify(formattedEvents)) }
+  } catch (e) {
+    return { success: false, error: 'Failed to fetch public ticker events.' }
+  }
+}

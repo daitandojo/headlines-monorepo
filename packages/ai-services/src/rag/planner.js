@@ -24,12 +24,22 @@ export async function runPlannerAgent(messages) {
     throw new Error(`Planner Agent failed: ${response.error}`)
   }
 
-  logger.groupCollapsed('[Planner Agent] Plan Generated')
-  logger.trace('User Query:', response.user_query)
-  logger.trace('Reasoning:', response.reasoning)
-  logger.trace('Plan Steps:', response.plan)
-  logger.trace('Search Queries:', response.search_queries)
-  logger.groupEnd()
+  // --- START OF THE FIX ---
+  // Replaced browser-specific logger.groupCollapsed with a single structured log object.
+  // This is safe to run on the server.
+  logger.trace(
+    {
+      agent: 'Planner Agent',
+      planDetails: {
+        userQuery: response.user_query,
+        reasoning: response.reasoning,
+        planSteps: response.plan,
+        searchQueries: response.search_queries,
+      },
+    },
+    '[Planner Agent] Plan Generated'
+  )
+  // --- END OF THE FIX ---
 
   return response
 }

@@ -135,3 +135,6 @@ export { PremiumSpinner } from './spinners/PremiumSpinner.jsx'
 export { Skeleton } from './skeletons/Skeleton.jsx'
 export { SkeletonCard } from './skeletons/SkeletonCard.jsx'
 export { ViewHeader } from './screen/ViewHeader.jsx'
+
+// ADDED for header user status
+export { Crown, CalendarClock } from 'lucide-react'

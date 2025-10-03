@@ -62,7 +62,6 @@ module.exports = {
       },
       fontFamily: {
         sans: ['var(--font-sans)', ...fontFamily.sans],
-        serif: ['Merriweather', 'serif'],
       },
       keyframes: {
         'accordion-down': {

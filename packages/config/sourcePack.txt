@@ -15,7 +15,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-02T23:22:35.389Z
+**Generated**: 2025-10-03T20:17:04.607Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/config
 **Total Files**: 6
 **Package**: @headlines/config@3.0.0

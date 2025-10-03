@@ -8,6 +8,14 @@ import { useState, useEffect } from 'react'
 const useAppStore = create(
   persist(
     (set, get) => ({
+      // --- Totals State ---
+      eventTotal: 0,
+      articleTotal: 0,
+      opportunityTotal: 0,
+      setEventTotal: (total) => set({ eventTotal: total }),
+      setArticleTotal: (total) => set({ articleTotal: total }),
+      setOpportunityTotal: (total) => set({ opportunityTotal: total }),
+
       // --- Chat State ---
       chats: [],
       activeChatId: null,
@@ -74,6 +82,7 @@ const useAppStore = create(
       name: 'headlines-app-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
+        // Only persist chat and preferences, not transient totals
         chats: state.chats,
         activeChatId: state.activeChatId,
         deletePreferences: state.deletePreferences,
@@ -93,7 +102,5 @@ const useHasHydrated = () => {
   return hydrated
 }
 
-// --- THE FIX IS HERE ---
-// We need to export the hook alongside the default export.
 export { useHasHydrated }
 export default useAppStore

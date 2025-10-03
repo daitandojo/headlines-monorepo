@@ -55,7 +55,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-02T23:22:35.394Z
+**Generated**: 2025-10-03T20:17:04.613Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/models
 **Total Files**: 45
 **Package**: @headlines/models@2.0.0

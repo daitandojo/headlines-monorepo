@@ -1,7 +1,7 @@
 // File: client/src/components/client/shared/DataView.jsx
 'use client'
 
-import { useMemo, Suspense } from 'react'
+import { useMemo, Suspense, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ViewHeader } from '@/components/shared/screen/ViewHeader'
@@ -13,6 +13,7 @@ import { InfiniteScrollLoader } from '../../shared/screen/InfiniteScrollLoader'
 import { useAuth } from '@/lib/auth/client'
 import { toast } from 'sonner'
 import { SearchX } from 'lucide-react'
+import useAppStore from '@/lib/store/use-app-store'
 
 async function fetchData({ queryKey, pageParam = 1 }) {
   const [queryKeyPrefix, params] = queryKey
@@ -58,6 +59,7 @@ export function DataView({
   const searchParams = useSearchParams()
   const queryClient = useQueryClient()
   const { user } = useAuth()
+  const { setEventTotal, setArticleTotal, setOpportunityTotal } = useAppStore()
 
   const q = searchParams.get('q') || ''
   const sort = searchParams.get('sort') || sortOptions[0].value
@@ -83,12 +85,18 @@ export function DataView({
       pageParams: [1],
     },
     enabled: !!user,
-    // --- START OF THE FIX ---
-    // This tells React Query that the initial data from SSR is fresh
-    // and prevents it from immediately re-fetching on the client.
     staleTime: 60 * 1000,
-    // --- END OF THE FIX ---
   })
+
+  // EFFECT TO UPDATE GLOBAL STATE WITH TOTALS
+  useEffect(() => {
+    const total = data?.pages?.[0]?.total
+    if (typeof total === 'number') {
+      if (queryKeyPrefix === 'events') setEventTotal(total)
+      if (queryKeyPrefix === 'articles') setArticleTotal(total)
+      if (queryKeyPrefix === 'opportunities') setOpportunityTotal(total)
+    }
+  }, [data, queryKeyPrefix, setEventTotal, setArticleTotal, setOpportunityTotal])
 
   const { mutate: performInteraction } = useMutation({
     mutationFn: updateUserInteraction,

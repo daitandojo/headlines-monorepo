@@ -42,7 +42,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-02T23:22:35.397Z
+**Generated**: 2025-10-03T20:17:04.616Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/prompts
 **Total Files**: 31
 **Package**: @headlines/prompts@1.0.0

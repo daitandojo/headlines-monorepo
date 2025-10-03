@@ -11,6 +11,14 @@ export async function createSubscriberWithPassword(userData) {
   try {
     const salt = await bcryptjs.genSalt(SALT_WORK_FACTOR)
     userData.password = await bcryptjs.hash(userData.password, salt)
+
+    // Set trial expiration if applicable
+    if (userData.subscriptionTier === 'trial') {
+      const trialEndDate = new Date()
+      trialEndDate.setDate(trialEndDate.getDate() + 30)
+      userData.subscriptionExpiresAt = trialEndDate
+    }
+
     const newUser = new Subscriber(userData)
     await newUser.save()
     const { password, ...userPayload } = newUser.toObject()

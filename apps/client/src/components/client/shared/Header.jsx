@@ -1,7 +1,15 @@
 // File: client/src/components/client/shared/Header.jsx
 'use client'
 
-import { Briefcase, LogOut, Settings, User, Shield } from 'lucide-react' // <-- Add Shield icon
+import {
+  Briefcase,
+  LogOut,
+  Settings,
+  User,
+  Shield,
+  Crown,
+  CalendarClock,
+} from 'lucide-react'
 import { InstallPwaButton } from '../../shared/buttons/InstallPwaButton'
 import { GlobalCountrySelector } from '../countries/GlobalCountrySelector'
 import { useAuth } from '@/lib/auth/client.js'
@@ -16,21 +24,43 @@ import {
   DropdownMenuTrigger,
 } from '@/components/shared'
 import Link from 'next/link'
+import { differenceInDays } from 'date-fns'
+import useAppStore from '@/lib/store/use-app-store'
 
-export const Header = ({
-  articleCount,
-  eventCount,
-  opportunityCount,
-  globalCountries,
-}) => {
+const UserSubscriptionStatus = () => {
+  const { user } = useAuth()
+  if (!user) return null
+
+  if (user.subscriptionTier === 'trial' && user.subscriptionExpiresAt) {
+    const daysLeft = differenceInDays(new Date(user.subscriptionExpiresAt), new Date())
+    if (daysLeft >= 0) {
+      return (
+        <div className="flex items-center gap-2">
+          <CalendarClock className="h-4 w-4 text-yellow-400" />
+          <span className="text-sm text-yellow-400">Trial: {daysLeft} days left</span>
+        </div>
+      )
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <Crown className="h-4 w-4 text-amber-400" />
+      <span className="capitalize text-sm text-amber-400">{user.subscriptionTier}</span>
+    </div>
+  )
+}
+
+export const Header = ({ globalCountries }) => {
   const { user, logout } = useAuth()
+  // Subscribe to the global store for live counts. This will now be hydrated correctly.
+  const { eventTotal, articleTotal, opportunityTotal } = useAppStore()
 
   return (
     <header className="mb-4 sm:mb-6 relative">
       <div className="absolute top-2 right-2 flex items-center gap-1">
         {user && (
           <>
-            {/* --- START: ADD ADMIN BUTTON --- */}
             {user.role === 'admin' && (
               <Button asChild variant="ghost" size="icon" aria-label="Admin Panel">
                 <Link href="/admin/dashboard">
@@ -38,7 +68,6 @@ export const Header = ({
                 </Link>
               </Button>
             )}
-            {/* --- END: ADD ADMIN BUTTON --- */}
             <GlobalCountrySelector allCountries={globalCountries || []} />
             <NotificationToggles />
             <DropdownMenu>
@@ -53,6 +82,9 @@ export const Header = ({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-secondary">
                 <DropdownMenuLabel>Hi, {user.firstName}</DropdownMenuLabel>
+                <div className="px-2 pb-2">
+                  <UserSubscriptionStatus />
+                </div>
                 <DropdownMenuSeparator />
                 <Link href="/settings" passHref>
                   <DropdownMenuItem>
@@ -78,16 +110,19 @@ export const Header = ({
       </div>
       <p className="text-center text-sm sm:text-base text-slate-400 max-w-3xl mx-auto">
         Analyze
-        <span className="font-bold text-slate-300"> {eventCount?.toLocaleString()} </span>
+        <span className="font-bold text-slate-300">
+          {' '}
+          {(eventTotal || 0).toLocaleString()}{' '}
+        </span>
         events,
         <span className="font-bold text-slate-300">
           {' '}
-          {opportunityCount?.toLocaleString()}{' '}
+          {(opportunityTotal || 0).toLocaleString()}{' '}
         </span>
         opportunities, from
         <span className="font-bold text-slate-300">
           {' '}
-          {articleCount?.toLocaleString()}{' '}
+          {(articleTotal || 0).toLocaleString()}{' '}
         </span>
         articles.
       </p>
