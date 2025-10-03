@@ -24,7 +24,7 @@ export async function POST(request) {
     }
 
     const { email, password } = validation.data
-    logger.info(`Login attempt for user: ${email}`) // Use logger instead of console.log
+    logger.info(`Login attempt for user: ${email}`)
     const result = await loginUser({ email, password })
 
     if (!result.success) {
