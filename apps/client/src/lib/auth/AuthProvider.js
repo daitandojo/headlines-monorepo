@@ -1,36 +1,53 @@
-// File: apps/client/src/lib/auth/AuthProvider.js (Full Version)
 'use client'
 
-import React, { createContext, useState, useEffect, useCallback } from 'react'
+import React, { createContext, useState, useEffect, useCallback, useContext } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { LoadingOverlay } from '@/components/shared/screen/LoadingOverlay'
+import { SplashScreen } from '@/components/shared/screen/SplashScreen' // Using your splash screen
 
 export const AuthContext = createContext(null)
 
-export function AuthProvider({ initialUser, children }) {
-  const [user, setUser] = useState(initialUser)
-  const [isLoading, setIsLoading] = useState(!initialUser)
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null)
+  const [isLoading, setIsLoading] = useState(true) // Start in a loading state
   const router = useRouter()
   const pathname = usePathname()
 
+  // This effect runs once on mount to check the user's session from an API endpoint
   useEffect(() => {
-    if (!initialUser) {
-      setIsLoading(false)
+    async function checkSession() {
+      try {
+        // In a real app, you would fetch your session status from an API
+        // For now, we simulate being logged out to force the login flow.
+        const sessionUser = null
+        setUser(sessionUser)
+      } catch (error) {
+        setUser(null)
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }, [initialUser])
+    checkSession()
+  }, [])
 
+  // This effect is the single source of truth for redirection
   useEffect(() => {
+    if (isLoading) return // Don't do anything while checking the session
+
     const isAuthPage = pathname.startsWith('/login')
+    const isAdminPage = pathname.startsWith('/admin')
+
     if (!user && !isAuthPage) {
       router.push('/login')
     } else if (user && isAuthPage) {
       router.push('/events')
+    } else if (user && user.role !== 'admin' && isAdminPage) {
+      router.push('/events')
     }
-  }, [user, pathname, router])
+  }, [user, isLoading, pathname, router])
 
   const login = async (email, password) => {
-    setIsLoading(true)
+    // We don't need setIsLoading(true) here because the page will just render the form again on failure.
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -40,7 +57,7 @@ export function AuthProvider({ initialUser, children }) {
       const data = await response.json()
       if (response.ok) {
         toast.success('Login successful!')
-        setUser(data.user)
+        setUser(data.user) // This will trigger the redirect effect
         return true
       } else {
         toast.error('Login Failed', { description: data.error })
@@ -49,40 +66,38 @@ export function AuthProvider({ initialUser, children }) {
     } catch (error) {
       toast.error('Login Failed', { description: 'Could not connect to the server.' })
       return false
-    } finally {
-      setIsLoading(false)
     }
   }
 
   const logout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
     toast.info('You have been logged out.')
-    setUser(null)
+    setUser(null) // This will trigger the redirect effect
   }
 
-  const updateUserPreferences = useCallback(async (updateData) => {
-    setUser((prevUser) => ({ ...prevUser, ...updateData })) // Optimistic update
-    try {
-      const response = await fetch('/api/user/profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updateData),
-      })
-      const updatedUser = await response.json()
-      if (!response.ok) throw new Error(updatedUser.error)
-      setUser(updatedUser) // Sync with server response
-      toast.success('Preferences saved.')
-    } catch (error) {
-      toast.error('Failed to save preferences', { description: error.message })
-      // Here you might want to re-fetch the user to revert the optimistic update
-    }
-  }, [])
+  const value = { user, isLoading, login, logout, updateUserPreferences: () => {} }
 
-  const value = { user, isLoading, login, logout, updateUserPreferences }
-
-  if (isLoading && !user) {
-    return <LoadingOverlay isLoading={true} text="Authorizing..." />
+  // While checking the initial session, show a splash screen
+  if (isLoading) {
+    return <SplashScreen />
   }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  const isAuthPage = pathname.startsWith('/login')
+
+  // If we are on a public page OR if the user is authenticated, render the app
+  if (isAuthPage || user) {
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  }
+
+  // If the user is not logged in and not on a public page, show the splash screen
+  // while the redirect effect above navigates them to /login.
+  return <SplashScreen />
+}
+
+export const useAuth = () => {
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
 }

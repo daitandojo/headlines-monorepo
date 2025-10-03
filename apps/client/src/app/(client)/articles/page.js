@@ -16,6 +16,7 @@ export default async function ArticlesPage({ searchParams }) {
   const userId = await getUserIdFromSession()
   let initialArticles = []
 
+  // The client-side AuthProvider handles redirection, so we only fetch data if a userId exists.
   if (userId) {
     try {
       const filters = { q: searchParams.q || '' }

@@ -2,7 +2,7 @@
 import { DataView } from '@/components/client/shared/DataView'
 import { getEvents } from '@headlines/data-access'
 import { getUserIdFromSession } from '@/lib/auth/server'
-import dbConnect from '@headlines/data-access/dbConnect/next' // Import dbConnect
+import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,10 +12,13 @@ const sortOptions = [
 ]
 
 export default async function EventsPage({ searchParams }) {
-  await dbConnect() // Ensure database connection is established
+  await dbConnect()
   const userId = await getUserIdFromSession()
   let initialEvents = []
 
+  // NO REDIRECT HERE.
+  // If userId is null, we simply fetch no data. The AuthProvider on the client
+  // will handle redirecting the user away from this page.
   if (userId) {
     try {
       const filters = { q: searchParams.q || '' }

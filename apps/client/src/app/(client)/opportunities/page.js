@@ -14,6 +14,7 @@ export default async function OpportunitiesPage({ searchParams }) {
   const userId = await getUserIdFromSession()
   let initialOpportunities = []
 
+  // The client-side AuthProvider handles redirection, so we only fetch data if a userId exists.
   if (userId) {
     try {
       const filters = {

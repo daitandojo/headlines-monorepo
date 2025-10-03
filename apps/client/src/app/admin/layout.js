@@ -1,20 +1,22 @@
 // 'use server'
 
 import { verifyAdmin } from '@/lib/auth/server'
-import { redirect } from 'next/navigation'
 import { DesktopOnlyWrapper } from '@/components/shared/screen/DesktopOnlyWrapper'
-import AdminNav from '@/components/admin/main-nav' // Import the nav component here
+import AdminNav from '@/components/admin/main-nav'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminLayout({ children }) {
+  // We can still verify admin here to be extra safe, but the redirect is now handled client-side
+  // by the AuthProvider, which prevents the rendering error.
   const { isAdmin } = await verifyAdmin()
 
   if (!isAdmin) {
-    redirect('/events') // Redirect non-admins away
+    // Instead of redirecting, we can return null or a loading/access-denied state.
+    // The AuthProvider will handle the redirect anyway.
+    return null
   }
 
-  // This Server Component now defines the admin layout structure.
   return (
     <DesktopOnlyWrapper>
       <div className="flex h-screen bg-background">
