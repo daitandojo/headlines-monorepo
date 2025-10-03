@@ -1,6 +1,6 @@
 'use server'
 
-import { getDashboardStats, getGlobalCountries } from '@headlines/data-access'
+import { getDashboardStats, getGlobalCountries } from '@headlines/data-access/next' // CORRECTED IMPORT
 import { ClientLayoutWrapper } from './client-layout-wrapper'
 
 export default async function ClientLayout({ children }) {

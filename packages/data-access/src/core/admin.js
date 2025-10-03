@@ -8,15 +8,20 @@ import {
   SourceSuggestion,
 } from '@headlines/models'
 import { buildQuery } from '../queryBuilder.js'
-import { createSubscriberWithPassword } from './auth.js'
+// We can no longer import createSubscriberWithPassword as it's environment-specific
+// import { createSubscriberWithPassword } from './auth.js'
 
 export async function createSubscriber(userData) {
-  // Delegate user creation with a password to the specialized function
+  // This function is now simplified. Password creation MUST be handled by
+  // an environment-specific function that can perform hashing.
   if (userData.password) {
-    return createSubscriberWithPassword(userData)
+    return {
+      success: false,
+      error:
+        'Password creation must be handled by a specific auth function, not the generic createSubscriber.',
+    }
   }
 
-  // Handle cases where a user might be created without a password initially (e.g., invites)
   try {
     const newUser = new Subscriber(userData)
     await newUser.save()
@@ -30,7 +35,6 @@ export async function createSubscriber(userData) {
 
 export async function updateSubscriber(userId, updateData) {
   try {
-    // Explicitly remove password from general updates. It must be updated via its own function.
     if (updateData.password) {
       delete updateData.password
     }

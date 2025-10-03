@@ -1,7 +1,7 @@
 // apps/client/src/app/(client)/articles/page.js
 import { DataView } from '@/components/client/shared/DataView'
-import { getArticles } from '@headlines/data-access'
-import { getUserIdFromSession } from '@/lib/auth/server'
+import { getArticles } from '@headlines/data-access/next' // CORRECTED IMPORT
+import { getUserIdFromSession } from '@/lib/auth/server' // CORRECTED IMPORT
 import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
@@ -16,7 +16,6 @@ export default async function ArticlesPage({ searchParams }) {
   const userId = await getUserIdFromSession()
   let initialArticles = []
 
-  // The client-side AuthProvider handles redirection, so we only fetch data if a userId exists.
   if (userId) {
     try {
       const filters = { q: searchParams.q || '' }

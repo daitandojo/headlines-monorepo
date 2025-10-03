@@ -1,6 +1,6 @@
 // apps/client/src/app/admin/articles/page.js
-import { getArticles } from '@headlines/data-access'
-import ArticlesClientPage from './ArticlesClientPage' // New client component
+import { getArticles } from '@headlines/data-access/next' // CORRECTED
+import ArticlesClientPage from './ArticlesClientPage'
 import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'

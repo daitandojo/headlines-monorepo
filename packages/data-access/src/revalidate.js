@@ -1,4 +1,4 @@
-// packages/data-access/src/revalidate.js (version 2.0.0)
+// packages/data-access/src/revalidate.js
 /**
  * An environment-aware revalidation function.
  * This function is now async to handle the dynamic import safely.
@@ -13,7 +13,6 @@ export async function revalidatePath(path, type) {
 
   try {
     // This dynamic import will only succeed in a Next.js environment.
-    // By placing it inside an async function, we avoid top-level await issues.
     const { revalidatePath: nextRevalidate } = await import('next/cache')
     return nextRevalidate(path, type)
   } catch (e) {

@@ -1,6 +1,6 @@
 // apps/client/src/app/(client)/opportunities/page.js
 import { DataView } from '@/components/client/shared/DataView'
-import { getOpportunities } from '@headlines/data-access'
+import { getOpportunities } from '@headlines/data-access/next' // CORRECTED
 import { getUserIdFromSession } from '@/lib/auth/server'
 import dbConnect from '@headlines/data-access/dbConnect/next'
 
@@ -14,7 +14,6 @@ export default async function OpportunitiesPage({ searchParams }) {
   const userId = await getUserIdFromSession()
   let initialOpportunities = []
 
-  // The client-side AuthProvider handles redirection, so we only fetch data if a userId exists.
   if (userId) {
     try {
       const filters = {

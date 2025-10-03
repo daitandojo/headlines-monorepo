@@ -1,21 +1,16 @@
 // packages/data-access/src/core/auth.js
 import { Subscriber } from '@headlines/models'
-import bcrypt from 'bcryptjs'
+import bcryptjs from 'bcryptjs'
 
 const SALT_WORK_FACTOR = 10
 
-/**
- * Creates a new subscriber with a securely hashed password.
- * @param {object} userData - The user data, including a plain-text password.
- * @returns {Promise<object>} The result of the creation operation.
- */
 export async function createSubscriberWithPassword(userData) {
   if (!userData.password) {
     return { success: false, error: 'Password is required to create a user.' }
   }
   try {
-    const salt = await bcrypt.genSalt(SALT_WORK_FACTOR)
-    userData.password = await bcrypt.hash(userData.password, salt)
+    const salt = await bcryptjs.genSalt(SALT_WORK_FACTOR)
+    userData.password = await bcryptjs.hash(userData.password, salt)
     const newUser = new Subscriber(userData)
     await newUser.save()
     const { password, ...userPayload } = newUser.toObject()
@@ -28,19 +23,13 @@ export async function createSubscriberWithPassword(userData) {
   }
 }
 
-/**
- * Updates a subscriber's password, ensuring it is properly hashed.
- * @param {string} userId - The ID of the user to update.
- * @param {string} newPassword - The new plain-text password.
- * @returns {Promise<object>} The result of the update operation.
- */
 export async function updateSubscriberPassword(userId, newPassword) {
   if (!newPassword) {
     return { success: false, error: 'New password cannot be empty.' }
   }
   try {
-    const salt = await bcrypt.genSalt(SALT_WORK_FACTOR)
-    const hashedPassword = await bcrypt.hash(newPassword, salt)
+    const salt = await bcryptjs.genSalt(SALT_WORK_FACTOR)
+    const hashedPassword = await bcryptjs.hash(newPassword, salt)
     const result = await Subscriber.updateOne(
       { _id: userId },
       { password: hashedPassword }
@@ -63,13 +52,13 @@ export async function loginUser({ email, password }) {
     const user = await Subscriber.findOne({
       email: email.toLowerCase().trim(),
       isActive: true,
-    }).select('+password') // No .lean() here, we need the Mongoose method
+    }).select('+password')
 
     if (!user) {
       return { success: false, error: 'Invalid credentials or inactive account.' }
     }
 
-    const isPasswordMatch = await user.comparePassword(password)
+    const isPasswordMatch = await bcryptjs.compare(password, user.password)
 
     if (!isPasswordMatch) {
       return { success: false, error: 'Invalid credentials or inactive account.' }

@@ -9,10 +9,7 @@
     ".": "./src/index.js",
     "./node": "./src/index.js",
     "./next": "./src/next.js",
-    "./dbConnect": "./src/dbConnect.js",
-    "./dbConnect/next": "./src/dbConnect.next.js",
-    "./dbConnect/node": "./src/dbConnect.node.js",
-    "./seed/dev-user.js": "./src/seed/dev-user.js"
+    "./dbConnect/next": "./src/dbConnect.next.js"
   },
   "dependencies": {
     "@headlines/utils-shared": "workspace:*",
@@ -20,9 +17,9 @@
     "@headlines/config": "workspace:*",
     "@headlines/prompts": "workspace:*",
     "@headlines/models": "workspace:*",
-    "@pinecone-database/pinecone": "^6.1.2",
-    "bcryptjs": "^3.0.2",
-    "mongoose": "^8.18.1",
-    "openai": "^5.22.0"
+    "@pinecone-database/pinecone": "^2.2.2",
+    "bcryptjs": "^2.4.3",
+    "mongoose": "^8.4.1",
+    "openai": "^4.29.2"
   }
 }

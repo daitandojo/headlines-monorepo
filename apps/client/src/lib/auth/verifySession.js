@@ -1,6 +1,7 @@
+// apps/client/src/lib/auth/verifySession.js
 'use server'
 
-import { getCookies } from './getCookies.js'
+import { cookies } from 'next/headers' // Direct, explicit import
 import * as jose from 'jose'
 import { env } from '@headlines/config/next'
 
@@ -18,7 +19,7 @@ async function verifyToken(token) {
 }
 
 export async function verifySession() {
-  const cookieStore = await getCookies()
+  const cookieStore = cookies()
   const token = cookieStore.get(JWT_COOKIE_NAME)?.value
   return await verifyToken(token)
 }
@@ -28,12 +29,9 @@ export async function getUserIdFromSession() {
   return user ? user.userId : null
 }
 
-// This function is now simplified and has no database side-effects.
-// It relies on a user having been seeded manually.
 export async function verifyAdmin() {
   const { user, error } = await verifySession()
 
-  // A simple check for a known dev user email can be a convenience.
   if (process.env.NODE_ENV === 'development' && user?.email === 'dev@headlines.dev') {
     return { isAdmin: true, user, error: null }
   }

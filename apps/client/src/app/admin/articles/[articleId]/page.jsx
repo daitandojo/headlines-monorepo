@@ -1,6 +1,6 @@
 'use server'
 
-import { getArticleDetails } from '@headlines/data-access'
+import { getArticleDetails } from '@headlines/data-access/next' // CORRECTED
 import { notFound } from 'next/navigation'
 import ArticleEditor from './ArticleEditor' // We will create this next
 

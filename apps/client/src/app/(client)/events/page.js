@@ -1,7 +1,7 @@
 // apps/client/src/app/(client)/events/page.js
 import { DataView } from '@/components/client/shared/DataView'
-import { getEvents } from '@headlines/data-access'
-import { getUserIdFromSession } from '@/lib/auth/server'
+import { getEvents } from '@headlines/data-access/next' // CORRECTED IMPORT
+import { getUserIdFromSession } from '@/lib/auth/server' // CORRECTED IMPORT
 import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
@@ -16,9 +16,6 @@ export default async function EventsPage({ searchParams }) {
   const userId = await getUserIdFromSession()
   let initialEvents = []
 
-  // NO REDIRECT HERE.
-  // If userId is null, we simply fetch no data. The AuthProvider on the client
-  // will handle redirecting the user away from this page.
   if (userId) {
     try {
       const filters = { q: searchParams.q || '' }

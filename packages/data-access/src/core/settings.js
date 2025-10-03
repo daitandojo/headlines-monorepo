@@ -1,6 +1,7 @@
 // packages/data-access/src/core/settings.js
 import { Setting } from '@headlines/models'
-import { revalidatePath } from '../revalidate.js'
+// The environment-specific import has been removed.
+// import { revalidatePath } from '../revalidate.js'
 
 export async function getSettings() {
   try {
@@ -37,7 +38,8 @@ export async function updateSettings(settingsData) {
       await Setting.bulkWrite(bulkOps)
     }
 
-    await revalidatePath('/admin/settings')
+    // Revalidation is now handled by the environment-specific wrapper.
+    // await revalidatePath('/admin/settings')
     return { success: true, message: `${bulkOps.length} settings updated.` }
   } catch (e) {
     console.error('[updateSettings Error]', e)

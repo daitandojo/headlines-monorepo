@@ -3,7 +3,7 @@ import {
   getDashboardStats,
   getRecentRunVerdicts,
   getAllSources,
-} from '@headlines/data-access'
+} from '@headlines/data-access/next' // CORRECTED
 import DashboardClientPage from './DashboardClientPage'
 import dbConnect from '@headlines/data-access/dbConnect/next'
 

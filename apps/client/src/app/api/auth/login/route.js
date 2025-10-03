@@ -3,11 +3,12 @@ import { NextResponse } from 'next/server'
 import { loginUser } from '@headlines/data-access/next'
 import * as jose from 'jose'
 import { env } from '@headlines/config/next'
-import dbConnect from '@headlines/data-access/dbConnect/next'
+import dbConnect from '@headlines/data-access/dbConnect/next' // This import is now valid
 import { loginSchema } from '@headlines/models/schemas'
 import { sendErrorAlert } from '@headlines/utils-server/next'
 import { logger } from '@headlines/utils-shared'
 
+// ... rest of the file
 const JWT_COOKIE_NAME = 'headlines-jwt'
 
 export async function POST(request) {

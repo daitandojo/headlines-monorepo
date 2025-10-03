@@ -2,7 +2,7 @@
 
 // 'use server'
 
-import { getGlobalCountries } from '@headlines/data-access'
+import { getGlobalCountries } from '@headlines/data-access/next' // CORRECTED
 import { SettingsForm } from '@/components/client/settings/SettingsForm'
 
 export const dynamic = 'force-dynamic'
