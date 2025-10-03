@@ -1,4 +1,4 @@
-// File: apps/client/src/app/admin/users/UsersClientPage.jsx (version 1.0 - New File)
+// apps/client/src/app/admin/users/UsersClientPage.jsx
 'use client'
 
 import { useState, useCallback, useMemo } from 'react'
@@ -14,7 +14,7 @@ import { PlusCircle } from 'lucide-react'
 import { columns } from './columns'
 import UserEditor from './user-editor'
 import { updateUserAction, deleteUserAction, createUserAction } from './actions'
-import { languageList } from '@headlines/utils-shared/next'
+import { languageList } from '@headlines/utils-shared'
 
 export default function UsersClientPage({ initialUsers, initialTotal, allCountries }) {
   const [users, setUsers] = useState(initialUsers)

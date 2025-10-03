@@ -1,3 +1,4 @@
+// File: client/src/app/admin/events/columns.jsx
 'use client'
 
 import React, { useState, useCallback } from 'react'
@@ -25,7 +26,7 @@ import { Loader2, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { RelationshipManager } from '@/components/admin/RelationshipManager'
 import { toast } from 'sonner'
-import { EditableCell } from '@/components/shared/EditableCell'
+import { EditableCell } from '@/components/shared/elements/EditableCell'
 
 const eventCategories = [
   'New Wealth',

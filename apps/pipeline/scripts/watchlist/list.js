@@ -1,9 +1,8 @@
-// apps/pipeline/scripts/watchlist/list.js (version 1.0)
+// apps/pipeline/scripts/watchlist/list.js
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
-import mongoose from 'mongoose'
-import { WatchlistEntity } from '@headlines/models'
-import dbConnect from '../../../../packages/data-access/src/dbConnect.js'
+import { initializeScriptEnv } from '../seed/lib/script-init.js'
+import { findWatchlistEntities } from '@headlines/data-access'
 import colors from 'ansi-colors'
 
 async function main() {
@@ -11,14 +10,16 @@ async function main() {
     .option('q', { type: 'string', description: 'Search query for entity name' })
     .help().argv
 
-  await dbConnect()
+  await initializeScriptEnv()
   try {
-    const query = {}
+    const filter = {}
     if (argv.q) {
-      query.name = new RegExp(argv.q, 'i')
+      filter.name = new RegExp(argv.q, 'i')
     }
 
-    const entities = await WatchlistEntity.find(query).sort({ name: 1 }).lean()
+    const entitiesResult = await findWatchlistEntities(filter)
+    if (!entitiesResult.success) throw new Error(entitiesResult.error)
+    const entities = entitiesResult.data
 
     if (entities.length === 0) {
       console.log('No watchlist entities found.')
@@ -34,8 +35,8 @@ async function main() {
     }))
     console.log(`\n--- Watchlist Entities (${entities.length}) ---`)
     console.table(tableData)
-  } finally {
-    await mongoose.disconnect()
+  } catch (error) {
+    console.error('An error occurred:', error.message)
   }
 }
 main()

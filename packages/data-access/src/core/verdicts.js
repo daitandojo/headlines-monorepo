@@ -1,11 +1,9 @@
+// packages/data-access/src/core/verdicts.js
 import { RunVerdict, SynthesizedEvent, Opportunity } from '@headlines/models'
-import dbConnect from '@headlines/data-access/dbConnect/node'
 import mongoose from 'mongoose'
 
-// This function now assumes authentication has already been handled by the caller.
 export async function getRecentRunVerdicts() {
   try {
-    await dbConnect()
     const verdicts = await RunVerdict.find({})
       .sort({ createdAt: -1 })
       .limit(5)
@@ -18,10 +16,8 @@ export async function getRecentRunVerdicts() {
   }
 }
 
-// This function is now purely for data retrieval.
 export async function getRunVerdictById(runId) {
   try {
-    await dbConnect()
     const verdict = await RunVerdict.findById(runId)
       .populate({ path: 'generatedEvents', model: SynthesizedEvent })
       .populate({ path: 'generatedOpportunities', model: Opportunity })

@@ -1,4 +1,6 @@
+// packages/data-access/src/dbConnect.core.js
 import mongoose from 'mongoose'
+import { logger } from '@headlines/utils-shared'
 
 export async function dbConnect(MONGO_URI) {
   if (!MONGO_URI) {
@@ -10,7 +12,7 @@ export async function dbConnect(MONGO_URI) {
   try {
     await mongoose.connect(MONGO_URI, { bufferCommands: false })
   } catch (e) {
-    console.error('[dbConnect] MongoDB connection failed:', e)
+    logger.error({ err: e }, '[dbConnect] MongoDB connection failed.')
     throw e
   }
 }

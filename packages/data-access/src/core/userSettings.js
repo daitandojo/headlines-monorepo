@@ -1,13 +1,11 @@
-// packages/data-access/src/actions/userSettings.js (Corrected)
+// packages/data-access/src/core/userSettings.js
 import { Subscriber } from '@headlines/models'
-import dbConnect from '@headlines/data-access/dbConnect/node'
 
 export async function clearDiscardedItems(userId) {
   if (!userId) {
     return { success: false, error: 'User ID is required.' }
   }
   try {
-    await dbConnect()
     await Subscriber.findByIdAndUpdate(userId, {
       $set: {
         'discardedItems.articles': [],

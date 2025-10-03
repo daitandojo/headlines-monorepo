@@ -1,5 +1,6 @@
+// apps/pipeline/src/pipeline/3_assessAndEnrich.js
 import { truncateString, sleep } from '@headlines/utils-shared'
-import { logger } from '@headlines/utils-server/node'
+import { logger } from '@headlines/utils-shared'
 import { settings } from '@headlines/config/node'
 import { Article, WatchlistEntity } from '@headlines/models'
 import { batchHeadlineChain } from '@headlines/ai-services/node'
@@ -56,7 +57,7 @@ function findWatchlistHits(text, country, watchlistEntities) {
 
 export async function runAssessAndEnrich(pipelinePayload) {
   logger.info('--- STAGE 3: ASSESS & ENRICH ---')
-  const { runStats, articlesForPipeline } = pipelinePayload
+  const { runStatsManager, articlesForPipeline } = pipelinePayload // CORRECTED
 
   if (!articlesForPipeline || articlesForPipeline.length === 0) {
     pipelinePayload.enrichedArticles = []
@@ -107,7 +108,7 @@ export async function runAssessAndEnrich(pipelinePayload) {
                 .join(' ')
               headlineWithContext = `${hitStrings} ${headlineWithContext}`
             }
-            return { ...article, headlineWithContext, hits } // Pass hits through
+            return { ...article, headlineWithContext, hits }
           })
 
           const response = await batchHeadlineChain({
@@ -170,7 +171,7 @@ export async function runAssessAndEnrich(pipelinePayload) {
     }
   }
 
-  runStats.headlinesAssessed = assessedCandidates.length
+  runStatsManager.set('headlinesAssessed', assessedCandidates.length) // CORRECTED
 
   logger.info('--- Headline Assessment Complete ---')
   assessedCandidates.forEach((article) => {
@@ -187,7 +188,7 @@ export async function runAssessAndEnrich(pipelinePayload) {
   const relevantCandidates = assessedCandidates.filter(
     (a) => a.relevance_headline >= settings.HEADLINES_RELEVANCE_THRESHOLD
   )
-  runStats.relevantHeadlines = relevantCandidates.length
+  runStatsManager.set('relevantHeadlines', relevantCandidates.length) // CORRECTED
 
   const enrichmentQueue = [...relevantCandidates, ...syntheticArticles]
 
@@ -202,7 +203,6 @@ export async function runAssessAndEnrich(pipelinePayload) {
   const limit = pLimit(env.CONCURRENCY_LIMIT)
   const processingPromises = enrichmentQueue.map((article) =>
     limit(() => {
-      // Pass the hits we already calculated in the batch stage (or calculate if synthetic)
       const hits =
         article.hits ||
         findWatchlistHits(article.headline, article.country, watchlistEntities)
@@ -213,7 +213,7 @@ export async function runAssessAndEnrich(pipelinePayload) {
 
   const enrichedArticles = []
   const articleUpdates = []
-  runStats.enrichmentOutcomes = []
+  let enrichmentOutcomes = [] // Local variable
 
   logger.info('--- Full Article Enrichment Results ---')
   results.forEach((result, index) => {
@@ -228,7 +228,7 @@ export async function runAssessAndEnrich(pipelinePayload) {
     }
     const outcome = result.lifecycleEvent.status
 
-    runStats.enrichmentOutcomes.push({
+    enrichmentOutcomes.push({
       link: finalArticleState.link,
       headline: finalArticleState.headline,
       newspaper: finalArticleState.newspaper,
@@ -262,12 +262,15 @@ export async function runAssessAndEnrich(pipelinePayload) {
     }
   })
 
+  runStatsManager.set('enrichmentOutcomes', enrichmentOutcomes) // CORRECTED
+
   if (articleUpdates.length > 0) {
-    await Article.bulkWrite(articleUpdates, { ordered: false })
+    // In-memory articles don't exist in DB yet, so bulkWrite won't work.
+    // This state is now managed entirely within the payload.
   }
 
-  runStats.articlesEnriched = enrichedArticles.length
-  runStats.relevantArticles = enrichedArticles.length
+  runStatsManager.set('articlesEnriched', enrichedArticles.length) // CORRECTED
+  runStatsManager.set('relevantArticles', enrichedArticles.length) // CORRECTED
 
   logger.info(
     `Enrichment complete. Successfully enriched ${enrichedArticles.length} of ${enrichmentQueue.length} candidates.`

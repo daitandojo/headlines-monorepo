@@ -1,22 +1,21 @@
 // apps/pipeline/scripts/seed/seed-test-user.js
-import mongoose from 'mongoose'
-import bcrypt from 'bcrypt'
-import { env } from '../../../../packages/config/src/server.js'
-import dbConnect from '../../../../packages/data-access/src/dbConnect.js'
-import { Subscriber } from '../../../../packages/models/src/index.js'
-import { logger, reinitializeLogger } from '../../../../packages/utils-server'
-import path from 'path'
-
-reinitializeLogger(path.resolve(process.cwd(), 'apps/pipeline/logs'))
+import { initializeScriptEnv } from './lib/script-init.js'
+import { logger, sendErrorAlert } from '@headlines/utils-server'
+import {
+  upsertSubscriber,
+  findSubscribers,
+  createSubscriberWithPassword,
+  updateSubscriberPassword,
+} from '@headlines/data-access'
 
 const TEST_USER_EMAIL = 'casagerardon@gmail.com'
 const TEST_USER_PASSWORD = 'Stanley'
 
 async function createTestUser() {
-  await dbConnect()
-  logger.info(`🚀 Seeding configured test user: ${TEST_USER_EMAIL}...`)
-
   try {
+    await initializeScriptEnv()
+    logger.info(`🚀 Seeding configured test user: ${TEST_USER_EMAIL}...`)
+
     const countriesForSubscription = [
       'Norway',
       'United States',
@@ -26,27 +25,31 @@ async function createTestUser() {
       'Global',
       'Scandinavia',
     ]
-    const existingUser = await Subscriber.findOne({ email: TEST_USER_EMAIL })
+
+    const findResult = await findSubscribers({ filter: { email: TEST_USER_EMAIL } })
+    const existingUser =
+      findResult.success && findResult.data.length > 0 ? findResult.data[0] : null
 
     if (existingUser) {
       logger.warn(
         '🔄 Test user already exists. Ensuring subscriptions and active status are correct...'
       )
-      existingUser.isActive = true
-      existingUser.emailNotificationsEnabled = true
-
-      const existingCountries = new Set(existingUser.countries.map((c) => c.name))
-      countriesForSubscription.forEach((country) => {
-        if (!existingCountries.has(country)) {
-          existingUser.countries.push({ name: country, active: true })
+      await updateSubscriberPassword(existingUser._id, TEST_USER_PASSWORD)
+      const updateResult = await upsertSubscriber(
+        { email: TEST_USER_EMAIL },
+        {
+          isActive: true,
+          emailNotificationsEnabled: true,
+          countries: countriesForSubscription.map((name) => ({ name, active: true })),
         }
-      })
-      await existingUser.save()
+      )
+      if (!updateResult.success) throw new Error(updateResult.error)
+
       logger.info(
         `✅ User '${TEST_USER_EMAIL}' updated and is subscribed to all necessary countries.`
       )
     } else {
-      const newUser = new Subscriber({
+      const newUser = {
         email: TEST_USER_EMAIL,
         password: TEST_USER_PASSWORD,
         firstName: 'Test',
@@ -54,19 +57,17 @@ async function createTestUser() {
         isActive: true,
         emailNotificationsEnabled: true,
         countries: countriesForSubscription.map((name) => ({ name, active: true })),
-      })
-      await newUser.save()
+      }
+      const createResult = await createSubscriberWithPassword(newUser)
+      if (!createResult.success) throw new Error(createResult.error)
+
       logger.info(
         `✅ New test user '${TEST_USER_EMAIL}' created and subscribed to necessary countries.`
       )
     }
   } catch (error) {
-    logger.error({ err: error }, '❌ Failed to create or update test user.')
-  } finally {
-    if (mongoose.connection.readyState === 1) {
-      await mongoose.disconnect()
-      logger.info('Disconnected from MongoDB.')
-    }
+    sendErrorAlert(error, { origin: 'SEED_TEST_USER_SCRIPT' })
+    logger.fatal({ err: error }, '❌ Failed to create or update test user.')
   }
 }
 

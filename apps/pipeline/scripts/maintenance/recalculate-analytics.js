@@ -1,46 +1,27 @@
-// apps/pipeline/scripts/maintenance/recalculate-analytics.js (version 1.0.0)
-import mongoose from 'mongoose'
-import { Source } from '../../../../packages/models/src/index.js'
-import dbConnect from '../../../../packages/data-access/src/dbConnect.js'
-import { reinitializeLogger, logger } from '../../../../packages/utils-server'
-import path from 'path'
+// apps/pipeline/scripts/maintenance/recalculate-analytics.js
+import { initializeScriptEnv } from '../seed/lib/script-init.js'
+import { logger } from '@headlines/utils-shared'
+import { findSources, updateSource } from '@headlines/data-access'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
-
-reinitializeLogger(path.resolve(process.cwd(), 'apps/pipeline/logs'))
 
 async function recalculateAnalytics() {
   const argv = yargs(hideBin(process.argv))
     .option('yes', { type: 'boolean', description: 'Skip confirmation prompt.' })
     .help().argv
 
+  await initializeScriptEnv()
   logger.info('🚀 Starting Source Analytics Recalculation...')
-  await dbConnect()
 
   try {
-    const sources = await Source.find({}).select('analytics').lean()
+    const sourcesResult = await findSources({ select: 'analytics' })
+    if (!sourcesResult.success) throw new Error(sourcesResult.error)
+    const sources = sourcesResult.data
+
     if (sources.length === 0) {
       logger.info('No sources found. Nothing to do.')
       return
     }
-
-    const bulkOps = sources.map((source) => {
-      const totalRelevant = source.analytics?.totalRelevant || 0
-      return {
-        updateOne: {
-          filter: { _id: source._id },
-          update: {
-            $set: {
-              'analytics.totalRuns': 0,
-              'analytics.totalSuccesses': 0,
-              'analytics.totalFailures': 0,
-              // Set totalScraped to be at least the number of relevant articles.
-              'analytics.totalScraped': Math.max(0, totalRelevant),
-            },
-          },
-        },
-      }
-    })
 
     logger.warn(
       `This script will perform the following actions on ${sources.length} sources:`
@@ -68,17 +49,25 @@ async function recalculateAnalytics() {
       }
     }
 
-    logger.info('Applying bulk update to the database...')
-    const result = await Source.bulkWrite(bulkOps)
+    let modifiedCount = 0
+    for (const source of sources) {
+      const totalRelevant = source.analytics?.totalRelevant || 0
+      const updateData = {
+        'analytics.totalRuns': 0,
+        'analytics.totalSuccesses': 0,
+        'analytics.totalFailures': 0,
+        'analytics.totalScraped': Math.max(0, totalRelevant),
+      }
+
+      const updateResult = await updateSource(source._id, updateData)
+      if (updateResult.success) modifiedCount++
+    }
+
     logger.info(
-      `✅ Analytics reset complete. Modified ${result.modifiedCount} source documents.`
+      `✅ Analytics reset complete. Modified ${modifiedCount} source documents.`
     )
   } catch (error) {
     logger.fatal({ err: error }, '❌ Failed to recalculate source analytics.')
-  } finally {
-    if (mongoose.connection.readyState === 1) {
-      await mongoose.disconnect()
-    }
   }
 }
 

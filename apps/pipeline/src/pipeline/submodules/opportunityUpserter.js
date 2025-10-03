@@ -1,6 +1,6 @@
 // apps/pipeline/src/pipeline/submodules/opportunityUpserter.js (version 7.1.0)
 import { Opportunity, SynthesizedEvent, WatchlistEntity } from '@headlines/models'
-import { logger } from '@headlines/utils-server'
+import { logger } from '@headlines/utils-shared'
 import {
   contactFinderChain,
   entityCanonicalizerChain,

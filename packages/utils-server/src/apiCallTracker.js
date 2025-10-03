@@ -1,4 +1,4 @@
-import { logger } from './logger.js'
+import { logger } from '@headlines/utils-shared' // CORRECTED IMPORT PATH
 
 const servicePricing = {
   serper_news: 2.5,

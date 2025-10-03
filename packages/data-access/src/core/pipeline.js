@@ -1,4 +1,4 @@
-// packages/data-access/src/actions/pipeline.js (version 1.0.0)
+// packages/data-access/src/core/pipeline.js
 import {
   Source,
   Article,
@@ -7,13 +7,10 @@ import {
   WatchlistEntity,
   WatchlistSuggestion,
 } from '@headlines/models'
-import dbConnect from '@headlines/data-access/dbConnect/node'
 
-// --- Source Analytics & Status ---
 export async function updateSourceAnalyticsBatch(bulkOps) {
   if (!bulkOps || bulkOps.length === 0) return { success: true, modifiedCount: 0 }
   try {
-    await dbConnect()
     const result = await Source.bulkWrite(bulkOps)
     return { success: true, modifiedCount: result.modifiedCount }
   } catch (error) {
@@ -23,7 +20,6 @@ export async function updateSourceAnalyticsBatch(bulkOps) {
 
 export async function findSourcesForScraping(queryCriteria) {
   try {
-    await dbConnect()
     const sources = await Source.find(queryCriteria).lean()
     return { success: true, data: JSON.parse(JSON.stringify(sources)) }
   } catch (error) {
@@ -31,10 +27,8 @@ export async function findSourcesForScraping(queryCriteria) {
   }
 }
 
-// --- Housekeeping ---
 export async function performHousekeeping(deletionCriteria) {
   try {
-    await dbConnect()
     const result = await Article.deleteMany(deletionCriteria)
     return { success: true, deletedCount: result.deletedCount }
   } catch (error) {
@@ -42,12 +36,10 @@ export async function performHousekeeping(deletionCriteria) {
   }
 }
 
-// --- Data Commits ---
 export async function bulkWriteEvents(eventOps) {
   if (!eventOps || eventOps.length === 0)
     return { success: true, upsertedCount: 0, modifiedCount: 0 }
   try {
-    await dbConnect()
     const result = await SynthesizedEvent.bulkWrite(eventOps, { ordered: false })
     return {
       success: true,
@@ -62,7 +54,6 @@ export async function bulkWriteEvents(eventOps) {
 export async function bulkWriteArticles(articleOps) {
   if (!articleOps || articleOps.length === 0) return { success: true, result: null }
   try {
-    await dbConnect()
     const result = await Article.bulkWrite(articleOps, { ordered: false })
     return { success: true, result }
   } catch (error) {
@@ -72,7 +63,6 @@ export async function bulkWriteArticles(articleOps) {
 
 export async function findEventsByKeys(eventKeys) {
   try {
-    await dbConnect()
     const events = await SynthesizedEvent.find({ event_key: { $in: eventKeys } }).lean()
     return { success: true, data: JSON.parse(JSON.stringify(events)) }
   } catch (error) {
@@ -82,7 +72,6 @@ export async function findEventsByKeys(eventKeys) {
 
 export async function findArticlesByLinks(links) {
   try {
-    await dbConnect()
     const articles = await Article.find({ link: { $in: links } })
       .select('link _id')
       .lean()
@@ -92,10 +81,8 @@ export async function findArticlesByLinks(links) {
   }
 }
 
-// --- Watchlist Suggestions ---
 export async function getActiveWatchlistEntityNames() {
   try {
-    await dbConnect()
     const entities = await WatchlistEntity.find({}).select('name').lean()
     return { success: true, data: entities }
   } catch (error) {
@@ -106,7 +93,6 @@ export async function getActiveWatchlistEntityNames() {
 export async function bulkWriteWatchlistSuggestions(bulkOps) {
   if (!bulkOps || bulkOps.length === 0) return { success: true, result: null }
   try {
-    await dbConnect()
     const result = await WatchlistSuggestion.bulkWrite(bulkOps)
     return { success: true, result }
   } catch (error) {

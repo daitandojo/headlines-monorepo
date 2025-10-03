@@ -3,7 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { Opportunity } from '@headlines/models'
-import { logger } from '@headlines/utils-server'
+import { logger } from '@headlines/utils-shared'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)

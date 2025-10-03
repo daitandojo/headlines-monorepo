@@ -1,5 +1,5 @@
 import Pusher from 'pusher'
-import { logger } from './logger.js'
+import { logger } from '@headlines/utils-shared' // CORRECTED IMPORT PATH
 import { env } from '@headlines/config'
 let pusher
 let isRealtimeConfigured = false

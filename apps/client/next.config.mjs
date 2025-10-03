@@ -3,20 +3,26 @@
 
 const nextConfig = {
   transpilePackages: [
-    '@headlines/config/next',
+    '@headlines/config',
     '@headlines/data-access',
     '@headlines/models',
-    '@headlines/utils-shared/next',
+    '@headlines/utils-shared',
   ],
   webpack: (config, { isServer }) => {
-    config.externals.push(
-      'bcrypt',
-      'sharp',
-      'mongodb-client-encryption',
-      'aws4',
-      'undici'
-    )
+      config.externals.push(
+        'onnxruntime-node',
+        '@xenova/transformers',
+        'sharp',
+        'bcrypt',
+        'mongodb-client-encryption',
+        'aws4'
+      )
 
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'onnxruntime-node': false,
+      '@xenova/transformers': false,
+    }
     if (isServer) {
       config.externals.push('onnxruntime-node')
     }

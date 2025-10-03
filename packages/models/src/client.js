@@ -3,7 +3,7 @@
 
 // This file is the designated "client-safe" entry point for the models package.
 // It ONLY exports constants and contains NO server-side code (like Mongoose).
-import * as constants from './constants.js'
+import * as constants from './prompt-constants.js'
 
 export const {
   ENTITY_TYPES,

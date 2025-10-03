@@ -5,7 +5,7 @@ import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionDisambiguation } from '@headlines/prompts'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
-import { disambiguationSchema } from '../schemas/index.js'
+import { disambiguationSchema } from '@headlines/models/schemas'
 
 const systemPrompt = [
   instructionDisambiguation.whoYouAre,

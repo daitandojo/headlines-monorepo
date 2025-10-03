@@ -1,64 +1,23 @@
+// packages/ai-services/src/next.js
 import 'server-only'
 
-// Explicitly re-export all functions and services from the core module
-// for the Next.js server runtime.
-export {
-  // Foundational exports
-  performAiSanityCheck,
-  processChatRequest,
-  callLanguageModel,
+// By marking this entire entry point as 'server-only', we tell the Next.js bundler
+// that none of this code should ever be included in a client-side bundle. This
+// correctly isolates the native dependencies and resolves the build error.
 
-  // Low-level chains
-  articleChain,
-  articlePreAssessmentChain,
-  clusteringChain,
-  contactFinderChain,
-  contactResolverChain,
-  disambiguationChain,
-  emailIntroChain,
-  emailSubjectChain,
-  entityCanonicalizerChain,
-  entityExtractorChain,
-  executiveSummaryChain,
-  headlineChain,
-  batchHeadlineChain,
-  judgeChain,
-  opportunityChain,
-  sectionClassifierChain,
-  selectorRepairChain,
-  synthesisChain,
-  watchlistSuggestionChain,
-  translateChain,
-  countryCorrectionChain,
+export * from './chains/index.js'
+export * from './search/search.js'
+export * from './search/wikipedia.js'
+export * from './embeddings/embeddings.js'
+export * from './embeddings/vectorSearch.js'
+export * from './rag/orchestrator.js'
+export * from './shared/agents/synthesisAgent.js'
+export * from './shared/agents/opportunityAgent.js'
+export * from './shared/agents/contactAgent.js'
+export * from './shared/agents/entityAgent.js'
+export * from './shared/agents/emailAgents.js'
+export * from './shared/agents/executiveSummaryAgent.js'
 
-  // External search and data retrieval services
-  findAlternativeSources,
-  performGoogleSearch,
-  findNewsApiArticlesForEvent,
-  fetchWikipediaSummary,
-
-  // Vector embedding and search services
-  generateEmbedding,
-  findSimilarArticles,
-
-  // High-level agent functions
-  assessArticleContent,
-  preAssessArticle,
-  batchAssessArticles,
-  clusterArticlesIntoEvents,
-  resolveVagueContact,
-  findContactDetails,
-  generateEmailSubjectLine,
-  generatePersonalizedIntro,
-  extractEntities,
-  entityCanonicalizerAgent,
-  assessHeadlinesInBatches,
-  judgePipelineOutput,
-  generateOpportunitiesFromEvent,
-  sectionClassifierAgent,
-  suggestNewSelector,
-  synthesizeEvent,
-  synthesizeFromHeadline,
-  generateWatchlistSuggestions,
-  generateExecutiveSummary,
-} from './core.js'
+// Re-export the sanity check function
+import { performAiSanityCheck as coreSanityCheck } from './index.js'
+export const performAiSanityCheck = coreSanityCheck

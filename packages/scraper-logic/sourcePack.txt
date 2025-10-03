@@ -1,6 +1,6 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 27 files, 7 directories
+Total: 29 files, 7 directories
 
 ```
 headlines/
@@ -32,20 +32,22 @@ headlines/
 │   │   ├── 📄 selectorOptimizer.js
 │   │   └── 📄 test-helpers.js
 │   ├── 📄 browser.js
+│   ├── 📄 browserManager.js
 │   ├── 📄 config.js
 │   ├── 📄 core.js
 │   ├── 📄 index.js
 │   ├── 📄 next.js
+│   ├── 📄 node.js
 │   └── 📄 test-orchestrator.js
 └── 📄 package.json
 ```
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-29T22:40:44.843Z
+**Generated**: 2025-10-02T23:22:35.400Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/scraper-logic
-**Total Files**: 27
-**Package**: @headlines/scraper-logic@1.0.0
+**Total Files**: 29
+**Package**: @headlines/scraper-logic@2.0.0
 
 
 
@@ -54,25 +56,27 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 41, Size: 1.11 KB*
+*Lines: 42, Size: 1.21 KB*
 
 ```json
 {
   "name": "@headlines/scraper-logic",
-  "version": "1.0.0",
-  "main": "src/index.js",
+  "version": "2.0.0",
+  "main": "src/node.js",
   "type": "module",
   "license": "ISC",
   "exports": {
-    ".": "./src/index.js",
-    "./node": "./src/index.js",
+    ".": "./src/node.js",
+    "./node": "./src/node.js",
     "./next": "./src/next.js",
     "./config.js": "./src/config.js",
     "./browser.js": "./src/browser.js",
+    "./browserManager.js": "./src/browserManager.js",
     "./scraper/index.js": "./src/scraper/index.js",
     "./scraper/selectorOptimizer.js": "./src/scraper/selectorOptimizer.js",
     "./push/client.js": "./src/push/client.js",
-    "./ai/index.js": "./src/ai/index.js"
+    "./ai/index.js": "./src/ai/index.js",
+    "./test-orchestrator": "./src/test-orchestrator.js"
   },
   "dependencies": {
     "@headlines/ai-services": "workspace:*",
@@ -97,7 +101,6 @@ headlines/
     "playwright": "^1.45.1"
   }
 }
-
 ```
 
 ## 📄 src/ai/index.js
@@ -243,23 +246,14 @@ export {
 ```
 
 ## 📄 src/browser.js
-*Lines: 208, Size: 6.38 KB*
+*Lines: 163, Size: 5.03 KB*
 
 ```javascript
-// packages/scraper-logic/src/browser.js (version 4.1.0)
-import playwright from 'playwright'
+// packages/scraper-logic/src/browser.js
 import fs from 'fs/promises'
 import path from 'path'
 import { getConfig } from './config.js'
-
-const BROWSER_HEADERS = {
-  Accept:
-    'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-  'Accept-Encoding': 'gzip, deflate, br',
-  'Accept-Language': 'en-US,en;q=0.9,nl-NL;q=0.8,nl;q=0.7',
-  'User-Agent':
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-}
+import { browserManager } from './browserManager.js'
 
 const CONSENT_SELECTORS = [
   'button:has-text("Accepteer alles")',
@@ -296,14 +290,14 @@ async function saveDebugHtml(page, caller, prefix, url) {
   try {
     const html = await page.content()
     const urlPart = new URL(url).hostname.replace(/[^a-z0-9]/gi, '_')
-    const filename = prefix + '_' + caller + '_' + urlPart + '.html'
+    const filename = `${prefix}_${caller}_${urlPart}.html`
     const filePath = path.join(debugDir, filename)
     await fs.writeFile(filePath, html)
-    getConfig().logger.warn('[Playwright:' + caller + '] Saved debug HTML to ' + filePath)
+    getConfig().logger.warn(`[Playwright:${caller}] Saved debug HTML to ${filePath}`)
     return filePath
   } catch (error) {
     getConfig().logger.error(
-      '[Playwright:' + caller + '] Failed to save debug HTML: ' + error.message
+      `[Playwright:${caller}] Failed to save debug HTML: ${error.message}`
     )
     return null
   }
@@ -316,11 +310,7 @@ async function handleConsent(page, caller) {
       if (await button.isVisible({ timeout: 1500 })) {
         await button.click({ timeout: 2000 })
         getConfig().logger.info(
-          '[Playwright:' +
-            caller +
-            '] Clicked consent button with selector: "' +
-            selector +
-            '"'
+          `[Playwright:${caller}] Clicked consent button with selector: "${selector}"`
         )
         await page.waitForTimeout(1500)
         return true
@@ -329,63 +319,40 @@ async function handleConsent(page, caller) {
       // Selector not found, continue
     }
   }
-  getConfig().logger.trace(
-    '[Playwright:' + caller + '] No actionable consent modal found.'
-  )
+  getConfig().logger.trace(`[Playwright:${caller}] No actionable consent modal found.`)
   return false
 }
 
 export async function fetchPageWithPlaywright(url, caller = 'Unknown', options = {}) {
   const { timeout = 60000, waitForSelector } = options
-
-  let browser = null
   let page = null
   try {
     getConfig().logger.trace(
-      '[Playwright:' +
-        caller +
-        '] Launching browser for: ' +
-        url +
-        ' (Timeout: ' +
-        timeout +
-        'ms)'
+      `[Playwright:${caller}] Requesting new page for: ${url} (Timeout: ${timeout}ms)`
     )
-    browser = await playwright.chromium.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-    })
-    const context = await browser.newContext({
-      userAgent: BROWSER_HEADERS['User-Agent'],
-      extraHTTPHeaders: BROWSER_HEADERS,
-      viewport: { width: 1920, height: 1080 },
-    })
-    page = await context.newPage()
+    page = await browserManager.newPage()
 
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout })
-
     await handleConsent(page, caller)
 
     if (waitForSelector) {
       getConfig().logger.info(
-        '[Playwright:' + caller + '] Waiting for selector "' + waitForSelector + '"...'
+        `[Playwright:${caller}] Waiting for selector "${waitForSelector}"...`
       )
       await page.waitForSelector(waitForSelector, { timeout: timeout - 5000 })
-      getConfig().logger.info(
-        '[Playwright:' + caller + '] Selector found. Page is ready.'
-      )
+      getConfig().logger.info(`[Playwright:${caller}] Selector found. Page is ready.`)
     } else {
       await page
         .waitForLoadState('networkidle', { timeout: 5000 })
         .catch(() =>
           getConfig().logger.trace(
-            '[Playwright:' + caller + '] Network idle timeout reached, proceeding anyway.'
+            `[Playwright:${caller}] Network idle timeout reached, proceeding anyway.`
           )
         )
     }
 
     return await page.content()
   } catch (error) {
-    // ENHANCED ERROR LOGGING: Provide more specific reasons for failures.
     let reason = error.message.split('\n')[0]
     if (error.message.includes('net::ERR')) {
       reason = `Network Error: ${reason}`
@@ -399,31 +366,24 @@ export async function fetchPageWithPlaywright(url, caller = 'Unknown', options =
     }
 
     getConfig().logger.error(
-      '[Playwright:' +
-        caller +
-        '] Critical failure during fetch for ' +
-        url +
-        ': ' +
-        reason
+      `[Playwright:${caller}] Critical failure during fetch for ${url}: ${reason}`
     )
     if (page) {
       await saveDebugHtml(page, caller, 'CRITICAL_FAIL', url)
     }
     return null
   } finally {
-    if (browser) {
-      await browser.close()
-      getConfig().logger.trace('[Playwright:' + caller + '] Browser closed for: ' + url)
+    if (page) {
+      await page.close()
+      getConfig().logger.trace(`[Playwright:${caller}] Page closed for: ${url}`)
     }
   }
 }
 
 export async function fetchPageContentFromPopup(pageUrl, buttonSelector) {
-  let browser = null
+  let page = null
   try {
-    browser = await playwright.chromium.launch({ headless: true })
-    const context = await browser.newContext({ userAgent: BROWSER_HEADERS['User-Agent'] })
-    const page = await context.newPage()
+    page = await browserManager.newPage()
     await page.goto(pageUrl, { waitUntil: 'networkidle' })
     await handleConsent(page, 'PopupFetcher')
 
@@ -431,13 +391,11 @@ export async function fetchPageContentFromPopup(pageUrl, buttonSelector) {
     const button = page.locator(buttonSelector).first()
     await button.click()
 
-    // Wait for the popup overlay to become visible
     await page.waitForSelector('.popup-overlay--opened', {
       state: 'visible',
       timeout: 5000,
     })
 
-    // Extract the HTML of the now-visible popup
     const popupElement = await page.locator('.popup__box')
     const popupHtml = await popupElement.innerHTML()
     return popupHtml
@@ -448,11 +406,79 @@ export async function fetchPageContentFromPopup(pageUrl, buttonSelector) {
     )
     return null
   } finally {
-    if (browser) {
-      await browser.close()
+    if (page) {
+      await page.close()
     }
   }
 }
+
+```
+
+## 📄 src/browserManager.js
+*Lines: 62, Size: 1.87 KB*
+
+```javascript
+// packages/scraper-logic/src/browserManager.js
+import playwright from 'playwright'
+import { getConfig } from './config.js'
+
+const BROWSER_HEADERS = {
+  Accept:
+    'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+  'Accept-Encoding': 'gzip, deflate, br',
+  'Accept-Language': 'en-US,en;q=0.9,nl-NL;q=0.8,nl;q=0.7',
+  'User-Agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+}
+
+class BrowserManager {
+  constructor() {
+    this.browser = null
+    this.context = null
+  }
+
+  async initialize() {
+    if (this.browser) {
+      return
+    }
+    const { logger } = getConfig()
+    logger.info('[BrowserManager] Initializing persistent browser instance...')
+    try {
+      this.browser = await playwright.chromium.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+      })
+      this.context = await this.browser.newContext({
+        userAgent: BROWSER_HEADERS['User-Agent'],
+        extraHTTPHeaders: BROWSER_HEADERS,
+        viewport: { width: 1920, height: 1080 },
+      })
+      logger.info('[BrowserManager] ✅ Browser instance ready.')
+    } catch (error) {
+      logger.fatal({ err: error }, '[BrowserManager] CRITICAL: Failed to launch browser.')
+      throw error
+    }
+  }
+
+  async newPage() {
+    if (!this.context) {
+      throw new Error('BrowserManager not initialized. Call initialize() first.')
+    }
+    return this.context.newPage()
+  }
+
+  async close() {
+    if (this.browser) {
+      await this.browser.close()
+      this.browser = null
+      this.context = null
+      getConfig().logger.info('[BrowserManager] Persistent browser instance closed.')
+    }
+  }
+}
+
+// Export a singleton instance of the manager
+export const browserManager = new BrowserManager()
 
 ```
 
@@ -512,17 +538,36 @@ export * from './core.js'
 ```
 
 ## 📄 src/next.js
-*Lines: 9, Size: 384 Bytes*
+*Lines: 10, Size: 349 Bytes*
 
 ```javascript
-import 'server-only'
+    
+// packages/scraper-logic/src/next.js (version 2.0.0)
+// ARCHITECTURAL REFACTORING: This file is now a "dead-end" shim.
+// It is guarded and exports nothing, preventing the Next.js/Vercel build
+// from ever bundling heavy, incompatible Node.js dependencies like Playwright.
+import 'server-only';
 
-// Explicitly re-export everything from the core module
-// Since this package's index doesn't export much, we list them here.
-// Note: The main value is guarding the side-effects of importing its dependencies.
-// If core.js exports functions, they would be listed here.
-// For now, it might be empty if core.js is empty, which is fine.
+// This file intentionally exports nothing.
+
+  
+```
+
+## 📄 src/node.js
+*Lines: 12, Size: 403 Bytes*
+
+```javascript
+// packages/scraper-logic/src/node.js
+// This file serves as the explicit, Node.js-only entry point.
+
 export * from './core.js'
+export * from './browser.js'
+export * from './browserManager.js' // Export the new manager
+export * from './scraper/index.js'
+export * from './scraper/selectorOptimizer.js'
+export * from './push/client.js'
+export * from './ai/index.js'
+export * from './test-orchestrator.js'
 
 ```
 
@@ -1611,58 +1656,59 @@ export async function testHeadlineExtraction(sourceConfig, html) {
 ```
 
 ## 📄 src/test-orchestrator.js
-*Lines: 51, Size: 1.49 KB*
+*Lines: 52, Size: 1.66 KB*
 
 ```javascript
-// packages/scraper-logic/src/test-orchestrator.js (NEW FILE)
-'use server'
-
+// packages/scraper-logic/src/test-orchestrator.js
 import { testHeadlineExtraction, scrapeArticleContentForTest } from './scraper/index.js'
 import { Source } from '@headlines/models'
+import { browserManager } from './browserManager.js' // Import the manager
 
-// This is the logic moved from data-access/actions/scrape.js
 export async function testScraperRecipe(sourceConfig, articleUrl = null) {
-  // Mode 1: Test a single article's content
-  if (articleUrl && sourceConfig.articleSelector) {
-    const content = await scrapeArticleContentForTest(
-      articleUrl,
-      sourceConfig.articleSelector
-    )
-    return { success: true, content: { preview: content, sourceUrl: articleUrl } }
-  }
-
-  // Mode 2: Test the full source recipe for headlines
-  if (sourceConfig && sourceConfig.sectionUrl) {
-    const headlines = await testHeadlineExtraction(sourceConfig)
-
-    // Update source analytics after the test
-    const success = headlines.length > 0
-    await Source.findByIdAndUpdate(
-      sourceConfig._id,
-      {
-        $set: {
-          lastScrapedAt: new Date(),
-          lastSuccessAt: success ? new Date() : undefined,
-        },
-        $inc: {
-          'analytics.totalRuns': 1,
-          'analytics.totalSuccesses': success ? 1 : 0,
-          'analytics.totalFailures': success ? 0 : 1,
-        },
-      },
-      { new: true }
-    ).lean()
-
-    return {
-      success: true,
-      headlines: {
-        count: headlines.length,
-        samples: headlines.slice(0, 10),
-      },
+  await browserManager.initialize() // Ensure browser is running for tests
+  try {
+    // Mode 1: Test a single article's content
+    if (articleUrl && sourceConfig.articleSelector) {
+      const content = await scrapeArticleContentForTest(
+        articleUrl,
+        sourceConfig.articleSelector
+      )
+      return { success: true, content: { preview: content, sourceUrl: articleUrl } }
     }
-  }
 
-  throw new Error('Invalid request payload for testScraperRecipe.')
+    // Mode 2: Test the full source recipe for headlines
+    if (sourceConfig && sourceConfig.sectionUrl) {
+      const headlines = await testHeadlineExtraction(sourceConfig)
+
+      const success = headlines.length > 0
+      await Source.findByIdAndUpdate(
+        sourceConfig._id,
+        {
+          $set: {
+            lastScrapedAt: new Date(),
+            lastSuccessAt: success ? new Date() : undefined,
+          },
+          $inc: {
+            'analytics.totalRuns': 1,
+            'analytics.totalSuccesses': success ? 1 : 0,
+            'analytics.totalFailures': success ? 0 : 1,
+          },
+        },
+        { new: true }
+      ).lean()
+
+      return {
+        success: true,
+        headlines: {
+          count: headlines.length,
+          samples: headlines.slice(0, 10),
+        },
+      }
+    }
+    throw new Error('Invalid request payload for testScraperRecipe.')
+  } finally {
+    await browserManager.close() // Close browser after test
+  }
 }
 
 ```

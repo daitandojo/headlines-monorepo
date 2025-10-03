@@ -1,7 +1,10 @@
 // packages/models/src/WatchlistSuggestion.js (version 3.0.0 - With Search Terms)
 import mongoose from 'mongoose'
-import { WATCHLIST_SUGGESTION_STATUSES, ENTITY_TYPES } from './constants.js'
-const { Schema, model, models } = mongoose;
+import {
+  WATCHLIST_SUGGESTION_STATUSES,
+  ENTITY_TYPES,
+} from './prompt-constants.js'
+const { Schema, model, models } = mongoose
 
 const WatchlistSuggestionSchema = new Schema(
   {
@@ -25,4 +28,5 @@ const WatchlistSuggestionSchema = new Schema(
   }
 )
 
-export default models.WatchlistSuggestion || model('WatchlistSuggestion', WatchlistSuggestionSchema)
+export default models.WatchlistSuggestion ||
+  model('WatchlistSuggestion', WatchlistSuggestionSchema)

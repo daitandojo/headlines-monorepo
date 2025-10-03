@@ -1,117 +1,30 @@
-'use client'
+// apps/client/src/app/admin/opportunities/page.jsx
+import { getOpportunities } from '@headlines/data-access'
+import OpportunitiesClientPage from './OpportunitiesClientPage' // New client component
+import dbConnect from '@headlines/data-access/dbConnect/next'
 
-import {
-  PageHeader,
-  DataTable,
-  ConfirmationDialog,
-  ExportButton,
-} from '@/components/shared'
-import { columns } from './columns'
-import { useEntityManager } from '@/hooks/use-entity-manager'
-import { toast } from 'sonner'
-import { useCallback, useMemo, useState } from 'react'
-import { updateOpportunityAction, deleteOpportunityAction } from './actions'
-import { handleExport } from '@/lib/api-client'
+export const dynamic = 'force-dynamic'
 
-export default function OpportunitiesPage() {
-  const {
-    data: opportunities,
-    setData,
-    total,
-    isLoading,
-    refetch,
-    page,
-    setPage,
-    sorting,
-    setSorting,
-    columnFilters,
-    setColumnFilters,
-  } = useEntityManager('opportunities')
+export default async function OpportunitiesPage({ searchParams }) {
+  await dbConnect()
+  const page = parseInt(searchParams.page || '1', 10)
+  const sort = searchParams.sort || null
+  const columnFilters = searchParams.filters ? JSON.parse(searchParams.filters) : []
 
-  const [confirmState, setConfirmState] = useState({ isOpen: false, opportunityId: null })
-
-  const handleUpdate = useCallback(
-    async (opportunity, updateData) => {
-      setData((currentData) =>
-        currentData.map((o) => (o._id === opportunity._id ? { ...o, ...updateData } : o))
-      )
-
-      const result = await updateOpportunityAction(opportunity._id, updateData)
-      if (!result.success) {
-        toast.error(`Update failed: ${result.error}. Reverting.`)
-        refetch()
-      }
-    },
-    [setData, refetch]
-  )
-
-  const handleDeleteRequest = useCallback((opportunityId) => {
-    setConfirmState({ isOpen: true, opportunityId })
-  }, [])
-
-  const confirmDelete = useCallback(async () => {
-    const { opportunityId } = confirmState
-    setConfirmState({ isOpen: false, opportunityId: null })
-    const toastId = toast.loading('Deleting opportunity...')
-
-    const result = await deleteOpportunityAction(opportunityId)
-    if (result.success) {
-      toast.success('Opportunity deleted.', { id: toastId })
-      refetch()
-    } else {
-      toast.error(`Deletion failed: ${result.error}`, { id: toastId })
+  const filters = columnFilters.reduce((acc, filter) => {
+    if (filter.value) {
+      const key = filter.id === 'reachOutTo' ? 'q' : filter.id
+      acc[key] = filter.value
     }
-  }, [confirmState, refetch])
+    return acc
+  }, {})
 
-  const tableColumns = useMemo(
-    () => columns(handleUpdate, handleDeleteRequest),
-    [handleUpdate, handleDeleteRequest]
-  )
-
-  const onExport = (fileType) => {
-    const sort = sorting[0]
-      ? `${sorting[0].id}_${sorting[0].desc ? 'desc' : 'asc'}`
-      : null
-    return handleExport('opportunities', fileType, columnFilters, sort)
-  }
+  const result = await getOpportunities({ page, filters, sort })
 
   return (
-    <>
-      <div className="flex flex-col h-full">
-        <PageHeader
-          title="Opportunity Management"
-          description={`Review and manage all ${total.toLocaleString()} actionable opportunities.`}
-        >
-          <ExportButton
-            hasData={opportunities && opportunities.length > 0}
-            onExport={onExport}
-          />
-        </PageHeader>
-        <div className="mt-8 flex-grow min-h-0">
-          <DataTable
-            columns={tableColumns}
-            data={opportunities}
-            isLoading={isLoading}
-            page={page}
-            setPage={setPage}
-            total={total}
-            sorting={sorting}
-            setSorting={setSorting}
-            columnFilters={columnFilters}
-            setColumnFilters={setColumnFilters}
-            filterColumn="reachOutTo"
-            filterPlaceholder="Filter by name, company..."
-          />
-        </div>
-      </div>
-      <ConfirmationDialog
-        open={confirmState.isOpen}
-        onOpenChange={(isOpen) => setConfirmState({ ...confirmState, isOpen })}
-        onConfirm={confirmDelete}
-        title="Confirm Deletion"
-        description="Are you sure you want to permanently delete this opportunity?"
-        confirmText="Delete Opportunity"
-      />
-    </>
+    <OpportunitiesClientPage
+      initialOpportunities={result.success ? result.data : []}
+      total={result.success ? result.total : 0}
+    />
   )
 }

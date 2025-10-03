@@ -1,16 +1,12 @@
 // apps/pipeline/scripts/maintenance/backfill-event-classifications.js
-'use server'
-
-import mongoose from 'mongoose'
-import { SynthesizedEvent } from '../../../../packages/models/src/index.js'
 import { initializeScriptEnv } from '../seed/lib/script-init.js'
-import { logger } from '../../../../packages/utils-server'
-import { callLanguageModel } from '../../../../packages/ai-services/src/index.js'
+import { logger, sendErrorAlert } from '@headlines/utils-server'
+import { findEvents, updateEvents } from '@headlines/data-access'
+import { callLanguageModel } from '@headlines/ai-services'
 import colors from 'ansi-colors'
 import cliProgress from 'cli-progress'
 import pLimit from 'p-limit'
 
-// Concurrency limit to avoid overwhelming the AI API
 const CONCURRENCY_LIMIT = 5
 
 const getClassificationPrompt =
@@ -34,16 +30,18 @@ Example JSON Response:
 { "classification": "New Wealth" }`
 
 async function main() {
-  await initializeScriptEnv()
   const startTime = Date.now()
-  logger.info('🚀 Starting backfill of `eventClassification` for past events...')
-
   try {
-    const eventsToUpdate = await SynthesizedEvent.find({
-      eventClassification: { $exists: false },
+    await initializeScriptEnv()
+    logger.info('🚀 Starting backfill of `eventClassification` for past events...')
+
+    const eventsResult = await findEvents({
+      filter: { eventClassification: { $exists: false } },
+      select: '_id synthesized_headline synthesized_summary',
     })
-      .select('_id synthesized_headline synthesized_summary')
-      .lean()
+
+    if (!eventsResult.success) throw new Error(eventsResult.error)
+    const eventsToUpdate = eventsResult.data
 
     if (eventsToUpdate.length === 0) {
       logger.info(
@@ -64,7 +62,7 @@ async function main() {
     progressBar.start(eventsToUpdate.length, 0)
 
     const limit = pLimit(CONCURRENCY_LIMIT)
-    const bulkOps = []
+    const updatePromises = []
 
     const processingPromises = eventsToUpdate.map((event) =>
       limit(async () => {
@@ -78,12 +76,12 @@ async function main() {
           })
 
           if (result && !result.error && result.classification) {
-            bulkOps.push({
-              updateOne: {
-                filter: { _id: event._id },
-                update: { $set: { eventClassification: result.classification } },
-              },
-            })
+            updatePromises.push(
+              updateEvents(
+                { _id: event._id },
+                { $set: { eventClassification: result.classification } }
+              )
+            )
             logger.trace(
               `Classification for "${event.synthesized_headline.substring(0, 50)}...": ${result.classification}`
             )
@@ -99,30 +97,18 @@ async function main() {
     )
 
     await Promise.all(processingPromises)
+    await Promise.all(updatePromises)
     progressBar.stop()
 
-    if (bulkOps.length > 0) {
-      logger.info(
-        `Applying ${bulkOps.length} updates to the database in a single bulk operation...`
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2)
+    logger.info(
+      colors.green(
+        `✅ Backfill complete in ${duration}s. Updated ${updatePromises.length} events.`
       )
-      const updateResult = await SynthesizedEvent.bulkWrite(bulkOps)
-      const duration = ((Date.now() - startTime) / 1000).toFixed(2)
-      logger.info(
-        colors.green(
-          `✅ Backfill complete in ${duration}s. Successfully updated ${updateResult.modifiedCount} events.`
-        )
-      )
-    } else {
-      logger.warn(
-        'Backfill process finished, but no successful classifications were generated.'
-      )
-    }
+    )
   } catch (error) {
-    logger.error({ err: error }, 'A critical error occurred during the backfill process.')
-  } finally {
-    if (mongoose.connection.readyState === 1) {
-      await mongoose.disconnect()
-    }
+    sendErrorAlert(error, { origin: 'BACKFILL_EVENT_CLASSIFICATIONS_SCRIPT' })
+    logger.fatal({ err: error }, 'A critical error occurred during the backfill process.')
   }
 }
 

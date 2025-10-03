@@ -5,7 +5,7 @@ import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionEntity } from '@headlines/prompts'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
-import { entitySchema } from '../schemas/index.js'
+import { entitySchema } from '@headlines/models/schemas'
 
 const systemPrompt = [
   instructionEntity.whoYouAre,

@@ -5,7 +5,7 @@ import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionEnrichContact } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
-import { enrichContactSchema } from '../schemas/index.js'
+import { enrichContactSchema } from '@headlines/models/schemas'
 
 const systemPrompt = [
   instructionEnrichContact.whoYouAre,

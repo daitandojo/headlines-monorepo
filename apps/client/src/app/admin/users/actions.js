@@ -1,3 +1,4 @@
+// apps/client/src/app/admin/users/actions.js
 'use server'
 
 import { revalidatePath } from 'next/cache'
@@ -6,26 +7,44 @@ import {
   updateSubscriber,
   deleteSubscriber,
   createSubscriber,
+  updateSubscriberPassword,
 } from '@headlines/data-access'
-
-// This file now uses the pure data logic functions from data-access
-// and adds the Next.js-specific logic (dbConnect, revalidation).
+import {
+  userCreateSchema,
+  userUpdateSchema,
+} from '@headlines/models/schemas' // Import Zod schemas
 
 export async function updateUserAction(userId, updateData) {
-  // Establish connection at the start of the action
+  const validation = userUpdateSchema.safeParse(updateData)
+  if (!validation.success) {
+    return { success: false, error: 'Invalid data.', details: validation.error.flatten() }
+  }
+  const validatedData = validation.data
+
   await dbConnect()
 
-  const result = await updateSubscriber(userId, updateData)
-  if (result.success) {
-    revalidatePath('/admin/users')
+  if (validatedData.password) {
+    const passwordResult = await updateSubscriberPassword(userId, validatedData.password)
+    if (!passwordResult.success) {
+      return passwordResult
+    }
+    delete validatedData.password
   }
-  return result
+
+  if (Object.keys(validatedData).length > 0) {
+    const result = await updateSubscriber(userId, validatedData)
+    if (result.success) {
+      revalidatePath('/admin/users')
+    }
+    return result
+  }
+
+  revalidatePath('/admin/users')
+  return { success: true }
 }
 
 export async function deleteUserAction(userId) {
-  // Establish connection at the start of the action
   await dbConnect()
-
   const result = await deleteSubscriber(userId)
   if (result.success) {
     revalidatePath('/admin/users')
@@ -34,10 +53,13 @@ export async function deleteUserAction(userId) {
 }
 
 export async function createUserAction(userData) {
-  // Establish connection at the start of the action
-  await dbConnect()
+  const validation = userCreateSchema.safeParse(userData)
+  if (!validation.success) {
+    return { success: false, error: 'Invalid data.', details: validation.error.flatten() }
+  }
 
-  const result = await createSubscriber(userData)
+  await dbConnect()
+  const result = await createSubscriber(validation.data)
   if (result.success) {
     revalidatePath('/admin/users')
   }

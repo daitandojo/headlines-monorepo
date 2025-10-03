@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
   Badge,
-} from '@shared/ui'
+} from '@/components/shared'
 import {
   PlusCircle,
   DatabaseZap,

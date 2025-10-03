@@ -5,7 +5,7 @@ import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionSelectorRepair } from '@headlines/prompts'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
-import { selectorRepairSchema } from '../schemas/index.js'
+import { selectorRepairSchema } from '@headlines/models/schemas'
 
 const systemPrompt = [
   instructionSelectorRepair.whoYouAre,

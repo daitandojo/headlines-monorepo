@@ -5,7 +5,7 @@ import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionEmailIntro } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
-import { emailIntroSchema } from '../schemas/index.js'
+import { emailIntroSchema } from '@headlines/models/schemas'
 
 const systemPrompt = [
   instructionEmailIntro.whoYouAre,

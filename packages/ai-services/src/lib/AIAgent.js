@@ -1,5 +1,6 @@
+// packages/ai-services/src/lib/AIAgent.js (version 2.0.0)
 import { callLanguageModel } from './langchain.js'
-import { logger } from '@headlines/utils-server/node'
+import { logger } from '@headlines/utils-shared'
 
 export class AIAgent {
   constructor({

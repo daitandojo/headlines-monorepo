@@ -10,7 +10,7 @@ import {
   DialogFooter,
   ScrollArea,
   Button,
-} from '@components/shared'
+} from '@/components/shared'
 import { ExternalLink, XCircle } from 'lucide-react'
 
 export default function TestResultsViewer({ results, open, onOpenChange }) {

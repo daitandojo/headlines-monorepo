@@ -1,10 +1,8 @@
-// File: packages/ai-services/src/rag/planner.js (Unabridged and Corrected)
-
-'use server'
-
+// packages/ai-services/src/rag/planner.js
 import { callLanguageModel } from '../lib/langchain.js'
 import { PLANNER_PROMPT } from './prompts.js'
 import { settings } from '@headlines/config'
+import { logger } from '@headlines/utils-shared'
 
 const PLANNER_MODEL = settings.LLM_MODEL_UTILITY
 
@@ -13,7 +11,7 @@ export async function runPlannerAgent(messages) {
     .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
     .join('\n\n')
 
-  console.log(`[Planner Agent] Generating plan with ${PLANNER_MODEL}...`)
+  logger.info(`[Planner Agent] Generating plan with ${PLANNER_MODEL}...`)
 
   const response = await callLanguageModel({
     modelName: PLANNER_MODEL,
@@ -26,14 +24,12 @@ export async function runPlannerAgent(messages) {
     throw new Error(`Planner Agent failed: ${response.error}`)
   }
 
-  const planObject = response
+  logger.groupCollapsed('[Planner Agent] Plan Generated')
+  logger.trace('User Query:', response.user_query)
+  logger.trace('Reasoning:', response.reasoning)
+  logger.trace('Plan Steps:', response.plan)
+  logger.trace('Search Queries:', response.search_queries)
+  logger.groupEnd()
 
-  console.groupCollapsed('[Planner Agent] Plan Generated')
-  console.log('User Query:', planObject.user_query)
-  console.log('Reasoning:', planObject.reasoning)
-  console.log('Plan Steps:', planObject.plan)
-  console.log('Search Queries:', planObject.search_queries)
-  console.groupEnd()
-
-  return planObject
+  return response
 }

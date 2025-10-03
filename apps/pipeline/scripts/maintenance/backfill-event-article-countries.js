@@ -1,23 +1,22 @@
 // apps/pipeline/scripts/maintenance/backfill-event-article-countries.js
-'use server'
-
-import mongoose from 'mongoose'
-import { SynthesizedEvent, Article } from '@headlines/models'
 import { initializeScriptEnv } from '../seed/lib/script-init.js'
-import { logger } from '@headlines/utils-server'
+import { logger, sendErrorAlert } from '@headlines/utils-server'
+import { findEvents, findArticles, updateEvents } from '@headlines/data-access'
 import colors from 'ansi-colors'
 import cliProgress from 'cli-progress'
 
 async function main() {
-  await initializeScriptEnv()
-  logger.info('🚀 Starting backfill of `country` field for event source articles...')
-
   try {
-    const eventsToFix = await SynthesizedEvent.find({
-      'source_articles.country': { $exists: false },
+    await initializeScriptEnv()
+    logger.info('🚀 Starting backfill of `country` field for event source articles...')
+
+    const eventsResult = await findEvents({
+      filter: { 'source_articles.country': { $exists: false } },
+      select: '_id source_articles',
     })
-      .select('_id source_articles')
-      .lean()
+
+    if (!eventsResult.success) throw new Error(eventsResult.error)
+    const eventsToFix = eventsResult.data
 
     if (eventsToFix.length === 0) {
       logger.info(
@@ -40,44 +39,36 @@ async function main() {
     })
     progressBar.start(eventsToFix.length, 0)
 
-    const bulkOps = []
     for (const event of eventsToFix) {
       const links = event.source_articles.map((sa) => sa.link)
-      const articles = await Article.find({ link: { $in: links } })
-        .select('link country')
-        .lean()
-      const articleCountryMap = new Map(articles.map((a) => [a.link, a.country]))
-
-      const updatedSourceArticles = event.source_articles.map((sa) => ({
-        ...sa,
-        country: articleCountryMap.get(sa.link) || null,
-      }))
-
-      bulkOps.push({
-        updateOne: {
-          filter: { _id: event._id },
-          update: { $set: { source_articles: updatedSourceArticles } },
-        },
+      const articlesResult = await findArticles({
+        filter: { link: { $in: links } },
+        select: 'link country',
       })
+
+      if (articlesResult.success) {
+        const articleCountryMap = new Map(
+          articlesResult.data.map((a) => [a.link, a.country])
+        )
+
+        const updatedSourceArticles = event.source_articles.map((sa) => ({
+          ...sa,
+          country: articleCountryMap.get(sa.link) || null,
+        }))
+
+        await updateEvents(
+          { _id: event._id },
+          { $set: { source_articles: updatedSourceArticles } }
+        )
+      }
       progressBar.increment()
     }
     progressBar.stop()
 
-    if (bulkOps.length > 0) {
-      logger.info(`Applying ${bulkOps.length} updates to the database...`)
-      const result = await SynthesizedEvent.bulkWrite(bulkOps)
-      logger.info(
-        colors.green(
-          `✅ Backfill complete. Successfully updated ${result.modifiedCount} events.`
-        )
-      )
-    }
+    logger.info(colors.green(`✅ Backfill complete.`))
   } catch (error) {
-    logger.error({ err: error }, 'A critical error occurred during the backfill script.')
-  } finally {
-    if (mongoose.connection.readyState === 1) {
-      await mongoose.disconnect()
-    }
+    sendErrorAlert(error, { origin: 'BACKFILL_EVENT_ARTICLE_COUNTRIES_SCRIPT' })
+    logger.fatal({ err: error }, 'A critical error occurred during the backfill script.')
   }
 }
 

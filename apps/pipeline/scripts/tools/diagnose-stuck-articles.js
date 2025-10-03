@@ -1,26 +1,26 @@
 // apps/pipeline/scripts/tools/diagnose-stuck-articles.js
-'use server'
-
-import mongoose from 'mongoose'
-import { Article } from '@headlines/models'
-import dbConnect from '@headlines/data-access/dbConnect/node'
-import { logger } from '@headlines/utils-server'
+import { initializeScriptEnv } from '../seed/lib/script-init.js'
+import { logger } from '@headlines/utils-shared'
+import { findArticles } from '@headlines/data-access'
 import colors from 'ansi-colors'
 
 async function diagnose() {
-  await dbConnect()
+  await initializeScriptEnv()
   logger.info('🔬 Running diagnostic script for stuck articles...')
 
   try {
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
 
-    const stuckArticles = await Article.find({
-      synthesizedEventId: { $exists: false },
-      createdAt: { $gte: twentyFourHoursAgo },
+    const articlesResult = await findArticles({
+      filter: {
+        synthesizedEventId: { $exists: false },
+        createdAt: { $gte: twentyFourHoursAgo },
+      },
+      limit: 10,
     })
-      .sort({ createdAt: -1 })
-      .limit(10) // Let's just look at the first 10 to see the pattern
-      .lean()
+
+    if (!articlesResult.success) throw new Error(articlesResult.error)
+    const stuckArticles = articlesResult.data
 
     if (stuckArticles.length === 0) {
       logger.info(
@@ -35,7 +35,6 @@ async function diagnose() {
       )
     )
 
-    // Use console.log for clean table output that the logger might interfere with.
     console.log('\n--- Sample of Stuck Articles ---')
     console.table(
       stuckArticles.map((a) => ({
@@ -43,7 +42,7 @@ async function diagnose() {
         createdAt: a.createdAt.toISOString(),
         headline: a.headline.substring(0, 50) + '...',
         newspaper: a.newspaper,
-        status: a.status, // THIS IS THE KEY FIELD TO CHECK
+        status: a.status,
         relevance_headline: a.relevance_headline,
         relevance_article: a.relevance_article,
       }))
@@ -53,10 +52,6 @@ async function diagnose() {
       { err: error },
       'A critical error occurred during the diagnostic script.'
     )
-  } finally {
-    if (mongoose.connection.readyState === 1) {
-      await mongoose.disconnect()
-    }
   }
 }
 

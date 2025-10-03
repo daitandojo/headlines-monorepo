@@ -1,4 +1,4 @@
-// File: apps/client/src/lib/store/use-app-store.js (Corrected Export)
+// File: client/src/lib/store/use-app-store.js
 'use client'
 
 import { create } from 'zustand'

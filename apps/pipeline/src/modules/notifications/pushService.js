@@ -1,5 +1,5 @@
 // apps/pipeline/src/modules/notifications/pushService.js (version 3.0.0)
-import { logger } from '@headlines/utils-server'
+import { logger } from '@headlines/utils-shared'
 import { PushSubscription } from '@headlines/models'
 import { webpush, isPushConfigured } from '@headlines/scraper-logic/push/client.js'
 

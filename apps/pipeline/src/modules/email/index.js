@@ -1,6 +1,6 @@
 // AFTER
 // apps/pipeline/src/modules/email/index.js (Corrected)
-import { logger } from '@headlines/utils-server'
+import { logger } from '@headlines/utils-shared'
 import { sendGenericEmail } from '@headlines/utils-server' // <-- CORRECT IMPORT
 import { Subscriber } from '@headlines/models'
 import { createSupervisorEmailBody } from './components/supervisor/supervisorEmailBodyBuilder.js'

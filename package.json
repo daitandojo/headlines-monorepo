@@ -1,16 +1,17 @@
 {
   "name": "headlines-monorepo",
-  "version": "1.2.2",
+  "version": "2.0.0",
   "private": true,
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
-"scripts": {
-    "//--- DASHBOARD APP (http://localhost:3000) ---//": "---",
-    "dev:client": "dotenv -e ./.env -- pnpm --filter @headlines/client dev",
-    "build:client": "pnpm --filter @headlines/client build",
-    "lint:client": "pnpm --filter @headlines/client lint",
+  "scripts": {
+    "//--- PRIMARY APPS ---//": "---",
+    "dev": "pnpm --filter @headlines/client dev",
+    "build": "pnpm --filter @headlines/client build",
+    "start": "pnpm --filter @headlines/client start",
+    "server": "pnpm --filter @headlines/server dev",
     "//--- PIPELINE EXECUTION ---//": "---",
     "pipeline": "pnpm --filter @headlines/pipeline pipeline --",
     "pipeline:test": "pnpm --filter @headlines/pipeline test",
@@ -39,24 +40,27 @@
     "sources:browse": "pnpm --filter @headlines/pipeline sources:browse --",
     "//--- MONOREPO UTILITIES ---//": "---",
     "cli": "pnpm --filter @headlines/pipeline cli:help",
-    "nuke": "rm -rf apps/*/.next && find . -name \"node_modules\" -type d -prune -exec rm -rf '{}' + && rm -f pnpm-lock.yaml && pnpm store prune && pnpm install",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "lint:client": "pnpm --filter @headlines/client lint",
+    "nuke": "rm -rf apps/*/.next && find . -name \"node_modules\" -type d -prune -exec rm -rf '{}' + && rm -f pnpm-lock.yaml && pnpm store prune && pnpm install"
   },
   "dependencies": {
-    "next": "14.2.4",
     "react": "18.3.1",
     "react-dom": "18.3.1"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.1.0",
+    "autoprefixer": "^10.4.19",
     "dotenv-cli": "^7.4.2",
-    "eslint": "^8.0.0",
-    "eslint-config-next": "14.2.3",
+    "eslint": "^9.8.0",
+    "eslint-config-next": "15.0.0-rc.0",
+    "eslint-plugin-import": "^2.29.1",
+    "postcss": "^8",
     "prettier": "^3.0.0",
     "tailwindcss": "^3.4.1",
-    "postcss": "^8",
-    "autoprefixer": "^10.4.19"
+    "typescript": "^5.5.4"
   },
-  "packageManager": "pnpm@9.1.1",
+  "packageManager": "pnpm@9.6.0",
   "pnpm": {
     "allowed-build-scripts": [
       "sharp",

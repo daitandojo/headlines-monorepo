@@ -1,6 +1,4 @@
 // apps/pipeline/scripts/migrations/V3_Fix_E24_Scraper.js
-'use server'
-
 import dbConnect from '../../packages/data-access/src/dbConnect.js'
 import { Source } from '@headlines/models'
 import { logger, reinitializeLogger } from '@headlines/utils-server'

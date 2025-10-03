@@ -1,27 +1,27 @@
+// apps/client/src/lib/api-handler.js
 import { NextResponse } from 'next/server'
 import { verifySession, verifyAdmin } from '@/lib/auth/server'
 import dbConnect from '@headlines/data-access/dbConnect/next'
+import { sendErrorAlert } from '@headlines/utils-server/next' // Use Next.js-safe import
 
-/**
- * A higher-order function for ADMIN API routes.
- * It handles DB connection, admin verification, and error handling in the correct order.
- */
 export function createApiHandler(handler) {
   return async (request, context) => {
     try {
-      // 1. Establish database connection FIRST. This resolves the race condition.
       await dbConnect()
-
-      // 2. Verify user is an admin.
       const { isAdmin, user, error: authError } = await verifyAdmin()
       if (!isAdmin) {
         return NextResponse.json({ error: authError }, { status: 401 })
       }
-
-      // 3. Execute the specific route logic, passing the verified user.
       return await handler(request, { ...context, user })
     } catch (error) {
-      console.error(`[Admin API Handler Error] in ${request.nextUrl.pathname}:`, error)
+      const errorContext = {
+        origin: 'ADMIN_API_HANDLER',
+        request: {
+          url: request.nextUrl.pathname,
+          method: request.method,
+        },
+      }
+      sendErrorAlert(error, errorContext)
       return NextResponse.json(
         {
           error: 'An unexpected internal server error occurred.',
@@ -33,15 +33,11 @@ export function createApiHandler(handler) {
   }
 }
 
-/**
- * A simpler handler for CLIENT-FACING API routes.
- * It handles DB connection and standard user session verification.
- */
 export function createClientApiHandler(handler) {
   return async (request, context) => {
+    let userPayload = null
     try {
       await dbConnect()
-
       const { user, error: authError } = await verifySession()
       if (!user) {
         return NextResponse.json(
@@ -49,10 +45,20 @@ export function createClientApiHandler(handler) {
           { status: 401 }
         )
       }
-
+      userPayload = user // Store user for error context
       return await handler(request, { ...context, user })
     } catch (error) {
-      console.error(`[Client API Handler Error] in ${request.nextUrl.pathname}:`, error)
+      const errorContext = {
+        origin: 'CLIENT_API_HANDLER',
+        request: {
+          url: request.nextUrl.pathname,
+          method: request.method,
+        },
+        user: userPayload
+          ? { userId: userPayload.userId, email: userPayload.email }
+          : null,
+      }
+      sendErrorAlert(error, errorContext)
       return NextResponse.json(
         {
           error: 'An unexpected internal server error occurred.',

@@ -1,14 +1,33 @@
-// File: packages/data-access/src/actions/opportunities.js (Corrected Sorting)
-
-import dbConnect from '@headlines/data-access/dbConnect/node'
+// packages/data-access/src/core/opportunities.js
 import { Opportunity } from '@headlines/models'
 import { buildQuery } from '../queryBuilder.js'
 import mongoose from 'mongoose'
 
 const OPPORTUNITIES_PER_PAGE = 50
 
+export async function getDistinctOpportunityFields(field) {
+  try {
+    const distinctValues = await Opportunity.distinct(field)
+    return { success: true, data: distinctValues }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+}
+
+export async function updateOpportunities(filter, update) {
+  try {
+    const result = await Opportunity.updateMany(filter, update)
+    return {
+      success: true,
+      matchedCount: result.matchedCount,
+      modifiedCount: result.modifiedCount,
+    }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+}
+
 export async function getTotalOpportunitiesCount({ filters = {}, userId = null }) {
-  await dbConnect()
   const { queryFilter } = await buildQuery(Opportunity, { filters, userId })
   const total = await Opportunity.countDocuments(queryFilter)
   return { success: true, total }
@@ -20,16 +39,12 @@ export async function getOpportunities({
   sort = 'date_desc',
   userId = null,
 }) {
-  await dbConnect()
   let { queryFilter, sortOptions } = await buildQuery(Opportunity, {
     filters,
     sort,
     userId,
   })
 
-  // --- START: OPPORTUNITY-SPECIFIC SORTING FIX ---
-  // If we are sorting by size, we MUST exclude documents where the
-  // wealth is null, undefined, or 0, as they would otherwise sort first.
   if (sort === 'size_desc') {
     if (queryFilter.$and) {
       queryFilter.$and.push({ likelyMMDollarWealth: { $gt: 0 } })
@@ -39,7 +54,6 @@ export async function getOpportunities({
       queryFilter = { likelyMMDollarWealth: { $gt: 0 } }
     }
   }
-  // --- END: OPPORTUNITY-SPECIFIC SORTING FIX ---
 
   const skipAmount = (page - 1) * OPPORTUNITIES_PER_PAGE
   const [opportunities, total] = await Promise.all([
@@ -58,7 +72,6 @@ export async function getOpportunityDetails(opportunityId) {
   if (!mongoose.Types.ObjectId.isValid(opportunityId)) {
     return { success: false, error: 'Invalid ID format.' }
   }
-  await dbConnect()
   const opportunity = await Opportunity.findById(opportunityId)
     .populate({ path: 'events', options: { sort: { createdAt: -1 } } })
     .lean()
@@ -67,7 +80,6 @@ export async function getOpportunityDetails(opportunityId) {
 }
 
 export async function updateOpportunity(oppId, updateData) {
-  await dbConnect()
   const opp = await Opportunity.findByIdAndUpdate(
     oppId,
     { $set: updateData },
@@ -78,7 +90,6 @@ export async function updateOpportunity(oppId, updateData) {
 }
 
 export async function deleteOpportunity(oppId) {
-  await dbConnect()
   const result = await Opportunity.findByIdAndDelete(oppId)
   if (!result) return { success: false, error: 'Opportunity not found.' }
   return { success: true }

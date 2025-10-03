@@ -5,7 +5,7 @@ import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionCanonicalizer } from '@headlines/prompts'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
-import { canonicalizerSchema } from '../schemas/index.js'
+import { canonicalizerSchema } from '@headlines/models/schemas'
 
 const systemPrompt = [
   instructionCanonicalizer.whoYouAre,

@@ -1,6 +1,6 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 9 files, 2 directories
+Total: 10 files, 2 directories
 
 ```
 headlines/
@@ -13,15 +13,16 @@ headlines/
 │   ├── 📄 helpers.js
 │   ├── 📄 index.js
 │   ├── 📄 languages.js
-│   └── 📄 logger.js
+│   ├── 📄 logger.js
+│   └── 📄 realtimeEvents.js
 └── 📄 package.json
 ```
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-29T22:40:44.847Z
+**Generated**: 2025-10-02T23:22:35.404Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/utils-shared
-**Total Files**: 9
+**Total Files**: 10
 **Package**: @headlines/utils-shared@2.0.0
 **Description**: Isomorphic (client and server safe) utilities and hooks.
 
@@ -31,7 +32,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 19, Size: 412 Bytes*
+*Lines: 18, Size: 380 Bytes*
 
 ```json
 {
@@ -42,8 +43,7 @@ headlines/
   "type": "module",
   "license": "ISC",
   "exports": {
-    ".": "./src/index.js",
-    "./next": "./src/index.js"
+    ".": "./src/index.js"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -335,18 +335,16 @@ export function groupItemsByCountry(items, countryKey) {
 ```
 
 ## 📄 src/index.js
-*Lines: 10, Size: 377 Bytes*
+*Lines: 8, Size: 434 Bytes*
 
 ```javascript
 // packages/utils-shared/src/index.js
-'use client'
-
-// DEFINITIVE FIX: Replace wildcard exports with explicit, named exports.
 export { cn, truncateString, sleep, escapeHtml, groupItemsByCountry } from './helpers.js'
-
 export { getCountryFlag } from './countries.js'
 export { languageList, languageMap } from './languages.js'
 export { apiCallTracker } from './apiCallTracker.js'
+export { REALTIME_CHANNELS, REALTIME_EVENTS } from './realtimeEvents.js'
+export { logger, setLogger } from './logger.js' // Export the new logger
 
 ```
 
@@ -363,49 +361,75 @@ export const languageMap = new Map(Object.entries(languageData))
 ```
 
 ## 📄 src/logger.js
-*Lines: 42, Size: 1.15 KB*
+*Lines: 47, Size: 1.31 KB*
 
 ```javascript
-let loggerInstance
+// packages/utils-shared/src/logger.js
+/**
+ * A universal, isomorphic logger that can be safely imported in any environment
+ * (Node.js, Next.js server, or client).
+ *
+ * It acts as a proxy. By default, it uses `console`. If a more powerful logger
+ * (like Pino) is provided via the `setLogger` function at application startup,
+ * it will transparently use that instead.
+ */
 
 const createSimpleLogger = () => {
   const simpleLogger = {}
   const levels = ['trace', 'debug', 'info', 'warn', 'error', 'fatal']
   levels.forEach((level) => {
-    const consoleMethod = level === 'trace' || level === 'debug' ? 'log' : level
-    simpleLogger[level] = (...args) => {
-      console[consoleMethod](`[${level.toUpperCase()}]`, ...args)
+    const consoleMethod =
+      level === 'fatal' ? 'error' : level === 'trace' || level === 'debug' ? 'log' : level
+    if (typeof console[consoleMethod] === 'function') {
+      simpleLogger[level] = (...args) => {
+        console[consoleMethod](`[${level.toUpperCase()}]`, ...args)
+      }
+    } else {
+      simpleLogger[level] = (...args) => {
+        console.log(`[${level.toUpperCase()}]`, ...args)
+      }
     }
   })
   return simpleLogger
 }
-export function initializeLogger(logDirectory = null) {
-  if (loggerInstance) {
-    return loggerInstance
-  }
-  if (process.env.NEXT_RUNTIME) {
-    console.log('Detected Next.js runtime. Initializing safe console logger.')
-    loggerInstance = createSimpleLogger()
-    return loggerInstance
+
+let loggerInstance = createSimpleLogger()
+
+export function setLogger(instance) {
+  if (instance && typeof instance.info === 'function') {
+    loggerInstance = instance
   }
 }
+
 export const logger = new Proxy(
   {},
   {
     get(target, prop) {
-      if (loggerInstance) {
-        return loggerInstance[prop]
-      }
-      const defaultLogPath = path.resolve(process.cwd(), 'logs')
-      initializeLogger(defaultLogPath)
+      // Forward any property access to the current logger instance
       return loggerInstance[prop]
     },
   }
 )
-export function reinitializeLogger(logDirectory, extraStreams = []) {
-  loggerInstance = null
-  loggerInstance = initializeLogger(logDirectory, extraStreams)
-  return loggerInstance
+
+```
+
+## 📄 src/realtimeEvents.js
+*Lines: 15, Size: 462 Bytes*
+
+```javascript
+// packages/utils-shared/src/realtimeEvents.js (version 1.0.0)
+// This file centralizes the names of all real-time channels and events,
+// eliminating "magic strings" and preventing typos between the backend
+// that triggers events and the frontend that listens for them.
+
+export const REALTIME_CHANNELS = {
+  ARTICLES: 'articles-channel',
+  EVENTS: 'events-channel',
+}
+
+export const REALTIME_EVENTS = {
+  NEW_ARTICLE: 'new-article',
+  NEW_EVENT: 'new-event',
 }
 
 ```

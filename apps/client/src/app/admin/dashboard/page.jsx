@@ -1,13 +1,11 @@
 // File: apps/client/src/app/admin/dashboard/page.jsx (version 2.5 - FINAL)
-// 'use server'
-
 import {
   getDashboardStats,
   getRecentRunVerdicts,
   getAllSources,
 } from '@headlines/data-access'
 import DashboardClientPage from './DashboardClientPage'
-// The explicit initializer is no longer needed.
+import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,7 +15,7 @@ async function getPageData() {
     const [statsResult, verdictsResult, sourcesResult] = await Promise.all([
       getDashboardStats(),
       getRecentRunVerdicts(),
-      getAllSources(),
+      getAllSources({}),
     ])
 
     return {
@@ -33,6 +31,7 @@ async function getPageData() {
 }
 
 export default async function AdminDashboardPage() {
+  await dbConnect()
   const { stats, runs, sources, error } = await getPageData()
 
   if (error) {

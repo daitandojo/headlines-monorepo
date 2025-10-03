@@ -1,114 +1,30 @@
-'use client'
+// apps/client/src/app/admin/articles/page.js
+import { getArticles } from '@headlines/data-access'
+import ArticlesClientPage from './ArticlesClientPage' // New client component
+import dbConnect from '@headlines/data-access/dbConnect/next'
 
-import {
-  PageHeader,
-  DataTable,
-  ConfirmationDialog,
-  ExportButton,
-} from '@/components/shared'
-import { columns } from './columns'
-import { useEntityManager } from '@/hooks/use-entity-manager'
-import { toast } from 'sonner'
-import { useCallback, useMemo, useState } from 'react'
-import { updateArticleAction, deleteArticleAction } from './actions'
-import { handleExport } from '@/lib/api-client'
+export const dynamic = 'force-dynamic'
 
-export default function ArticlesPage() {
-  const {
-    data,
-    setData,
-    total,
-    isLoading,
-    refetch,
-    page,
-    setPage,
-    sorting,
-    setSorting,
-    columnFilters,
-    setColumnFilters,
-  } = useEntityManager('articles')
+export default async function ArticlesPage({ searchParams }) {
+  await dbConnect()
+  const page = parseInt(searchParams.page || '1', 10)
+  const sort = searchParams.sort || null
+  const columnFilters = searchParams.filters ? JSON.parse(searchParams.filters) : []
 
-  const [confirmState, setConfirmState] = useState({ isOpen: false, articleId: null })
-
-  const handleUpdate = useCallback(
-    async (article, updateData) => {
-      setData((currentData) =>
-        currentData.map((a) => (a._id === article._id ? { ...a, ...updateData } : a))
-      )
-
-      const result = await updateArticleAction(article._id, updateData)
-      if (!result.success) {
-        toast.error(`Update failed: ${result.error}. Reverting.`)
-        refetch()
-      }
-    },
-    [setData, refetch]
-  )
-
-  const handleDeleteRequest = useCallback((articleId) => {
-    setConfirmState({ isOpen: true, articleId })
-  }, [])
-
-  const confirmDelete = useCallback(async () => {
-    const { articleId } = confirmState
-    setConfirmState({ isOpen: false, articleId: null })
-    const toastId = toast.loading('Deleting article...')
-
-    const result = await deleteArticleAction(articleId)
-    if (result.success) {
-      toast.success('Article deleted.', { id: toastId })
-      refetch()
-    } else {
-      toast.error(`Deletion failed: ${result.error}`, { id: toastId })
+  const filters = columnFilters.reduce((acc, filter) => {
+    if (filter.value) {
+      const key = filter.id === 'headline' ? 'q' : filter.id
+      acc[key] = filter.value
     }
-  }, [confirmState, refetch])
+    return acc
+  }, {})
 
-  const tableColumns = useMemo(
-    () => columns(handleUpdate, handleDeleteRequest),
-    [handleUpdate, handleDeleteRequest]
-  )
-
-  const onExport = (fileType) => {
-    const sort = sorting[0]
-      ? `${sorting[0].id}_${sorting[0].desc ? 'desc' : 'asc'}`
-      : null
-    return handleExport('articles', fileType, columnFilters, sort)
-  }
+  const result = await getArticles({ page, filters, sort })
 
   return (
-    <>
-      <div className="flex flex-col h-full">
-        <PageHeader
-          title="Article Management"
-          description={`Review and manage all ${total.toLocaleString()} raw articles.`}
-        >
-          <ExportButton hasData={data && data.length > 0} onExport={onExport} />
-        </PageHeader>
-        <div className="mt-8 flex-grow min-h-0">
-          <DataTable
-            columns={tableColumns}
-            data={data}
-            isLoading={isLoading}
-            page={page}
-            setPage={setPage}
-            total={total}
-            sorting={sorting}
-            setSorting={setSorting}
-            columnFilters={columnFilters}
-            setColumnFilters={setColumnFilters}
-            filterColumn="headline"
-            filterPlaceholder="Filter by headline..."
-          />
-        </div>
-      </div>
-      <ConfirmationDialog
-        open={confirmState.isOpen}
-        onOpenChange={(isOpen) => setConfirmState({ ...confirmState, isOpen })}
-        onConfirm={confirmDelete}
-        title="Confirm Deletion"
-        description="Are you sure you want to permanently delete this article?"
-        confirmText="Delete Article"
-      />
-    </>
+    <ArticlesClientPage
+      initialArticles={result.success ? result.data : []}
+      total={result.success ? result.total : 0}
+    />
   )
 }

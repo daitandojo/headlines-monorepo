@@ -1,6 +1,6 @@
-// apps/pipeline/src/modules/notifications/emailDispatcher.js (version 4.0.1)
+// apps/pipeline/src/modules/notifications/emailDispatcher.js
 import { groupItemsByCountry, getCountryFlag } from '@headlines/utils-shared'
-import { logger } from '@headlines/utils-server'
+import { logger } from '@headlines/utils-shared'
 import { createPersonalizedEmailBody } from '../email/components/emailBodyBuilder.js'
 import { sendGenericEmail as sendWealthEventsEmail } from '@headlines/utils-server'
 import {
@@ -41,7 +41,6 @@ export async function sendBulkEmails(emailQueue) {
         continue
       }
 
-      // --- AI-Powered Subject and Intro Generation ---
       const eventsByCountry = groupItemsByCountry(events, 'country')
       const primaryCountry = Object.keys(eventsByCountry)[0]
       const countryFlag = getCountryFlag(primaryCountry)
@@ -51,7 +50,6 @@ export async function sendBulkEmails(emailQueue) {
         summary: e.synthesized_summary,
       }))
 
-      // DEFINITIVE FIX: Use direct await calls instead of
       const [subjectResult, introResult] = await Promise.all([
         emailSubjectChain({
           events_json_string: JSON.stringify(eventPayloadForAI),
@@ -76,7 +74,7 @@ export async function sendBulkEmails(emailQueue) {
                 (e) =>
                   `A key development regarding ${e.synthesized_headline.substring(0, 40)}...`
               ),
-            signoff: 'We wish you a fruitful day!\\n\\nThe team at Wealth Watch',
+            signoff: ['We wish you a fruitful day!', 'The team at Wealth Watch'],
           }
         : introResult
 
@@ -99,7 +97,6 @@ export async function sendBulkEmails(emailQueue) {
 
       if (targetLanguage !== 'English') {
         logger.info(`Translating email for ${user.email} into ${targetLanguage}...`)
-        // DEFINITIVE FIX: Use direct await calls instead of
         const translationResult = await translateChain({
           language: targetLanguage,
           html_content: htmlBody,

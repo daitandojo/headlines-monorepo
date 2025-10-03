@@ -1,5 +1,5 @@
 // packages/utils-server/src/redisClient.js
-import { logger } from './logger.js'
+import { logger } from '@headlines/utils-shared' // CORRECTED IMPORT PATH
 import { Redis } from '@upstash/redis'
 
 let redisClient

@@ -5,7 +5,7 @@ import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionSynthesize } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
-import { synthesisSchema } from '../schemas/index.js'
+import { synthesisSchema } from '@headlines/models/schemas'
 
 const systemPrompt = [
   instructionSynthesize.whoYouAre,

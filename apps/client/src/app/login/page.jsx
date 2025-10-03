@@ -1,5 +1,7 @@
-// Full Path: headlines/src/app/login/page.jsx
+// File: client/src/app/login/page.jsx
 'use client'
+
+export const dynamic = 'force-dynamic'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -12,7 +14,7 @@ import {
   Button,
   Label,
 } from '@/components/shared' // CORRECTED IMPORT
-import { LoadingOverlay } from '@/components/shared/LoadingOverlay'
+import { LoadingOverlay } from '@/components/shared/screen/LoadingOverlay'
 import { cn } from '@headlines/utils-shared'
 
 import { KeyRound, Shield, Sparkles, Mail } from 'lucide-react'

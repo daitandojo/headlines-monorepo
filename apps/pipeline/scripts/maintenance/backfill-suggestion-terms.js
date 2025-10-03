@@ -1,12 +1,11 @@
 // apps/pipeline/scripts/maintenance/backfill-suggestion-terms.js
-'use server'
-
-import mongoose from 'mongoose'
-import { WatchlistSuggestion } from '../../../../packages/models/src/index.js'
-import dbConnect from '../../../../packages/data-access/src/dbConnect.js'
 import { initializeScriptEnv } from '../seed/lib/script-init.js'
-import { logger } from '../../../../packages/utils-server'
-import { callLanguageModel } from '../../../../packages/ai-services/src/index.js'
+import { logger } from '@headlines/utils-shared'
+import {
+  findWatchlistSuggestions,
+  updateWatchlistSuggestion,
+} from '@headlines/data-access'
+import { callLanguageModel } from '@headlines/ai-services'
 import colors from 'ansi-colors'
 import cliProgress from 'cli-progress'
 import pLimit from 'p-limit'
@@ -28,10 +27,15 @@ async function main() {
   logger.info('🚀 Starting one-off backfill of search terms for watchlist suggestions...')
 
   try {
-    const suggestionsToUpdate = await WatchlistSuggestion.find({
-      status: 'candidate',
-      $or: [{ searchTerms: { $exists: false } }, { searchTerms: { $size: 0 } }],
-    }).lean()
+    const suggestionsResult = await findWatchlistSuggestions({
+      filter: {
+        status: 'candidate',
+        $or: [{ searchTerms: { $exists: false } }, { searchTerms: { $size: 0 } }],
+      },
+    })
+
+    if (!suggestionsResult.success) throw new Error(suggestionsResult.error)
+    const suggestionsToUpdate = suggestionsResult.data
 
     if (suggestionsToUpdate.length === 0) {
       logger.info(
@@ -52,7 +56,7 @@ async function main() {
     progressBar.start(suggestionsToUpdate.length, 0)
 
     const limit = pLimit(CONCURRENCY_LIMIT)
-    const bulkOps = []
+    let updatedCount = 0
 
     const processingPromises = suggestionsToUpdate.map((suggestion) =>
       limit(async () => {
@@ -66,12 +70,10 @@ async function main() {
           })
 
           if (result && !result.error && result.searchTerms) {
-            bulkOps.push({
-              updateOne: {
-                filter: { _id: suggestion._id },
-                update: { $set: { searchTerms: result.searchTerms } },
-              },
+            const updateResult = await updateWatchlistSuggestion(suggestion._id, {
+              searchTerms: result.searchTerms,
             })
+            if (updateResult.success) updatedCount++
             logger.trace(
               `Generated terms for "${suggestion.name}": ${result.searchTerms.join(', ')}`
             )
@@ -89,23 +91,13 @@ async function main() {
     await Promise.all(processingPromises)
     progressBar.stop()
 
-    if (bulkOps.length > 0) {
-      logger.info(`Applying ${bulkOps.length} updates to the database...`)
-      const updateResult = await WatchlistSuggestion.bulkWrite(bulkOps)
-      logger.info(
-        colors.green(
-          `✅ Backfill complete. Successfully updated ${updateResult.modifiedCount} suggestions.`
-        )
+    logger.info(
+      colors.green(
+        `✅ Backfill complete. Successfully updated ${updatedCount} suggestions.`
       )
-    } else {
-      logger.warn('Backfill process finished, but no successful updates were generated.')
-    }
+    )
   } catch (error) {
     logger.error({ err: error }, 'A critical error occurred during the backfill process.')
-  } finally {
-    if (mongoose.connection.readyState === 1) {
-      await mongoose.disconnect()
-    }
   }
 }
 

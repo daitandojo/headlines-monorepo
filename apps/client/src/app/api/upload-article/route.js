@@ -1,20 +1,25 @@
+// apps/client/src/app/api/upload-article/route.js
 'use server'
 
 import { NextResponse } from 'next/server'
-import { processUploadedArticle } from '@headlines/data-access'
-import { createClientApiHandler } from '@/lib/api-handler' // Use the new client handler
+import { processUploadedArticle } from '@headlines/data-access/next'
+import { createClientApiHandler } from '@/lib/api-handler'
+import { articleUploadSchema } from '@headlines/models/schemas'
 
 const handlePost = async (request, { user }) => {
-  const { item } = await request.json()
-  if (!item || !item.headline || !item.article) {
-    return NextResponse.json({ error: 'Invalid item structure.' }, { status: 400 })
+  const body = await request.json()
+  const validation = articleUploadSchema.safeParse(body)
+
+  if (!validation.success) {
+    return NextResponse.json(
+      { error: 'Invalid input.', details: validation.error.flatten() },
+      { status: 400 }
+    )
   }
 
-  // The userId is automatically passed via the user object from the handler
-  const result = await processUploadedArticle(item, user.userId)
+  const result = await processUploadedArticle(validation.data.item, user.userId)
 
   if (!result.success) {
-    // Let the handler manage the 500 error
     throw new Error(result.error || 'Failed to process article')
   }
 

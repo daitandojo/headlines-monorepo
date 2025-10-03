@@ -1,6 +1,4 @@
-'use server'
-
-import { logger } from '@headlines/utils-server/node'
+import { logger } from '@headlines/utils-shared'
 import { getRedisClient } from '@headlines/utils-server/node'
 import { createHash } from 'crypto'
 import { StringOutputParser } from '@langchain/core/output_parsers'

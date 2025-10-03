@@ -2,7 +2,7 @@
 import 'dotenv/config'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
-import { logger } from '@headlines/utils-server'
+import { logger } from '@headlines/utils-shared'
 import { connectDatabase, disconnectDatabase } from '../../src/database.js'
 import { scrapeSiteForHeadlines } from '../../src/modules/scraper/headlineScraper.js'
 import { suggestNewSelector } from '../../src/modules/ai/agents/selectorRepairAgent.js'

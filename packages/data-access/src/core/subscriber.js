@@ -1,11 +1,42 @@
-// packages/data-access/src/actions/subscriber.js (Corrected)
+// packages/data-access/src/core/subscriber.js
 import { Subscriber, PushSubscription } from '@headlines/models'
-import dbConnect from '@headlines/data-access/dbConnect/node'
+
+export async function upsertSubscriber(filter, userData) {
+  try {
+    const user = await Subscriber.findOneAndUpdate(filter, userData, {
+      new: true,
+      upsert: true,
+      runValidators: true,
+    }).lean()
+    return { success: true, user: JSON.parse(JSON.stringify(user)) }
+  } catch (error) {
+    if (error.code === 11000)
+      return { success: false, error: 'A user with this email already exists.' }
+    return { success: false, error: 'Failed to upsert subscriber.' }
+  }
+}
+
+export async function getAllPushSubscriptions() {
+  try {
+    const subscriptions = await PushSubscription.find().lean()
+    return { success: true, data: JSON.parse(JSON.stringify(subscriptions)) }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+}
+
+export async function deletePushSubscription(filter) {
+  try {
+    const result = await PushSubscription.deleteOne(filter)
+    return { success: true, deletedCount: result.deletedCount }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+}
 
 export async function getCurrentSubscriber(userId) {
   if (!userId) return { success: false, error: 'User ID is required' }
   try {
-    await dbConnect()
     const user = await Subscriber.findById(userId).lean()
     if (!user) return { success: false, error: 'User not found' }
     return { success: true, data: JSON.parse(JSON.stringify(user)) }
@@ -19,7 +50,6 @@ export async function savePushSubscription(subscription, userId) {
   if (!subscription || !subscription.endpoint)
     return { success: false, error: 'Invalid subscription object.' }
   try {
-    await dbConnect()
     await PushSubscription.updateOne(
       { endpoint: subscription.endpoint },
       { $set: { ...subscription, subscriberId: userId } },
@@ -36,7 +66,6 @@ export async function updateUserProfile({ userId, updateData }) {
   if (!updateData) return { success: false, error: 'No update data provided.' }
 
   try {
-    await dbConnect()
     const updatedUser = await Subscriber.findByIdAndUpdate(
       userId,
       { $set: updateData },
@@ -48,5 +77,32 @@ export async function updateUserProfile({ userId, updateData }) {
     return { success: true, user: JSON.parse(JSON.stringify(updatedUser)) }
   } catch (error) {
     return { success: false, error: 'Failed to update profile.' }
+  }
+}
+
+export async function updateUserInteraction({ userId, itemId, itemType, action }) {
+  const modelName = `${itemType}s` // e.g., 'articles', 'events'
+  let updateQuery
+
+  switch (action) {
+    case 'favorite':
+      updateQuery = { $addToSet: { [`favoritedItems.${modelName}`]: itemId } }
+      break
+    case 'unfavorite':
+      updateQuery = { $pull: { [`favoritedItems.${modelName}`]: itemId } }
+      break
+    case 'discard':
+      updateQuery = { $addToSet: { [`discardedItems.${modelName}`]: itemId } }
+      break
+    default:
+      return { success: false, error: 'Invalid action.' }
+  }
+
+  try {
+    const result = await Subscriber.updateOne({ _id: userId }, updateQuery)
+    if (result.matchedCount === 0) return { success: false, error: 'User not found.' }
+    return { success: true }
+  } catch (e) {
+    return { success: false, error: 'Database interaction failed.' }
   }
 }

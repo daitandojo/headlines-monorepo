@@ -1,6 +1,6 @@
 // packages/models/src/SourceSuggestion.js (version 5.0.0)
 import mongoose from 'mongoose'
-import { SUGGESTION_STATUSES } from './constants.js'
+import { SUGGESTION_STATUSES } from './prompt-constants.js'
 const { Schema, model, models } = mongoose
 
 const SourceSuggestionSchema = new Schema(

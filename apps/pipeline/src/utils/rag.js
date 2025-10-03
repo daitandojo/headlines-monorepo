@@ -1,6 +1,6 @@
 // apps/pipeline/src/utils/rag.js (version 2.0.0)
 import { Pinecone } from '@pinecone-database/pinecone'
-import { logger } from './logger.js'
+import { logger } from '@headlines/utils-shared'
 import { generateEmbedding } from '@headlines/ai-services'
 import { env } from '@headlines/config'
 

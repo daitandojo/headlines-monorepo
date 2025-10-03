@@ -1,0 +1,21 @@
+{
+  "name": "@headlines/server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "@headlines/config": "workspace:*",
+    "@headlines/data-access": "workspace:*",
+    "@headlines/models": "workspace:*",
+    "@headlines/scraper-logic": "workspace:*",
+    "@headlines/utils-server": "workspace:*",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "jose": "^5.6.3",
+    "playwright": "^1.45.1"
+  }
+}

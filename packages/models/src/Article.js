@@ -1,6 +1,6 @@
 // packages/models/src/Article.js (version 2.0.2)
 import mongoose from 'mongoose'
-import { ARTICLE_STATUSES } from './constants.js'
+import { ARTICLE_STATUSES } from './prompt-constants.js'
 
 const { Schema, model, models } = mongoose
 

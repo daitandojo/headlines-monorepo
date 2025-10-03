@@ -4,7 +4,7 @@ import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { getUtilityModel } from '../lib/langchain.js' // Correctly import the getter function
 import { safeInvoke } from '../lib/safeInvoke.js'
-import { sectionClassifierSchema } from '../schemas/index.js'
+import { sectionClassifierSchema } from '@headlines/models/schemas'
 
 const INSTRUCTION = {
   whoYouAre:

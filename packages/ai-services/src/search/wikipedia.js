@@ -1,12 +1,11 @@
-'use server'
-import { logger, apiCallTracker } from '@headlines/utils-server'
+import { logger, apiCallTracker } from '@headlines/utils-shared'
 import { settings } from '@headlines/config'
 // --- START: DEFINITIVE FIX ---
 // Import the centrally defined, corrected chain instead of recreating it locally.
 import { disambiguationChain } from '../chains/index.js'
 // --- END: DEFINITIVE FIX ---
 import { safeInvoke } from '../lib/safeInvoke.js'
-import { disambiguationSchema } from '../schemas/index.js'
+import { disambiguationSchema } from '@headlines/models/schemas'
 
 const WIKI_API_ENDPOINT = 'https://en.wikipedia.org/w/api.php'
 const WIKI_SUMMARY_LENGTH = 750

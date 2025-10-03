@@ -4,7 +4,7 @@ import { RunnableSequence } from '@langchain/core/runnables'
 import { getInstructionOpportunities } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
-import { opportunitySchema } from '../schemas/index.js'
+import { opportunitySchema } from '@headlines/models/schemas'
 // Correct: Import from the /node entry point for the pipeline/Node.js environment
 import { settings } from '@headlines/config/node'
 

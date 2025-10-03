@@ -1,8 +1,7 @@
-'use server'
 import axios from 'axios'
 import NewsAPI from 'newsapi'
 import { env } from '@headlines/config'
-import { logger, apiCallTracker } from '@headlines/utils-server'
+import { logger, apiCallTracker } from '@headlines/utils-shared'
 
 const { SERPER_API_KEY, NEWSAPI_API_KEY } = env
 const serperClient = SERPER_API_KEY

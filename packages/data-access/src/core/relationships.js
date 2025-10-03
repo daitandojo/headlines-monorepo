@@ -1,8 +1,12 @@
-// packages/data-access/src/actions/relationships.js (version 2.0.0)
+// packages/data-access/src/core/relationships.js
 import { SynthesizedEvent, Opportunity } from '@headlines/models'
-import dbConnect from '@headlines/data-access/dbConnect/node'
-import { revalidatePath } from '../revalidate.js'
 import mongoose from 'mongoose'
+
+// --- START DEFINITIVE FIX ---
+// This file is now TRULY isomorphic and stateless. It does not import
+// or call dbConnect. The caller (API Handler or Server Action) is
+// responsible for establishing the connection.
+// --- END DEFINITIVE FIX ---
 
 export async function linkOpportunityToEvent(eventId, opportunityId) {
   if (
@@ -12,15 +16,12 @@ export async function linkOpportunityToEvent(eventId, opportunityId) {
     return { success: false, error: 'Invalid ID format.' }
   }
   try {
-    await dbConnect()
     await Promise.all([
       SynthesizedEvent.findByIdAndUpdate(eventId, {
         $addToSet: { relatedOpportunities: opportunityId },
       }),
       Opportunity.findByIdAndUpdate(opportunityId, { $addToSet: { events: eventId } }),
     ])
-    await revalidatePath('/admin/events')
-    await revalidatePath('/admin/opportunities')
     return { success: true, message: 'Relationship linked.' }
   } catch (e) {
     return { success: false, error: 'Database operation failed.' }
@@ -35,15 +36,12 @@ export async function unlinkOpportunityFromEvent(eventId, opportunityId) {
     return { success: false, error: 'Invalid ID format.' }
   }
   try {
-    await dbConnect()
     await Promise.all([
       SynthesizedEvent.findByIdAndUpdate(eventId, {
         $pull: { relatedOpportunities: opportunityId },
       }),
       Opportunity.findByIdAndUpdate(opportunityId, { $pull: { events: eventId } }),
     ])
-    await revalidatePath('/admin/events')
-    await revalidatePath('/admin/opportunities')
     return { success: true, message: 'Relationship unlinked.' }
   } catch (e) {
     return { success: false, error: 'Database operation failed.' }

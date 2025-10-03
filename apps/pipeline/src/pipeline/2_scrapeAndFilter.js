@@ -1,7 +1,11 @@
 // apps/pipeline/src/pipeline/2_scrapeAndFilter.js
-import { logger, auditLogger } from '@headlines/utils-server'
+
+import { logger } from '@headlines/utils-shared' // The universal, isomorphic logger
+import { auditLogger } from '@headlines/utils-server' // The server-only, file-writing audit logger
+
+// apps/pipeline/src/pipeline/2_scrapeAndFilter.js
 import { filterFreshArticles } from '../modules/dataStore/index.js'
-import { Source, Article } from '@headlines/models'
+import { Source } from '@headlines/models'
 import {
   scrapeSiteForHeadlines,
   scrapeArticleContent,
@@ -75,7 +79,7 @@ async function performStandardScraping(sourcesToScrape) {
         allArticles.push(...articlesWithMetadata)
       } else {
         logger.warn(
-          `[Scraping] ❌ FAILED for "${source.name}": ${result.error || 'Extracted 0 headlines.'}.`
+          `[Scraping] ❌ FAILED for "${source.name}": ${result.error || 'Extracted 0 headlines.'}`
         )
       }
     })
@@ -87,7 +91,7 @@ async function performStandardScraping(sourcesToScrape) {
 
 export async function runScrapeAndFilter(pipelinePayload) {
   logger.info('--- STAGE 2: SCRAPE & FILTER ---')
-  const { runStats } = pipelinePayload
+  const { runStatsManager } = pipelinePayload // CORRECTED: Use runStatsManager
 
   const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
 
@@ -106,13 +110,10 @@ export async function runScrapeAndFilter(pipelinePayload) {
     queryCriteria.country = new RegExp(`^${pipelinePayload.countryFilter}$`, 'i')
     delete queryCriteria.$or
   }
-  // --- DEFINITIVE FIX: Change the source filter from an exact match to a "contains" match ---
   if (pipelinePayload.sourceFilter) {
-    // This allows you to run "--source Berlingske" and it will match "Berlingske Business"
     queryCriteria.name = new RegExp(pipelinePayload.sourceFilter, 'i')
     delete queryCriteria.$or
   }
-  // --- END FIX ---
 
   const sourcesToScrape = await Source.find(queryCriteria).lean()
   if (sourcesToScrape.length === 0) {
@@ -123,7 +124,7 @@ export async function runScrapeAndFilter(pipelinePayload) {
   }
 
   const { allArticles, scraperHealth } = await performStandardScraping(sourcesToScrape)
-  runStats.scraperHealth = scraperHealth
+  runStatsManager.set('scraperHealth', scraperHealth) // CORRECTED: Use manager method
   auditLogger.info(
     {
       context: {
@@ -191,20 +192,16 @@ export async function runScrapeAndFilter(pipelinePayload) {
     await Source.bulkWrite(analyticsUpdateOps)
   }
 
-  runStats.headlinesScraped = allArticles.length
-  runStats.validatedHeadlines = validatedArticles.length
-  runStats.freshHeadlinesFound = validatedArticles.length
+  runStatsManager.set('headlinesScraped', allArticles.length) // CORRECTED
+  runStatsManager.set('validatedHeadlines', validatedArticles.length) // CORRECTED
+  runStatsManager.set('freshHeadlinesFound', validatedArticles.length) // CORRECTED
 
   if (validatedArticles.length > 0) {
-    // --- START LOGIC FIX ---
-    // Instead of saving to DB, create in-memory objects with synthetic IDs.
-    // These will be passed through the pipeline and saved only at the end.
     pipelinePayload.articlesForPipeline = validatedArticles.map((article) => ({
       ...article,
-      _id: new mongoose.Types.ObjectId(), // Assign a temporary ID for tracking
+      _id: new mongoose.Types.ObjectId(),
       status: 'scraped',
     }))
-    // --- END LOGIC FIX ---
   } else {
     logger.info('No new, validated articles to process. Ending run early.')
     pipelinePayload.articlesForPipeline = []

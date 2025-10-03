@@ -1,18 +1,20 @@
 {
   "name": "@headlines/models",
-  "version": "1.0.0",
-  "description": "Shared Mongoose models for the Headlines monorepo.",
-  "main": "src/index.js",
+  "version": "2.0.0",
+  "description": "Shared Mongoose models and Zod validation schemas for the Headlines monorepo.",
+  "main": "src/node.js",
   "type": "module",
   "license": "ISC",
   "exports": {
-    ".": "./src/index.js",
+    ".": "./src/node.js",
     "./node": "./src/node.js",
     "./next": "./src/next.js",
-    "./client": "./src/client.js"
+    "./client": "./src/client.js",
+    "./schemas": "./src/schemas/index.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
-    "mongoose": "^8.4.1"
+    "mongoose": "^8.4.1",
+    "zod": "^3.23.8"
   }
 }

@@ -1,23 +1,27 @@
+// apps/client/src/app/api-admin/export/route.js
 import { NextResponse } from 'next/server'
 import { createApiHandler } from '@/lib/api-handler'
-// --- START OF THE FIX ---
-// Import the single, generic export function
 import { generateExport } from '@headlines/data-access'
-// --- END OF THE FIX ---
+import { exportSchema } from '@headlines/models/schemas'
 
 const handlePost = async (request) => {
-  const { entity, fileType, filters, sort } = await request.json()
+  const body = await request.json()
+  const validation = exportSchema.safeParse(body)
 
-  // --- START OF THE FIX ---
-  // Call the single generic function with all the necessary parameters
-  const result = await generateExport({ entity, fileType, filters, sort })
-  // --- END OF THE FIX ---
+  if (!validation.success) {
+    return NextResponse.json(
+      { error: 'Invalid input.', details: validation.error.flatten() },
+      { status: 400 }
+    )
+  }
+
+  const result = await generateExport(validation.data)
 
   if (!result.success) {
     throw new Error(result.error)
   }
 
-  const filename = `export_${entity}_${new Date().toISOString()}.${result.extension}`
+  const filename = `export_${validation.data.entity}_${new Date().toISOString()}.${result.extension}`
 
   return new Response(result.data, {
     headers: {

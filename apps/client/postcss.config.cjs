@@ -1,4 +1,4 @@
-// File: apps/client/postcss.config.js
+// File: apps/client/postcss.config.Cjs
 
 const path = require('path')
 

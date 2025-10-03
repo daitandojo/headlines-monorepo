@@ -1,9 +1,8 @@
-// packages/models/src/Subscriber.js (version 5.0.1 - Complete)
+// packages/models/src/Subscriber.js
 import mongoose from 'mongoose'
 import bcrypt from 'bcryptjs'
-import { SUBSCRIBER_ROLES, SUBSCRIPTION_TIERS } from './constants.js'
+import { SUBSCRIBER_ROLES, SUBSCRIPTION_TIERS } from './prompt-constants.js'
 const { Schema, model, models } = mongoose
-const SALT_WORK_FACTOR = 10
 
 const CountrySubscriptionSchema = new Schema(
   {
@@ -61,40 +60,8 @@ const SubscriberSchema = new Schema(
   { timestamps: true, collection: 'subscribers' }
 )
 
-SubscriberSchema.pre('save', function (next) {
-  const user = this
-  console.log('[Subscriber Model] pre-save hook triggered.')
-
-  if (!user.isModified('password')) {
-    console.log('[Subscriber Model] Password not modified. Skipping hash.')
-    return next()
-  }
-
-  console.log('[Subscriber Model] Password has been modified. Proceeding to hash.')
-  console.log(
-    '[Subscriber Model]   - Plain text password received:',
-    `"${user.password}"`
-  )
-
-  bcrypt.genSalt(SALT_WORK_FACTOR, function (err, salt) {
-    if (err) {
-      console.error('[Subscriber Model] Error generating salt:', err)
-      return next(err)
-    }
-    bcrypt.hash(user.password, salt, function (err, hash) {
-      if (err) {
-        console.error('[Subscriber Model] Error hashing password:', err)
-        return next(err)
-      }
-      user.password = hash
-      console.log(
-        '[Subscriber Model]   - Hashing successful. New hash:',
-        `"${user.password}"`
-      )
-      next()
-    })
-  })
-})
+// The pre('save') hook for password hashing has been REMOVED.
+// Hashing is now handled explicitly in the data-access layer.
 
 SubscriberSchema.methods.comparePassword = function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password)

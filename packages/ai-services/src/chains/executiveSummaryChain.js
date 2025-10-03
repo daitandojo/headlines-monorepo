@@ -5,7 +5,7 @@ import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionExecutiveSummary } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
-import { executiveSummarySchema } from '../schemas/index.js'
+import { executiveSummarySchema } from '@headlines/models/schemas'
 
 const systemPrompt = [
   instructionExecutiveSummary.whoYouAre,

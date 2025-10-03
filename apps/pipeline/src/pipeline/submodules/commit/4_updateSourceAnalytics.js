@@ -1,5 +1,5 @@
 // apps/pipeline/src/pipeline/submodules/commit/4_updateSourceAnalytics.js (version 3.2.0)
-import { logger } from '@headlines/utils-server'
+import { logger } from '@headlines/utils-shared'
 import { settings } from '@headlines/config'
 import { updateSourceAnalyticsBatch } from '@headlines/data-access'
 

@@ -13,7 +13,7 @@ import {
 } from '@/components/shared'
 import { Trash2, Edit } from 'lucide-react'
 import { format } from 'date-fns'
-import { EditableCell } from '@/components/shared/EditableCell'
+import { EditableCell } from '@/components/shared/elements/EditableCell'
 import Link from 'next/link'
 
 export const columns = (onUpdate, onDelete) => [

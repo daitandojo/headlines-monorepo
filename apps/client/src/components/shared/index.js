@@ -89,6 +89,7 @@ export {
   SelectValue,
 } from './elements/select'
 export { Separator } from './elements/separator'
+export { MultiSelect } from './elements/multi-select'
 export {
   Sheet,
   SheetClose,
@@ -123,14 +124,14 @@ export {
 } from './elements/tooltip'
 
 // Components from ./src root
-export { ConfirmationDialog } from './ConfirmationDialog.jsx'
-export { DataTable } from './data-table.jsx'
-export { DataTableColumnHeader } from './DataTableColumnHeader.jsx'
-export { EditableCell } from './EditableCell.jsx'
-export { ExportButton } from './ExportButton.jsx'
-export { LoadingOverlay } from './LoadingOverlay.jsx'
-export { default as PageHeader } from './page-header.jsx'
-export { PremiumSpinner } from './PremiumSpinner.jsx'
-export { Skeleton } from './Skeleton.jsx'
-export { SkeletonCard } from './SkeletonCard.jsx'
-export { ViewHeader } from './ViewHeader.jsx'
+export { ConfirmationDialog } from './modals/ConfirmationDialog.jsx'
+export { DataTable } from './tables/data-table.jsx'
+export { DataTableColumnHeader } from './tables/DataTableColumnHeader.jsx'
+export { EditableCell } from './elements/EditableCell.jsx'
+export { ExportButton } from './buttons/ExportButton.jsx'
+export { LoadingOverlay } from './screen/LoadingOverlay.jsx'
+export { default as PageHeader } from './screen/page-header.jsx'
+export { PremiumSpinner } from './spinners/PremiumSpinner.jsx'
+export { Skeleton } from './skeletons/Skeleton.jsx'
+export { SkeletonCard } from './skeletons/SkeletonCard.jsx'
+export { ViewHeader } from './screen/ViewHeader.jsx'

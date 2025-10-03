@@ -15,7 +15,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-29T22:40:44.833Z
+**Generated**: 2025-10-02T23:22:35.389Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/config
 **Total Files**: 6
 **Package**: @headlines/config@3.0.0
@@ -99,54 +99,17 @@ export const envSchema = z.object({
 ```
 
 ## 📄 src/index.js
-*Lines: 103, Size: 3.45 KB*
+*Lines: 67, Size: 2.08 KB*
 
 ```javascript
-// packages/config/src/pipeline.js (NEW FILE)
-// This file is IDENTICAL to server.js but WITHOUT the 'server-only' import.
-// It is intended ONLY for use by the pipeline script.
+// packages/config/src/index.js (version 4.0.0)
+// This file serves as the core, shared module for the config package.
+// It validates and exports environment variables and static configuration.
+// It also re-exports the new, decoupled settings logic.
 
 import { z } from 'zod'
-import { settings, initializeSettings } from './settings.js'
-
-// --- Environment Schema and Validation ---
-const stringToBoolean = z
-  .string()
-  .transform((val) => val === 'true')
-  .or(z.boolean())
-const stringToNumber = z.string().transform((val) => parseInt(val, 10))
-
-const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'production']).default('development'),
-  MONGO_URI: z.string().url(),
-  JWT_SECRET: z.string().min(32),
-  LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
-  CONCURRENCY_LIMIT: stringToNumber.default('3'),
-  OPENAI_API_KEY: z.string().startsWith('sk-'),
-  PINECONE_API_KEY: z.string().min(1),
-  PINECONE_INDEX_NAME: z.string().min(1).default('headlines'),
-  UPSTASH_REDIS_REST_URL: z.string().url().optional(),
-  UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
-  SMTP_HOST: z.string().min(1),
-  SMTP_PORT: stringToNumber,
-  SMTP_SECURE: stringToBoolean,
-  SMTP_USER: z.string().email(),
-  SMTP_PASS: z.string().min(1),
-  SMTP_FROM_ADDRESS: z.string().email(),
-  SMTP_FROM_NAME: z.string().min(1).default('Headlines AI'),
-  NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().min(1),
-  VAPID_PRIVATE_KEY: z.string().min(1),
-  VAPID_SUBJECT: z.string().startsWith('mailto:'),
-  NEXT_PUBLIC_PUSHER_KEY: z.string().min(1),
-  NEXT_PUBLIC_PUSHER_CLUSTER: z.string().min(1),
-  PUSHER_APP_ID: z.string().min(1),
-  PUSHER_KEY: z.string().min(1),
-  PUSHER_SECRET: z.string().min(1),
-  PUSHER_CLUSTER: z.string().min(1),
-  GROQ_API_KEY: z.string().startsWith('gsk_').optional(),
-  SERPER_API_KEY: z.string().min(1).optional(),
-  NEWSAPI_API_KEY: z.string().min(1),
-})
+import { settings, populateSettings } from './settings.js'
+import { envSchema } from './envSchema.js'
 
 let validatedEnv = null
 function validateAndExportEnv() {
@@ -203,14 +166,17 @@ export const SUPERVISOR_EMAIL_CONFIG = {
   brandName: 'Headlines Processing Bot',
 }
 
-export { settings, initializeSettings }
+// Re-export the new settings logic.
+export { settings, populateSettings }
 
 ```
 
 ## 📄 src/next.js
-*Lines: 20, Size: 492 Bytes*
+*Lines: 23, Size: 572 Bytes*
 
 ```javascript
+    
+// packages/config/src/next.js
 import 'server-only'
 
 // Explicitly re-export every constant and function from the shared core file.
@@ -219,7 +185,7 @@ import 'server-only'
 export {
   env,
   settings,
-  initializeSettings,
+  populateSettings, // CORRECTED: Export the new function name
   IS_REFRESH_MODE,
   MAX_ARTICLE_CHARS,
   LLM_CONTEXT_MAX_CHARS,
@@ -231,6 +197,7 @@ export {
   SUPERVISOR_EMAIL_CONFIG,
 } from './index.js'
 
+  
 ```
 
 ## 📄 src/node.js
@@ -242,13 +209,14 @@ export * from './index.js'
 ```
 
 ## 📄 src/settings.js
-*Lines: 55, Size: 1.61 KB*
+*Lines: 53, Size: 1.75 KB*
 
 ```javascript
-// packages/config/src/settings.js
-import { Setting } from '@headlines/models'
-// This file must have ZERO workspace dependencies.
-// We will use console.log for this critical, low-level module.
+// packages/config/src/settings.js (version 2.0.0)
+// ARCHITECTURAL REFACTORING: This file is now a "dumb" provider of default settings.
+// It no longer contains any logic for fetching data from a database and has no
+// dependency on @headlines/models. The application is now responsible for populating
+// these settings at runtime.
 
 const DEFAULTS = {
   HEADLINES_RELEVANCE_THRESHOLD: 25,
@@ -273,31 +241,28 @@ export const settings = { ...DEFAULTS }
 
 let isInitialized = false
 
-export async function initializeSettings() {
+/**
+ * Populates the exported `settings` object with values from the database.
+ * This function is intended to be called by the application layer at startup.
+ * @param {Array<object>} dbSettings - An array of setting objects from the database.
+ */
+export function populateSettings(dbSettings) {
   if (isInitialized) return
-  console.log('[Config] Loading pipeline settings from database...')
-  try {
-    const dbSettings = await Setting.find({}).lean()
-    if (dbSettings.length === 0) {
-      console.warn(
-        '[Config] No settings found in the database. The pipeline will run on default values.'
-      )
-    } else {
-      dbSettings.forEach((setting) => {
-        settings[setting.key] = setting.value
-      })
-      console.log(
-        `[Config] Successfully loaded ${dbSettings.length} settings from the database.`
-      )
-    }
-    isInitialized = true
-  } catch (error) {
-    console.error(
-      '[Config] CRITICAL: Failed to load settings from database. Halting.',
-      error
+  if (!dbSettings || dbSettings.length === 0) {
+    console.warn(
+      '[Config] No settings provided from database. The application will run on default values.'
     )
-    throw error
+  } else {
+    dbSettings.forEach((setting) => {
+      if (setting.key in settings) {
+        settings[setting.key] = setting.value
+      }
+    })
+    console.log(
+      `[Config] Successfully populated ${dbSettings.length} settings from the database.`
+    )
   }
+  isInitialized = true
 }
 
 ```

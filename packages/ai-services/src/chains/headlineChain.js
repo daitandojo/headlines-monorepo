@@ -13,7 +13,7 @@ import {
 } from '@headlines/prompts' // Correct: Import from the monorepo package
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
-import { headlineAssessmentSchema } from '../schemas/index.js'
+import { headlineAssessmentSchema } from '@headlines/models/schemas'
 import { settings } from '@headlines/config/node' // Correct: Import from the /node entry point
 
 const systemPrompt = [

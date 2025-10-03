@@ -1,13 +1,10 @@
-// apps/pipeline/scripts/results/send-last-events.js (version 2.1.0)
+// apps/pipeline/scripts/results/send-last-events.js
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
-import { initializeSettings } from '@headlines/config'
-import { logger } from '@headlines/utils-server'
-import { Subscriber, SynthesizedEvent } from '@headlines/models'
+import { initializeScriptEnv } from '../seed/lib/script-init.js'
+import { logger } from '@headlines/utils-shared'
+import { findEvents } from '@headlines/data-access'
 import { sendNotifications } from '../../src/modules/notifications/index.js'
-import { refreshConfig } from '../../src/config/dynamicConfig.js'
-import dbConnect from '@headlines/data-access/dbConnect/node'
-import mongoose from 'mongoose'
 
 async function main() {
   const argv = yargs(hideBin(process.argv))
@@ -19,19 +16,16 @@ async function main() {
     })
     .help().argv
 
-  await dbConnect()
+  await initializeScriptEnv()
   logger.info('🚀 Starting Manual Event Dispatcher...')
 
-  logger.info('Initializing dynamic configuration and settings...')
-  await initializeSettings()
-  await refreshConfig()
-  logger.info('Configuration loaded.')
-
   try {
-    const eventsToSend = await SynthesizedEvent.find({ emailed: false })
-      .sort({ createdAt: -1 })
-      .limit(argv.limit)
-      .lean()
+    const eventsResult = await findEvents({
+      filter: { emailed: false },
+      limit: argv.limit,
+    })
+    if (!eventsResult.success) throw new Error(eventsResult.error)
+    const eventsToSend = eventsResult.data
 
     if (eventsToSend.length === 0) {
       logger.info('✅ No un-emailed events found. All notifications are up to date.')
@@ -39,18 +33,12 @@ async function main() {
     }
     logger.info(`Found ${eventsToSend.length} recent, un-emailed event(s) to dispatch.`)
 
-    // The sendNotifications function is designed to handle dispatch to all relevant users
-    // based on their country subscriptions. It's the perfect tool for the job.
     await sendNotifications(eventsToSend, [])
   } catch (error) {
     logger.fatal(
       { err: error },
       'A critical error occurred during the manual dispatch process.'
     )
-  } finally {
-    if (mongoose.connection.readyState === 1) {
-      await mongoose.disconnect()
-    }
   }
 }
 

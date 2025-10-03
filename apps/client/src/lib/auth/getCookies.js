@@ -1,4 +1,6 @@
+// apps/client/src/lib/auth/getCookies.js
 'use server'
+import { logger } from '@headlines/utils-shared'
 
 /**
  * An environment-aware cookie accessor.
@@ -9,7 +11,6 @@ export async function getCookies() {
     typeof window !== 'undefined' ||
     !process.env.NEXT_RUNTIME
   ) {
-    // Return a mock for non-Next.js server environments or client-side
     return {
       get: () => undefined,
       getAll: () => [],
@@ -22,8 +23,7 @@ export async function getCookies() {
     const { cookies } = await import('next/headers')
     return cookies()
   } catch (error) {
-    console.error('Failed to import cookies from next/headers:', error.message)
-    // Fallback mock
+    logger.error({ err: error }, 'Failed to import cookies from next/headers.')
     return {
       get: () => undefined,
       getAll: () => [],

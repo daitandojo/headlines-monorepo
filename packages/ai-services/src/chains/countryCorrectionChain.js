@@ -4,7 +4,7 @@ import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
-import { countryCorrectionSchema } from '../schemas/index.js'
+import { countryCorrectionSchema } from '@headlines/models/schemas'
 
 const systemPrompt = `You are a data cleaning expert. Your sole task is to analyze a given text string that is supposed to represent a country and extract the single, correct, UN-recognized sovereign country name from it.
 

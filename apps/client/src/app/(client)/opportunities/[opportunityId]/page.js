@@ -1,8 +1,9 @@
-// File: apps/client/src/app/(client)/opportunities/[opportunityId]/page.js
+// apps/client/src/app/(client)/opportunities/[opportunityId]/page.js
 
-'use server'
 
-import { getOpportunityDetails } from '@headlines/data-access'
+export const dynamic = 'force-dynamic'
+
+import { getOpportunityDetails } from '@headlines/data-access/next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -16,7 +17,7 @@ import {
 } from '@/components/shared'
 import { ArrowLeft, User, MapPin, Briefcase, Mail, Zap, ExternalLink } from 'lucide-react'
 import { format } from 'date-fns'
-import { getCountryFlag } from '@headlines/utils-shared/next'
+import { getCountryFlag } from '@headlines/utils-shared'
 
 function TimelineItem({ event, isLast }) {
   return (

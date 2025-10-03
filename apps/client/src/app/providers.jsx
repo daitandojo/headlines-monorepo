@@ -1,17 +1,17 @@
-// Full Path: headlines/src/app/providers.jsx (REVISED)
+// apps/client/src/app/providers.jsx
 'use client'
-
-import { useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { AuthProvider } from '@/lib/auth/AuthProvider'
+import { useState } from 'react'
 
 export function AppProviders({ children }) {
   const [queryClient] = useState(() => new QueryClient())
 
+  // AuthProvider needs an initialUser. Since this is now a full client component,
+  // we start with null and let the provider logic handle fetching/redirecting.
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
-      <ReactQueryDevtools initialIsOpen={false} />
+      <AuthProvider initialUser={null}>{children}</AuthProvider>
     </QueryClientProvider>
   )
 }

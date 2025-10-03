@@ -22,7 +22,6 @@ import { translateChain as tc } from './translateChain.js'
 import { countryCorrectionChain as ccc } from './countryCorrectionChain.js'
 
 // DEFINITIVE FIX: Export each chain's invoke method as a standalone async function
-// to comply with "use server" constraints.
 export const articleChain = async (input) => ac.invoke(input)
 export const articlePreAssessmentChain = async (input) => apac.invoke(input)
 export const clusteringChain = async (input) => cc.invoke(input)

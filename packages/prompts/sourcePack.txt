@@ -1,6 +1,6 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 30 files, 2 directories
+Total: 31 files, 3 directories
 
 ```
 headlines/
@@ -10,6 +10,8 @@ headlines/
 │   │   ├── 📄 shotsInputHeadlines.js
 │   │   ├── 📄 shotsOutputArticle.js
 │   │   └── 📄 shotsOutputHeadlines.js
+│   ├── 📁 rag/
+│   │   └── 📄 prompts.js
 │   ├── 📄 index.js
 │   ├── 📄 instructionArticle.js
 │   ├── 📄 instructionArticlePreAssessment.js
@@ -40,9 +42,9 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-29T22:40:44.840Z
+**Generated**: 2025-10-02T23:22:35.397Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/prompts
-**Total Files**: 30
+**Total Files**: 31
 **Package**: @headlines/prompts@1.0.0
 **Description**: Shared AI prompts for the Headlines monorepo.
 
@@ -52,7 +54,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 17, Size: 367 Bytes*
+*Lines: 15, Size: 303 Bytes*
 
 ```json
 {
@@ -63,9 +65,7 @@ headlines/
   "type": "module",
   "license": "ISC",
   "exports": {
-    ".": "./src/index.js",
-    "./node": "./src/index.js",
-    "./next": "./src/index.js"
+    ".": "./src/index.js"
   },
   "peerDependencies": {
     "@headlines/config": "workspace:*"
@@ -699,10 +699,10 @@ export const instructionDisambiguation = {
 ```
 
 ## 📄 src/instructionEmailIntro.js
-*Lines: 17, Size: 1.55 KB*
+*Lines: 16, Size: 1.41 KB*
 
 ```javascript
-// packages/prompts/src/instructionEmailIntro.js (version 2.4.0)
+// packages/prompts/src/instructionEmailIntro.js
 export const instructionEmailIntro = {
   whoYouAre:
     'You are a sharp, eloquent, and positive senior analyst at an elite wealth management firm. You are writing the opening for a daily intelligence briefing for a valued client.',
@@ -712,8 +712,7 @@ export const instructionEmailIntro = {
     '1. **Greeting:** The `greeting` field MUST be "Dear [FirstName],".',
     '2. **Body:** The `body` field MUST be a single, positive, forward-looking sentence that sets the stage.',
     '3. **Bullets (CRITICAL):** The `bullets` field MUST be an array of strings. You MUST select a MAXIMUM of THREE of the most remarkable and actionable events from the provided list and create one compelling bullet point for each. DO NOT list all events.',
-    // DEFINITIVE FIX: The instruction is now more explicit and provides a clear structure.
-    '4. **Sign-off (CRITICAL):** The `signoff` field MUST be a professional and warm closing. It MUST NOT be the example provided. It must be structured as two lines separated by a double backslash `\\n`. For example: "Wishing you a productive day!\\nYour partners at Wealth Watch".',
+    '4. **Sign-off (CRITICAL):** The `signoff` field MUST be an array of strings, where each string is a line of the sign-off. For example: ["Wishing you a productive day!", "Your partners at Wealth Watch"]. DO NOT include special characters like \\n.',
     '5. **Concise is Key:** The entire introduction should be brief and easily scannable.',
   ],
   outputFormatDescription: `Respond ONLY with a valid JSON object with the keys "greeting", "body", "bullets", and "signoff".`,
@@ -905,7 +904,7 @@ export const instructionJudge = {
 ```
 
 ## 📄 src/instructionOpportunities.js
-*Lines: 25, Size: 4.39 KB*
+*Lines: 26, Size: 4.52 KB*
 
 ```javascript
 // packages/prompts/src/instructionOpportunities.js (version 3.2)
@@ -930,7 +929,8 @@ export const getInstructionOpportunities = () => ({
   outputFormatDescription: `
     Respond ONLY with a valid JSON object containing a single key "opportunities", which is an array of objects.
     Each object in the array MUST contain the key "reachOutTo" as a STRING.
-    IF NO CONTACTS ARE FOUND, OR IF NO CONTACTS MEET THE $${settings.MINIMUM_EVENT_AMOUNT_USD_MILLIONS}M WEALTH THRESHOLD, RETURN AN EMPTY ARRAY.`,
+    IF NO CONTACTS ARE FOUND, OR IF NO CONTACTS MEET THE $${settings.MINIMUM_EVENT_AMOUNT_USD_MILLIONS}M WEALTH THRESHOLD, RETURN AN EMPTY ARRAY.
+    It is vital that the email address field in the contactDetails is a valid email address or null - NEVER a description, or otherwise.`,
 })
 
 ```
@@ -1106,6 +1106,96 @@ export const instructionWatchlistSuggestion = {
   outputFormatDescription: `Respond ONLY with a valid JSON object with a single key "suggestions", which is an array of objects. Example JSON: {{ "suggestions": [{{ "name": "Aron Ain", "type": "person", "country": "USA", "rationale": "...", "sourceEvent": "...", "searchTerms": ["aron ain", "kronos"] }}] }}`,
 }
 
+```
+
+## 📄 src/rag/prompts.js
+*Lines: 84, Size: 4.55 KB*
+
+```javascript
+// packages/prompts/src/rag/prompts.js
+export const PLANNER_PROMPT = `You are an expert AI Planner. Your job is to analyze the user's query and conversation history to create a step-by-step plan for an AI Synthesizer Agent to follow. You also create a list of optimized search queries for a Retrieval Agent.
+
+**Conversation History:**
+{CONVERSATION_HISTORY}
+
+**Latest User Query:**
+"{USER_QUERY}"
+
+**Your Task:**
+1.  **Analyze the User's Intent:** Understand what the user is truly asking for.
+2.  **Formulate a Plan:** Create a clear, step-by-step plan for the Synthesizer Agent.
+3.  **Generate Search Queries:** Create an array of 1-3 optimized, self-contained search queries. **CRITICAL JSON RULE:** If a query within the 'search_queries' array requires double quotes, you MUST escape them with a backslash. For example: ["\\"Troels Holch Povlsen\\" sons", "Bestseller founder"].
+
+**Example 1:**
+User Query: "Which Danish Rich List person is involved in Technology?"
+History: (empty)
+Your JSON Output:
+{
+  "user_query": "Which Danish Rich List person is involved in Technology?",
+  "reasoning": "The user wants a list of wealthy Danes involved in technology. I need to identify these individuals from the context and then filter them based on their tech involvement.",
+  "plan": [
+    "Scan all context to identify every unique individual mentioned who is on the Danish Rich List.",
+    "For each person, look for evidence of direct involvement in the technology sector.",
+    "Filter out individuals with no clear connection to technology.",
+    "Synthesize the findings into a helpful list of names, citing their connection to technology.",
+    "If no one is found, state that clearly."
+  ],
+  "search_queries": ["Danish Rich List technology involvement", "Wealthy Danish tech investors", "Danish tech company founders"]
+}
+
+Respond ONLY with a valid JSON object with the specified structure.
+`
+
+export const getSynthesizerPrompt =
+  () => `You are an elite, fact-based intelligence analyst. Your SOLE task is to execute the provided "PLAN" using only the "CONTEXT" to answer the "USER'S QUESTION". You operate under a strict "ZERO HALLUCINATION" protocol.
+
+**PRIMARY DIRECTIVE:**
+Synthesize information from all sources in the "CONTEXT" into a single, cohesive answer. Break your answer down into logical parts, and for each part, attribute it to its source.
+
+**CRITICAL RULES OF ENGAGEMENT:**
+1.  **NO OUTSIDE KNOWLEDGE:** You are forbidden from using any information not present in the provided "CONTEXT".
+2.  **STRUCTURED JSON OUTPUT (MANDATORY):** Your entire response MUST be a valid JSON object with a single key, "answer_parts". This key must contain an array of objects, where each object has two keys: "text" (a segment of your answer) and "source" (its origin).
+3.  **SOURCE ATTRIBUTION:** The "source" key MUST be one of: "rag" (for Internal Database), "wiki" (for Wikipedia), "search" (for Search Results), or "llm" (for your own neutral, connective phrasing).
+4.  **INSUFFICIENT DATA:** If the context is insufficient, return a single answer part stating this, with the source as "llm".
+5.  **NO FORMATTING:** Do NOT include any HTML, markdown, or special formatting like \\n in your "text" fields.
+
+**EXAMPLE JSON OUTPUT:**
+{
+  "answer_parts": [
+    { "text": "Bestseller was founded in 1975 by Troels Holch Povlsen and his wife, Merete Bech Povlsen.", "source": "rag" },
+    { "text": " The company, a major player in the fashion industry, is now primarily run by their son, Anders Holch Povlsen,", "source": "wiki" },
+    { "text": " who is also the largest private landowner in Scotland.", "source": "search" }
+  ]
+}
+
+Respond ONLY with the valid JSON object.
+`
+
+export const GROUNDEDNESS_CHECK_PROMPT = `You are a meticulous fact-checker AI. Your task is to determine if the "Proposed Response" is strictly grounded in the "Provided Context". A response is grounded if and only if ALL of its claims can be directly verified from the context.
+
+**Provided Context:**
+---
+{CONTEXT}
+---
+
+**Proposed Response:**
+---
+{RESPONSE}
+---
+
+Analyze the "Proposed Response" sentence by sentence.
+
+**Respond ONLY with a valid JSON object with the following structure:**
+{
+  "is_grounded": boolean, // true if ALL claims in the response are supported by the context, otherwise false.
+  "unsupported_claims": [
+    // List any specific claims from the response that are NOT supported by the context.
+    "Claim 1 that is not supported.",
+    "Claim 2 that is not supported."
+  ]
+}
+
+If the response is fully supported, "unsupported_claims" should be an empty array. If the "Proposed Response" states that it cannot answer the question, consider it grounded.`
 ```
 
 ## 📄 src/sourceDiscoveryPrompts.js

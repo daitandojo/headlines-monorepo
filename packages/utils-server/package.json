@@ -1,8 +1,8 @@
 {
   "name": "@headlines/utils-server",
-  "version": "3.0.0",
+  "version": "5.0.0",
   "description": "Server-only utilities for the Headlines monorepo.",
-  "main": "src/index.js",
+  "main": "src/node.js",
   "type": "module",
   "license": "ISC",
   "exports": {
@@ -10,7 +10,10 @@
     "./node": "./src/node.js",
     "./next": "./src/next.js",
     "./logger": "./src/logger.js",
-    "./helpers": "./src/helpers.js",
+    "./helpers": {
+      "node": "./src/helpers.js",
+      "default": "./src/helpers-next.js"
+    },
     "./tokenTracker": "./src/tokenTracker.js",
     "./apiCallTracker": "./src/apiCallTracker.js",
     "./auditLogger": "./src/auditLogger.js",
@@ -19,6 +22,7 @@
     "./pusher": "./src/pusher.js"
   },
   "dependencies": {
+    "@headlines/utils-shared": "workspace:*",
     "@headlines/config": "workspace:*",
     "@headlines/models": "workspace:*",
     "@upstash/redis": "^1.35.4",

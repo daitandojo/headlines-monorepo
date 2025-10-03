@@ -1,4 +1,4 @@
-// packages/data-access/src/actions/chat.js (version 2.0.0)
+// packages/data-access/src/core/chat.js
 import { callLanguageModel } from '@headlines/ai-services'
 import { settings } from '@headlines/config'
 

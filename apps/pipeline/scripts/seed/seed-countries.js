@@ -1,23 +1,18 @@
-// apps/pipeline/scripts/seed/seed-countries.js (version 2.3.0)
-import {
-  reinitializeLogger as initializeLogger,
-  logger,
-} from '../../../../packages/utils-server'
-import path from 'path'
+// apps/pipeline/scripts/seed/seed-countries.js
+import { logger } from '@headlines/utils-shared'
+import { initializeScriptEnv } from './lib/script-init.js'
+import { updateCountry } from '@headlines/data-access'
 import fs from 'fs'
+import path from 'path'
 import { fileURLToPath } from 'url'
-import { Country } from '../../../../packages/models/src/index.js'
-import dbConnect from '../../../../packages/data-access/src/dbConnect.js'
-import mongoose from 'mongoose'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-initializeLogger(path.resolve(process.cwd(), 'apps/pipeline/logs'))
 
 function loadCountriesFromFile() {
   const filePath = path.resolve(
     __dirname,
-    '../../../../packages/utils/src/data/countries.json'
+    '../../../../packages/utils-shared/src/data/countries.json'
   )
   const fileContent = fs.readFileSync(filePath, 'utf8')
   const countryData = JSON.parse(fileContent)
@@ -25,31 +20,30 @@ function loadCountriesFromFile() {
 }
 
 async function seedCountries() {
-  await dbConnect()
+  await initializeScriptEnv()
   logger.info('🚀 Seeding Countries from canonical JSON file...')
   const countriesToSeed = loadCountriesFromFile()
   try {
-    const bulkOps = countriesToSeed.map((country) => ({
-      updateOne: {
-        filter: { name: country.name },
-        update: {
+    const promises = countriesToSeed.map((country) =>
+      updateCountry(
+        { name: country.name },
+        {
           $set: { isoCode: country.isoCode.substring(0, 2) },
           $setOnInsert: { name: country.name, status: 'active' },
         },
-        upsert: true,
-      },
-    }))
+        { upsert: true }
+      )
+    )
 
-    const result = await Country.bulkWrite(bulkOps)
+    // Note: A true bulk upsert function would be more efficient.
+    // This is a simple implementation for seeding.
+    await Promise.all(promises)
+
     logger.info(
-      `✅ Country seeding complete. ${result.upsertedCount} new countries added, ${result.modifiedCount} updated.`
+      `✅ Country seeding complete. Synced ${countriesToSeed.length} countries.`
     )
   } catch (error) {
     logger.fatal({ err: error }, '❌ Country seeding failed.')
-  } finally {
-    if (mongoose.connection.readyState === 1) {
-      await mongoose.disconnect()
-    }
   }
 }
 

@@ -1,16 +1,15 @@
-// apps/pipeline/scripts/results/list-events.js (version 2.0)
-import dbConnect from '../../packages/data-access/src/dbConnect.js'
-import { SynthesizedEvent } from '@headlines/models'
-import mongoose from 'mongoose'
+// apps/pipeline/scripts/results/list-events.js
+import { initializeScriptEnv } from '../seed/lib/script-init.js'
+import { findEvents } from '@headlines/data-access'
 import { formatDistanceToNow } from 'date-fns'
 
 async function main() {
-  await dbConnect()
+  await initializeScriptEnv()
   try {
-    const events = await SynthesizedEvent.find({})
-      .sort({ createdAt: -1 })
-      .limit(10)
-      .lean()
+    const eventsResult = await findEvents({ limit: 10 })
+    if (!eventsResult.success) throw new Error(eventsResult.error)
+
+    const events = eventsResult.data
     if (events.length === 0) {
       console.log('No recent events found.')
     } else {
@@ -27,8 +26,6 @@ async function main() {
     }
   } catch (error) {
     console.error('Failed to list events:', error)
-  } finally {
-    await mongoose.disconnect()
   }
 }
 main()

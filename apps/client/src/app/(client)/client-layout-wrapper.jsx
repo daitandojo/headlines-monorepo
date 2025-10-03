@@ -1,7 +1,7 @@
 'use client'
 
-import { Header } from '@/components/client/Header'
-import { MainNavTabs } from '@/components/client/MainNavTabs'
+import { Header } from '@/components/client/shared/Header'
+import { MainNavTabs } from '@/components/client/shared/MainNavTabs'
 
 export function ClientLayoutWrapper({ children, serverProps }) {
   return (

@@ -1,17 +1,8 @@
-// packages/scraper-logic/src/browser.js (version 4.1.0)
-import playwright from 'playwright'
+// packages/scraper-logic/src/browser.js
 import fs from 'fs/promises'
 import path from 'path'
 import { getConfig } from './config.js'
-
-const BROWSER_HEADERS = {
-  Accept:
-    'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-  'Accept-Encoding': 'gzip, deflate, br',
-  'Accept-Language': 'en-US,en;q=0.9,nl-NL;q=0.8,nl;q=0.7',
-  'User-Agent':
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-}
+import { browserManager } from './browserManager.js'
 
 const CONSENT_SELECTORS = [
   'button:has-text("Accepteer alles")',
@@ -48,14 +39,14 @@ async function saveDebugHtml(page, caller, prefix, url) {
   try {
     const html = await page.content()
     const urlPart = new URL(url).hostname.replace(/[^a-z0-9]/gi, '_')
-    const filename = prefix + '_' + caller + '_' + urlPart + '.html'
+    const filename = `${prefix}_${caller}_${urlPart}.html`
     const filePath = path.join(debugDir, filename)
     await fs.writeFile(filePath, html)
-    getConfig().logger.warn('[Playwright:' + caller + '] Saved debug HTML to ' + filePath)
+    getConfig().logger.warn(`[Playwright:${caller}] Saved debug HTML to ${filePath}`)
     return filePath
   } catch (error) {
     getConfig().logger.error(
-      '[Playwright:' + caller + '] Failed to save debug HTML: ' + error.message
+      `[Playwright:${caller}] Failed to save debug HTML: ${error.message}`
     )
     return null
   }
@@ -68,11 +59,7 @@ async function handleConsent(page, caller) {
       if (await button.isVisible({ timeout: 1500 })) {
         await button.click({ timeout: 2000 })
         getConfig().logger.info(
-          '[Playwright:' +
-            caller +
-            '] Clicked consent button with selector: "' +
-            selector +
-            '"'
+          `[Playwright:${caller}] Clicked consent button with selector: "${selector}"`
         )
         await page.waitForTimeout(1500)
         return true
@@ -81,63 +68,40 @@ async function handleConsent(page, caller) {
       // Selector not found, continue
     }
   }
-  getConfig().logger.trace(
-    '[Playwright:' + caller + '] No actionable consent modal found.'
-  )
+  getConfig().logger.trace(`[Playwright:${caller}] No actionable consent modal found.`)
   return false
 }
 
 export async function fetchPageWithPlaywright(url, caller = 'Unknown', options = {}) {
   const { timeout = 60000, waitForSelector } = options
-
-  let browser = null
   let page = null
   try {
     getConfig().logger.trace(
-      '[Playwright:' +
-        caller +
-        '] Launching browser for: ' +
-        url +
-        ' (Timeout: ' +
-        timeout +
-        'ms)'
+      `[Playwright:${caller}] Requesting new page for: ${url} (Timeout: ${timeout}ms)`
     )
-    browser = await playwright.chromium.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-    })
-    const context = await browser.newContext({
-      userAgent: BROWSER_HEADERS['User-Agent'],
-      extraHTTPHeaders: BROWSER_HEADERS,
-      viewport: { width: 1920, height: 1080 },
-    })
-    page = await context.newPage()
+    page = await browserManager.newPage()
 
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout })
-
     await handleConsent(page, caller)
 
     if (waitForSelector) {
       getConfig().logger.info(
-        '[Playwright:' + caller + '] Waiting for selector "' + waitForSelector + '"...'
+        `[Playwright:${caller}] Waiting for selector "${waitForSelector}"...`
       )
       await page.waitForSelector(waitForSelector, { timeout: timeout - 5000 })
-      getConfig().logger.info(
-        '[Playwright:' + caller + '] Selector found. Page is ready.'
-      )
+      getConfig().logger.info(`[Playwright:${caller}] Selector found. Page is ready.`)
     } else {
       await page
         .waitForLoadState('networkidle', { timeout: 5000 })
         .catch(() =>
           getConfig().logger.trace(
-            '[Playwright:' + caller + '] Network idle timeout reached, proceeding anyway.'
+            `[Playwright:${caller}] Network idle timeout reached, proceeding anyway.`
           )
         )
     }
 
     return await page.content()
   } catch (error) {
-    // ENHANCED ERROR LOGGING: Provide more specific reasons for failures.
     let reason = error.message.split('\n')[0]
     if (error.message.includes('net::ERR')) {
       reason = `Network Error: ${reason}`
@@ -151,31 +115,24 @@ export async function fetchPageWithPlaywright(url, caller = 'Unknown', options =
     }
 
     getConfig().logger.error(
-      '[Playwright:' +
-        caller +
-        '] Critical failure during fetch for ' +
-        url +
-        ': ' +
-        reason
+      `[Playwright:${caller}] Critical failure during fetch for ${url}: ${reason}`
     )
     if (page) {
       await saveDebugHtml(page, caller, 'CRITICAL_FAIL', url)
     }
     return null
   } finally {
-    if (browser) {
-      await browser.close()
-      getConfig().logger.trace('[Playwright:' + caller + '] Browser closed for: ' + url)
+    if (page) {
+      await page.close()
+      getConfig().logger.trace(`[Playwright:${caller}] Page closed for: ${url}`)
     }
   }
 }
 
 export async function fetchPageContentFromPopup(pageUrl, buttonSelector) {
-  let browser = null
+  let page = null
   try {
-    browser = await playwright.chromium.launch({ headless: true })
-    const context = await browser.newContext({ userAgent: BROWSER_HEADERS['User-Agent'] })
-    const page = await context.newPage()
+    page = await browserManager.newPage()
     await page.goto(pageUrl, { waitUntil: 'networkidle' })
     await handleConsent(page, 'PopupFetcher')
 
@@ -183,13 +140,11 @@ export async function fetchPageContentFromPopup(pageUrl, buttonSelector) {
     const button = page.locator(buttonSelector).first()
     await button.click()
 
-    // Wait for the popup overlay to become visible
     await page.waitForSelector('.popup-overlay--opened', {
       state: 'visible',
       timeout: 5000,
     })
 
-    // Extract the HTML of the now-visible popup
     const popupElement = await page.locator('.popup__box')
     const popupHtml = await popupElement.innerHTML()
     return popupHtml
@@ -200,8 +155,8 @@ export async function fetchPageContentFromPopup(pageUrl, buttonSelector) {
     )
     return null
   } finally {
-    if (browser) {
-      await browser.close()
+    if (page) {
+      await page.close()
     }
   }
 }

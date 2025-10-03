@@ -1,5 +1,8 @@
 // apps/pipeline/src/pipeline/6_suggestNewWatchlistEntities.js (version 4.1)
-import { logger } from '@headlines/utils-server'
+
+import { logger } from '@headlines/utils-shared' // The universal, isomorphic logger
+import { auditLogger } from '@headlines/utils-server' // The server-only, file-writing audit logger
+
 import { watchlistSuggestionChain } from '@headlines/ai-services'
 import {
   getActiveWatchlistEntityNames,

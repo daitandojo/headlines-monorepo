@@ -5,7 +5,7 @@ import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionJudge } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
-import { judgeSchema } from '../schemas/index.js'
+import { judgeSchema } from '@headlines/models/schemas'
 
 const systemPrompt = [
   instructionJudge.whoYouAre,

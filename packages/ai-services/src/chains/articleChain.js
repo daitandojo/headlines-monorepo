@@ -1,10 +1,10 @@
+// packages/ai-services/src/chains/articleChain.js (version 2.0.0)
 import {
   ChatPromptTemplate,
   HumanMessagePromptTemplate,
   SystemMessagePromptTemplate,
 } from '@langchain/core/prompts'
 import { AIMessage, HumanMessage } from '@langchain/core/messages'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { settings } from '@headlines/config'
 import {
@@ -14,8 +14,9 @@ import {
 } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
-import { logger } from '@headlines/utils-server/logger'
-import { articleAssessmentSchema } from '../schemas/index.js'
+import { logger } from '@headlines/utils-shared'
+// REFACTOR: Import Zod schema from the new canonical location.
+import { articleAssessmentSchema } from '@headlines/models/schemas'
 
 const instructions = getInstructionArticle(settings)
 const systemPrompt = [
@@ -38,9 +39,6 @@ const messages = [
 ]
 
 const prompt = ChatPromptTemplate.fromMessages(messages)
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
-// The safeInvoke function will be responsible for all parsing.
 const chain = RunnableSequence.from([prompt, getHighPowerModel()])
 
 async function invoke(input) {

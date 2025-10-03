@@ -1,4 +1,4 @@
-'use server'
+export const dynamic = 'force-dynamic'
 
 import { PageHeader } from '@/components/shared'
 import { getAllSubscribers, getAllCountries } from '@headlines/data-access'

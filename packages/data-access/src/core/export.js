@@ -1,8 +1,6 @@
+// packages/data-access/src/core/export.js
 import { Opportunity, Subscriber, SynthesizedEvent, Article } from '@headlines/models'
 import { buildQuery } from '../queryBuilder.js'
-import dbConnect from '@headlines/data-access/dbConnect/node'
-
-// --- Helper Functions ---
 
 function escapeXml(str) {
   if (str === null || str === undefined) return ''
@@ -71,8 +69,6 @@ function convertToExcelXML(data, columns) {
   return xml
 }
 
-// --- START OF THE FIX ---
-// Consolidate all logic into a single, robust generateExport function.
 const entityConfig = {
   opportunities: {
     model: Opportunity,
@@ -124,7 +120,6 @@ const entityConfig = {
 
 export async function generateExport({ entity, fileType, filters, sort }) {
   try {
-    await dbConnect()
     const config = entityConfig[entity]
     if (!config) {
       return { success: false, error: `Invalid entity type for export: ${entity}` }
@@ -143,7 +138,6 @@ export async function generateExport({ entity, fileType, filters, sort }) {
       return { success: true, data: csv, contentType: 'text/csv', extension: 'csv' }
     } else if (fileType === 'xlsx') {
       const xml = convertToExcelXML(dataToExport, columns)
-      // The extension for this XML-based format is typically .xls
       return {
         success: true,
         data: xml,
@@ -158,7 +152,3 @@ export async function generateExport({ entity, fileType, filters, sort }) {
     return { success: false, error: `Failed to generate export: ${e.message}` }
   }
 }
-// --- END OF THE FIX ---
-
-// Remove all the individual export functions like exportOpportunitiesToCSV, etc.
-// They are now replaced by the single generic function above.

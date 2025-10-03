@@ -1,10 +1,7 @@
 // apps/pipeline/scripts/maintenance/fix-event-countries.js
-'use server'
-
-import mongoose from 'mongoose'
-import { SynthesizedEvent } from '@headlines/models'
 import { initializeScriptEnv } from '../seed/lib/script-init.js'
-import { logger } from '@headlines/utils-server'
+import { logger } from '@headlines/utils-shared'
+import { findEvents, updateEvent } from '@headlines/data-access'
 import colors from 'ansi-colors'
 
 async function main() {
@@ -13,14 +10,13 @@ async function main() {
 
   try {
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
-    const eventsToFix = await SynthesizedEvent.find({
-      createdAt: { $gte: twentyFourHoursAgo },
-      // Add any other filter if needed, e.g., to find events with non-Danish countries
-    }).populate({
-      path: 'source_articles',
-      model: 'Article', // This assumes you have an 'Article' model linked
-      select: 'country',
+    const eventsResult = await findEvents({
+      filter: { createdAt: { $gte: twentyFourHoursAgo } },
+      populate: { path: 'source_articles', model: 'Article', select: 'country' },
     })
+
+    if (!eventsResult.success) throw new Error(eventsResult.error)
+    const eventsToFix = eventsResult.data
 
     if (eventsToFix.length === 0) {
       logger.info('✅ No recent events found needing country correction.')
@@ -33,7 +29,7 @@ async function main() {
       )
     )
 
-    const bulkOps = []
+    let correctedCount = 0
     for (const event of eventsToFix) {
       if (event.source_articles && event.source_articles.length > 0) {
         const sourceCountry = event.source_articles[0].country
@@ -42,22 +38,14 @@ async function main() {
           logger.info(
             `  Current Country: ${colors.red(event.country)} -> Correct Country: ${colors.green(sourceCountry)}`
           )
-          bulkOps.push({
-            updateOne: {
-              filter: { _id: event._id },
-              update: { $set: { country: sourceCountry } },
-            },
-          })
+          const updateResult = await updateEvent(event._id, { country: sourceCountry })
+          if (updateResult.success) correctedCount++
         }
       }
     }
 
-    if (bulkOps.length > 0) {
-      logger.info(`Applying ${bulkOps.length} country corrections to the database...`)
-      const result = await SynthesizedEvent.bulkWrite(bulkOps)
-      logger.info(
-        colors.green(`✅ Successfully corrected ${result.modifiedCount} events.`)
-      )
+    if (correctedCount > 0) {
+      logger.info(colors.green(`✅ Successfully corrected ${correctedCount} events.`))
     } else {
       logger.info('✅ No corrections were necessary for the found events.')
     }
@@ -66,10 +54,6 @@ async function main() {
       { err: error },
       'A critical error occurred during the correction script.'
     )
-  } finally {
-    if (mongoose.connection.readyState === 1) {
-      await mongoose.disconnect()
-    }
   }
 }
 

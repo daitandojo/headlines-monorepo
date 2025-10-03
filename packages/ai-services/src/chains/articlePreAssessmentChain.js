@@ -5,7 +5,7 @@ import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionArticlePreAssessment } from '@headlines/prompts'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
-import { articlePreAssessmentSchema } from '../schemas/index.js'
+import { articlePreAssessmentSchema } from '@headlines/models/schemas'
 
 const systemPrompt = [
   instructionArticlePreAssessment.whoYouAre,

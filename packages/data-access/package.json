@@ -9,14 +9,16 @@
     ".": "./src/index.js",
     "./node": "./src/index.js",
     "./next": "./src/next.js",
-    "./dbConnect": "./src/dbConnect.node.js",
-    "./dbConnect/node": "./src/dbConnect.node.js",
+    "./dbConnect": "./src/dbConnect.js",
     "./dbConnect/next": "./src/dbConnect.next.js",
+    "./dbConnect/node": "./src/dbConnect.node.js",
     "./seed/dev-user.js": "./src/seed/dev-user.js"
   },
   "dependencies": {
+    "@headlines/utils-shared": "workspace:*",
     "@headlines/ai-services": "workspace:*",
     "@headlines/config": "workspace:*",
+    "@headlines/prompts": "workspace:*",
     "@headlines/models": "workspace:*",
     "@pinecone-database/pinecone": "^6.1.2",
     "bcryptjs": "^3.0.2",

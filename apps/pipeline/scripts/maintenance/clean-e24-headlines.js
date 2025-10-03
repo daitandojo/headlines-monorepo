@@ -1,56 +1,44 @@
 // apps/pipeline/scripts/maintenance/clean-e24-headlines.js
-'use server'
-
-import dbConnect from '../../../../packages/data-access/src/dbConnect.js'
-import { Article } from '../../../../packages/models/src/index.js'
-import { logger, reinitializeLogger } from '../../../../packages/utils-server'
-import path from 'path'
-import mongoose from 'mongoose'
-
-reinitializeLogger(path.resolve(process.cwd(), 'apps/pipeline/logs'))
+import { initializeScriptEnv } from '../seed/lib/script-init.js'
+import { logger } from '@headlines/utils-shared'
+import { findArticles, updateArticle } from '@headlines/data-access'
 
 async function cleanE24Headlines() {
-  await dbConnect()
+  await initializeScriptEnv()
   logger.info('🚀 Starting E24 headline cleanup...')
 
   try {
-    // This regex is more robust and captures multiple patterns of CSS gibberish.
-    const articlesToClean = await Article.find({
-      newspaper: 'E24',
-      headline: { $regex: /(#title-.*)|(span \{ font-weight)/ },
+    const articlesResult = await findArticles({
+      filter: {
+        newspaper: 'E24',
+        headline: { $regex: /(#title-.*)|(span \{ font-weight)/ },
+      },
     })
+
+    if (!articlesResult.success) throw new Error(articlesResult.error)
+    const articlesToClean = articlesResult.data
 
     if (articlesToClean.length === 0) {
       logger.info('✅ No E24 articles with CSS gibberish found. Database is clean.')
       return
     }
 
-    logger.info(
-      `Found ${articlesToClean.length} E24 articles to clean. Preparing bulk update...`
-    )
+    logger.info(`Found ${articlesToClean.length} E24 articles to clean. Updating...`)
+    let modifiedCount = 0
 
-    const bulkOps = articlesToClean.map((article) => {
-      // Use a more robust regex to remove the CSS part.
+    for (const article of articlesToClean) {
       const cleanedHeadline = article.headline
-        .replace(/#title-.*?span \{.*?\}/g, '') // Removes the entire CSS block
-        .replace(/#title-.*/, '') // Fallback for simpler cases
+        .replace(/#title-.*?span \{.*?\}/g, '')
+        .replace(/#title-.*/, '')
         .trim()
-      return {
-        updateOne: {
-          filter: { _id: article._id },
-          update: { $set: { headline: cleanedHeadline } },
-        },
-      }
-    })
 
-    const result = await Article.bulkWrite(bulkOps)
-    logger.info(`✅ Cleanup complete. Modified ${result.modifiedCount} articles.`)
+      const updateResult = await updateArticle(article._id, { headline: cleanedHeadline })
+      if (updateResult.success) modifiedCount++
+    }
+
+    logger.info(`✅ Cleanup complete. Modified ${modifiedCount} articles.`)
   } catch (error) {
     logger.error({ err: error }, '❌ E24 headline cleanup failed.')
-  } finally {
-    if (mongoose.connection.readyState === 1) {
-      await mongoose.disconnect()
-    }
   }
 }
 

@@ -1,14 +1,13 @@
-// apps/pipeline/scripts/seed/seed-admin-user.js (version 4.0.0 - Model-driven)
+// apps/pipeline/scripts/seed/seed-admin-user.js
+import { logger } from '@headlines/utils-shared'
 import {
-  reinitializeLogger as initializeLogger,
-  logger,
-} from '../../../../packages/utils-server'
-import path from 'path'
-import { Subscriber, Country } from '../../../../packages/models/src/index.js'
-import dbConnect from '../../../../packages/data-access/src/dbConnect.js'
-import mongoose from 'mongoose'
-
-initializeLogger(path.resolve(process.cwd(), 'apps/pipeline/logs'))
+  createSubscriberWithPassword,
+  updateSubscriber,
+  updateSubscriberPassword,
+  getAllCountries,
+  findSubscribers,
+} from '@headlines/data-access'
+import { initializeScriptEnv } from './lib/script-init.js'
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
@@ -20,24 +19,31 @@ async function seedAdminUser() {
     return
   }
 
-  await dbConnect()
+  await initializeScriptEnv()
   logger.info(`🚀 Seeding Admin User: ${ADMIN_EMAIL}...`)
   try {
-    const existingUser = await Subscriber.findOne({ email: ADMIN_EMAIL })
-    const allCountries = await Country.find({ status: 'active' }).select('name').lean()
-    const countrySubscriptions = allCountries.map((c) => ({ name: c.name, active: true }))
+    const countriesResult = await getAllCountries()
+    if (!countriesResult.success) throw new Error('Could not fetch countries.')
+    const countrySubscriptions = countriesResult.data
+      .filter((c) => c.status === 'active')
+      .map((c) => ({ name: c.name, active: true }))
+
+    const findResult = await findSubscribers({ filter: { email: ADMIN_EMAIL } })
+    const existingUser =
+      findResult.success && findResult.data.length > 0 ? findResult.data[0] : null
 
     if (existingUser) {
       logger.warn(
         'Admin user already exists. Overwriting password and ensuring settings are correct.'
       )
-      existingUser.password = ADMIN_PASSWORD // The pre-save hook will hash this
-      await existingUser.save()
-      logger.info(`✅ Admin user password has been reset and saved.`)
-    } else {
-      const newUser = new Subscriber({
-        email: ADMIN_EMAIL,
-        password: ADMIN_PASSWORD, // The pre-save hook will hash this
+      const passwordResult = await updateSubscriberPassword(
+        existingUser._id,
+        ADMIN_PASSWORD
+      )
+      if (!passwordResult.success) throw new Error(passwordResult.error)
+
+      // Update other fields separately
+      await updateSubscriber(existingUser._id, {
         firstName: ADMIN_FIRST_NAME,
         role: 'admin',
         isActive: true,
@@ -45,15 +51,25 @@ async function seedAdminUser() {
         subscriptionTier: 'enterprise',
         isLifetimeFree: true,
       })
-      await newUser.save()
+
+      logger.info(`✅ Admin user password has been reset and settings updated.`)
+    } else {
+      const adminData = {
+        email: ADMIN_EMAIL,
+        password: ADMIN_PASSWORD,
+        firstName: ADMIN_FIRST_NAME,
+        role: 'admin',
+        isActive: true,
+        countries: countrySubscriptions,
+        subscriptionTier: 'enterprise',
+        isLifetimeFree: true,
+      }
+      const createResult = await createSubscriberWithPassword(adminData)
+      if (!createResult.success) throw new Error(createResult.error)
       logger.info(`✅ Admin user created successfully.`)
     }
   } catch (error) {
     logger.fatal({ err: error }, '❌ Admin user seeding failed.')
-  } finally {
-    if (mongoose.connection.readyState === 1) {
-      await mongoose.disconnect()
-    }
   }
 }
 

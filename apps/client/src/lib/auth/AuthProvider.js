@@ -4,7 +4,7 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { LoadingOverlay } from '@/components/shared/LoadingOverlay'
+import { LoadingOverlay } from '@/components/shared/screen/LoadingOverlay'
 
 export const AuthContext = createContext(null)
 

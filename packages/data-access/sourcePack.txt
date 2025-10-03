@@ -1,6 +1,6 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 27 files, 3 directories
+Total: 30 files, 3 directories
 
 ```
 headlines/
@@ -15,7 +15,9 @@ headlines/
 │   │   ├── 📄 email.js
 │   │   ├── 📄 events.js
 │   │   ├── 📄 export.js
+│   │   ├── 📄 index.js
 │   │   ├── 📄 knowledge.js
+│   │   ├── 📄 maintenance.js
 │   │   ├── 📄 opportunities.js
 │   │   ├── 📄 pipeline.js
 │   │   ├── 📄 relationships.js
@@ -31,6 +33,7 @@ headlines/
 │   ├── 📄 dbConnect.next.js
 │   ├── 📄 dbConnect.node.js
 │   ├── 📄 index.js
+│   ├── 📄 next.js
 │   ├── 📄 queryBuilder.js
 │   └── 📄 revalidate.js
 └── 📄 package.json
@@ -38,9 +41,9 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-29T22:40:44.835Z
+**Generated**: 2025-10-02T23:22:35.391Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/data-access
-**Total Files**: 27
+**Total Files**: 30
 **Package**: @headlines/data-access@1.0.0
 **Description**: Shared, server-only data access logic for the Headlines monorepo.
 
@@ -50,7 +53,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 27, Size: 794 Bytes*
+*Lines: 29, Size: 876 Bytes*
 
 ```json
 {
@@ -64,14 +67,16 @@ headlines/
     ".": "./src/index.js",
     "./node": "./src/index.js",
     "./next": "./src/next.js",
-    "./dbConnect": "./src/dbConnect.node.js",
-    "./dbConnect/node": "./src/dbConnect.node.js",
+    "./dbConnect": "./src/dbConnect.js",
     "./dbConnect/next": "./src/dbConnect.next.js",
+    "./dbConnect/node": "./src/dbConnect.node.js",
     "./seed/dev-user.js": "./src/seed/dev-user.js"
   },
   "dependencies": {
+    "@headlines/utils-shared": "workspace:*",
     "@headlines/ai-services": "workspace:*",
     "@headlines/config": "workspace:*",
+    "@headlines/prompts": "workspace:*",
     "@headlines/models": "workspace:*",
     "@pinecone-database/pinecone": "^6.1.2",
     "bcryptjs": "^3.0.2",
@@ -83,11 +88,10 @@ headlines/
 ```
 
 ## 📄 src/core/admin.js
-*Lines: 240, Size: 7.17 KB*
+*Lines: 240, Size: 7.28 KB*
 
 ```javascript
-'use server'
-
+// packages/data-access/src/core/admin.js
 import {
   Subscriber,
   Country,
@@ -97,11 +101,16 @@ import {
   SourceSuggestion,
 } from '@headlines/models'
 import { buildQuery } from '../queryBuilder.js'
-import dbConnect from '@headlines/data-access/dbConnect/node'
+import { createSubscriberWithPassword } from './auth.js'
 
 export async function createSubscriber(userData) {
+  // Delegate user creation with a password to the specialized function
+  if (userData.password) {
+    return createSubscriberWithPassword(userData)
+  }
+
+  // Handle cases where a user might be created without a password initially (e.g., invites)
   try {
-    await dbConnect()
     const newUser = new Subscriber(userData)
     await newUser.save()
     return { success: true, subscriber: JSON.parse(JSON.stringify(newUser)) }
@@ -114,8 +123,11 @@ export async function createSubscriber(userData) {
 
 export async function updateSubscriber(userId, updateData) {
   try {
-    await dbConnect()
-    if (updateData.password === '') delete updateData.password
+    // Explicitly remove password from general updates. It must be updated via its own function.
+    if (updateData.password) {
+      delete updateData.password
+    }
+
     const user = await Subscriber.findByIdAndUpdate(
       userId,
       { $set: updateData },
@@ -131,7 +143,6 @@ export async function updateSubscriber(userId, updateData) {
 
 export async function deleteSubscriber(userId) {
   try {
-    await dbConnect()
     const result = await Subscriber.findByIdAndDelete(userId)
     if (!result) return { success: false, error: 'User not found.' }
     return { success: true }
@@ -143,7 +154,6 @@ export async function deleteSubscriber(userId) {
 
 export async function createCountry(countryData) {
   try {
-    await dbConnect()
     const newCountry = new Country(countryData)
     await newCountry.save()
     return { success: true, country: JSON.parse(JSON.stringify(newCountry)) }
@@ -153,15 +163,12 @@ export async function createCountry(countryData) {
   }
 }
 
-export async function updateCountry(countryId, updateData) {
+export async function updateCountry(filter, update, options) {
   try {
-    await dbConnect()
-    const country = await Country.findByIdAndUpdate(
-      countryId,
-      { $set: updateData },
-      { new: true }
-    ).lean()
-    if (!country) return { success: false, error: 'Country not found.' }
+    const country = await Country.findOneAndUpdate(filter, update, {
+      new: true,
+      ...options,
+    }).lean()
     return { success: true, country: JSON.parse(JSON.stringify(country)) }
   } catch (e) {
     return { success: false, error: 'Failed to update country.' }
@@ -170,7 +177,6 @@ export async function updateCountry(countryId, updateData) {
 
 export async function createSource(sourceData) {
   try {
-    await dbConnect()
     const newSource = new Source(sourceData)
     await newSource.save()
     return { success: true, source: JSON.parse(JSON.stringify(newSource)) }
@@ -183,7 +189,6 @@ export async function createSource(sourceData) {
 
 export async function updateSource(sourceId, updateData) {
   try {
-    await dbConnect()
     const updatedSource = await Source.findByIdAndUpdate(
       sourceId,
       { $set: updateData },
@@ -198,7 +203,6 @@ export async function updateSource(sourceId, updateData) {
 
 export const getAllCountries = async () => {
   try {
-    // await dbConnect(); // Intentionally left out, handled by caller
     const countries = await Country.aggregate([
       { $match: {} },
       {
@@ -243,13 +247,21 @@ export const getAllCountries = async () => {
   }
 }
 
+export const findSubscribers = async ({ filter = {}, sort = { createdAt: -1 } }) => {
+  try {
+    const subscribers = await Subscriber.find(filter).sort(sort).lean()
+    return { success: true, data: JSON.parse(JSON.stringify(subscribers)) }
+  } catch (e) {
+    return { success: false, error: 'Failed to find subscribers.' }
+  }
+}
+
 export const getAllSubscribers = async ({
   page = 1,
   filters = {},
   sort = 'createdAt_desc',
 }) => {
   try {
-    // await dbConnect(); // Intentionally left out, handled by caller
     const { queryFilter, sortOptions } = await buildQuery(Subscriber, { filters, sort })
     const SUBSCRIBERS_PER_PAGE = 50
     const skipAmount = (page - 1) * SUBSCRIBERS_PER_PAGE
@@ -268,13 +280,9 @@ export const getAllSubscribers = async ({
   }
 }
 
-export const getAllSources = async ({ country = null } = {}) => {
+export const getAllSources = async ({ filter = {}, sort = { name: 1 } }) => {
   try {
-    const filter = {}
-    if (country) {
-      filter.country = country
-    }
-    const sources = await Source.find(filter).sort({ name: 1 }).lean()
+    const sources = await Source.find(filter).sort(sort).lean()
     return { success: true, data: JSON.parse(JSON.stringify(sources)) }
   } catch (e) {
     console.error('[getAllSources Error]', e)
@@ -288,7 +296,6 @@ export const getAllWatchlistEntities = async ({
   sort = 'name_asc',
 } = {}) => {
   try {
-    // await dbConnect(); // Intentionally left out, handled by caller
     const { queryFilter, sortOptions } = await buildQuery(WatchlistEntity, {
       filters,
       sort,
@@ -314,7 +321,6 @@ export const getAllWatchlistEntities = async ({
 
 export const getSuggestions = async () => {
   try {
-    // await dbConnect(); // Intentionally left out, handled by caller
     const [watchlistSuggestions, sourceSuggestions] = await Promise.all([
       WatchlistSuggestion.find({ status: 'candidate' }).sort({ createdAt: -1 }).lean(),
       SourceSuggestion.find({ status: 'pending' }).sort({ createdAt: -1 }).lean(),
@@ -325,18 +331,15 @@ export const getSuggestions = async () => {
     return { success: false, error: 'Failed to fetch suggestions.' }
   }
 }
-
 ```
 
 ## 📄 src/core/aiSourceDiscovery.js
-*Lines: 35, Size: 1.1 KB*
+*Lines: 33, Size: 980 Bytes*
 
 ```javascript
 // packages/data-access/src/actions/aiSourceDiscovery.js
-import { testSourceConfig as scrapeUrl } from './scrape.js'
 import { callLanguageModel } from '@headlines/ai-services'
 import { instructionSourceDiscovery } from '@headlines/prompts'
-// DEFINITIVE FIX: Import from the server-only entry point of the config package.
 import { settings } from '@headlines/config'
 
 const AI_AGENT_MODEL = settings.LLM_MODEL_UTILITY
@@ -370,14 +373,12 @@ export async function suggestSelector(url, targetType) {
 ```
 
 ## 📄 src/core/articles.js
-*Lines: 71, Size: 2.16 KB*
+*Lines: 95, Size: 2.59 KB*
 
 ```javascript
-'use server'
-
+// packages/data-access/src/core/articles.js
 import { Article } from '@headlines/models'
 import { buildQuery } from '../queryBuilder.js'
-import dbConnect from '@headlines/data-access/dbConnect/node' // Make sure this is imported
 import mongoose from 'mongoose'
 
 const ARTICLES_PER_PAGE = 50
@@ -388,13 +389,12 @@ export async function getArticles({
   sort = 'date_desc',
   userId = null,
 }) {
-  await dbConnect() // <-- ADD THIS BACK
-  let { queryFilter, sortOptions } = await buildQuery(Article, {
+  const { queryFilter, sortOptions } = await buildQuery(Article, {
     filters,
     sort,
     userId,
   })
-  // ... rest of the function is the same
+
   const [articles, total] = await Promise.all([
     Article.find(queryFilter)
       .sort(sortOptions)
@@ -403,19 +403,48 @@ export async function getArticles({
       .lean(),
     Article.countDocuments(queryFilter),
   ])
-  // ...
+
   return { success: true, data: JSON.parse(JSON.stringify(articles)), total }
 }
 
+export async function findArticles({
+  filter = {},
+  sort = { createdAt: -1 },
+  select = '',
+  limit = 0,
+}) {
+  try {
+    const query = Article.find(filter).sort(sort).select(select)
+    if (limit > 0) {
+      query.limit(limit)
+    }
+    const articles = await query.lean()
+    return { success: true, data: JSON.parse(JSON.stringify(articles)) }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+}
+
+export async function updateArticles(filter, update) {
+  try {
+    const result = await Article.updateMany(filter, update)
+    return {
+      success: true,
+      matchedCount: result.matchedCount,
+      modifiedCount: result.modifiedCount,
+    }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+}
+
 export async function getTotalArticleCount({ filters = {}, userId = null }) {
-  await dbConnect() // <-- ADD THIS BACK
   const { queryFilter } = await buildQuery(Article, { filters, userId })
   const total = await Article.countDocuments(queryFilter)
   return { success: true, total }
 }
 
 export async function updateArticle(articleId, updateData) {
-  await dbConnect() // <-- ADD THIS BACK
   const article = await Article.findByIdAndUpdate(
     articleId,
     { $set: updateData },
@@ -426,14 +455,12 @@ export async function updateArticle(articleId, updateData) {
 }
 
 export async function deleteArticle(articleId) {
-  await dbConnect() // <-- ADD THIS BACK
   const result = await Article.findByIdAndDelete(articleId)
   if (!result) return { success: false, error: 'Article not found.' }
   return { success: true }
 }
 
 export async function getArticleDetails(articleId) {
-  await dbConnect() // <-- ADD THIS BACK
   if (!mongoose.Types.ObjectId.isValid(articleId)) {
     return { success: false, error: 'Invalid ID format.' }
   }
@@ -447,12 +474,64 @@ export async function getArticleDetails(articleId) {
 ```
 
 ## 📄 src/core/auth.js
-*Lines: 36, Size: 1.04 KB*
+*Lines: 85, Size: 2.79 KB*
 
 ```javascript
-// File: packages/data-access/src/actions/auth.js (version 2.1 - Connection Centralized)
+// packages/data-access/src/core/auth.js
 import { Subscriber } from '@headlines/models'
 import bcrypt from 'bcryptjs'
+
+const SALT_WORK_FACTOR = 10
+
+/**
+ * Creates a new subscriber with a securely hashed password.
+ * @param {object} userData - The user data, including a plain-text password.
+ * @returns {Promise<object>} The result of the creation operation.
+ */
+export async function createSubscriberWithPassword(userData) {
+  if (!userData.password) {
+    return { success: false, error: 'Password is required to create a user.' }
+  }
+  try {
+    const salt = await bcrypt.genSalt(SALT_WORK_FACTOR)
+    userData.password = await bcrypt.hash(userData.password, salt)
+    const newUser = new Subscriber(userData)
+    await newUser.save()
+    const { password, ...userPayload } = newUser.toObject()
+    return { success: true, user: userPayload }
+  } catch (error) {
+    if (error.code === 11000) {
+      return { success: false, error: 'A user with this email already exists.' }
+    }
+    return { success: false, error: 'Failed to create subscriber.' }
+  }
+}
+
+/**
+ * Updates a subscriber's password, ensuring it is properly hashed.
+ * @param {string} userId - The ID of the user to update.
+ * @param {string} newPassword - The new plain-text password.
+ * @returns {Promise<object>} The result of the update operation.
+ */
+export async function updateSubscriberPassword(userId, newPassword) {
+  if (!newPassword) {
+    return { success: false, error: 'New password cannot be empty.' }
+  }
+  try {
+    const salt = await bcrypt.genSalt(SALT_WORK_FACTOR)
+    const hashedPassword = await bcrypt.hash(newPassword, salt)
+    const result = await Subscriber.updateOne(
+      { _id: userId },
+      { password: hashedPassword }
+    )
+    if (result.matchedCount === 0) {
+      return { success: false, error: 'User not found.' }
+    }
+    return { success: true }
+  } catch (error) {
+    return { success: false, error: 'Failed to update password.' }
+  }
+}
 
 export async function loginUser({ email, password }) {
   if (!email || !password) {
@@ -460,25 +539,22 @@ export async function loginUser({ email, password }) {
   }
 
   try {
-    await dbConnect();
     const user = await Subscriber.findOne({
       email: email.toLowerCase().trim(),
       isActive: true,
-    })
-      .select('+password')
-      .lean()
+    }).select('+password') // No .lean() here, we need the Mongoose method
 
     if (!user) {
       return { success: false, error: 'Invalid credentials or inactive account.' }
     }
 
-    const isPasswordMatch = await bcrypt.compare(password, user.password)
+    const isPasswordMatch = await user.comparePassword(password)
 
     if (!isPasswordMatch) {
       return { success: false, error: 'Invalid credentials or inactive account.' }
     }
 
-    const { password: _, ...userPayload } = user
+    const { password: _, ...userPayload } = user.toObject()
     return { success: true, user: userPayload }
   } catch (error) {
     console.error('[loginUser Action Error]', error)
@@ -489,10 +565,10 @@ export async function loginUser({ email, password }) {
 ```
 
 ## 📄 src/core/chat.js
-*Lines: 27, Size: 1.1 KB*
+*Lines: 27, Size: 1.08 KB*
 
 ```javascript
-// packages/data-access/src/actions/chat.js (version 2.0.0)
+// packages/data-access/src/core/chat.js
 import { callLanguageModel } from '@headlines/ai-services'
 import { settings } from '@headlines/config'
 
@@ -522,10 +598,10 @@ export async function generateChatTitle(messages) {
 ```
 
 ## 📄 src/core/dashboard.js
-*Lines: 105, Size: 2.79 KB*
+*Lines: 99, Size: 2.51 KB*
 
 ```javascript
-// File: packages/data-access/src/actions/dashboard.js
+// packages/data-access/src/core/dashboard.js
 import {
   Source,
   Subscriber,
@@ -535,11 +611,9 @@ import {
   Opportunity,
   Country,
 } from '@headlines/models'
-import dbConnect from '@headlines/data-access/dbConnect/node'
 
 export async function getDashboardStats() {
   try {
-    await dbConnect()
     const [
       sourceStats,
       userStats,
@@ -594,10 +668,8 @@ export async function getDashboardStats() {
   }
 }
 
-// This is the missing function
 export async function getGlobalCountries() {
   try {
-    await dbConnect()
     const countries = await Country.aggregate([
       { $match: { status: 'active' } },
       {
@@ -615,13 +687,11 @@ export async function getGlobalCountries() {
           count: { $size: '$events' },
         },
       },
-      // --- ADD THIS STAGE TO FILTER OUT ZERO-COUNT COUNTRIES ---
       {
         $match: {
           count: { $gt: 0 },
         },
       },
-      // ---------------------------------------------------------
       { $sort: { name: 1 } },
     ])
     return { success: true, data: JSON.parse(JSON.stringify(countries)) }
@@ -633,19 +703,16 @@ export async function getGlobalCountries() {
 ```
 
 ## 📄 src/core/email.js
-*Lines: 46, Size: 1.6 KB*
+*Lines: 43, Size: 1.5 KB*
 
 ```javascript
-// packages/data-access/src/actions/email.js (version 1.0)
+// packages/data-access/src/core/email.js
 import { SynthesizedEvent, Opportunity, Article } from '@headlines/models'
-import dbConnect from '@headlines/data-access/dbConnect/node'
 // This import will need a proper mailer service setup, for now we mock it.
 // import { sendSingleItemEmail } from '@/lib/mailer';
 
-async function sendItemByEmail(itemId, itemType) {
+async function sendItemByEmail(itemId, itemType, userId) {
   try {
-    await dbConnect()
-
     let item
     const modelMap = {
       event: SynthesizedEvent,
@@ -685,12 +752,10 @@ export { sendItemByEmail }
 ```
 
 ## 📄 src/core/events.js
-*Lines: 75, Size: 2.43 KB*
+*Lines: 106, Size: 3.25 KB*
 
 ```javascript
-'use server'
-
-import dbConnect from '@headlines/data-access/dbConnect/node'
+// packages/data-access/src/core/events.js
 import { SynthesizedEvent, Article, Opportunity } from '@headlines/models'
 import { buildQuery } from '../queryBuilder.js'
 import mongoose from 'mongoose'
@@ -703,7 +768,6 @@ export async function getEvents({
   sort = 'createdAt_desc',
   userId = null,
 }) {
-  await dbConnect() // <-- ADD THIS BACK
   const { queryFilter, sortOptions } = await buildQuery(SynthesizedEvent, {
     filters,
     sort,
@@ -723,8 +787,38 @@ export async function getEvents({
   return { success: true, data: JSON.parse(JSON.stringify(events)), total }
 }
 
+export async function findEvents({
+  filter = {},
+  sort = { createdAt: -1 },
+  limit = 0,
+  populate = '',
+}) {
+  try {
+    const query = SynthesizedEvent.find(filter).sort(sort).populate(populate)
+    if (limit > 0) {
+      query.limit(limit)
+    }
+    const events = await query.lean()
+    return { success: true, data: JSON.parse(JSON.stringify(events)) }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+}
+
+export async function updateEvents(filter, update) {
+  try {
+    const result = await SynthesizedEvent.updateMany(filter, update)
+    return {
+      success: true,
+      matchedCount: result.matchedCount,
+      modifiedCount: result.modifiedCount,
+    }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+}
+
 export async function getEventDetails(eventId) {
-  await dbConnect() // <-- ADD THIS BACK
   if (!mongoose.Types.ObjectId.isValid(eventId))
     return { success: false, error: 'Invalid event ID' }
   const event = await SynthesizedEvent.findById(eventId)
@@ -735,7 +829,6 @@ export async function getEventDetails(eventId) {
 }
 
 export async function updateEvent(eventId, updateData) {
-  await dbConnect() // <-- ADD THIS BACK
   if (!mongoose.Types.ObjectId.isValid(eventId))
     return { success: false, error: 'Invalid event ID' }
   const event = await SynthesizedEvent.findByIdAndUpdate(
@@ -748,7 +841,6 @@ export async function updateEvent(eventId, updateData) {
 }
 
 export async function deleteEvent(eventId) {
-  await dbConnect() // <-- ADD THIS BACK
   if (!mongoose.Types.ObjectId.isValid(eventId))
     return { success: false, error: 'Invalid event ID' }
   const result = await SynthesizedEvent.findByIdAndDelete(eventId)
@@ -763,17 +855,21 @@ export async function deleteEvent(eventId) {
   return { success: true }
 }
 
+export async function getTotalEventCount({ filters = {}, userId = null }) {
+  const { queryFilter } = await buildQuery(SynthesizedEvent, { filters, userId })
+  const total = await SynthesizedEvent.countDocuments(queryFilter)
+  return { success: true, total }
+}
+
 ```
 
 ## 📄 src/core/export.js
-*Lines: 165, Size: 5.59 KB*
+*Lines: 155, Size: 5.19 KB*
 
 ```javascript
+// packages/data-access/src/core/export.js
 import { Opportunity, Subscriber, SynthesizedEvent, Article } from '@headlines/models'
 import { buildQuery } from '../queryBuilder.js'
-import dbConnect from '@headlines/data-access/dbConnect/node'
-
-// --- Helper Functions ---
 
 function escapeXml(str) {
   if (str === null || str === undefined) return ''
@@ -842,8 +938,6 @@ function convertToExcelXML(data, columns) {
   return xml
 }
 
-// --- START OF THE FIX ---
-// Consolidate all logic into a single, robust generateExport function.
 const entityConfig = {
   opportunities: {
     model: Opportunity,
@@ -895,7 +989,6 @@ const entityConfig = {
 
 export async function generateExport({ entity, fileType, filters, sort }) {
   try {
-    await dbConnect()
     const config = entityConfig[entity]
     if (!config) {
       return { success: false, error: `Invalid entity type for export: ${entity}` }
@@ -914,7 +1007,6 @@ export async function generateExport({ entity, fileType, filters, sort }) {
       return { success: true, data: csv, contentType: 'text/csv', extension: 'csv' }
     } else if (fileType === 'xlsx') {
       const xml = convertToExcelXML(dataToExport, columns)
-      // The extension for this XML-based format is typically .xls
       return {
         success: true,
         data: xml,
@@ -929,21 +1021,44 @@ export async function generateExport({ entity, fileType, filters, sort }) {
     return { success: false, error: `Failed to generate export: ${e.message}` }
   }
 }
-// --- END OF THE FIX ---
 
-// Remove all the individual export functions like exportOpportunitiesToCSV, etc.
-// They are now replaced by the single generic function above.
+```
+
+## 📄 src/core/index.js
+*Lines: 22, Size: 653 Bytes*
+
+```javascript
+// packages/data-access/src/core/index.js
+export * from './admin.js'
+export * from './aiSourceDiscovery.js'
+export * from './articles.js'
+export * from './auth.js'
+export * from './chat.js'
+export * from './dashboard.js'
+export * from './email.js'
+export * from './events.js'
+export * from './export.js'
+export * from './knowledge.js'
+export * from './maintenance.js'
+export * from './opportunities.js'
+export * from './pipeline.js'
+export * from './relationships.js'
+export * from './settings.js'
+export * from './subscriber.js'
+export * from './upload.js'
+export * from './userSettings.js'
+export * from './verdicts.js'
+export * from './watchlist.js'
 
 ```
 
 ## 📄 src/core/knowledge.js
-*Lines: 81, Size: 2.65 KB*
+*Lines: 78, Size: 2.52 KB*
 
 ```javascript
-// src/actions/knowledge.js (Corrected)
+// packages/data-access/src/core/knowledge.js
 import { Pinecone } from '@pinecone-database/pinecone'
 import mongoose from 'mongoose'
-import dbConnect from '@headlines/data-access/dbConnect/node'
 import { Article } from '@headlines/models'
 import { generateEmbedding } from '@headlines/ai-services'
 import { env } from '@headlines/config'
@@ -968,8 +1083,6 @@ export async function addKnowledge(data) {
 
   try {
     const index = getPineconeIndex()
-    await dbConnect()
-    console.log('[Add Knowledge] Database connected.')
 
     console.log('[Add Knowledge] Generating embedding...')
     const textToEmbed = `${headline}\n${business_summary}`
@@ -1023,21 +1136,125 @@ export async function addKnowledge(data) {
 
 ```
 
-## 📄 src/core/opportunities.js
-*Lines: 86, Size: 2.91 KB*
+## 📄 src/core/maintenance.js
+*Lines: 79, Size: 2.29 KB*
 
 ```javascript
-// File: packages/data-access/src/actions/opportunities.js (Corrected Sorting)
+// packages/data-access/src/core/maintenance.js
+import {
+  Article,
+  SynthesizedEvent,
+  Opportunity,
+  RunVerdict,
+  Source,
+} from '@headlines/models'
 
-import dbConnect from '@headlines/data-access/dbConnect/node'
+/**
+ * Deletes all documents from key collections that were created after a specific cutoff date.
+ * @param {Date} cutoffDate - The date after which documents will be deleted.
+ * @returns {Promise<object>} An object with counts of deleted documents per model.
+ */
+export async function deleteAllSince(cutoffDate) {
+  const query = { createdAt: { $gte: cutoffDate } }
+  const modelsToDelete = {
+    Article,
+    SynthesizedEvent,
+    Opportunity,
+    RunVerdict,
+  }
+
+  const deletionPromises = Object.entries(modelsToDelete).map(
+    async ([modelName, model]) => {
+      const { deletedCount } = await model.deleteMany(query)
+      return { modelName, deletedCount }
+    }
+  )
+
+  const results = await Promise.all(deletionPromises)
+  const summary = results.reduce((acc, { modelName, deletedCount }) => {
+    acc[modelName] = deletedCount
+    return acc
+  }, {})
+
+  return { success: true, summary }
+}
+
+/**
+ * Resets all analytics fields for every Source document to their default zero values.
+ * @returns {Promise<object>} An object containing the count of modified documents.
+ */
+export async function resetAllSourceAnalytics() {
+  const result = await Source.updateMany(
+    {},
+    {
+      $set: {
+        'analytics.totalRuns': 0,
+        'analytics.totalSuccesses': 0,
+        'analytics.totalFailures': 0,
+        'analytics.totalScraped': 0,
+        'analytics.totalRelevant': 0,
+        'analytics.lastRunHeadlineCount': 0,
+        'analytics.lastRunRelevantCount': 0,
+        'analytics.lastRunContentSuccess': false,
+      },
+    }
+  )
+  return { success: true, modifiedCount: result.modifiedCount }
+}
+
+/**
+ * Resets the `emailed` status to false for all events created after a specific cutoff date.
+ * @param {Date} cutoffDate - The date to filter events from.
+ * @returns {Promise<object>} An object containing the count of matched and modified documents.
+ */
+export async function resetEventsEmailedStatusSince(cutoffDate) {
+  const result = await SynthesizedEvent.updateMany(
+    { createdAt: { $gte: cutoffDate } },
+    { $set: { emailed: false } }
+  )
+  return {
+    success: true,
+    matchedCount: result.matchedCount,
+    modifiedCount: result.modifiedCount,
+  }
+}
+
+```
+
+## 📄 src/core/opportunities.js
+*Lines: 97, Size: 3.07 KB*
+
+```javascript
+// packages/data-access/src/core/opportunities.js
 import { Opportunity } from '@headlines/models'
 import { buildQuery } from '../queryBuilder.js'
 import mongoose from 'mongoose'
 
 const OPPORTUNITIES_PER_PAGE = 50
 
+export async function getDistinctOpportunityFields(field) {
+  try {
+    const distinctValues = await Opportunity.distinct(field)
+    return { success: true, data: distinctValues }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+}
+
+export async function updateOpportunities(filter, update) {
+  try {
+    const result = await Opportunity.updateMany(filter, update)
+    return {
+      success: true,
+      matchedCount: result.matchedCount,
+      modifiedCount: result.modifiedCount,
+    }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+}
+
 export async function getTotalOpportunitiesCount({ filters = {}, userId = null }) {
-  await dbConnect()
   const { queryFilter } = await buildQuery(Opportunity, { filters, userId })
   const total = await Opportunity.countDocuments(queryFilter)
   return { success: true, total }
@@ -1049,16 +1266,12 @@ export async function getOpportunities({
   sort = 'date_desc',
   userId = null,
 }) {
-  await dbConnect()
   let { queryFilter, sortOptions } = await buildQuery(Opportunity, {
     filters,
     sort,
     userId,
   })
 
-  // --- START: OPPORTUNITY-SPECIFIC SORTING FIX ---
-  // If we are sorting by size, we MUST exclude documents where the
-  // wealth is null, undefined, or 0, as they would otherwise sort first.
   if (sort === 'size_desc') {
     if (queryFilter.$and) {
       queryFilter.$and.push({ likelyMMDollarWealth: { $gt: 0 } })
@@ -1068,7 +1281,6 @@ export async function getOpportunities({
       queryFilter = { likelyMMDollarWealth: { $gt: 0 } }
     }
   }
-  // --- END: OPPORTUNITY-SPECIFIC SORTING FIX ---
 
   const skipAmount = (page - 1) * OPPORTUNITIES_PER_PAGE
   const [opportunities, total] = await Promise.all([
@@ -1087,7 +1299,6 @@ export async function getOpportunityDetails(opportunityId) {
   if (!mongoose.Types.ObjectId.isValid(opportunityId)) {
     return { success: false, error: 'Invalid ID format.' }
   }
-  await dbConnect()
   const opportunity = await Opportunity.findById(opportunityId)
     .populate({ path: 'events', options: { sort: { createdAt: -1 } } })
     .lean()
@@ -1096,7 +1307,6 @@ export async function getOpportunityDetails(opportunityId) {
 }
 
 export async function updateOpportunity(oppId, updateData) {
-  await dbConnect()
   const opp = await Opportunity.findByIdAndUpdate(
     oppId,
     { $set: updateData },
@@ -1107,7 +1317,6 @@ export async function updateOpportunity(oppId, updateData) {
 }
 
 export async function deleteOpportunity(oppId) {
-  await dbConnect()
   const result = await Opportunity.findByIdAndDelete(oppId)
   if (!result) return { success: false, error: 'Opportunity not found.' }
   return { success: true }
@@ -1116,10 +1325,10 @@ export async function deleteOpportunity(oppId) {
 ```
 
 ## 📄 src/core/pipeline.js
-*Lines: 116, Size: 3.4 KB*
+*Lines: 102, Size: 3.01 KB*
 
 ```javascript
-// packages/data-access/src/actions/pipeline.js (version 1.0.0)
+// packages/data-access/src/core/pipeline.js
 import {
   Source,
   Article,
@@ -1128,13 +1337,10 @@ import {
   WatchlistEntity,
   WatchlistSuggestion,
 } from '@headlines/models'
-import dbConnect from '@headlines/data-access/dbConnect/node'
 
-// --- Source Analytics & Status ---
 export async function updateSourceAnalyticsBatch(bulkOps) {
   if (!bulkOps || bulkOps.length === 0) return { success: true, modifiedCount: 0 }
   try {
-    await dbConnect()
     const result = await Source.bulkWrite(bulkOps)
     return { success: true, modifiedCount: result.modifiedCount }
   } catch (error) {
@@ -1144,7 +1350,6 @@ export async function updateSourceAnalyticsBatch(bulkOps) {
 
 export async function findSourcesForScraping(queryCriteria) {
   try {
-    await dbConnect()
     const sources = await Source.find(queryCriteria).lean()
     return { success: true, data: JSON.parse(JSON.stringify(sources)) }
   } catch (error) {
@@ -1152,10 +1357,8 @@ export async function findSourcesForScraping(queryCriteria) {
   }
 }
 
-// --- Housekeeping ---
 export async function performHousekeeping(deletionCriteria) {
   try {
-    await dbConnect()
     const result = await Article.deleteMany(deletionCriteria)
     return { success: true, deletedCount: result.deletedCount }
   } catch (error) {
@@ -1163,12 +1366,10 @@ export async function performHousekeeping(deletionCriteria) {
   }
 }
 
-// --- Data Commits ---
 export async function bulkWriteEvents(eventOps) {
   if (!eventOps || eventOps.length === 0)
     return { success: true, upsertedCount: 0, modifiedCount: 0 }
   try {
-    await dbConnect()
     const result = await SynthesizedEvent.bulkWrite(eventOps, { ordered: false })
     return {
       success: true,
@@ -1183,7 +1384,6 @@ export async function bulkWriteEvents(eventOps) {
 export async function bulkWriteArticles(articleOps) {
   if (!articleOps || articleOps.length === 0) return { success: true, result: null }
   try {
-    await dbConnect()
     const result = await Article.bulkWrite(articleOps, { ordered: false })
     return { success: true, result }
   } catch (error) {
@@ -1193,7 +1393,6 @@ export async function bulkWriteArticles(articleOps) {
 
 export async function findEventsByKeys(eventKeys) {
   try {
-    await dbConnect()
     const events = await SynthesizedEvent.find({ event_key: { $in: eventKeys } }).lean()
     return { success: true, data: JSON.parse(JSON.stringify(events)) }
   } catch (error) {
@@ -1203,7 +1402,6 @@ export async function findEventsByKeys(eventKeys) {
 
 export async function findArticlesByLinks(links) {
   try {
-    await dbConnect()
     const articles = await Article.find({ link: { $in: links } })
       .select('link _id')
       .lean()
@@ -1213,10 +1411,8 @@ export async function findArticlesByLinks(links) {
   }
 }
 
-// --- Watchlist Suggestions ---
 export async function getActiveWatchlistEntityNames() {
   try {
-    await dbConnect()
     const entities = await WatchlistEntity.find({}).select('name').lean()
     return { success: true, data: entities }
   } catch (error) {
@@ -1227,7 +1423,6 @@ export async function getActiveWatchlistEntityNames() {
 export async function bulkWriteWatchlistSuggestions(bulkOps) {
   if (!bulkOps || bulkOps.length === 0) return { success: true, result: null }
   try {
-    await dbConnect()
     const result = await WatchlistSuggestion.bulkWrite(bulkOps)
     return { success: true, result }
   } catch (error) {
@@ -1238,14 +1433,18 @@ export async function bulkWriteWatchlistSuggestions(bulkOps) {
 ```
 
 ## 📄 src/core/relationships.js
-*Lines: 52, Size: 1.76 KB*
+*Lines: 50, Size: 1.65 KB*
 
 ```javascript
-// packages/data-access/src/actions/relationships.js (version 2.0.0)
+// packages/data-access/src/core/relationships.js
 import { SynthesizedEvent, Opportunity } from '@headlines/models'
-import dbConnect from '@headlines/data-access/dbConnect/node'
-import { revalidatePath } from '../revalidate.js'
 import mongoose from 'mongoose'
+
+// --- START DEFINITIVE FIX ---
+// This file is now TRULY isomorphic and stateless. It does not import
+// or call dbConnect. The caller (API Handler or Server Action) is
+// responsible for establishing the connection.
+// --- END DEFINITIVE FIX ---
 
 export async function linkOpportunityToEvent(eventId, opportunityId) {
   if (
@@ -1255,15 +1454,12 @@ export async function linkOpportunityToEvent(eventId, opportunityId) {
     return { success: false, error: 'Invalid ID format.' }
   }
   try {
-    await dbConnect()
     await Promise.all([
       SynthesizedEvent.findByIdAndUpdate(eventId, {
         $addToSet: { relatedOpportunities: opportunityId },
       }),
       Opportunity.findByIdAndUpdate(opportunityId, { $addToSet: { events: eventId } }),
     ])
-    await revalidatePath('/admin/events')
-    await revalidatePath('/admin/opportunities')
     return { success: true, message: 'Relationship linked.' }
   } catch (e) {
     return { success: false, error: 'Database operation failed.' }
@@ -1278,15 +1474,12 @@ export async function unlinkOpportunityFromEvent(eventId, opportunityId) {
     return { success: false, error: 'Invalid ID format.' }
   }
   try {
-    await dbConnect()
     await Promise.all([
       SynthesizedEvent.findByIdAndUpdate(eventId, {
         $pull: { relatedOpportunities: opportunityId },
       }),
       Opportunity.findByIdAndUpdate(opportunityId, { $pull: { events: eventId } }),
     ])
-    await revalidatePath('/admin/events')
-    await revalidatePath('/admin/opportunities')
     return { success: true, message: 'Relationship unlinked.' }
   } catch (e) {
     return { success: false, error: 'Database operation failed.' }
@@ -1296,29 +1489,25 @@ export async function unlinkOpportunityFromEvent(eventId, opportunityId) {
 ```
 
 ## 📄 src/core/settings.js
-*Lines: 52, Size: 1.68 KB*
+*Lines: 47, Size: 1.36 KB*
 
 ```javascript
-'use server'
-
+// packages/data-access/src/core/settings.js
 import { Setting } from '@headlines/models'
-import dbConnect from '@headlines/data-access/dbConnect/node' // Ensure dbConnect is imported
 import { revalidatePath } from '../revalidate.js'
 
 export async function getSettings() {
   try {
-    await dbConnect() // <-- ADD THIS LINE
     const settings = await Setting.find({}).sort({ key: 1 }).lean()
     return { success: true, data: JSON.parse(JSON.stringify(settings)) }
   } catch (e) {
-    console.error('[getSettings Error]', e) // Add more specific logging
+    console.error('[getSettings Error]', e)
     return { success: false, error: 'Failed to fetch settings.' }
   }
 }
 
 export async function updateSettings(settingsData) {
   try {
-    await dbConnect() // <-- ADD THIS LINE
     const bulkOps = settingsData.map((setting) => {
       let castValue = setting.value
       if (setting.type === 'number') castValue = Number(setting.value)
@@ -1326,7 +1515,6 @@ export async function updateSettings(settingsData) {
       return {
         updateOne: {
           filter: { key: setting.key },
-          // Use $set to ensure the entire setting object is updated, not just the value
           update: {
             $set: {
               value: castValue,
@@ -1334,7 +1522,7 @@ export async function updateSettings(settingsData) {
               type: setting.type,
             },
           },
-          upsert: true, // Use upsert to be safe
+          upsert: true,
         },
       }
     })
@@ -1346,7 +1534,7 @@ export async function updateSettings(settingsData) {
     await revalidatePath('/admin/settings')
     return { success: true, message: `${bulkOps.length} settings updated.` }
   } catch (e) {
-    console.error('[updateSettings Error]', e) // Add more specific logging
+    console.error('[updateSettings Error]', e)
     return { success: false, error: 'Failed to update settings.' }
   }
 }
@@ -1354,17 +1542,48 @@ export async function updateSettings(settingsData) {
 ```
 
 ## 📄 src/core/subscriber.js
-*Lines: 53, Size: 1.84 KB*
+*Lines: 109, Size: 3.58 KB*
 
 ```javascript
-// packages/data-access/src/actions/subscriber.js (Corrected)
+// packages/data-access/src/core/subscriber.js
 import { Subscriber, PushSubscription } from '@headlines/models'
-import dbConnect from '@headlines/data-access/dbConnect/node'
+
+export async function upsertSubscriber(filter, userData) {
+  try {
+    const user = await Subscriber.findOneAndUpdate(filter, userData, {
+      new: true,
+      upsert: true,
+      runValidators: true,
+    }).lean()
+    return { success: true, user: JSON.parse(JSON.stringify(user)) }
+  } catch (error) {
+    if (error.code === 11000)
+      return { success: false, error: 'A user with this email already exists.' }
+    return { success: false, error: 'Failed to upsert subscriber.' }
+  }
+}
+
+export async function getAllPushSubscriptions() {
+  try {
+    const subscriptions = await PushSubscription.find().lean()
+    return { success: true, data: JSON.parse(JSON.stringify(subscriptions)) }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+}
+
+export async function deletePushSubscription(filter) {
+  try {
+    const result = await PushSubscription.deleteOne(filter)
+    return { success: true, deletedCount: result.deletedCount }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+}
 
 export async function getCurrentSubscriber(userId) {
   if (!userId) return { success: false, error: 'User ID is required' }
   try {
-    await dbConnect()
     const user = await Subscriber.findById(userId).lean()
     if (!user) return { success: false, error: 'User not found' }
     return { success: true, data: JSON.parse(JSON.stringify(user)) }
@@ -1378,7 +1597,6 @@ export async function savePushSubscription(subscription, userId) {
   if (!subscription || !subscription.endpoint)
     return { success: false, error: 'Invalid subscription object.' }
   try {
-    await dbConnect()
     await PushSubscription.updateOne(
       { endpoint: subscription.endpoint },
       { $set: { ...subscription, subscriberId: userId } },
@@ -1395,7 +1613,6 @@ export async function updateUserProfile({ userId, updateData }) {
   if (!updateData) return { success: false, error: 'No update data provided.' }
 
   try {
-    await dbConnect()
     const updatedUser = await Subscriber.findByIdAndUpdate(
       userId,
       { $set: updateData },
@@ -1410,15 +1627,43 @@ export async function updateUserProfile({ userId, updateData }) {
   }
 }
 
+export async function updateUserInteraction({ userId, itemId, itemType, action }) {
+  const modelName = `${itemType}s` // e.g., 'articles', 'events'
+  let updateQuery
+
+  switch (action) {
+    case 'favorite':
+      updateQuery = { $addToSet: { [`favoritedItems.${modelName}`]: itemId } }
+      break
+    case 'unfavorite':
+      updateQuery = { $pull: { [`favoritedItems.${modelName}`]: itemId } }
+      break
+    case 'discard':
+      updateQuery = { $addToSet: { [`discardedItems.${modelName}`]: itemId } }
+      break
+    default:
+      return { success: false, error: 'Invalid action.' }
+  }
+
+  try {
+    const result = await Subscriber.updateOne({ _id: userId }, updateQuery)
+    if (result.matchedCount === 0) return { success: false, error: 'User not found.' }
+    return { success: true }
+  } catch (e) {
+    return { success: false, error: 'Database interaction failed.' }
+  }
+}
+
 ```
 
 ## 📄 src/core/upload.js
-*Lines: 55, Size: 1.66 KB*
+*Lines: 61, Size: 1.83 KB*
 
 ```javascript
-// packages/data-access/src/actions/upload.js (version 2.0.0)
+// packages/data-access/src/core/upload.js
 import { revalidatePath } from '../revalidate.js'
 import { SynthesizedEvent, Opportunity } from '@headlines/models'
+import { synthesizeEvent, generateOpportunitiesFromEvent } from '@headlines/ai-services'
 
 export async function processUploadedArticle(item, userId) {
   if (!userId) {
@@ -1437,12 +1682,17 @@ export async function processUploadedArticle(item, userId) {
     }
 
     const synthesizedResult = await synthesizeEvent([enrichedArticle], [], '', '')
-    if (!synthesizedResult || !synthesizedResult.headline) {
+    if (
+      !synthesizedResult ||
+      !synthesizedResult.events ||
+      synthesizedResult.events.length === 0
+    ) {
       throw new Error('AI failed to synthesize an event from the provided text.')
     }
+    const eventData = synthesizedResult.events[0]
 
     const eventToSave = new SynthesizedEvent({
-      ...synthesizedResult,
+      ...eventData,
       event_key: `manual-${new Date().toISOString()}`,
       highest_relevance_score: 100,
       source_articles: [
@@ -1474,19 +1724,17 @@ export async function processUploadedArticle(item, userId) {
 ```
 
 ## 📄 src/core/userSettings.js
-*Lines: 25, Size: 767 Bytes*
+*Lines: 23, Size: 668 Bytes*
 
 ```javascript
-// packages/data-access/src/actions/userSettings.js (Corrected)
+// packages/data-access/src/core/userSettings.js
 import { Subscriber } from '@headlines/models'
-import dbConnect from '@headlines/data-access/dbConnect/node'
 
 export async function clearDiscardedItems(userId) {
   if (!userId) {
     return { success: false, error: 'User ID is required.' }
   }
   try {
-    await dbConnect()
     await Subscriber.findByIdAndUpdate(userId, {
       $set: {
         'discardedItems.articles': [],
@@ -1505,17 +1753,15 @@ export async function clearDiscardedItems(userId) {
 ```
 
 ## 📄 src/core/verdicts.js
-*Lines: 36, Size: 1.29 KB*
+*Lines: 32, Size: 1.1 KB*
 
 ```javascript
+// packages/data-access/src/core/verdicts.js
 import { RunVerdict, SynthesizedEvent, Opportunity } from '@headlines/models'
-import dbConnect from '@headlines/data-access/dbConnect/node'
 import mongoose from 'mongoose'
 
-// This function now assumes authentication has already been handled by the caller.
 export async function getRecentRunVerdicts() {
   try {
-    await dbConnect()
     const verdicts = await RunVerdict.find({})
       .sort({ createdAt: -1 })
       .limit(5)
@@ -1528,10 +1774,8 @@ export async function getRecentRunVerdicts() {
   }
 }
 
-// This function is now purely for data retrieval.
 export async function getRunVerdictById(runId) {
   try {
-    await dbConnect()
     const verdict = await RunVerdict.findById(runId)
       .populate({ path: 'generatedEvents', model: SynthesizedEvent })
       .populate({ path: 'generatedOpportunities', model: Opportunity })
@@ -1547,16 +1791,36 @@ export async function getRunVerdictById(runId) {
 ```
 
 ## 📄 src/core/watchlist.js
-*Lines: 113, Size: 3.71 KB*
+*Lines: 129, Size: 4.17 KB*
 
 ```javascript
-// packages/data-access/src/actions/watchlist.js (Corrected)
+// packages/data-access/src/core/watchlist.js
 import { WatchlistEntity, Article, WatchlistSuggestion } from '@headlines/models'
-import dbConnect from '@headlines/data-access/dbConnect/node'
+
+export async function findWatchlistEntities(filter = {}, sort = { name: 1 }) {
+  try {
+    const entities = await WatchlistEntity.find(filter).sort(sort).lean()
+    return { success: true, data: JSON.parse(JSON.stringify(entities)) }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+}
+
+export async function updateWatchlistEntities(filter, update) {
+  try {
+    const result = await WatchlistEntity.updateMany(filter, update)
+    return {
+      success: true,
+      matchedCount: result.matchedCount,
+      modifiedCount: result.modifiedCount,
+    }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+}
 
 export async function createWatchlistEntity(entityData) {
   try {
-    await dbConnect()
     const newEntity = new WatchlistEntity(entityData)
     await newEntity.save()
     return { success: true, entity: JSON.parse(JSON.stringify(newEntity)) }
@@ -1569,7 +1833,6 @@ export async function createWatchlistEntity(entityData) {
 
 export async function updateWatchlistEntity(entityId, updateData) {
   try {
-    await dbConnect()
     if (updateData.searchTerms && Array.isArray(updateData.searchTerms)) {
       updateData.searchTerms = [
         ...new Set(
@@ -1607,7 +1870,6 @@ export async function updateWatchlistEntity(entityId, updateData) {
 
 export async function deleteWatchlistEntity(entityId) {
   try {
-    await dbConnect()
     const result = await WatchlistEntity.findByIdAndDelete(entityId)
     if (!result) return { success: false, error: 'Entity not found.' }
     return { success: true }
@@ -1618,7 +1880,6 @@ export async function deleteWatchlistEntity(entityId) {
 
 export async function updateWatchlistSuggestion(suggestionId, updateData) {
   try {
-    await dbConnect()
     const suggestion = await WatchlistSuggestion.findByIdAndUpdate(
       suggestionId,
       { $set: updateData },
@@ -1633,7 +1894,6 @@ export async function updateWatchlistSuggestion(suggestionId, updateData) {
 
 export async function processWatchlistSuggestion({ suggestionId, action }) {
   try {
-    await dbConnect()
     const suggestion = await WatchlistSuggestion.findById(suggestionId)
     if (!suggestion) return { success: false, error: 'Suggestion not found.' }
     suggestion.status = action
@@ -1666,10 +1926,12 @@ export async function processWatchlistSuggestion({ suggestionId, action }) {
 ```
 
 ## 📄 src/dbConnect.core.js
-*Lines: 17, Size: 396 Bytes*
+*Lines: 19, Size: 499 Bytes*
 
 ```javascript
+// packages/data-access/src/dbConnect.core.js
 import mongoose from 'mongoose'
+import { logger } from '@headlines/utils-shared'
 
 export async function dbConnect(MONGO_URI) {
   if (!MONGO_URI) {
@@ -1681,7 +1943,7 @@ export async function dbConnect(MONGO_URI) {
   try {
     await mongoose.connect(MONGO_URI, { bufferCommands: false })
   } catch (e) {
-    console.error('[dbConnect] MongoDB connection failed:', e)
+    logger.error({ err: e }, '[dbConnect] MongoDB connection failed.')
     throw e
   }
 }
@@ -1689,9 +1951,10 @@ export async function dbConnect(MONGO_URI) {
 ```
 
 ## 📄 src/dbConnect.next.js
-*Lines: 7, Size: 189 Bytes*
+*Lines: 8, Size: 235 Bytes*
 
 ```javascript
+// packages/data-access/src/dbConnect.next.js
 import { env } from '@headlines/config/next'
 import { dbConnect as coreDbConnect } from './dbConnect.core.js'
 
@@ -1702,65 +1965,247 @@ export default function dbConnect() {
 ```
 
 ## 📄 src/dbConnect.node.js
-*Lines: 7, Size: 189 Bytes*
+*Lines: 7, Size: 234 Bytes*
 
 ```javascript
+// packages/data-access/src/dbConnect.node.js
 import { env } from '@headlines/config/node'
 import { dbConnect as coreDbConnect } from './dbConnect.core.js'
 
 export default function dbConnect() {
   return coreDbConnect(env.MONGO_URI)
 }
-
 ```
 
 ## 📄 src/index.js
-*Lines: 25, Size: 815 Bytes*
+*Lines: 100, Size: 5.73 KB*
 
 ```javascript
-// This file is the default, Node.js-safe entry point.
-// It should only contain re-exports from the /core directory.
+// packages/data-access/src/index.js (Node.js Entry Point)
+import dbConnect from './dbConnect.node.js'
+import * as core from './core/index.js'
 
-export * from './core/admin.js'
-export * from './core/articles.js'
-export * from './core/auth.js'
-export * from './core/chat.js'
-export * from './core/dashboard.js'
-export * from './core/email.js'
-export * from './core/events.js'
-export * from './core/export.js'
-export * from './core/knowledge.js'
-export * from './core/opportunities.js'
-export * from './core/pipeline.js'
-export * from './core/relationships.js'
-export * from './core/settings.js'
-export * from './core/subscriber.js'
-export * from './core/upload.js'
-export * from './core/userSettings.js'
-export * from './core/verdicts.js'
-export * from './core/watchlist.js'
+function withDbConnect(fn) {
+  return async (...args) => {
+    await dbConnect()
+    return fn(...args)
+  }
+}
 
-export * from './queryBuilder.js'
-export * from './revalidate.js'
+export const createSubscriber = withDbConnect(core.createSubscriber)
+export const updateSubscriber = withDbConnect(core.updateSubscriber)
+export const deleteSubscriber = withDbConnect(core.deleteSubscriber)
+export const createCountry = withDbConnect(core.createCountry)
+export const updateCountry = withDbConnect(core.updateCountry)
+export const createSource = withDbConnect(core.createSource)
+export const updateSource = withDbConnect(core.updateSource)
+export const getAllCountries = withDbConnect(core.getAllCountries)
+export const findSubscribers = withDbConnect(core.findSubscribers)
+export const getAllSubscribers = withDbConnect(core.getAllSubscribers)
+export const getAllSources = withDbConnect(core.getAllSources)
+export const getAllWatchlistEntities = withDbConnect(core.getAllWatchlistEntities)
+export const getSuggestions = withDbConnect(core.getSuggestions)
+export const getArticles = withDbConnect(core.getArticles)
+export const findArticles = withDbConnect(core.findArticles)
+export const updateArticles = withDbConnect(core.updateArticles)
+export const getTotalArticleCount = withDbConnect(core.getTotalArticleCount)
+export const updateArticle = withDbConnect(core.updateArticle)
+export const deleteArticle = withDbConnect(core.deleteArticle)
+export const getArticleDetails = withDbConnect(core.getArticleDetails)
+export const createSubscriberWithPassword = withDbConnect(
+  core.createSubscriberWithPassword
+)
+export const updateSubscriberPassword = withDbConnect(core.updateSubscriberPassword)
+export const loginUser = withDbConnect(core.loginUser)
+export const generateChatTitle = withDbConnect(core.generateChatTitle)
+export const getDashboardStats = withDbConnect(core.getDashboardStats)
+export const getGlobalCountries = withDbConnect(core.getGlobalCountries)
+export const getEvents = withDbConnect(core.getEvents)
+export const findEvents = withDbConnect(core.findEvents)
+export const updateEvents = withDbConnect(core.updateEvents)
+export const getEventDetails = withDbConnect(core.getEventDetails)
+export const updateEvent = withDbConnect(core.updateEvent)
+export const deleteEvent = withDbConnect(core.deleteEvent)
+export const getTotalEventCount = withDbConnect(core.getTotalEventCount)
+export const generateExport = withDbConnect(core.generateExport)
+export const getDistinctOpportunityFields = withDbConnect(
+  core.getDistinctOpportunityFields
+)
+export const updateOpportunities = withDbConnect(core.updateOpportunities)
+export const getTotalOpportunitiesCount = withDbConnect(core.getTotalOpportunitiesCount)
+export const getOpportunities = withDbConnect(core.getOpportunities)
+export const getOpportunityDetails = withDbConnect(core.getOpportunityDetails)
+export const updateOpportunity = withDbConnect(core.updateOpportunity)
+export const deleteOpportunity = withDbConnect(core.deleteOpportunity)
+export const updateSourceAnalyticsBatch = withDbConnect(core.updateSourceAnalyticsBatch)
+export const findSourcesForScraping = withDbConnect(core.findSourcesForScraping)
+export const performHousekeeping = withDbConnect(core.performHousekeeping)
+export const bulkWriteEvents = withDbConnect(core.bulkWriteEvents)
+export const bulkWriteArticles = withDbConnect(core.bulkWriteArticles)
+export const findEventsByKeys = withDbConnect(core.findEventsByKeys)
+export const findArticlesByLinks = withDbConnect(core.findArticlesByLinks)
+export const getActiveWatchlistEntityNames = withDbConnect(
+  core.getActiveWatchlistEntityNames
+)
+export const bulkWriteWatchlistSuggestions = withDbConnect(
+  core.bulkWriteWatchlistSuggestions
+)
+export const linkOpportunityToEvent = withDbConnect(core.linkOpportunityToEvent)
+export const unlinkOpportunityFromEvent = withDbConnect(core.unlinkOpportunityFromEvent)
+export const getSettings = withDbConnect(core.getSettings)
+export const updateSettings = withDbConnect(core.updateSettings)
+export const upsertSubscriber = withDbConnect(core.upsertSubscriber)
+export const getAllPushSubscriptions = withDbConnect(core.getAllPushSubscriptions)
+export const deletePushSubscription = withDbConnect(core.deletePushSubscription)
+export const getCurrentSubscriber = withDbConnect(core.getCurrentSubscriber)
+export const savePushSubscription = withDbConnect(core.savePushSubscription)
+export const updateUserProfile = withDbConnect(core.updateUserProfile)
+export const updateUserInteraction = withDbConnect(core.updateUserInteraction)
+export const processUploadedArticle = withDbConnect(core.processUploadedArticle)
+export const clearDiscardedItems = withDbConnect(core.clearDiscardedItems)
+export const getRecentRunVerdicts = withDbConnect(core.getRecentRunVerdicts)
+export const getRunVerdictById = withDbConnect(core.getRunVerdictById)
+export const findWatchlistEntities = withDbConnect(core.findWatchlistEntities)
+export const updateWatchlistEntities = withDbConnect(core.updateWatchlistEntities)
+export const createWatchlistEntity = withDbConnect(core.createWatchlistEntity)
+export const updateWatchlistEntity = withDbConnect(core.updateWatchlistEntity)
+export const deleteWatchlistEntity = withDbConnect(core.deleteWatchlistEntity)
+export const updateWatchlistSuggestion = withDbConnect(core.updateWatchlistSuggestion)
+export const processWatchlistSuggestion = withDbConnect(core.processWatchlistSuggestion)
+export const deleteAllSince = withDbConnect(core.deleteAllSince)
+export const resetAllSourceAnalytics = withDbConnect(core.resetAllSourceAnalytics)
+export const resetEventsEmailedStatusSince = withDbConnect(
+  core.resetEventsEmailedStatusSince
+)
+
+export { buildQuery } from './queryBuilder.js'
+export { revalidatePath } from './revalidate.js'
+
+```
+
+## 📄 src/next.js
+*Lines: 101, Size: 5.75 KB*
+
+```javascript
+// packages/data-access/src/next.js (Next.js Entry Point)
+import 'server-only'
+import dbConnect from './dbConnect.next.js'
+import * as core from './core/index.js'
+
+function withDbConnect(fn) {
+  return async (...args) => {
+    await dbConnect()
+    return fn(...args)
+  }
+}
+
+export const createSubscriber = withDbConnect(core.createSubscriber)
+export const updateSubscriber = withDbConnect(core.updateSubscriber)
+export const deleteSubscriber = withDbConnect(core.deleteSubscriber)
+export const createCountry = withDbConnect(core.createCountry)
+export const updateCountry = withDbConnect(core.updateCountry)
+export const createSource = withDbConnect(core.createSource)
+export const updateSource = withDbConnect(core.updateSource)
+export const getAllCountries = withDbConnect(core.getAllCountries)
+export const findSubscribers = withDbConnect(core.findSubscribers)
+export const getAllSubscribers = withDbConnect(core.getAllSubscribers)
+export const getAllSources = withDbConnect(core.getAllSources)
+export const getAllWatchlistEntities = withDbConnect(core.getAllWatchlistEntities)
+export const getSuggestions = withDbConnect(core.getSuggestions)
+export const getArticles = withDbConnect(core.getArticles)
+export const findArticles = withDbConnect(core.findArticles)
+export const updateArticles = withDbConnect(core.updateArticles)
+export const getTotalArticleCount = withDbConnect(core.getTotalArticleCount)
+export const updateArticle = withDbConnect(core.updateArticle)
+export const deleteArticle = withDbConnect(core.deleteArticle)
+export const getArticleDetails = withDbConnect(core.getArticleDetails)
+export const createSubscriberWithPassword = withDbConnect(
+  core.createSubscriberWithPassword
+)
+export const updateSubscriberPassword = withDbConnect(core.updateSubscriberPassword)
+export const loginUser = withDbConnect(core.loginUser)
+export const generateChatTitle = withDbConnect(core.generateChatTitle)
+export const getDashboardStats = withDbConnect(core.getDashboardStats)
+export const getGlobalCountries = withDbConnect(core.getGlobalCountries)
+export const getEvents = withDbConnect(core.getEvents)
+export const findEvents = withDbConnect(core.findEvents)
+export const updateEvents = withDbConnect(core.updateEvents)
+export const getEventDetails = withDbConnect(core.getEventDetails)
+export const updateEvent = withDbConnect(core.updateEvent)
+export const deleteEvent = withDbConnect(core.deleteEvent)
+export const getTotalEventCount = withDbConnect(core.getTotalEventCount)
+export const generateExport = withDbConnect(core.generateExport)
+export const getDistinctOpportunityFields = withDbConnect(
+  core.getDistinctOpportunityFields
+)
+export const updateOpportunities = withDbConnect(core.updateOpportunities)
+export const getTotalOpportunitiesCount = withDbConnect(core.getTotalOpportunitiesCount)
+export const getOpportunities = withDbConnect(core.getOpportunities)
+export const getOpportunityDetails = withDbConnect(core.getOpportunityDetails)
+export const updateOpportunity = withDbConnect(core.updateOpportunity)
+export const deleteOpportunity = withDbConnect(core.deleteOpportunity)
+export const updateSourceAnalyticsBatch = withDbConnect(core.updateSourceAnalyticsBatch)
+export const findSourcesForScraping = withDbConnect(core.findSourcesForScraping)
+export const performHousekeeping = withDbConnect(core.performHousekeeping)
+export const bulkWriteEvents = withDbConnect(core.bulkWriteEvents)
+export const bulkWriteArticles = withDbConnect(core.bulkWriteArticles)
+export const findEventsByKeys = withDbConnect(core.findEventsByKeys)
+export const findArticlesByLinks = withDbConnect(core.findArticlesByLinks)
+export const getActiveWatchlistEntityNames = withDbConnect(
+  core.getActiveWatchlistEntityNames
+)
+export const bulkWriteWatchlistSuggestions = withDbConnect(
+  core.bulkWriteWatchlistSuggestions
+)
+export const linkOpportunityToEvent = withDbConnect(core.linkOpportunityToEvent)
+export const unlinkOpportunityFromEvent = withDbConnect(core.unlinkOpportunityFromEvent)
+export const getSettings = withDbConnect(core.getSettings)
+export const updateSettings = withDbConnect(core.updateSettings)
+export const upsertSubscriber = withDbConnect(core.upsertSubscriber)
+export const getAllPushSubscriptions = withDbConnect(core.getAllPushSubscriptions)
+export const deletePushSubscription = withDbConnect(core.deletePushSubscription)
+export const getCurrentSubscriber = withDbConnect(core.getCurrentSubscriber)
+export const savePushSubscription = withDbConnect(core.savePushSubscription)
+export const updateUserProfile = withDbConnect(core.updateUserProfile)
+export const updateUserInteraction = withDbConnect(core.updateUserInteraction)
+export const processUploadedArticle = withDbConnect(core.processUploadedArticle)
+export const clearDiscardedItems = withDbConnect(core.clearDiscardedItems)
+export const getRecentRunVerdicts = withDbConnect(core.getRecentRunVerdicts)
+export const getRunVerdictById = withDbConnect(core.getRunVerdictById)
+export const findWatchlistEntities = withDbConnect(core.findWatchlistEntities)
+export const updateWatchlistEntities = withDbConnect(core.updateWatchlistEntities)
+export const createWatchlistEntity = withDbConnect(core.createWatchlistEntity)
+export const updateWatchlistEntity = withDbConnect(core.updateWatchlistEntity)
+export const deleteWatchlistEntity = withDbConnect(core.deleteWatchlistEntity)
+export const updateWatchlistSuggestion = withDbConnect(core.updateWatchlistSuggestion)
+export const processWatchlistSuggestion = withDbConnect(core.processWatchlistSuggestion)
+export const deleteAllSince = withDbConnect(core.deleteAllSince)
+export const resetAllSourceAnalytics = withDbConnect(core.resetAllSourceAnalytics)
+export const resetEventsEmailedStatusSince = withDbConnect(
+  core.resetEventsEmailedStatusSince
+)
+
+export { buildQuery } from './queryBuilder.js'
+export { revalidatePath } from './revalidate.js'
 
 ```
 
 ## 📄 src/queryBuilder.js
-*Lines: 96, Size: 2.89 KB*
+*Lines: 96, Size: 3.1 KB*
 
 ```javascript
+// packages/data-access/src/queryBuilder.js (version 2.0.0)
 import { Subscriber } from '@headlines/models'
-import dbConnect from './dbConnect.node.js'
+// ARCHITECTURAL REFACTORING: This component is now isomorphic (shared).
+// It no longer imports any environment-specific modules like dbConnect.
+// The responsibility for establishing a database connection now lies with the
+// application entry point (e.g., the API handler or pipeline stage) that calls this function.
 
-// --- START OF THE FIX ---
-// The function MUST be marked as async.
 export async function buildQuery(
-  // --- END OF THE FIX ---
   model,
   { filters = {}, sort = 'date_desc', baseQuery = {}, userId = null }
 ) {
-  // This dbConnect call is now crucial for robustness
-  await dbConnect()
+  // The `await dbConnect()` call has been removed.
 
   const andConditions = [{ ...baseQuery }]
   let user = null

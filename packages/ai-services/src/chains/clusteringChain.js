@@ -5,7 +5,7 @@ import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionCluster } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
-import { clusterSchema } from '../schemas/index.js'
+import { clusterSchema } from '@headlines/models/schemas'
 
 const systemPrompt = [
   instructionCluster.whoYouAre,

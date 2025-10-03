@@ -1,6 +1,6 @@
 // apps/pipeline/src/modules/dataStore/index.js (version 6.1.0)
 import { Pinecone } from '@pinecone-database/pinecone'
-import { logger } from '@headlines/utils-server'
+import { logger } from '@headlines/utils-shared'
 import { generateEmbedding } from '@headlines/ai-services'
 import { env } from '@headlines/config'
 import { Opportunity } from '@headlines/models'

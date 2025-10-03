@@ -1,7 +1,7 @@
 // File: apps/pipeline/src/modules/notifications/index.js
 
 import { groupItemsByCountry } from '@headlines/utils-shared'
-import { logger } from '@headlines/utils-server/node'
+import { logger } from '@headlines/utils-shared'
 import { Subscriber, PushSubscription } from '@headlines/models'
 import { sendBulkEmails } from './emailDispatcher.js'
 import { sendBulkPushNotifications } from './pushService.js'

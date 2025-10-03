@@ -1,15 +1,16 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 12 files, 1 directories
+Total: 13 files, 1 directories
 
 ```
 headlines/
 ├── 📁 src/
+│   ├── 📄 alerting.js
 │   ├── 📄 apiCallTracker.js
 │   ├── 📄 auditLogger.js
-│   ├── 📄 core.js
+│   ├── 📄 helpers-next.js
 │   ├── 📄 helpers.js
-│   ├── 📄 logger.js
+│   ├── 📄 index.js
 │   ├── 📄 mailer.js
 │   ├── 📄 next.js
 │   ├── 📄 node.js
@@ -21,10 +22,10 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-29T22:40:44.845Z
+**Generated**: 2025-10-02T23:22:35.403Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/utils-server
-**Total Files**: 12
-**Package**: @headlines/utils-server@3.0.0
+**Total Files**: 13
+**Package**: @headlines/utils-server@5.0.0
 **Description**: Server-only utilities for the Headlines monorepo.
 
 
@@ -33,14 +34,14 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 37, Size: 1.02 KB*
+*Lines: 41, Size: 1.12 KB*
 
 ```json
 {
   "name": "@headlines/utils-server",
-  "version": "3.0.0",
+  "version": "5.0.0",
   "description": "Server-only utilities for the Headlines monorepo.",
-  "main": "src/index.js",
+  "main": "src/node.js",
   "type": "module",
   "license": "ISC",
   "exports": {
@@ -48,7 +49,10 @@ headlines/
     "./node": "./src/node.js",
     "./next": "./src/next.js",
     "./logger": "./src/logger.js",
-    "./helpers": "./src/helpers.js",
+    "./helpers": {
+      "node": "./src/helpers.js",
+      "default": "./src/helpers-next.js"
+    },
     "./tokenTracker": "./src/tokenTracker.js",
     "./apiCallTracker": "./src/apiCallTracker.js",
     "./auditLogger": "./src/auditLogger.js",
@@ -57,6 +61,7 @@ headlines/
     "./pusher": "./src/pusher.js"
   },
   "dependencies": {
+    "@headlines/utils-shared": "workspace:*",
     "@headlines/config": "workspace:*",
     "@headlines/models": "workspace:*",
     "@upstash/redis": "^1.35.4",
@@ -75,11 +80,57 @@ headlines/
 
 ```
 
-## 📄 src/apiCallTracker.js
-*Lines: 37, Size: 854 Bytes*
+## 📄 src/alerting.js
+*Lines: 40, Size: 1.57 KB*
 
 ```javascript
-import { logger } from './logger.js'
+// packages/utils-server/src/alerting.js
+import { logger } from '@headlines/utils-shared' // CORRECTED IMPORT PATH
+
+/**
+ * Simulates sending a structured error alert to an external monitoring service.
+ * In a real application, this would be replaced with an SDK call (e.g., Sentry.captureException)
+ * or a webhook post to a service like Slack or Better Stack.
+ *
+ * @param {Error} error - The error object.
+ * @param {object} [context={}] - Optional context to include with the alert.
+ * @param {string} [context.origin] - The part of the system where the error occurred (e.g., 'API_HANDLER', 'PIPELINE').
+ * @param {object} [context.request] - Information about the incoming request.
+ * @param {object} [context.user] - Information about the authenticated user.
+ */
+export function sendErrorAlert(error, context = {}) {
+  const alertPayload = {
+    timestamp: new Date().toISOString(),
+    errorMessage: error.message,
+    errorStack: error.stack,
+    origin: context.origin || 'Unknown',
+    ...context,
+  }
+
+  // In a real app, you would replace this with an actual alerting call.
+  // For now, we log it with a specific format to simulate an alert being fired.
+  logger.fatal(alertPayload, `🚨 CRITICAL ERROR ALERT TRIGGERED 🚨`)
+
+  // Example integrations:
+  // if (process.env.SENTRY_DSN) {
+  //   Sentry.captureException(error, { extra: context });
+  // }
+  //
+  // if (process.env.SLACK_WEBHOOK_URL) {
+  //   await fetch(process.env.SLACK_WEBHOOK_URL, {
+  //     method: 'POST',
+  //     body: JSON.stringify({ text: `🚨 Error in ${context.origin}: ${error.message}` }),
+  //   });
+  // }
+}
+
+```
+
+## 📄 src/apiCallTracker.js
+*Lines: 37, Size: 891 Bytes*
+
+```javascript
+import { logger } from '@headlines/utils-shared' // CORRECTED IMPORT PATH
 
 const servicePricing = {
   serper_news: 2.5,
@@ -173,27 +224,17 @@ export const auditLogger = new Proxy({}, {
 
 ```
 
-## 📄 src/core.js
-*Lines: 10, Size: 319 Bytes*
+## 📄 src/helpers-next.js
+*Lines: 41, Size: 1.39 KB*
 
 ```javascript
-// File: packages/utils-server/src/index.js (version 3.2 - Unchanged)
-export * from './auditLogger.js'
-export * from './helpers.js'
-export * from './logger.js'
-export * from './redisClient.js'
-export * from './tokenTracker.js'
-export * from './apiCallTracker.js'
-export * from './mailer.js'
-export * from './pusher.js'
+// packages/utils-server/src/helpers-next.js (version 1.0.0)
+// ARCHITECTURAL REFACTORING: This new file is a Next.js-safe "shim".
+// It explicitly re-exports only the functions from the core `helpers.js`
+// that are needed and guaranteed to be safe for the Next.js/Vercel environment.
+// It is guarded by the 'server-only' directive to prevent client-side bundling.
 
-```
-
-## 📄 src/helpers.js
-*Lines: 60, Size: 2.07 KB*
-
-```javascript
-// File: packages/utils-server/src/helpers.js
+import 'server-only'
 
 /**
  * Creates a promise that rejects after a specified timeout.
@@ -204,13 +245,58 @@ export * from './pusher.js'
 function promiseTimeout(ms, customMessage = 'Operation timed out.') {
   return new Promise((_, reject) => {
     setTimeout(() => {
-      reject(new Error(customMessage));
-    }, ms);
-  });
+      reject(new Error(customMessage))
+    }, ms)
+  })
 }
 
 /**
  * Wraps an async function in a try-catch block and a timeout race.
+ * This is used by ai-services' safeInvoke to protect against hanging AI calls.
+ */
+export async function safeExecute(asyncFn, { errorHandler, timeout = 90000 } = {}) {
+  try {
+    return await Promise.race([
+      asyncFn(),
+      promiseTimeout(timeout, `safeExecute timed out after ${timeout / 1000}s`),
+    ])
+  } catch (error) {
+    if (errorHandler) {
+      return errorHandler(error)
+    }
+    console.error('An unexpected error occurred in a safeExecute block:', error)
+    return null
+  }
+}
+
+```
+
+## 📄 src/helpers.js
+*Lines: 45, Size: 1.83 KB*
+
+```javascript
+// packages/utils-server/src/helpers.js (version 2.0.0)
+// ARCHITECTURAL REFACTORING: This file now serves as the 'core' module for helpers.
+// It contains only truly isomorphic functions that are safe to run in any JavaScript environment.
+// Node.js-specific helpers have been removed.
+
+/**
+ * Creates a promise that rejects after a specified timeout.
+ * @param {number} ms - The timeout duration in milliseconds.
+ * @param {string} [customMessage] - An optional message for the timeout error.
+ * @returns {Promise<never>} A promise that will reject.
+ */
+function promiseTimeout(ms, customMessage = 'Operation timed out.') {
+  return new Promise((_, reject) => {
+    setTimeout(() => {
+      reject(new Error(customMessage))
+    }, ms)
+  })
+}
+
+/**
+ * Wraps an async function in a try-catch block and a timeout race.
+ * This is a critical utility for protecting against hanging external API calls (e.g., to an LLM).
  * @param {Function} asyncFn - The async function to execute.
  * @param {object} [options] - Options object.
  * @param {Function} [options.errorHandler] - An optional custom error handler.
@@ -222,159 +308,44 @@ export async function safeExecute(asyncFn, { errorHandler, timeout = 90000 } = {
     // Race the async function against a timeout promise.
     return await Promise.race([
       asyncFn(),
-      promiseTimeout(timeout, `safeExecute timed out after ${timeout / 1000}s`)
-    ]);
+      promiseTimeout(timeout, `safeExecute timed out after ${timeout / 1000}s`),
+    ])
   } catch (error) {
     if (errorHandler) {
-      return errorHandler(error);
+      return errorHandler(error)
     }
     // Log the error centrally, so individual call sites don't have to.
-    console.error(
-      'An unexpected error occurred in a safeExecute block:',
-      error
-    );
-    return null; // Return null on failure
+    console.error('An unexpected error occurred in a safeExecute block:', error)
+    return null // Return null on failure
   }
 }
 
-// ... (keep the smartStripHtml function)
-
-/**
- * Strips scripts, styles, and other non-content tags from an HTML string.
- * @param {string} rawHtml - The raw HTML content.
- * @returns {Promise<string>} The cleaned body HTML.
- */
-export async function smartStripHtml(rawHtml) {
-  // Use dynamic import for cheerio to keep it a lightweight dependency
-  const cheerio = await import('cheerio');
-  const $ = cheerio.load(rawHtml);
-  $(
-    'script, style, link[rel="stylesheet"], noscript, svg, path, footer, header, nav'
-  ).remove();
-  return $('body').html();
-}
 ```
 
-## 📄 src/logger.js
-*Lines: 107, Size: 2.79 KB*
+## 📄 src/index.js
+*Lines: 11, Size: 382 Bytes*
 
 ```javascript
-// packages/utils-server/src/logger.js
-import pino from 'pino'
-import fs from 'fs'
-import path from 'path'
-import { createRequire } from 'module'
-const require = createRequire(import.meta.url)
-
-const LOG_LEVEL = process.env.LOG_LEVEL || 'trace'
-const IS_PRODUCTION = process.env.NODE_ENV === 'production'
-
-let loggerInstance
-
-const createSimpleLogger = () => {
-  const simpleLogger = {}
-  const levels = ['trace', 'debug', 'info', 'warn', 'error', 'fatal']
-  levels.forEach((level) => {
-    const consoleMethod = level === 'trace' || level === 'debug' ? 'log' : level
-    simpleLogger[level] = (...args) => {
-      console[consoleMethod](`[${level.toUpperCase()}]`, ...args)
-    }
-  })
-  return simpleLogger
-}
-
-export function initializeLogger(logDirectory = null, extraStreams = []) {
-  if (loggerInstance) {
-    return loggerInstance
-  }
-
-  if (process.env.NEXT_RUNTIME) {
-    console.log('Detected Next.js runtime. Initializing safe console logger.')
-    loggerInstance = createSimpleLogger()
-    return loggerInstance
-  }
-
-  const pinoPrettyPath = require.resolve('pino-pretty')
-  const consoleTransport = pino.transport({
-    target: pinoPrettyPath,
-    options: {
-      colorize: true,
-      translateTime: 'HH:MM:ss',
-      ignore:
-        'pid,hostname,runStats,article,assessment,event,payload,details,context,embedding,finalAssessment,watchlistHits,hits,reasoning,enrichmentSources,source_articles,key_individuals,source',
-      singleLine: true,
-      messageFormat: '{msg}',
-    },
-  })
-
-  const streams = [{ level: LOG_LEVEL, stream: consoleTransport }, ...extraStreams]
-
-  loggerInstance = pino({ level: 'trace' }, pino.multistream(streams))
-  return loggerInstance
-}
-
-export const logger = new Proxy(
-  {},
-  {
-    get(target, prop) {
-      if (loggerInstance) {
-        return loggerInstance[prop]
-      }
-      return initializeLogger()[prop]
-    },
-  }
-)
-
-export function reinitializeLogger(logDirectory, extraStreams = []) {
-  const pinoPrettyPath = require.resolve('pino-pretty')
-
-  const consoleTransport = {
-    level: LOG_LEVEL,
-    target: pinoPrettyPath,
-    options: {
-      colorize: true,
-      translateTime: 'HH:mm:ss',
-      ignore: 'pid,hostname,context',
-      singleLine: true,
-      messageFormat: '{msg}',
-    },
-  }
-
-  const logFile = path.join(logDirectory, 'run.log')
-  const fileTransport = {
-    level: 'trace',
-    target: pinoPrettyPath,
-    options: {
-      colorize: false,
-      // DEFINITIVE FIX: Use 'mm' for minutes and 'MM' for month.
-      translateTime: 'YYYY/MM/DD HH:mm:ss',
-      ignore: 'pid,hostname',
-      destination: logFile,
-      mkdir: true,
-      append: false,
-    },
-  }
-
-  const allStreams = [
-    pino.transport(consoleTransport),
-    pino.transport(fileTransport),
-    ...extraStreams,
-  ]
-
-  loggerInstance = pino({ level: 'trace' }, pino.multistream(allStreams))
-
-  return loggerInstance
-}
+// packages/utils-server/src/index.js
+export * from './auditLogger.js'
+export * from './helpers.js'
+export * from './redisClient.js'
+export * from './tokenTracker.js'
+export * from './apiCallTracker.js'
+export * from './mailer.js'
+export * from './pusher.js'
+export * from './alerting.js'
+// Note: logger is no longer exported from here. It's imported from @headlines/utils-shared.
 
 ```
 
 ## 📄 src/mailer.js
-*Lines: 80, Size: 2.55 KB*
+*Lines: 73, Size: 2.37 KB*
 
 ```javascript
-// Full Path: headlines/packages/utils-server/src/mailer.js
+// packages/utils-server/src/mailer.js
 import nodemailer from 'nodemailer'
-import { logger } from './logger.js'
+import { logger } from '@headlines/utils-shared' // CORRECTED IMPORT PATH
 import { safeExecute } from './helpers.js'
 import { SMTP_CONFIG } from '@headlines/config'
 import { Subscriber } from '@headlines/models'
@@ -432,69 +403,62 @@ export async function sendGenericEmail({ to, subject, html, emailType = 'Generic
     html,
   }
 
-  // --- START DEFINITIVE FIX ---
-  // Apply BCC logic ONLY for non-supervisor reports.
   if (emailType !== 'SupervisorReport') {
     const allAdminEmails = await getAdminEmails()
-
-    // Filter out the primary recipient from the BCC list if they are an admin.
     const bccList = allAdminEmails.filter(
       (adminEmail) => adminEmail.toLowerCase() !== to.toLowerCase()
     )
-
     if (bccList && bccList.length > 0) {
       mailOptions.bcc = bccList.join(',')
     }
   }
-  // --- END DEFINITIVE FIX ---
 
   const result = await sendEmail(mailOptions, emailType)
   return result.success || false
 }
-
 ```
 
 ## 📄 src/next.js
-*Lines: 20, Size: 378 Bytes*
+*Lines: 17, Size: 558 Bytes*
 
 ```javascript
+// packages/utils-server/src/next.js
 import 'server-only'
 
-// Explicitly re-export all functions from the core barrel file.
-export {
-  apiCallTracker,
-  auditLogger,
-  initializeAuditLogger,
-  safeExecute,
-  smartStripHtml,
-  logger,
-  initializeLogger,
-  reinitializeLogger,
-  sendGenericEmail,
-  configurePusher,
-  triggerRealtimeEvent,
-  getRedisClient,
-  testRedisConnection,
-  tokenTracker,
-} from './core.js'
+// This file exports the absolute minimum set of utilities required by the
+// Next.js application's server-side code.
+
+// The shared logger is now imported directly from @headlines/utils-shared where needed.
+
+// Import ONLY the needed functions from the safe helpers shim
+import { safeExecute } from './helpers-next.js'
+
+// Import and re-export the alerting utility
+import { sendErrorAlert } from './alerting.js'
+
+// EXPLICITLY export ONLY the safe functions.
+export { safeExecute, sendErrorAlert }
 
 ```
 
 ## 📄 src/node.js
-*Lines: 3, Size: 76 Bytes*
+*Lines: 6, Size: 209 Bytes*
 
 ```javascript
+// packages/utils-server/src/node.js
 // This is the default, Node.js-safe entry point.
-export * from './core.js'
+// logger is no longer exported from here; it should be imported from @headlines/utils-shared
+
+export * from './index.js'
 
 ```
 
 ## 📄 src/pusher.js
-*Lines: 37, Size: 1.13 KB*
+*Lines: 37, Size: 1.17 KB*
 
 ```javascript
 import Pusher from 'pusher'
-import { logger } from './logger.js'
+import { logger } from '@headlines/utils-shared' // CORRECTED IMPORT PATH
 import { env } from '@headlines/config'
 let pusher
 let isRealtimeConfigured = false
@@ -533,11 +497,11 @@ export async function triggerRealtimeEvent(channel, event, data) {
 ```
 
 ## 📄 src/redisClient.js
-*Lines: 66, Size: 1.88 KB*
+*Lines: 66, Size: 1.92 KB*
 
 ```javascript
 // packages/utils-server/src/redisClient.js
-import { logger } from './logger.js'
+import { logger } from '@headlines/utils-shared' // CORRECTED IMPORT PATH
 import { Redis } from '@upstash/redis'
 
 let redisClient
@@ -605,10 +569,10 @@ export async function testRedisConnection(env) {
 ```
 
 ## 📄 src/tokenTracker.js
-*Lines: 46, Size: 1.35 KB*
+*Lines: 46, Size: 1.39 KB*
 
 ```javascript
-import { logger } from './logger.js'
+import { logger } from '@headlines/utils-shared' // CORRECTED IMPORT PATH
 
 const modelPricing = {
   'gpt-5-nano': { input: 0.15, output: 0.4 },

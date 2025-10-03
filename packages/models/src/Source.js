@@ -1,6 +1,10 @@
 // packages/models/src/Source.js (version 7.0.0)
 import mongoose from 'mongoose'
-import { SOURCE_STATUSES, SOURCE_FREQUENCIES, EXTRACTION_METHODS } from './constants.js'
+import {
+  SOURCE_STATUSES,
+  SOURCE_FREQUENCIES,
+  EXTRACTION_METHODS,
+} from './prompt-constants.js'
 const { Schema, model, models } = mongoose
 
 const SourceAnalyticsSchema = new Schema(

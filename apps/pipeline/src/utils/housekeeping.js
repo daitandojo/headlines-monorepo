@@ -1,5 +1,5 @@
 // apps/pipeline/src/utils/housekeeping.js (version 3.0.0)
-import { logger } from '@headlines/utils-server'
+import { logger } from '@headlines/utils-shared'
 import { findSourcesForScraping, performHousekeeping } from '@headlines/data-access'
 
 const ARTICLE_RETENTION_DAYS = 14

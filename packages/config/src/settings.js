@@ -1,7 +1,8 @@
-// packages/config/src/settings.js
-import { Setting } from '@headlines/models'
-// This file must have ZERO workspace dependencies.
-// We will use console.log for this critical, low-level module.
+// packages/config/src/settings.js (version 2.0.0)
+// ARCHITECTURAL REFACTORING: This file is now a "dumb" provider of default settings.
+// It no longer contains any logic for fetching data from a database and has no
+// dependency on @headlines/models. The application is now responsible for populating
+// these settings at runtime.
 
 const DEFAULTS = {
   HEADLINES_RELEVANCE_THRESHOLD: 25,
@@ -26,29 +27,26 @@ export const settings = { ...DEFAULTS }
 
 let isInitialized = false
 
-export async function initializeSettings() {
+/**
+ * Populates the exported `settings` object with values from the database.
+ * This function is intended to be called by the application layer at startup.
+ * @param {Array<object>} dbSettings - An array of setting objects from the database.
+ */
+export function populateSettings(dbSettings) {
   if (isInitialized) return
-  console.log('[Config] Loading pipeline settings from database...')
-  try {
-    const dbSettings = await Setting.find({}).lean()
-    if (dbSettings.length === 0) {
-      console.warn(
-        '[Config] No settings found in the database. The pipeline will run on default values.'
-      )
-    } else {
-      dbSettings.forEach((setting) => {
-        settings[setting.key] = setting.value
-      })
-      console.log(
-        `[Config] Successfully loaded ${dbSettings.length} settings from the database.`
-      )
-    }
-    isInitialized = true
-  } catch (error) {
-    console.error(
-      '[Config] CRITICAL: Failed to load settings from database. Halting.',
-      error
+  if (!dbSettings || dbSettings.length === 0) {
+    console.warn(
+      '[Config] No settings provided from database. The application will run on default values.'
     )
-    throw error
+  } else {
+    dbSettings.forEach((setting) => {
+      if (setting.key in settings) {
+        settings[setting.key] = setting.value
+      }
+    })
+    console.log(
+      `[Config] Successfully populated ${dbSettings.length} settings from the database.`
+    )
   }
+  isInitialized = true
 }

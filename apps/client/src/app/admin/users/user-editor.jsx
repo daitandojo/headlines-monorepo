@@ -1,4 +1,4 @@
-// File: apps/client/src/app/admin/users/user-editor.jsx (version 2.0 - Server Actions)
+// apps/client/src/app/admin/users/user-editor.jsx (version 3.0.0)
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -18,9 +18,11 @@ import {
 import { toast } from 'sonner'
 import { Save, Loader2, UserPlus, X } from 'lucide-react'
 import CountrySubscriptionManager from './country-subscription-manager'
-// The editor now uses the Server Actions directly.
 import { createUserAction, updateUserAction } from './actions'
 import { SUBSCRIPTION_TIERS } from '@headlines/models/client'
+// ILLUSTRATION: In a future refactor, Zod schemas from the new central location
+// could be imported for robust client-side form validation.
+// import { userFormSchema } from '@headlines/models/schemas'
 
 const FormField = ({ id, label, children, description }) => (
   <div className="space-y-2">
@@ -34,7 +36,7 @@ const FormField = ({ id, label, children, description }) => (
 
 export default function UserEditor({
   user,
-  onSave, // The onSave prop now comes from UsersClientPage
+  onSave,
   onCancel,
   availableCountries,
   availableLanguages,
@@ -42,10 +44,13 @@ export default function UserEditor({
   const [formData, setFormData] = useState(user)
   const [isSaving, setIsSaving] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
+  // ILLUSTRATION: State for validation errors could be added here.
+  // const [errors, setErrors] = useState({});
 
   useEffect(() => {
     setFormData(user)
     setIsDirty(false)
+    // setErrors({});
   }, [user])
 
   if (!user) return null
@@ -56,8 +61,16 @@ export default function UserEditor({
   }
 
   const handleSave = async () => {
+    // ILLUSTRATION: Use Zod for client-side validation before sending.
+    // const validation = userFormSchema.safeParse(formData);
+    // if (!validation.success) {
+    //   setErrors(validation.error.flatten().fieldErrors);
+    //   toast.error("Please correct the errors before saving.");
+    //   return;
+    // }
+    // setErrors({});
+
     setIsSaving(true)
-    // The onSave prop is now the `handleSaveEditor` function from the client page.
     await onSave(formData)
     setIsSaving(false)
   }
@@ -104,6 +117,8 @@ export default function UserEditor({
             onChange={(e) => handleChange('email', e.target.value)}
             disabled={!!user._id}
           />
+          {/* ILLUSTRATION: Display validation error message. */}
+          {/* {errors.email && <p className="text-sm text-red-400 mt-1">{errors.email[0]}</p>} */}
         </FormField>
         <FormField
           id="password"

@@ -1,4 +1,4 @@
-import { logger } from '@headlines/utils-server/node'
+import { logger } from '@headlines/utils-shared'
 import {
   articleChain,
   articlePreAssessmentChain,

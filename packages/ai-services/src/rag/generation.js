@@ -1,11 +1,10 @@
-// File: packages/ai-services/src/rag/generation.js (Unabridged, Final Fix)
-
-'use server'
-
+// packages/ai-services/src/rag/generation.js
 import { getSynthesizerPrompt } from './prompts.js'
 import { checkGroundedness } from './validation.js'
 import { callLanguageModel } from '../lib/langchain.js'
 import { settings } from '@headlines/config'
+import { ragResponseSchema } from '@headlines/models/schemas'
+import { logger } from '@headlines/utils-shared'
 
 const SYNTHESIZER_MODEL = settings.LLM_MODEL_SYNTHESIS
 
@@ -72,6 +71,21 @@ ${context.searchResults.map((s) => `  - **Query:** "${plan.user_query}"\n    - *
   return thoughts.trim().replace(/\n\n+/g, '\n\n')
 }
 
+function buildHtmlFromAnswerParts(answerParts) {
+  if (!answerParts || answerParts.length === 0) return ''
+  return answerParts
+    .map((part) => {
+      const sourceClass = {
+        rag: 'rag-source',
+        wiki: 'wiki-source',
+        search: 'llm-source',
+        llm: '',
+      }[part.source]
+      return sourceClass ? `<span class="${sourceClass}">${part.text}</span>` : part.text
+    })
+    .join('')
+}
+
 export async function generateFinalResponse({ plan, context }) {
   const fullContextString = assembleContext(
     context.ragResults,
@@ -79,7 +93,7 @@ export async function generateFinalResponse({ plan, context }) {
     context.searchResults
   )
 
-  console.log(`[RAG Generation] Calling Synthesizer Agent with ${SYNTHESIZER_MODEL}...`)
+  logger.info(`[RAG Generation] Calling Synthesizer Agent with ${SYNTHESIZER_MODEL}...`)
   const synthesizerResponse = await callLanguageModel({
     modelName: SYNTHESIZER_MODEL,
     systemPrompt: getSynthesizerPrompt(),
@@ -88,38 +102,32 @@ export async function generateFinalResponse({ plan, context }) {
       null,
       2
     )}\n\nUSER'S QUESTION: "${plan.user_query}"`,
-    isJson: false,
-    // temperature: 0.1, // <-- THIS LINE IS NOW REMOVED
+    isJson: true,
   })
 
-  const rawResponse = synthesizerResponse
-  if (typeof rawResponse !== 'string') {
-    console.error(
-      '[RAG Generation] Synthesizer Agent failed to return a valid string response.',
-      rawResponse
+  const validation = ragResponseSchema.safeParse(synthesizerResponse)
+  if (!validation.success) {
+    logger.error(
+      { err: validation.error },
+      '[RAG Generation] Synthesizer Agent failed to return valid structured JSON.'
     )
     return {
-      answer: 'The AI synthesizer failed to generate a response.',
+      answer: 'The AI synthesizer failed to generate a structured response.',
       thoughts: 'An error occurred during the final synthesis step.',
     }
   }
 
-  const groundednessResult = await checkGroundedness(rawResponse, fullContextString)
+  const answerParts = validation.data.answer_parts
+  const rawResponseText = answerParts.map((p) => p.text).join(' ')
+
+  const groundednessResult = await checkGroundedness(rawResponseText, fullContextString)
   const thoughts = formatThoughts(plan, context, groundednessResult)
 
   let finalAnswer
   if (groundednessResult.is_grounded) {
-    let responseWithSpans = rawResponse.replace(/<rag>/g, '<span class="rag-source">')
-    responseWithSpans = responseWithSpans.replace(/<\/rag>/g, '</span>')
-    responseWithSpans = responseWithSpans.replace(/<wiki>/g, '<span class="wiki-source">')
-    responseWithSpans = responseWithSpans.replace(/<\/wiki>/g, '</span>')
-    responseWithSpans = responseWithSpans.replace(
-      /<search>/g,
-      '<span class="llm-source">'
-    )
-    finalAnswer = responseWithSpans.replace(/<\/search>/g, '</span>')
+    finalAnswer = buildHtmlFromAnswerParts(answerParts)
   } else {
-    console.warn('[RAG Pipeline] Groundedness check failed. Returning safe response.')
+    logger.warn('[RAG Pipeline] Groundedness check failed. Returning safe response.')
     finalAnswer =
       'I was unable to construct a reliable answer from the available sources. The context may be insufficient or conflicting.'
   }

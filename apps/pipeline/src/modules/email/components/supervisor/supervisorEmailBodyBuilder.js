@@ -11,7 +11,7 @@ import { createJudgeVerdictHtml } from './judgeVerdict.js'
 import { createCostSummaryHtml } from './costSummary.js'
 import { SynthesizedEvent, Opportunity } from '@headlines/models'
 import { executiveSummaryChain } from '@headlines/ai-services'
-import { logger } from '@headlines/utils-server'
+import { logger } from '@headlines/utils-shared'
 
 function createPerformanceDashboardHtml(runStats, newEventCount, newOpportunityCount) {
   const funnel = `${runStats.headlinesScraped} Scraped ➔ ${runStats.relevantHeadlines} Relevant ➔ ${runStats.eventsSynthesized} Events ➔ ${newOpportunityCount} Opps`

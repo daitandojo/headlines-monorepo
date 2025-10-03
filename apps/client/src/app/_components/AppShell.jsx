@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { AnimatePresence } from 'framer-motion'
-import { SplashScreen } from '@/components/client/SplashScreen'
+import { SplashScreen } from '@/components/shared/screen/SplashScreen'
 
 export function AppShell({ children }) {
   const pathname = usePathname()

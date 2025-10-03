@@ -1,18 +1,26 @@
+// apps/client/src/app/api/user/interactions/route.js
 import { NextResponse } from 'next/server'
-import { updateUserInteraction } from '@headlines/data-access'
-import { createClientApiHandler } from '@/lib/api-handler' // Use the new client handler
+import { updateUserInteraction } from '@headlines/data-access/next'
+import { createClientApiHandler } from '@/lib/api-handler'
+import { interactionSchema } from '@headlines/models/schemas'
 
 const handlePost = async (request, { user }) => {
-  const { itemId, itemType, action } = await request.json()
+  const body = await request.json()
+  const validation = interactionSchema.safeParse(body)
+
+  if (!validation.success) {
+    return NextResponse.json(
+      { error: 'Invalid input.', details: validation.error.flatten() },
+      { status: 400 }
+    )
+  }
+
   const result = await updateUserInteraction({
     userId: user.userId,
-    itemId,
-    itemType,
-    action,
+    ...validation.data,
   })
 
   if (!result.success) {
-    // Let the handler manage the 500 error, return 400 for bad input
     return NextResponse.json({ error: result.error }, { status: 400 })
   }
 
@@ -20,3 +28,4 @@ const handlePost = async (request, { user }) => {
 }
 
 export const POST = createClientApiHandler(handlePost)
+export const dynamic = 'force-dynamic'

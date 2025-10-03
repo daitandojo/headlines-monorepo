@@ -5,7 +5,7 @@ import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionWatchlistSuggestion } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
-import { watchlistSuggestionSchema } from '../schemas/index.js'
+import { watchlistSuggestionSchema } from '@headlines/models/schemas'
 
 const systemPrompt = [
   instructionWatchlistSuggestion.whoYouAre,

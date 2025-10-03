@@ -20,5 +20,6 @@ export const getInstructionOpportunities = () => ({
   outputFormatDescription: `
     Respond ONLY with a valid JSON object containing a single key "opportunities", which is an array of objects.
     Each object in the array MUST contain the key "reachOutTo" as a STRING.
-    IF NO CONTACTS ARE FOUND, OR IF NO CONTACTS MEET THE $${settings.MINIMUM_EVENT_AMOUNT_USD_MILLIONS}M WEALTH THRESHOLD, RETURN AN EMPTY ARRAY.`,
+    IF NO CONTACTS ARE FOUND, OR IF NO CONTACTS MEET THE $${settings.MINIMUM_EVENT_AMOUNT_USD_MILLIONS}M WEALTH THRESHOLD, RETURN AN EMPTY ARRAY.
+    It is vital that the email address field in the contactDetails is a valid email address or null - NEVER a description, or otherwise.`,
 })

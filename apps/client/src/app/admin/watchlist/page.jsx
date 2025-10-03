@@ -1,37 +1,40 @@
-'use server'
-
-import { PageHeader, Button } from '@/components/shared'
-import dbConnect from '@headlines/data-access/dbConnect/next'
+// apps/client/src/app/admin/watchlist/page.jsx
 import {
   getAllWatchlistEntities,
   getSuggestions,
   getAllCountries,
 } from '@headlines/data-access'
-import WatchlistClientPage from './WatchlistClientPage' // We will create this next
-import { PlusCircle } from 'lucide-react'
-import { languageList } from '@headlines/utils-shared'
+import WatchlistClientPage from './WatchlistClientPage'
+import dbConnect from '@headlines/data-access/dbConnect/next'
 
-export default async function WatchlistPage() {
+export const dynamic = 'force-dynamic'
+
+export default async function WatchlistPage({ searchParams }) {
   await dbConnect()
+  const page = parseInt(searchParams.page || '1', 10)
+  const sort = searchParams.sort || null
+  const columnFilters = searchParams.filters ? JSON.parse(searchParams.filters) : []
+
+  const filters = columnFilters.reduce((acc, filter) => {
+    if (filter.value) {
+      const key = filter.id === 'name' ? 'q' : filter.id
+      acc[key] = filter.value
+    }
+    return acc
+  }, {})
 
   const [watchlistResult, suggestionsResult, countriesResult] = await Promise.all([
-    getAllWatchlistEntities(),
+    getAllWatchlistEntities({ page, filters, sort }),
     getSuggestions(),
     getAllCountries(),
   ])
 
-  // Error handling can be improved, but this is a start
   if (
     !watchlistResult.success ||
     !suggestionsResult.success ||
     !countriesResult.success
   ) {
-    return (
-      <div>
-        <h1>Error loading data</h1>
-        <p>{watchlistResult.error || suggestionsResult.error || countriesResult.error}</p>
-      </div>
-    )
+    return <div>Error loading data.</div> // Simple error handling for brevity
   }
 
   const allCountries = countriesResult.data
@@ -42,9 +45,8 @@ export default async function WatchlistPage() {
     <div className="flex flex-col h-full">
       <WatchlistClientPage
         initialWatchlist={JSON.parse(JSON.stringify(watchlistResult.data))}
-        initialSuggestions={JSON.parse(
-          JSON.stringify(suggestionsResult.data.watchlistSuggestions)
-        )}
+        total={watchlistResult.total}
+        initialSuggestions={JSON.parse(JSON.stringify(suggestionsResult.data.watchlistSuggestions))}
         availableCountries={allCountries}
       />
     </div>

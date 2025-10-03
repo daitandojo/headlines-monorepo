@@ -1,24 +1,17 @@
-// apps/pipeline/scripts/seed/seed-settings.js (version 1.8.0)
-import { reinitializeLogger, logger } from '@headlines/utils-server'
-import path from 'path'
-import { Setting } from '@headlines/models'
-import dbConnect from '../../../../packages/data-access/src/dbConnect.js'
-import mongoose from 'mongoose'
-
-// Initialize logger for this specific script run
-reinitializeLogger(path.resolve(process.cwd(), 'apps/pipeline/logs'))
+// apps/pipeline/scripts/seed/seed-settings.js
+import { logger } from '@headlines/utils-shared'
+import { initializeScriptEnv } from './lib/script-init.js'
+import { updateSettings } from '@headlines/data-access'
 
 const SETTINGS = [
   {
     key: 'HEADLINES_RELEVANCE_THRESHOLD',
-    // DEFINITIVE FIX: Lowered from 35 to 25 to widen the funnel and reduce missed articles.
     value: 25,
     description: 'Minimum score (0-100) for a headline to be considered for enrichment.',
     type: 'number',
   },
   {
     key: 'ARTICLES_RELEVANCE_THRESHOLD',
-    // FUNNEL WIDENING: Lowered from 50 to 45 to investigate high drop-off rate.
     value: 45,
     description:
       'Minimum score (0-100) for an enriched article to be considered a valid event signal.',
@@ -26,7 +19,6 @@ const SETTINGS = [
   },
   {
     key: 'EVENT_RELEVANCE_THRESHOLD',
-    // FUNNEL WIDENING: Lowered from 59 to 55 to capture more borderline events.
     value: 55,
     description:
       'Minimum score for a synthesized event to be saved and sent in notifications.',
@@ -123,31 +115,15 @@ const SETTINGS = [
 ]
 
 async function seedSettings() {
-  await dbConnect()
+  await initializeScriptEnv()
   logger.info('🚀 Syncing Pipeline Settings from config file...')
   try {
-    const bulkOps = SETTINGS.map((setting) => ({
-      updateOne: {
-        filter: { key: setting.key },
-        // Use $set to overwrite existing settings with values from the file.
-        // This ensures the file is always the source of truth.
-        update: { $set: setting },
-        upsert: true,
-      },
-    }))
+    const result = await updateSettings(SETTINGS)
+    if (!result.success) throw new Error(result.error)
 
-    const result = await Setting.bulkWrite(bulkOps)
-
-    // Improved log message to show both new and modified settings.
-    logger.info(
-      `✅ Settings sync complete. ${result.upsertedCount} new settings added, ${result.modifiedCount} settings updated.`
-    )
+    logger.info(`✅ Settings sync complete. ${result.message}`)
   } catch (error) {
     logger.fatal({ err: error }, '❌ Settings sync failed.')
-  } finally {
-    if (mongoose.connection.readyState === 1) {
-      await mongoose.disconnect()
-    }
   }
 }
 

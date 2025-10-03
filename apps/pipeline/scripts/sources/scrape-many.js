@@ -1,12 +1,10 @@
-'use server'
-
+// apps/pipeline/scripts/sources/scrape-many.js
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
-import mongoose from 'mongoose'
 import pLimit from 'p-limit'
-import { initializeScriptEnv } from '../seed/lib/script-init.js' // The centralized initializer
-import { logger } from '@headlines/utils-server/node'
-import { Source } from '@headlines/models'
+import { initializeScriptEnv } from '../seed/lib/script-init.js'
+import { logger } from '@headlines/utils-shared'
+import { getAllSources } from '@headlines/data-access'
 import {
   scrapeSiteForHeadlines,
   scrapeArticleContent,
@@ -66,20 +64,21 @@ async function scrapeMany() {
     .alias('help', 'h').argv
 
   try {
-    // The initializeScriptEnv function handles db connection, config loading, and logger setup.
     await initializeScriptEnv()
 
-    const query = {}
+    const filter = {}
     if (argv.country) {
-      query.country = new RegExp(`^${argv.country}$`, 'i')
+      filter.country = new RegExp(`^${argv.country}$`, 'i')
       logger.info(`Filtering for country: "${argv.country}"`)
     }
     if (!argv.includeInactive) {
-      query.status = 'active'
+      filter.status = 'active'
       logger.info('Including only "active" sources. Use --include-inactive to override.')
     }
 
-    const sources = await Source.find(query).sort({ country: 1, name: 1 }).lean()
+    const sourcesResult = await getAllSources({ filter })
+    if (!sourcesResult.success) throw new Error(sourcesResult.error)
+    const sources = sourcesResult.data
 
     if (sources.length === 0) {
       logger.warn('No sources found matching the criteria.')
@@ -99,10 +98,6 @@ async function scrapeMany() {
       { err: error },
       'A critical error occurred during the scrape-many script.'
     )
-  } finally {
-    if (mongoose.connection.readyState === 1) {
-      await mongoose.disconnect()
-    }
   }
 }
 

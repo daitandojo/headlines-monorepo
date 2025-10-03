@@ -1,6 +1,8 @@
+// apps/client/src/app/admin/watchlist/WatchlistClientPage.jsx
 'use client'
 
 import { useState, useMemo, useCallback } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import {
   PageHeader,
   Button,
@@ -22,30 +24,57 @@ import {
   deleteEntityAction,
   processSuggestionAction,
 } from './actions'
-import { useEntityManager } from '@/hooks/use-entity-manager'
 
 export default function WatchlistClientPage({
   initialWatchlist,
+  total,
   initialSuggestions,
   availableCountries,
 }) {
-  const {
-    data: watchlist,
-    setData: setWatchlist,
-    total,
-    isLoading,
-    page,
-    setPage,
-    sorting,
-    setSorting,
-    columnFilters,
-    setColumnFilters,
-  } = useEntityManager('watchlist', initialWatchlist, initialWatchlist.length)
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  const page = parseInt(searchParams.get('page') || '1', 10)
+  const sortParam = searchParams.get('sort') || ''
+  const filterParam = searchParams.get('filters') || '[]'
 
   const [suggestions, setSuggestions] = useState(initialSuggestions)
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [selectedId, setSelectedId] = useState(null)
   const [confirmState, setConfirmState] = useState({ isOpen: false, entityId: null })
+  const [sorting, setSorting] = useState(
+    sortParam
+      ? [{ id: sortParam.split('_')[0], desc: sortParam.split('_')[1] === 'desc' }]
+      : []
+  )
+  const [columnFilters, setColumnFilters] = useState(JSON.parse(filterParam))
+
+  const updateUrlParams = useCallback(
+    ({ page, sorting, filters }) => {
+      const params = new URLSearchParams(searchParams.toString())
+      params.set('page', page.toString())
+      if (sorting?.length > 0) {
+        params.set('sort', `${sorting[0].id}_${sorting[0].desc ? 'desc' : 'asc'}`)
+      } else {
+        params.delete('sort')
+      }
+      if (filters?.length > 0) {
+        params.set('filters', JSON.stringify(filters))
+      } else {
+        params.delete('filters')
+      }
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    },
+    [pathname, router, searchParams]
+  )
+
+  const handlePageChange = (newPage) =>
+    updateUrlParams({ page: newPage, sorting, filters: columnFilters })
+  const handleSortChange = (newSorting) =>
+    updateUrlParams({ page: 1, sorting: newSorting, filters: columnFilters })
+  const handleFilterChange = (newFilters) =>
+    updateUrlParams({ page: 1, sorting, filters: newFilters })
 
   const handleEdit = (id) => {
     setSelectedId(id)
@@ -58,43 +87,31 @@ export default function WatchlistClientPage({
   }
 
   const handleEntityUpdate = useCallback(async (entity, updateData) => {
-    // Optimistic UI update
-    setWatchlist((prev) =>
-      prev.map((e) => (e._id === entity._id ? { ...e, ...updateData } : e))
-    )
-
-    const result = await updateEntityAction(entity._id, updateData)
-
-    if (!result.success) {
-      toast.error('Update failed. Reverting.')
-      // Revert optimistic update on failure by reloading the page
-      window.location.reload()
-    }
+    toast.promise(updateEntityAction(entity._id, updateData), {
+      loading: 'Updating entity...',
+      success: 'Entity updated.',
+      error: (err) => `Update failed: ${err.message}`,
+    })
   }, [])
 
   const handleSuggestionAction = async (suggestion, action) => {
-    const toastId = toast.loading(`Processing suggestion "${suggestion.name}"...`)
     setSuggestions((prev) => prev.filter((s) => s._id !== suggestion._id)) // Optimistic removal
-    const result = await processSuggestionAction(suggestion._id, action)
-    if (result.success) {
-      toast.success(result.message, { id: toastId })
-    } else {
-      toast.error(`Failed to ${action} suggestion: ${result.error}`, { id: toastId })
-      setSuggestions(initialSuggestions) // Revert on failure
-    }
+    toast.promise(processSuggestionAction(suggestion._id, action), {
+      loading: `Processing suggestion "${suggestion.name}"...`,
+      success: (result) => result.message,
+      error: (err) => `Failed to ${action} suggestion: ${err.message}`,
+    })
   }
 
   const handleDelete = (entityId) => setConfirmState({ isOpen: true, entityId })
   const confirmDelete = async () => {
     const { entityId } = confirmState
     setConfirmState({ isOpen: false, entityId: null })
-    const toastId = toast.loading('Deleting entity...')
-    const result = await deleteEntityAction(entityId)
-    if (result.success) {
-      toast.success('Entity deleted.', { id: toastId })
-    } else {
-      toast.error(`Deletion failed: ${result.error}`, { id: toastId })
-    }
+    toast.promise(deleteEntityAction(entityId), {
+      loading: 'Deleting entity...',
+      success: 'Entity deleted.',
+      error: (err) => `Deletion failed: ${err.message}`,
+    })
   }
 
   const activeEntityData = useMemo(() => {
@@ -108,8 +125,8 @@ export default function WatchlistClientPage({
         country: '',
         searchTerms: [],
       }
-    return watchlist?.find((e) => e._id === selectedId) || null
-  }, [selectedId, watchlist])
+    return initialWatchlist?.find((e) => e._id === selectedId) || null
+  }, [selectedId, initialWatchlist])
 
   return (
     <>
@@ -134,15 +151,14 @@ export default function WatchlistClientPage({
           <TabsContent value="watchlist" className="flex-grow min-h-0">
             <DataTable
               columns={watchlistColumns(handleEdit, handleEntityUpdate, handleDelete)}
-              data={watchlist}
-              isLoading={isLoading}
+              data={initialWatchlist}
               total={total}
               page={page}
-              setPage={setPage}
+              setPage={handlePageChange}
               sorting={sorting}
-              setSorting={setSorting}
+              setSorting={handleSortChange}
               columnFilters={columnFilters}
-              setColumnFilters={setColumnFilters}
+              setColumnFilters={handleFilterChange}
               filterColumn="name"
               filterPlaceholder="Filter by name..."
             />
@@ -162,7 +178,7 @@ export default function WatchlistClientPage({
           <WatchlistEditor
             key={selectedId}
             entity={activeEntityData}
-            onSave={() => setIsEditorOpen(false)} // The editor's action now triggers a revalidation
+            onSave={() => setIsEditorOpen(false)}
             onCancel={() => setIsEditorOpen(false)}
             countries={availableCountries}
           />

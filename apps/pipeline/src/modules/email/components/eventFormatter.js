@@ -1,5 +1,5 @@
 // apps/pipeline/src/modules/email/components/eventFormatter.js (version 5.1.0)
-import { logger } from '@headlines/utils-server'
+import { logger } from '@headlines/utils-shared'
 import { Opportunity } from '@headlines/models'
 
 const sourceIcons = {

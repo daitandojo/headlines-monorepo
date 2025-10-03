@@ -1,10 +1,30 @@
-// packages/data-access/src/actions/watchlist.js (Corrected)
+// packages/data-access/src/core/watchlist.js
 import { WatchlistEntity, Article, WatchlistSuggestion } from '@headlines/models'
-import dbConnect from '@headlines/data-access/dbConnect/node'
+
+export async function findWatchlistEntities(filter = {}, sort = { name: 1 }) {
+  try {
+    const entities = await WatchlistEntity.find(filter).sort(sort).lean()
+    return { success: true, data: JSON.parse(JSON.stringify(entities)) }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+}
+
+export async function updateWatchlistEntities(filter, update) {
+  try {
+    const result = await WatchlistEntity.updateMany(filter, update)
+    return {
+      success: true,
+      matchedCount: result.matchedCount,
+      modifiedCount: result.modifiedCount,
+    }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+}
 
 export async function createWatchlistEntity(entityData) {
   try {
-    await dbConnect()
     const newEntity = new WatchlistEntity(entityData)
     await newEntity.save()
     return { success: true, entity: JSON.parse(JSON.stringify(newEntity)) }
@@ -17,7 +37,6 @@ export async function createWatchlistEntity(entityData) {
 
 export async function updateWatchlistEntity(entityId, updateData) {
   try {
-    await dbConnect()
     if (updateData.searchTerms && Array.isArray(updateData.searchTerms)) {
       updateData.searchTerms = [
         ...new Set(
@@ -55,7 +74,6 @@ export async function updateWatchlistEntity(entityId, updateData) {
 
 export async function deleteWatchlistEntity(entityId) {
   try {
-    await dbConnect()
     const result = await WatchlistEntity.findByIdAndDelete(entityId)
     if (!result) return { success: false, error: 'Entity not found.' }
     return { success: true }
@@ -66,7 +84,6 @@ export async function deleteWatchlistEntity(entityId) {
 
 export async function updateWatchlistSuggestion(suggestionId, updateData) {
   try {
-    await dbConnect()
     const suggestion = await WatchlistSuggestion.findByIdAndUpdate(
       suggestionId,
       { $set: updateData },
@@ -81,7 +98,6 @@ export async function updateWatchlistSuggestion(suggestionId, updateData) {
 
 export async function processWatchlistSuggestion({ suggestionId, action }) {
   try {
-    await dbConnect()
     const suggestion = await WatchlistSuggestion.findById(suggestionId)
     if (!suggestion) return { success: false, error: 'Suggestion not found.' }
     suggestion.status = action

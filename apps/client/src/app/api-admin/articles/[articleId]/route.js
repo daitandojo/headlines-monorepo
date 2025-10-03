@@ -1,24 +1,35 @@
 import { NextResponse } from 'next/server'
+// --- START DEFINITIVE FIX ---
+// Import the environment-specific dbConnect for the unwrapped GET handler
 import dbConnect from '@headlines/data-access/dbConnect/next'
-import { updateArticle, deleteArticle } from '@headlines/data-access'
-import { Article } from '@headlines/models' // Import the model for GET
+// Import data access functions from the Next.js-safe entry point
+import {
+  updateArticle,
+  deleteArticle,
+  getArticleDetails,
+} from '@headlines/data-access/next'
+// --- END DEFINITIVE FIX ---
+import { Article } from '@headlines/models'
 import { createApiHandler } from '@/lib/api-handler'
 import mongoose from 'mongoose'
 
-// We need a GET handler that is not wrapped by the default auth handler
+// This GET handler is NOT wrapped by createApiHandler (e.g., if it needs to be public).
+// Therefore, it is responsible for its own database connection.
 const handleGet = async (request, { params }) => {
   await dbConnect()
   const { articleId } = params
   if (!mongoose.Types.ObjectId.isValid(articleId)) {
     return NextResponse.json({ error: 'Invalid article ID' }, { status: 400 })
   }
-  const article = await Article.findById(articleId).lean()
-  if (!article) {
-    return NextResponse.json({ error: 'Article not found' }, { status: 404 })
+  // The `getArticleDetails` function is now isomorphic and doesn't connect itself.
+  const result = await getArticleDetails(articleId)
+  if (!result.success) {
+    return NextResponse.json({ error: result.error }, { status: 404 })
   }
-  return NextResponse.json(article)
+  return NextResponse.json(result.data)
 }
 
+// These handlers ARE wrapped by createApiHandler, which handles the db connection.
 const handlePatch = async (request, { params }) => {
   const { articleId } = params
   const updateData = await request.json()
@@ -38,7 +49,7 @@ const handleDelete = async (request, { params }) => {
   return NextResponse.json(result)
 }
 
-export const GET = handleGet // Export directly
+export const GET = handleGet
 export const PATCH = createApiHandler(handlePatch)
 export const DELETE = createApiHandler(handleDelete)
 export const dynamic = 'force-dynamic'

@@ -1,7 +1,8 @@
 // apps/client/src/app/api/chat/title/route.js
 import { NextResponse } from 'next/server'
-import { generateChatTitle } from '@headlines/data-access/server' // Use the server entry point
-import { verifySession } from '@shared/auth'
+import { generateChatTitle } from '@headlines/data-access/next'
+import { verifySession } from '@/lib/auth/server'
+import { chatSchema } from '@headlines/models/schemas'
 
 export async function POST(request) {
   const { user, error } = await verifySession()
@@ -13,8 +14,19 @@ export async function POST(request) {
   }
 
   try {
-    const { messages } = await request.json()
-    const result = await generateChatTitle(messages)
+    const body = await request.json()
+    const validation = chatSchema.safeParse(body)
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          error: 'Invalid chat message structure.',
+          details: validation.error.flatten(),
+        },
+        { status: 400 }
+      )
+    }
+
+    const result = await generateChatTitle(validation.data.messages)
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 })
     }

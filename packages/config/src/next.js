@@ -1,3 +1,5 @@
+    
+// packages/config/src/next.js
 import 'server-only'
 
 // Explicitly re-export every constant and function from the shared core file.
@@ -6,7 +8,7 @@ import 'server-only'
 export {
   env,
   settings,
-  initializeSettings,
+  populateSettings, // CORRECTED: Export the new function name
   IS_REFRESH_MODE,
   MAX_ARTICLE_CHARS,
   LLM_CONTEXT_MAX_CHARS,
@@ -17,3 +19,5 @@ export {
   EMAIL_CONFIG,
   SUPERVISOR_EMAIL_CONFIG,
 } from './index.js'
+
+  

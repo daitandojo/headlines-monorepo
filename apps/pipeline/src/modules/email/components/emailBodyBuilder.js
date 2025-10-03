@@ -1,11 +1,10 @@
-// apps/pipeline/src/modules/email/components/emailBodyBuilder.js (version 4.1.1 - Path Fix)
-import { logger } from '@headlines/utils-server'
+// apps/pipeline/src/modules/email/components/emailBodyBuilder.js
+import { logger } from '@headlines/utils-shared'
 import { EMAIL_CONFIG } from '../../../config/index.js'
 import { formatEventForEmail } from './eventFormatter.js'
 import { getCountryFlag } from '@headlines/utils-shared'
 
 function createEmailWrapper(bodyContent, subject) {
-  // ... (wrapper remains the same)
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -40,12 +39,7 @@ function createEmailWrapper(bodyContent, subject) {
   `
 }
 
-export async function createPersonalizedEmailBody(
-  user,
-  eventsByCountry,
-  subject,
-  intro // Now a structured object
-) {
+export async function createPersonalizedEmailBody(user, eventsByCountry, subject, intro) {
   logger.info(
     { user: user.email, countries: Object.keys(eventsByCountry) },
     'Initiating email body generation.'
@@ -56,20 +50,25 @@ export async function createPersonalizedEmailBody(
     return null
   }
 
-  // Format the new intro structure
   const bulletsHtml = intro.bullets
     .map((b) => `<li style="margin-bottom: 10px;">${b}</li>`)
     .join('')
+
+  // CORRECTED: Handle the signoff as an array and join with <br>
+  const signoffHtml = Array.isArray(intro.signoff)
+    ? intro.signoff.join('<br>')
+    : intro.signoff
+
   const introHtml = `
     <h1 class="main-heading" style="margin:0 0 20px 0; font-size: 24px; font-weight: bold;">${intro.greeting}</h1>
     <p class="paragraph" style="margin:0 0 25px 0; font-size: 15px;">${intro.body}</p>
     <ul class="paragraph" style="margin:0 0 25px 0; font-size: 15px; padding-left: 20px;">${bulletsHtml}</ul>
-    <p class="paragraph" style="margin:0 0 25px 0; font-size: 15px;">${intro.signoff.replace(/\\n/g, '<br>')}</p>
+    <p class="paragraph" style="margin:0 0 25px 0; font-size: 15px;">${signoffHtml}</p>
   `
 
   let formattedEventsHtml = ''
   for (const [country, events] of Object.entries(eventsByCountry)) {
-    const flag = getCountryFlag(country) // CORRECTED: Use utility function
+    const flag = getCountryFlag(country)
     formattedEventsHtml += `<tr><td style="padding: 30px 0 10px 0;"><h2 style="margin:0; font-size: 24px; font-weight: 500; color: #EAEAEA;">${flag} ${country}</h2></td></tr>`
 
     const eventPromises = events.map((event) => formatEventForEmail(event))

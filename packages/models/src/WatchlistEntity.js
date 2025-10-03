@@ -1,6 +1,6 @@
 // packages/models/src/WatchlistEntity.js (version 2.1.0)
 import mongoose from 'mongoose'
-import { ENTITY_TYPES, ENTITY_STATUSES } from './constants.js'
+import { ENTITY_TYPES, ENTITY_STATUSES } from './prompt-constants.js'
 
 const { Schema, model, models } = mongoose
 

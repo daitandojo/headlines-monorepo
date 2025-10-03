@@ -1,6 +1,7 @@
-// packages/data-access/src/actions/upload.js (version 2.0.0)
+// packages/data-access/src/core/upload.js
 import { revalidatePath } from '../revalidate.js'
 import { SynthesizedEvent, Opportunity } from '@headlines/models'
+import { synthesizeEvent, generateOpportunitiesFromEvent } from '@headlines/ai-services'
 
 export async function processUploadedArticle(item, userId) {
   if (!userId) {
@@ -19,12 +20,17 @@ export async function processUploadedArticle(item, userId) {
     }
 
     const synthesizedResult = await synthesizeEvent([enrichedArticle], [], '', '')
-    if (!synthesizedResult || !synthesizedResult.headline) {
+    if (
+      !synthesizedResult ||
+      !synthesizedResult.events ||
+      synthesizedResult.events.length === 0
+    ) {
       throw new Error('AI failed to synthesize an event from the provided text.')
     }
+    const eventData = synthesizedResult.events[0]
 
     const eventToSave = new SynthesizedEvent({
-      ...synthesizedResult,
+      ...eventData,
       event_key: `manual-${new Date().toISOString()}`,
       highest_relevance_score: 100,
       source_articles: [

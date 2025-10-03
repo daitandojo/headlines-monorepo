@@ -1,19 +1,21 @@
 {
   "name": "@headlines/scraper-logic",
-  "version": "1.0.0",
-  "main": "src/index.js",
+  "version": "2.0.0",
+  "main": "src/node.js",
   "type": "module",
   "license": "ISC",
   "exports": {
-    ".": "./src/index.js",
-    "./node": "./src/index.js",
+    ".": "./src/node.js",
+    "./node": "./src/node.js",
     "./next": "./src/next.js",
     "./config.js": "./src/config.js",
     "./browser.js": "./src/browser.js",
+    "./browserManager.js": "./src/browserManager.js",
     "./scraper/index.js": "./src/scraper/index.js",
     "./scraper/selectorOptimizer.js": "./src/scraper/selectorOptimizer.js",
     "./push/client.js": "./src/push/client.js",
-    "./ai/index.js": "./src/ai/index.js"
+    "./ai/index.js": "./src/ai/index.js",
+    "./test-orchestrator": "./src/test-orchestrator.js"
   },
   "dependencies": {
     "@headlines/ai-services": "workspace:*",

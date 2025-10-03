@@ -1,8 +1,6 @@
 // packages/data-access/src/actions/aiSourceDiscovery.js
-import { testSourceConfig as scrapeUrl } from './scrape.js'
 import { callLanguageModel } from '@headlines/ai-services'
 import { instructionSourceDiscovery } from '@headlines/prompts'
-// DEFINITIVE FIX: Import from the server-only entry point of the config package.
 import { settings } from '@headlines/config'
 
 const AI_AGENT_MODEL = settings.LLM_MODEL_UTILITY

@@ -1,5 +1,4 @@
-'use server'
-
+// packages/data-access/src/core/admin.js
 import {
   Subscriber,
   Country,
@@ -9,11 +8,16 @@ import {
   SourceSuggestion,
 } from '@headlines/models'
 import { buildQuery } from '../queryBuilder.js'
-import dbConnect from '@headlines/data-access/dbConnect/node'
+import { createSubscriberWithPassword } from './auth.js'
 
 export async function createSubscriber(userData) {
+  // Delegate user creation with a password to the specialized function
+  if (userData.password) {
+    return createSubscriberWithPassword(userData)
+  }
+
+  // Handle cases where a user might be created without a password initially (e.g., invites)
   try {
-    await dbConnect()
     const newUser = new Subscriber(userData)
     await newUser.save()
     return { success: true, subscriber: JSON.parse(JSON.stringify(newUser)) }
@@ -26,8 +30,11 @@ export async function createSubscriber(userData) {
 
 export async function updateSubscriber(userId, updateData) {
   try {
-    await dbConnect()
-    if (updateData.password === '') delete updateData.password
+    // Explicitly remove password from general updates. It must be updated via its own function.
+    if (updateData.password) {
+      delete updateData.password
+    }
+
     const user = await Subscriber.findByIdAndUpdate(
       userId,
       { $set: updateData },
@@ -43,7 +50,6 @@ export async function updateSubscriber(userId, updateData) {
 
 export async function deleteSubscriber(userId) {
   try {
-    await dbConnect()
     const result = await Subscriber.findByIdAndDelete(userId)
     if (!result) return { success: false, error: 'User not found.' }
     return { success: true }
@@ -55,7 +61,6 @@ export async function deleteSubscriber(userId) {
 
 export async function createCountry(countryData) {
   try {
-    await dbConnect()
     const newCountry = new Country(countryData)
     await newCountry.save()
     return { success: true, country: JSON.parse(JSON.stringify(newCountry)) }
@@ -65,15 +70,12 @@ export async function createCountry(countryData) {
   }
 }
 
-export async function updateCountry(countryId, updateData) {
+export async function updateCountry(filter, update, options) {
   try {
-    await dbConnect()
-    const country = await Country.findByIdAndUpdate(
-      countryId,
-      { $set: updateData },
-      { new: true }
-    ).lean()
-    if (!country) return { success: false, error: 'Country not found.' }
+    const country = await Country.findOneAndUpdate(filter, update, {
+      new: true,
+      ...options,
+    }).lean()
     return { success: true, country: JSON.parse(JSON.stringify(country)) }
   } catch (e) {
     return { success: false, error: 'Failed to update country.' }
@@ -82,7 +84,6 @@ export async function updateCountry(countryId, updateData) {
 
 export async function createSource(sourceData) {
   try {
-    await dbConnect()
     const newSource = new Source(sourceData)
     await newSource.save()
     return { success: true, source: JSON.parse(JSON.stringify(newSource)) }
@@ -95,7 +96,6 @@ export async function createSource(sourceData) {
 
 export async function updateSource(sourceId, updateData) {
   try {
-    await dbConnect()
     const updatedSource = await Source.findByIdAndUpdate(
       sourceId,
       { $set: updateData },
@@ -110,7 +110,6 @@ export async function updateSource(sourceId, updateData) {
 
 export const getAllCountries = async () => {
   try {
-    // await dbConnect(); // Intentionally left out, handled by caller
     const countries = await Country.aggregate([
       { $match: {} },
       {
@@ -155,13 +154,21 @@ export const getAllCountries = async () => {
   }
 }
 
+export const findSubscribers = async ({ filter = {}, sort = { createdAt: -1 } }) => {
+  try {
+    const subscribers = await Subscriber.find(filter).sort(sort).lean()
+    return { success: true, data: JSON.parse(JSON.stringify(subscribers)) }
+  } catch (e) {
+    return { success: false, error: 'Failed to find subscribers.' }
+  }
+}
+
 export const getAllSubscribers = async ({
   page = 1,
   filters = {},
   sort = 'createdAt_desc',
 }) => {
   try {
-    // await dbConnect(); // Intentionally left out, handled by caller
     const { queryFilter, sortOptions } = await buildQuery(Subscriber, { filters, sort })
     const SUBSCRIBERS_PER_PAGE = 50
     const skipAmount = (page - 1) * SUBSCRIBERS_PER_PAGE
@@ -180,13 +187,9 @@ export const getAllSubscribers = async ({
   }
 }
 
-export const getAllSources = async ({ country = null } = {}) => {
+export const getAllSources = async ({ filter = {}, sort = { name: 1 } }) => {
   try {
-    const filter = {}
-    if (country) {
-      filter.country = country
-    }
-    const sources = await Source.find(filter).sort({ name: 1 }).lean()
+    const sources = await Source.find(filter).sort(sort).lean()
     return { success: true, data: JSON.parse(JSON.stringify(sources)) }
   } catch (e) {
     console.error('[getAllSources Error]', e)
@@ -200,7 +203,6 @@ export const getAllWatchlistEntities = async ({
   sort = 'name_asc',
 } = {}) => {
   try {
-    // await dbConnect(); // Intentionally left out, handled by caller
     const { queryFilter, sortOptions } = await buildQuery(WatchlistEntity, {
       filters,
       sort,
@@ -226,7 +228,6 @@ export const getAllWatchlistEntities = async ({
 
 export const getSuggestions = async () => {
   try {
-    // await dbConnect(); // Intentionally left out, handled by caller
     const [watchlistSuggestions, sourceSuggestions] = await Promise.all([
       WatchlistSuggestion.find({ status: 'candidate' }).sort({ createdAt: -1 }).lean(),
       SourceSuggestion.find({ status: 'pending' }).sort({ createdAt: -1 }).lean(),

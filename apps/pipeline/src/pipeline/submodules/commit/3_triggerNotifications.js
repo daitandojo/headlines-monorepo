@@ -1,7 +1,8 @@
-// AFTER
-// apps/pipeline/src/pipeline/submodules/commit/3_triggerNotifications.js (Corrected)
-import { logger } from '@headlines/utils-server'
-import { triggerRealtimeEvent } from '@headlines/utils-server' // <-- CORRECT IMPORT from the shared utility package
+// apps/pipeline/src/pipeline/submodules/commit/3_triggerNotifications.js (version 2.0.0)
+import { logger } from '@headlines/utils-shared'
+import { triggerRealtimeEvent } from '@headlines/utils-server'
+// REFACTOR: Import the new centralized constants.
+import { REALTIME_CHANNELS, REALTIME_EVENTS } from '@headlines/utils-shared'
 import { SynthesizedEvent, Article } from '@headlines/models'
 import { settings } from '@headlines/config'
 import { sendNotifications } from '../../../modules/notifications/index.js'
@@ -11,7 +12,7 @@ export async function triggerNotifications(
   savedEvents,
   savedOpportunities
 ) {
-  const { assessedCandidates, isDryRun, runStats } = pipelinePayload
+  const { assessedCandidates, isDryRun, runStatsManager } = pipelinePayload
 
   const eventIds = savedEvents.map((e) => e._id)
 
@@ -26,9 +27,10 @@ export async function triggerNotifications(
           link: { $in: relevantArticleLinks },
         })
         for (const articleDoc of relevantArticleDocs) {
+          // REFACTOR: Use the imported constants instead of magic strings.
           await triggerRealtimeEvent(
-            'articles-channel',
-            'new-article',
+            REALTIME_CHANNELS.ARTICLES,
+            REALTIME_EVENTS.NEW_ARTICLE,
             articleDoc.toRealtimePayload()
           )
         }
@@ -40,9 +42,10 @@ export async function triggerNotifications(
         _id: { $in: eventIds },
       })
       for (const eventDoc of eventDocsForStreaming) {
+        // REFACTOR: Use the imported constants instead of magic strings.
         await triggerRealtimeEvent(
-          'events-channel',
-          'new-event',
+          REALTIME_CHANNELS.EVENTS,
+          REALTIME_EVENTS.NEW_EVENT,
           eventDoc.toRealtimePayload()
         )
       }
@@ -57,7 +60,8 @@ export async function triggerNotifications(
     eventsForNotification,
     savedOpportunities
   )
-  runStats.eventsEmailed = emailSentCount
+  // REFACTOR: Use the RunStatsManager to set the final count.
+  runStatsManager.set('eventsEmailed', emailSentCount)
 
   if (emailSentCount > 0 && !isDryRun) {
     await SynthesizedEvent.updateMany(

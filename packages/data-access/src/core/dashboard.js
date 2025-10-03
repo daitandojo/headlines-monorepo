@@ -1,4 +1,4 @@
-// File: packages/data-access/src/actions/dashboard.js
+// packages/data-access/src/core/dashboard.js
 import {
   Source,
   Subscriber,
@@ -8,11 +8,9 @@ import {
   Opportunity,
   Country,
 } from '@headlines/models'
-import dbConnect from '@headlines/data-access/dbConnect/node'
 
 export async function getDashboardStats() {
   try {
-    await dbConnect()
     const [
       sourceStats,
       userStats,
@@ -67,10 +65,8 @@ export async function getDashboardStats() {
   }
 }
 
-// This is the missing function
 export async function getGlobalCountries() {
   try {
-    await dbConnect()
     const countries = await Country.aggregate([
       { $match: { status: 'active' } },
       {
@@ -88,13 +84,11 @@ export async function getGlobalCountries() {
           count: { $size: '$events' },
         },
       },
-      // --- ADD THIS STAGE TO FILTER OUT ZERO-COUNT COUNTRIES ---
       {
         $match: {
           count: { $gt: 0 },
         },
       },
-      // ---------------------------------------------------------
       { $sort: { name: 1 } },
     ])
     return { success: true, data: JSON.parse(JSON.stringify(countries)) }

@@ -1,18 +1,46 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 18 files, 1 directories
+Total: 45 files, 2 directories
 
 ```
 headlines/
 ├── 📁 src/
+│   ├── 📁 schemas/
+│   │   ├── 📄 apiSchemas.js
+│   │   ├── 📄 articleAssessmentSchema.js
+│   │   ├── 📄 articlePreAssessmentSchema.js
+│   │   ├── 📄 batchArticleAssessmentSchema.js
+│   │   ├── 📄 batchHeadlineAssessmentSchema.js
+│   │   ├── 📄 canonicalizerSchema.js
+│   │   ├── 📄 clusterSchema.js
+│   │   ├── 📄 countryCorrectionSchema.js
+│   │   ├── 📄 disambiguationSchema.js
+│   │   ├── 📄 emailIntroSchema.js
+│   │   ├── 📄 emailSubjectSchema.js
+│   │   ├── 📄 enrichContactSchema.js
+│   │   ├── 📄 entitySchema.js
+│   │   ├── 📄 executiveSummarySchema.js
+│   │   ├── 📄 findContactSchema.js
+│   │   ├── 📄 headlineAssessmentSchema.js
+│   │   ├── 📄 index.js
+│   │   ├── 📄 judgeSchema.js
+│   │   ├── 📄 opportunitySchema.js
+│   │   ├── 📄 ragResponseSchema.js
+│   │   ├── 📄 sectionClassifierSchema.js
+│   │   ├── 📄 selectorRepairSchema.js
+│   │   ├── 📄 synthesisSchema.js
+│   │   ├── 📄 translateSchema.js
+│   │   ├── 📄 userSchemas.js
+│   │   ├── 📄 watchlistSchemas.js
+│   │   └── 📄 watchlistSuggestionSchema.js
 │   ├── 📄 Article.js
 │   ├── 📄 client.js
-│   ├── 📄 constants.js
 │   ├── 📄 Country.js
 │   ├── 📄 index.js
 │   ├── 📄 next.js
 │   ├── 📄 node.js
 │   ├── 📄 Opportunity.js
+│   ├── 📄 prompt-constants.js
 │   ├── 📄 PushSubscription.js
 │   ├── 📄 RunVerdict.js
 │   ├── 📄 Setting.js
@@ -27,11 +55,11 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-09-29T22:40:44.837Z
+**Generated**: 2025-10-02T23:22:35.394Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/models
-**Total Files**: 18
-**Package**: @headlines/models@1.0.0
-**Description**: Shared Mongoose models for the Headlines monorepo.
+**Total Files**: 45
+**Package**: @headlines/models@2.0.0
+**Description**: Shared Mongoose models and Zod validation schemas for the Headlines monorepo.
 
 
 
@@ -39,37 +67,39 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 19, Size: 412 Bytes*
+*Lines: 21, Size: 502 Bytes*
 
 ```json
 {
   "name": "@headlines/models",
-  "version": "1.0.0",
-  "description": "Shared Mongoose models for the Headlines monorepo.",
-  "main": "src/index.js",
+  "version": "2.0.0",
+  "description": "Shared Mongoose models and Zod validation schemas for the Headlines monorepo.",
+  "main": "src/node.js",
   "type": "module",
   "license": "ISC",
   "exports": {
-    ".": "./src/index.js",
+    ".": "./src/node.js",
     "./node": "./src/node.js",
     "./next": "./src/next.js",
-    "./client": "./src/client.js"
+    "./client": "./src/client.js",
+    "./schemas": "./src/schemas/index.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
-    "mongoose": "^8.4.1"
+    "mongoose": "^8.4.1",
+    "zod": "^3.23.8"
   }
 }
 
 ```
 
 ## 📄 src/Article.js
-*Lines: 79, Size: 2.44 KB*
+*Lines: 79, Size: 2.45 KB*
 
 ```javascript
 // packages/models/src/Article.js (version 2.0.2)
 import mongoose from 'mongoose'
-import { ARTICLE_STATUSES } from './constants.js'
+import { ARTICLE_STATUSES } from './prompt-constants.js'
 
 const { Schema, model, models } = mongoose
 
@@ -322,12 +352,16 @@ export default models.Setting || model('Setting', SettingSchema)
 ```
 
 ## 📄 src/Source.js
-*Lines: 61, Size: 2.14 KB*
+*Lines: 65, Size: 2.15 KB*
 
 ```javascript
 // packages/models/src/Source.js (version 7.0.0)
 import mongoose from 'mongoose'
-import { SOURCE_STATUSES, SOURCE_FREQUENCIES, EXTRACTION_METHODS } from './constants.js'
+import {
+  SOURCE_STATUSES,
+  SOURCE_FREQUENCIES,
+  EXTRACTION_METHODS,
+} from './prompt-constants.js'
 const { Schema, model, models } = mongoose
 
 const SourceAnalyticsSchema = new Schema(
@@ -389,12 +423,12 @@ export default models.Source || model('Source', SourceSchema)
 ```
 
 ## 📄 src/SourceSuggestion.js
-*Lines: 31, Size: 975 Bytes*
+*Lines: 31, Size: 982 Bytes*
 
 ```javascript
 // packages/models/src/SourceSuggestion.js (version 5.0.0)
 import mongoose from 'mongoose'
-import { SUGGESTION_STATUSES } from './constants.js'
+import { SUGGESTION_STATUSES } from './prompt-constants.js'
 const { Schema, model, models } = mongoose
 
 const SourceSuggestionSchema = new Schema(
@@ -426,15 +460,14 @@ export default models.SourceSuggestion ||
 ```
 
 ## 📄 src/Subscriber.js
-*Lines: 104, Size: 3.38 KB*
+*Lines: 71, Size: 2.49 KB*
 
 ```javascript
-// packages/models/src/Subscriber.js (version 5.0.1 - Complete)
+// packages/models/src/Subscriber.js
 import mongoose from 'mongoose'
 import bcrypt from 'bcryptjs'
-import { SUBSCRIBER_ROLES, SUBSCRIPTION_TIERS } from './constants.js'
+import { SUBSCRIBER_ROLES, SUBSCRIPTION_TIERS } from './prompt-constants.js'
 const { Schema, model, models } = mongoose
-const SALT_WORK_FACTOR = 10
 
 const CountrySubscriptionSchema = new Schema(
   {
@@ -492,40 +525,8 @@ const SubscriberSchema = new Schema(
   { timestamps: true, collection: 'subscribers' }
 )
 
-SubscriberSchema.pre('save', function (next) {
-  const user = this
-  console.log('[Subscriber Model] pre-save hook triggered.')
-
-  if (!user.isModified('password')) {
-    console.log('[Subscriber Model] Password not modified. Skipping hash.')
-    return next()
-  }
-
-  console.log('[Subscriber Model] Password has been modified. Proceeding to hash.')
-  console.log(
-    '[Subscriber Model]   - Plain text password received:',
-    `"${user.password}"`
-  )
-
-  bcrypt.genSalt(SALT_WORK_FACTOR, function (err, salt) {
-    if (err) {
-      console.error('[Subscriber Model] Error generating salt:', err)
-      return next(err)
-    }
-    bcrypt.hash(user.password, salt, function (err, hash) {
-      if (err) {
-        console.error('[Subscriber Model] Error hashing password:', err)
-        return next(err)
-      }
-      user.password = hash
-      console.log(
-        '[Subscriber Model]   - Hashing successful. New hash:',
-        `"${user.password}"`
-      )
-      next()
-    })
-  })
-})
+// The pre('save') hook for password hashing has been REMOVED.
+// Hashing is now handled explicitly in the data-access layer.
 
 SubscriberSchema.methods.comparePassword = function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password)
@@ -616,12 +617,12 @@ export default models.SynthesizedEvent ||
 ```
 
 ## 📄 src/WatchlistEntity.js
-*Lines: 33, Size: 1.12 KB*
+*Lines: 33, Size: 1.13 KB*
 
 ```javascript
 // packages/models/src/WatchlistEntity.js (version 2.1.0)
 import mongoose from 'mongoose'
-import { ENTITY_TYPES, ENTITY_STATUSES } from './constants.js'
+import { ENTITY_TYPES, ENTITY_STATUSES } from './prompt-constants.js'
 
 const { Schema, model, models } = mongoose
 
@@ -655,13 +656,16 @@ export default models.WatchlistEntity || model('WatchlistEntity', WatchlistEntit
 ```
 
 ## 📄 src/WatchlistSuggestion.js
-*Lines: 29, Size: 1014 Bytes*
+*Lines: 33, Size: 1 KB*
 
 ```javascript
 // packages/models/src/WatchlistSuggestion.js (version 3.0.0 - With Search Terms)
 import mongoose from 'mongoose'
-import { WATCHLIST_SUGGESTION_STATUSES, ENTITY_TYPES } from './constants.js'
-const { Schema, model, models } = mongoose;
+import {
+  WATCHLIST_SUGGESTION_STATUSES,
+  ENTITY_TYPES,
+} from './prompt-constants.js'
+const { Schema, model, models } = mongoose
 
 const WatchlistSuggestionSchema = new Schema(
   {
@@ -685,12 +689,13 @@ const WatchlistSuggestionSchema = new Schema(
   }
 )
 
-export default models.WatchlistSuggestion || model('WatchlistSuggestion', WatchlistSuggestionSchema)
+export default models.WatchlistSuggestion ||
+  model('WatchlistSuggestion', WatchlistSuggestionSchema)
 
 ```
 
 ## 📄 src/client.js
-*Lines: 20, Size: 528 Bytes*
+*Lines: 20, Size: 535 Bytes*
 
 ```javascript
 // File: packages/models/src/client.js (version 1.0 - New File)
@@ -698,7 +703,7 @@ export default models.WatchlistSuggestion || model('WatchlistSuggestion', Watchl
 
 // This file is the designated "client-safe" entry point for the models package.
 // It ONLY exports constants and contains NO server-side code (like Mongoose).
-import * as constants from './constants.js'
+import * as constants from './prompt-constants.js'
 
 export const {
   ENTITY_TYPES,
@@ -712,23 +717,6 @@ export const {
   SUBSCRIBER_ROLES,
   SUBSCRIPTION_TIERS,
 } = constants
-
-```
-
-## 📄 src/constants.js
-*Lines: 11, Size: 688 Bytes*
-
-```javascript
-export const ENTITY_TYPES = ['person', 'family', 'company'];
-export const ENTITY_STATUSES = ['active', 'inactive', 'candidate'];
-export const SOURCE_STATUSES = ['active', 'paused', 'under_review'];
-export const SOURCE_FREQUENCIES = ['high', 'low'];
-export const EXTRACTION_METHODS = ['custom', 'declarative', 'json-ld'];
-export const ARTICLE_STATUSES = ['scraped', 'assessed', 'enriched', 'failed_enrichment'];
-export const SUGGESTION_STATUSES = ['pending', 'approved', 'rejected'];
-export const WATCHLIST_SUGGESTION_STATUSES = ['candidate', 'approved', 'dismissed'];
-export const SUBSCRIBER_ROLES = ['user', 'admin'];
-export const SUBSCRIPTION_TIERS = ['free', 'premium', 'enterprise'];
 
 ```
 
@@ -786,5 +774,592 @@ export * from './index.js'
 ```javascript
 // Re-export all models for the pure Node.js environment
 export * from './index.js'
+
+```
+
+## 📄 src/prompt-constants.js
+*Lines: 11, Size: 688 Bytes*
+
+```javascript
+export const ENTITY_TYPES = ['person', 'family', 'company'];
+export const ENTITY_STATUSES = ['active', 'inactive', 'candidate'];
+export const SOURCE_STATUSES = ['active', 'paused', 'under_review'];
+export const SOURCE_FREQUENCIES = ['high', 'low'];
+export const EXTRACTION_METHODS = ['custom', 'declarative', 'json-ld'];
+export const ARTICLE_STATUSES = ['scraped', 'assessed', 'enriched', 'failed_enrichment'];
+export const SUGGESTION_STATUSES = ['pending', 'approved', 'rejected'];
+export const WATCHLIST_SUGGESTION_STATUSES = ['candidate', 'approved', 'dismissed'];
+export const SUBSCRIBER_ROLES = ['user', 'admin'];
+export const SUBSCRIPTION_TIERS = ['free', 'premium', 'enterprise'];
+
+```
+
+## 📄 src/schemas/apiSchemas.js
+*Lines: 45, Size: 1.21 KB*
+
+```javascript
+// packages/models/src/schemas/apiSchemas.js
+import { z } from 'zod'
+
+// Schema for /api/user/interactions
+export const interactionSchema = z.object({
+  itemId: z.string().min(1),
+  itemType: z.enum(['article', 'event', 'opportunity']),
+  action: z.enum(['favorite', 'unfavorite', 'discard']),
+})
+
+// Schema for /api/upload-article
+export const articleUploadSchema = z.object({
+  item: z.object({
+    headline: z.string().min(1, 'Headline is required'),
+    article: z.string().min(1, 'Article content is required'),
+  }),
+})
+
+// Schema for /api/chat and /api/chat/title
+export const chatSchema = z.object({
+  messages: z.array(
+    z.object({
+      role: z.enum(['user', 'assistant']),
+      content: z.string(),
+      id: z.string().optional(),
+      isThinking: z.boolean().optional(),
+      isError: z.boolean().optional(),
+    })
+  ),
+})
+
+// Schema for /api-admin/export
+export const exportSchema = z.object({
+  entity: z.enum(['opportunities', 'users', 'events', 'articles']),
+  fileType: z.enum(['csv', 'xlsx']),
+  filters: z.array(z.any()).optional(),
+  sort: z.string().optional().nullable(),
+})
+
+// Schema for /api/auth/login
+export const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+})
+
+```
+
+## 📄 src/schemas/articleAssessmentSchema.js
+*Lines: 24, Size: 753 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/articleAssessmentSchema.js (version 1.1)
+import { z } from 'zod'
+
+export const articleAssessmentSchema = z.object({
+  reasoning: z.object({
+    event_type: z.string(),
+    is_liquidity_event: z.boolean(),
+    beneficiary: z.string(),
+  }),
+  // NEW FIELD: Added classification to the schema.
+  classification: z.enum(['New wealth', 'Wealth detection', 'Interview', 'IPO', 'Other']),
+  relevance_article: z.number().min(0).max(100),
+  assessment_article: z.string().min(1),
+  amount: z.number().nullable().optional(),
+  key_individuals: z.array(
+    z.object({
+      name: z.string(),
+      role_in_event: z.string(),
+      company: z.string().nullable(),
+      email_suggestion: z.string().nullable(),
+    })
+  ),
+})
+
+```
+
+## 📄 src/schemas/articlePreAssessmentSchema.js
+*Lines: 7, Size: 223 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/articlePreAssessmentSchema.js (version 1.0)
+import { z } from 'zod'
+
+export const articlePreAssessmentSchema = z.object({
+  classification: z.enum(['private', 'public', 'corporate']),
+})
+
+```
+
+## 📄 src/schemas/batchArticleAssessmentSchema.js
+*Lines: 8, Size: 285 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/batchArticleAssessmentSchema.js (version 1.0)
+import { z } from 'zod'
+import { articleAssessmentSchema } from './articleAssessmentSchema.js'
+
+export const batchArticleAssessmentSchema = z.object({
+  assessments: z.array(articleAssessmentSchema),
+})
+
+```
+
+## 📄 src/schemas/batchHeadlineAssessmentSchema.js
+*Lines: 9, Size: 371 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/batchHeadlineAssessmentSchema.js (version 1.0)
+import { z } from 'zod'
+import { headlineAssessmentSchema } from './headlineAssessmentSchema.js'
+
+// The batch schema reuses the single assessment schema
+export const batchHeadlineAssessmentSchema = z.object({
+  assessments: z.array(headlineAssessmentSchema.shape.assessment.element),
+})
+
+```
+
+## 📄 src/schemas/canonicalizerSchema.js
+*Lines: 7, Size: 188 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/canonicalizerSchema.js (version 1.0)
+import { z } from 'zod'
+
+export const canonicalizerSchema = z.object({
+  canonical_name: z.string().nullable(),
+})
+
+```
+
+## 📄 src/schemas/clusterSchema.js
+*Lines: 12, Size: 250 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/clusterSchema.js (version 1.0)
+import { z } from 'zod'
+
+export const clusterSchema = z.object({
+  events: z.array(
+    z.object({
+      event_key: z.string(),
+      article_ids: z.array(z.string()),
+    })
+  ),
+})
+
+```
+
+## 📄 src/schemas/countryCorrectionSchema.js
+*Lines: 7, Size: 269 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/countryCorrectionSchema.js
+import { z } from 'zod';
+
+export const countryCorrectionSchema = z.object({
+  country: z.string().nullable().describe("The single, corrected, UN-recognized country name, or null if not determinable."),
+});
+
+```
+
+## 📄 src/schemas/disambiguationSchema.js
+*Lines: 7, Size: 186 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/disambiguationSchema.js (version 1.0)
+import { z } from 'zod'
+
+export const disambiguationSchema = z.object({
+  best_title: z.string().nullable(),
+})
+
+```
+
+## 📄 src/schemas/emailIntroSchema.js
+*Lines: 11, Size: 313 Bytes*
+
+```javascript
+// packages/models/src/schemas/emailIntroSchema.js
+import { z } from 'zod'
+
+export const emailIntroSchema = z.object({
+  greeting: z.string(),
+  body: z.string(),
+  bullets: z.array(z.string()),
+  // The signoff is now an array of strings, with each string representing a line.
+  signoff: z.array(z.string()),
+})
+
+```
+
+## 📄 src/schemas/emailSubjectSchema.js
+*Lines: 7, Size: 184 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/emailSubjectSchema.js (version 1.0)
+import { z } from 'zod'
+
+export const emailSubjectSchema = z.object({
+  subject_headline: z.string().min(1),
+})
+
+```
+
+## 📄 src/schemas/enrichContactSchema.js
+*Lines: 14, Size: 335 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/enrichContactSchema.js (version 1.0)
+import { z } from 'zod'
+
+export const enrichContactSchema = z.object({
+  enriched_contacts: z.array(
+    z.object({
+      name: z.string(),
+      role_in_event: z.string(),
+      company: z.string(),
+      email_suggestion: z.string().nullable(),
+    })
+  ),
+})
+
+```
+
+## 📄 src/schemas/entitySchema.js
+*Lines: 8, Size: 191 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/entitySchema.js (version 1.0)
+import { z } from 'zod'
+
+export const entitySchema = z.object({
+  reasoning: z.string(),
+  entities: z.array(z.string()),
+})
+
+```
+
+## 📄 src/schemas/executiveSummarySchema.js
+*Lines: 7, Size: 176 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/executiveSummarySchema.js (version 1.0)
+import { z } from 'zod'
+
+export const executiveSummarySchema = z.object({
+  summary: z.string(),
+})
+
+```
+
+## 📄 src/schemas/findContactSchema.js
+*Lines: 7, Size: 183 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/findContactSchema.js (version 1.0)
+import { z } from 'zod'
+
+export const findContactSchema = z.object({
+  email: z.string().email().nullable(),
+})
+
+```
+
+## 📄 src/schemas/headlineAssessmentSchema.js
+*Lines: 13, Size: 362 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/headlineAssessmentSchema.js (version 1.0)
+import { z } from 'zod'
+
+const singleAssessmentSchema = z.object({
+  headline_en: z.string(),
+  relevance_headline: z.number().min(0).max(100),
+  assessment_headline: z.string(),
+})
+
+export const headlineAssessmentSchema = z.object({
+  assessment: z.array(singleAssessmentSchema),
+})
+
+```
+
+## 📄 src/schemas/index.js
+*Lines: 30, Size: 1.17 KB*
+
+```javascript
+// packages/models/src/schemas/index.js
+// This file is the central, isomorphic entry point for all Zod schemas.
+
+export * from './apiSchemas.js' // Added new API schemas
+export * from './articleAssessmentSchema.js'
+export * from './articlePreAssessmentSchema.js'
+export * from './batchArticleAssessmentSchema.js'
+export * from './batchHeadlineAssessmentSchema.js'
+export * from './canonicalizerSchema.js'
+export * from './clusterSchema.js'
+export * from './countryCorrectionSchema.js'
+export * from './disambiguationSchema.js'
+export * from './emailIntroSchema.js'
+export * from './emailSubjectSchema.js'
+export * from './enrichContactSchema.js'
+export * from './entitySchema.js'
+export * from './executiveSummarySchema.js'
+export * from './findContactSchema.js'
+export * from './headlineAssessmentSchema.js'
+export * from './judgeSchema.js'
+export * from './opportunitySchema.js'
+export * from './ragResponseSchema.js'
+export * from './sectionClassifierSchema.js'
+export * from './selectorRepairSchema.js'
+export * from './synthesisSchema.js'
+export * from './translateSchema.js'
+export * from './userSchemas.js'
+export * from './watchlistSchemas.js'
+export * from './watchlistSuggestionSchema.js'
+
+```
+
+## 📄 src/schemas/judgeSchema.js
+*Lines: 14, Size: 404 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/judgeSchema.js (version 1.0)
+import { z } from 'zod'
+
+const verdictSchema = z.object({
+  identifier: z.string(),
+  quality: z.enum(['Excellent', 'Good', 'Acceptable', 'Marginal', 'Poor', 'Irrelevant']),
+  commentary: z.string(),
+})
+
+export const judgeSchema = z.object({
+  event_judgements: z.array(verdictSchema),
+  opportunity_judgements: z.array(verdictSchema),
+})
+
+```
+
+## 📄 src/schemas/opportunitySchema.js
+*Lines: 22, Size: 929 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/opportunitySchema.js (version 2.1)
+import { z } from 'zod'
+
+export const opportunitySchema = z.object({
+  opportunities: z.array(
+    // DEFINITIVE FIX: Use .passthrough() to allow the AI to include extra fields
+    // without causing a validation error. We will only use the fields we define.
+    z.object({
+      reachOutTo: z.string().describe("The full name of the individual or family to contact."),
+      contactDetails: z.object({
+        email: z.string().email().nullable(),
+        role: z.string().nullable(),
+        company: z.string().nullable(),
+      }),
+      basedIn: z.string().nullable(),
+      whyContact: z.array(z.string()).describe("An array of concise, one-sentence reasons for contact."),
+      likelyMMDollarWealth: z.number().nullable(),
+      event_key: z.string().describe("The unique key of the source event for this opportunity."),
+    }).passthrough()
+  ),
+})
+
+```
+
+## 📄 src/schemas/ragResponseSchema.js
+*Lines: 20, Size: 581 Bytes*
+
+```javascript
+// packages/models/src/schemas/ragResponseSchema.js
+import { z } from 'zod'
+
+/**
+ * Defines the structured response for the RAG synthesizer agent.
+ * The answer is broken down into parts, each with its own source attribution.
+ */
+export const ragResponseSchema = z.object({
+  answer_parts: z.array(
+    z.object({
+      text: z.string().describe('A segment of the final answer.'),
+      source: z
+        .enum(['rag', 'wiki', 'search', 'llm'])
+        .describe(
+          'The source of the text segment. "llm" is used for general connective phrasing.'
+        ),
+    })
+  ),
+})
+
+```
+
+## 📄 src/schemas/sectionClassifierSchema.js
+*Lines: 14, Size: 411 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/sectionClassifierSchema.js (version 1.0)
+import { z } from 'zod'
+
+export const sectionClassifierSchema = z.object({
+  classifications: z.array(
+    z.object({
+      classification: z.enum(['news_section', 'article_headline', 'navigation', 'other']),
+      reasoning: z
+        .string()
+        .describe('A brief explanation for the classification choice.'),
+    })
+  ),
+})
+
+```
+
+## 📄 src/schemas/selectorRepairSchema.js
+*Lines: 13, Size: 415 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/selectorRepairSchema.js (version 1.0)
+import { z } from 'zod'
+
+export const selectorRepairSchema = z.object({
+  reasoning: z.string(),
+  suggested_selectors: z.object({
+    headlineSelector: z.string().optional(),
+    linkSelector: z.string().optional().nullable(),
+    headlineTextSelector: z.string().optional().nullable(),
+    articleSelector: z.string().optional(),
+  }),
+})
+
+```
+
+## 📄 src/schemas/synthesisSchema.js
+*Lines: 27, Size: 819 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/synthesisSchema.js (version 1.1)
+import { z } from 'zod'
+
+export const synthesisSchema = z.object({
+  events: z.array(
+    z.object({
+      headline: z.string().min(1),
+      summary: z.string().min(1),
+      advisor_summary: z
+        .string()
+        .min(1)
+        .describe('The one-sentence actionable summary for wealth advisors.'),
+      // DEFINITIVE FIX: Add the new classification field to the schema.
+      eventClassification: z.string().min(1).describe("The event's classification type."),
+      country: z.string().min(1),
+      key_individuals: z.array(
+        z.object({
+          name: z.string(),
+          role_in_event: z.string(),
+          company: z.string().nullable(),
+          email_suggestion: z.string().nullable(),
+        })
+      ),
+    })
+  ),
+})
+
+```
+
+## 📄 src/schemas/translateSchema.js
+*Lines: 7, Size: 179 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/translateSchema.js (version 1.0.0)
+import { z } from 'zod'
+
+export const translateSchema = z.object({
+  translated_html: z.string().min(1),
+})
+
+```
+
+## 📄 src/schemas/userSchemas.js
+*Lines: 35, Size: 1.19 KB*
+
+```javascript
+// packages/models/src/schemas/userSchemas.js
+import { z } from 'zod'
+import { SUBSCRIBER_ROLES, SUBSCRIPTION_TIERS } from '../prompt-constants.js'
+
+const countrySubscriptionSchema = z.object({
+  name: z.string(),
+  active: z.boolean(),
+})
+
+export const userCreateSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().optional(),
+  language: z.string().default('English'),
+  countries: z.array(countrySubscriptionSchema).default([]),
+  role: z.enum(SUBSCRIBER_ROLES).default('user'),
+  emailNotificationsEnabled: z.boolean().default(true),
+  pushNotificationsEnabled: z.boolean().default(true),
+  subscriptionTier: z.enum(SUBSCRIPTION_TIERS).default('free'),
+  isActive: z.boolean().default(true),
+})
+
+export const userUpdateSchema = userCreateSchema
+  .omit({ email: true }) // Email cannot be changed on update
+  .partial() // All fields are optional on update
+  .extend({
+    // Allow password to be an empty string for "no change"
+    password: z
+      .string()
+      .min(6, 'Password must be at least 6 characters')
+      .or(z.literal(''))
+      .optional(),
+  })
+
+```
+
+## 📄 src/schemas/watchlistSchemas.js
+*Lines: 17, Size: 605 Bytes*
+
+```javascript
+// packages/models/src/schemas/watchlistSchemas.js
+import { z } from 'zod'
+import { ENTITY_TYPES, ENTITY_STATUSES } from '../prompt-constants.js'
+
+export const watchlistEntitySchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  type: z.enum(ENTITY_TYPES),
+  status: z.enum(ENTITY_STATUSES).default('candidate'),
+  context: z.string().optional(),
+  searchTerms: z.array(z.string()).default([]),
+  country: z.string().optional(),
+  hitCount: z.number().optional(),
+  estimatedNetWorthUSD_MM: z.number().optional(),
+  primaryCompany: z.string().optional(),
+  notes: z.string().optional(),
+})
+
+```
+
+## 📄 src/schemas/watchlistSuggestionSchema.js
+*Lines: 16, Size: 496 Bytes*
+
+```javascript
+// packages/ai-services/src/schemas/watchlistSuggestionSchema.js (version 2.0.0 - With Search Terms)
+import { z } from 'zod'
+
+export const watchlistSuggestionSchema = z.object({
+  suggestions: z.array(
+    z.object({
+      name: z.string(),
+      type: z.enum(['person', 'family', 'company']),
+      country: z.string(),
+      rationale: z.string(),
+      sourceEvent: z.string(),
+      searchTerms: z.array(z.string()).describe("An array of 2-4 unique, lowercase search terms."),
+    })
+  ),
+})
 
 ```

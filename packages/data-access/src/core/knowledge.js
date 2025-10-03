@@ -1,7 +1,6 @@
-// src/actions/knowledge.js (Corrected)
+// packages/data-access/src/core/knowledge.js
 import { Pinecone } from '@pinecone-database/pinecone'
 import mongoose from 'mongoose'
-import dbConnect from '@headlines/data-access/dbConnect/node'
 import { Article } from '@headlines/models'
 import { generateEmbedding } from '@headlines/ai-services'
 import { env } from '@headlines/config'
@@ -26,8 +25,6 @@ export async function addKnowledge(data) {
 
   try {
     const index = getPineconeIndex()
-    await dbConnect()
-    console.log('[Add Knowledge] Database connected.')
 
     console.log('[Add Knowledge] Generating embedding...')
     const textToEmbed = `${headline}\n${business_summary}`

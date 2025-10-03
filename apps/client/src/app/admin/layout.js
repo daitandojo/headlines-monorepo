@@ -2,7 +2,7 @@
 
 import { verifyAdmin } from '@/lib/auth/server'
 import { redirect } from 'next/navigation'
-import { DesktopOnlyWrapper } from '@/components/admin/DesktopOnlyWrapper'
+import { DesktopOnlyWrapper } from '@/components/shared/screen/DesktopOnlyWrapper'
 import AdminNav from '@/components/admin/main-nav' // Import the nav component here
 
 export const dynamic = 'force-dynamic'

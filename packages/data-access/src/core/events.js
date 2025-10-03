@@ -1,6 +1,4 @@
-'use server'
-
-import dbConnect from '@headlines/data-access/dbConnect/node'
+// packages/data-access/src/core/events.js
 import { SynthesizedEvent, Article, Opportunity } from '@headlines/models'
 import { buildQuery } from '../queryBuilder.js'
 import mongoose from 'mongoose'
@@ -13,7 +11,6 @@ export async function getEvents({
   sort = 'createdAt_desc',
   userId = null,
 }) {
-  await dbConnect() // <-- ADD THIS BACK
   const { queryFilter, sortOptions } = await buildQuery(SynthesizedEvent, {
     filters,
     sort,
@@ -33,8 +30,38 @@ export async function getEvents({
   return { success: true, data: JSON.parse(JSON.stringify(events)), total }
 }
 
+export async function findEvents({
+  filter = {},
+  sort = { createdAt: -1 },
+  limit = 0,
+  populate = '',
+}) {
+  try {
+    const query = SynthesizedEvent.find(filter).sort(sort).populate(populate)
+    if (limit > 0) {
+      query.limit(limit)
+    }
+    const events = await query.lean()
+    return { success: true, data: JSON.parse(JSON.stringify(events)) }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+}
+
+export async function updateEvents(filter, update) {
+  try {
+    const result = await SynthesizedEvent.updateMany(filter, update)
+    return {
+      success: true,
+      matchedCount: result.matchedCount,
+      modifiedCount: result.modifiedCount,
+    }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+}
+
 export async function getEventDetails(eventId) {
-  await dbConnect() // <-- ADD THIS BACK
   if (!mongoose.Types.ObjectId.isValid(eventId))
     return { success: false, error: 'Invalid event ID' }
   const event = await SynthesizedEvent.findById(eventId)
@@ -45,7 +72,6 @@ export async function getEventDetails(eventId) {
 }
 
 export async function updateEvent(eventId, updateData) {
-  await dbConnect() // <-- ADD THIS BACK
   if (!mongoose.Types.ObjectId.isValid(eventId))
     return { success: false, error: 'Invalid event ID' }
   const event = await SynthesizedEvent.findByIdAndUpdate(
@@ -58,7 +84,6 @@ export async function updateEvent(eventId, updateData) {
 }
 
 export async function deleteEvent(eventId) {
-  await dbConnect() // <-- ADD THIS BACK
   if (!mongoose.Types.ObjectId.isValid(eventId))
     return { success: false, error: 'Invalid event ID' }
   const result = await SynthesizedEvent.findByIdAndDelete(eventId)
@@ -71,4 +96,10 @@ export async function deleteEvent(eventId) {
     ),
   ])
   return { success: true }
+}
+
+export async function getTotalEventCount({ filters = {}, userId = null }) {
+  const { queryFilter } = await buildQuery(SynthesizedEvent, { filters, userId })
+  const total = await SynthesizedEvent.countDocuments(queryFilter)
+  return { success: true, total }
 }

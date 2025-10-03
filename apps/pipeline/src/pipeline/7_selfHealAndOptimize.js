@@ -1,5 +1,5 @@
 // apps/pipeline/src/pipeline/7_selfHealAndOptimize.js (version 2.0.0)
-import { logger } from '@headlines/utils-server'
+import { logger } from '@headlines/utils-shared'
 
 export async function runSelfHealAndOptimize(pipelinePayload) {
   logger.warn('--- STAGE 7: SELF-HEAL & OPTIMIZE (DISABLED) ---')

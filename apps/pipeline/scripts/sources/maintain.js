@@ -1,68 +1,80 @@
-// apps/pipeline/scripts/sources/maintain.js (version 2.0.0)
-import dbConnect from '../../packages/data-access/src/dbConnect.js'
-import { Source } from '@headlines/models'
-import { logger } from '@headlines/utils-server'
-import mongoose from 'mongoose'
+// apps/pipeline/scripts/sources/maintain.js
+import { initializeScriptEnv } from '../seed/lib/script-init.js'
+import { logger, sendErrorAlert } from '@headlines/utils-server'
+import { getAllSources, updateSource } from '@headlines/data-access'
 import colors from 'ansi-colors'
 
 const LOW_LEAD_RATE_THRESHOLD = 0.01 // 1%
 const MIN_RUNS_FOR_PRUNING = 100
 
 async function maintainSources() {
-  await dbConnect()
-  logger.info('🤖 Starting Autonomous Scraper Maintenance...')
+  try {
+    await initializeScriptEnv()
+    logger.info('🤖 Starting Autonomous Scraper Maintenance...')
 
-  // --- 1. Report on Failing Sources (Self-Heal Disabled) ---
-  logger.info('--- Phase 1: Identifying and Reporting Failing Scrapers ---')
-  const failingSources = await Source.find({
-    status: 'active',
-    'analytics.totalRuns': { $gt: 0 },
-    'analytics.lastRunHeadlineCount': 0,
-  }).lean()
+    logger.info('--- Phase 1: Identifying and Reporting Failing Scrapers ---')
+    const failingResult = await getAllSources({
+      filter: {
+        status: 'active',
+        'analytics.totalRuns': { $gt: 0 },
+        'analytics.lastRunHeadlineCount': 0,
+      },
+    })
+    if (!failingResult.success) throw new Error(failingResult.error)
+    const failingSources = failingResult.data
 
-  if (failingSources.length === 0) {
-    logger.info('✅ No failing sources detected.')
-  } else {
-    logger.warn(
-      `Found ${failingSources.length} failing sources. Self-healing is disabled, reporting only:`
-    )
-    for (const source of failingSources) {
+    if (failingSources.length === 0) {
+      logger.info('✅ No failing sources detected.')
+    } else {
       logger.warn(
-        colors.red(
-          `  - FAILED: ${source.name} (Last scraped: ${source.lastScrapedAt?.toISOString() || 'N/A'})`
+        `Found ${failingSources.length} failing sources. Self-healing is disabled, reporting only:`
+      )
+      for (const source of failingSources) {
+        logger.warn(
+          colors.red(
+            `  - FAILED: ${source.name} (Last scraped: ${source.lastScrapedAt?.toISOString() || 'N/A'})`
+          )
         )
-      )
+      }
     }
-  }
 
-  // --- 2. Proactive Pruning of Low-Value Sources ---
-  logger.info('\n--- Phase 2: Pruning Low-Value (High Noise) Sources ---')
-  const candidatesForPruning = await Source.find({
-    'analytics.totalRuns': { $gt: MIN_RUNS_FOR_PRUNING },
-    scrapeFrequency: 'high',
-  }).lean()
+    logger.info('\n--- Phase 2: Pruning Low-Value (High Noise) Sources ---')
+    const candidatesResult = await getAllSources({
+      filter: {
+        'analytics.totalRuns': { $gt: MIN_RUNS_FOR_PRUNING },
+        scrapeFrequency: 'high',
+      },
+    })
+    if (!candidatesResult.success) throw new Error(candidatesResult.error)
+    const candidatesForPruning = candidatesResult.data
 
-  let prunedCount = 0
-  for (const source of candidatesForPruning) {
-    const analytics = source.analytics
-    const leadRate =
-      analytics.totalScraped > 0 ? analytics.totalRelevant / analytics.totalScraped : 0
-    if (leadRate < LOW_LEAD_RATE_THRESHOLD) {
-      await Source.findByIdAndUpdate(source._id, { $set: { scrapeFrequency: 'low' } })
-      logger.warn(
-        `  - Downgraded "${source.name}" to 'low' frequency due to low lead rate (${(leadRate * 100).toFixed(2)}%).`
-      )
-      prunedCount++
+    let prunedCount = 0
+    for (const source of candidatesForPruning) {
+      const analytics = source.analytics
+      const leadRate =
+        analytics.totalScraped > 0 ? analytics.totalRelevant / analytics.totalScraped : 0
+      if (leadRate < LOW_LEAD_RATE_THRESHOLD) {
+        const updateResult = await updateSource(source._id, { scrapeFrequency: 'low' })
+        if (updateResult.success) {
+          logger.warn(
+            `  - Downgraded "${source.name}" to 'low' frequency due to low lead rate (${(leadRate * 100).toFixed(2)}%).`
+          )
+          prunedCount++
+        }
+      }
     }
-  }
 
-  if (prunedCount > 0) {
-    logger.info(`✅ Pruning complete. Downgraded ${prunedCount} noisy sources.`)
-  } else {
-    logger.info('✅ No sources met the criteria for pruning.')
-  }
+    if (prunedCount > 0) {
+      logger.info(`✅ Pruning complete. Downgraded ${prunedCount} noisy sources.`)
+    } else {
+      logger.info('✅ No sources met the criteria for pruning.')
+    }
 
-  logger.info('\n🤖 Autonomous Scraper Maintenance complete.')
+    logger.info('\n🤖 Autonomous Scraper Maintenance complete.')
+  } catch (error) {
+    sendErrorAlert(error, { origin: 'MAINTAIN_SOURCES_SCRIPT' })
+    logger.fatal({ err: error }, 'A critical error occurred during source maintenance.')
+  }
 }
 
-maintainSources().finally(() => mongoose.disconnect())
+maintainSources()

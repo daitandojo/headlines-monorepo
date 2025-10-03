@@ -1,12 +1,8 @@
-// File: apps/client/src/app/(client)/opportunities/page.js
-
-// 'use server'
-
-import { DataView } from '@/components/client/DataView'
+// apps/client/src/app/(client)/opportunities/page.js
+import { DataView } from '@/components/client/shared/DataView'
 import { getOpportunities } from '@headlines/data-access'
 import { getUserIdFromSession } from '@/lib/auth/server'
-
-export const dynamic = 'force-dynamic'
+import dbConnect from '@headlines/data-access/dbConnect/next'
 
 const sortOptions = [
   { value: 'date_desc', icon: 'clock', tooltip: 'Sort by Date (Newest First)' },
@@ -14,6 +10,7 @@ const sortOptions = [
 ]
 
 export default async function OpportunitiesPage({ searchParams }) {
+  await dbConnect()
   const userId = await getUserIdFromSession()
   let initialOpportunities = []
 

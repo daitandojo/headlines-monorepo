@@ -1,16 +1,14 @@
-// File: packages/ai-services/src/search/serpapi.js (Unabridged)
-
-'use server'
-
+// packages/ai-services/src/search/serpapi.js
 import { getJson } from 'serpapi'
 import { env } from '@headlines/config'
+import { logger } from '@headlines/utils-shared'
 
 const searchCache = new Map()
 const CACHE_TTL = 1000 * 60 * 60 // 1 hour
 
 export async function getGoogleSearchResults(query) {
   if (!env.SERPAPI_API_KEY) {
-    console.warn('[SerpAPI] SERPAPI_API_KEY is not configured. Skipping web search.')
+    logger.warn('[SerpAPI] SERPAPI_API_KEY is not configured. Skipping web search.')
     return { success: true, results: [] }
   }
 
@@ -22,12 +20,12 @@ export async function getGoogleSearchResults(query) {
   if (searchCache.has(cacheKey)) {
     const cached = searchCache.get(cacheKey)
     if (Date.now() - cached.timestamp < CACHE_TTL) {
-      console.log(`[SerpAPI Cache] Hit for query: "${query}"`)
+      logger.info(`[SerpAPI Cache] Hit for query: "${query}"`)
       return cached.data
     }
   }
 
-  console.log(`[SerpAPI] Performing live search for: "${query}"`)
+  logger.info(`[SerpAPI] Performing live search for: "${query}"`)
 
   try {
     const response = await getJson({
@@ -56,7 +54,7 @@ export async function getGoogleSearchResults(query) {
     searchCache.set(cacheKey, { data: result, timestamp: Date.now() })
     return result
   } catch (error) {
-    console.error('[SerpAPI Error]', error)
+    logger.error({ err: error }, '[SerpAPI Error]')
     return { success: false, error: `Failed to fetch search results: ${error.message}` }
   }
 }

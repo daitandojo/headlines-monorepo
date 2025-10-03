@@ -1,12 +1,12 @@
-// apps/pipeline/src/pipeline/submodules/commit/1_judgeOutput.js (version 2.4.1)
-import { logger } from '@headlines/utils-server'
+// apps/pipeline/src/pipeline/submodules/commit/1_judgeOutput.js
+import { logger } from '@headlines/utils-shared' // CORRECTED IMPORT
 import { judgeChain } from '@headlines/ai-services'
 
 export async function judgeAndFilterOutput(pipelinePayload, fatalQualities) {
   const {
     synthesizedEvents: initialEvents = [],
     opportunitiesToSave: initialOpportunities = [],
-    runStats,
+    runStatsManager, // CORRECTED
   } = pipelinePayload
 
   logger.info(
@@ -29,12 +29,11 @@ export async function judgeAndFilterOutput(pipelinePayload, fatalQualities) {
     events: lightweightEvents,
     opportunities: lightweightOpportunities,
   }
-  // DEFINITIVE FIX: Changed from .invoke to direct await
   const judgeVerdict = await judgeChain({
     payload_json_string: JSON.stringify(payloadForJudge),
   })
 
-  runStats.judgeVerdict = judgeVerdict
+  runStatsManager.set('judgeVerdict', judgeVerdict) // CORRECTED
 
   if (judgeVerdict.error) {
     logger.error(
@@ -71,7 +70,6 @@ export async function judgeAndFilterOutput(pipelinePayload, fatalQualities) {
     `[Judge Agent] Verdict complete. Approved ${finalEvents.length} out of ${initialEvents.length} events.`
   )
 
-  // For now, we are not filtering opportunities, but the framework is here.
   const finalOpportunities = initialOpportunities
 
   return { finalEvents, finalOpportunities }

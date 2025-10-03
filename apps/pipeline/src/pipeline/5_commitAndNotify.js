@@ -1,5 +1,6 @@
 // apps/pipeline/src/pipeline/5_commitAndNotify.js
-import { logger, auditLogger } from '@headlines/utils-server'
+import { logger } from '@headlines/utils-shared'
+import { auditLogger } from '@headlines/utils-server'
 import { sendSupervisorReportEmail } from '../modules/email/index.js'
 import { judgeAndFilterOutput } from './submodules/commit/1_judgeOutput.js'
 import { saveResultsToDb } from './submodules/commit/2_saveResults.js'
@@ -9,7 +10,8 @@ const FATAL_JUDGEMENT_QUALITIES = ['Irrelevant', 'Poor']
 
 export async function runCommitAndNotify(pipelinePayload) {
   logger.info('--- STAGE 5: COMMIT & NOTIFY ---')
-  const { noCommitMode, runStats, isDryRun, dbConnection } = pipelinePayload
+  const { noCommitMode, runStatsManager, isDryRun, dbConnection } = pipelinePayload // CORRECTED
+  const runStats = runStatsManager.getStats()
 
   if (noCommitMode || isDryRun) {
     logger.warn(

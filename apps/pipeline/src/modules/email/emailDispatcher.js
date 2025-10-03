@@ -1,7 +1,7 @@
 // apps/pipeline/src/modules/notifications/emailDispatcher.js (version 4.0.1)
 import { groupItemsByCountry, getCountryFlag } from '@headlines/utils-shared'
-import { logger } from '@headlines/utils-server'
-import { createPersonalizedEmailBody } from '../email/components/emailBodyBuilder.js'
+import { logger } from '@headlines/utils-shared'
+import { createPersonalizedEmailBody } from './components/emailBodyBuilder.js'
 import { sendWealthEventsEmail } from '@headlines/utils-server'
 import {
   emailSubjectChain,

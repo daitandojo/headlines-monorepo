@@ -1,4 +1,4 @@
-import { logger } from './logger.js'
+import { logger } from '@headlines/utils-shared' // CORRECTED IMPORT PATH
 
 const modelPricing = {
   'gpt-5-nano': { input: 0.15, output: 0.4 },

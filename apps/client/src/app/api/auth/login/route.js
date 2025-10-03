@@ -1,20 +1,30 @@
-// File: apps/client/src/app/api/auth/login/route.js (Corrected)
-
+// apps/client/src/app/api/auth/login/route.js
 import { NextResponse } from 'next/server'
-import { loginUser } from '@headlines/data-access'
+import { loginUser } from '@headlines/data-access/next'
 import * as jose from 'jose'
 import { env } from '@headlines/config/next'
-import { initializeSharedLogic } from '@/lib/init-shared-logic' // <-- Import initialization
+import dbConnect from '@headlines/data-access/dbConnect/next'
+import { loginSchema } from '@headlines/models/schemas'
+import { sendErrorAlert } from '@headlines/utils-server/next'
+import { logger } from '@headlines/utils-shared'
 
 const JWT_COOKIE_NAME = 'headlines-jwt'
 
 export async function POST(request) {
   try {
-    // Explicitly initialize for this public route
-    await initializeSharedLogic()
+    await dbConnect()
 
-    const { email, password } = await request.json()
+    const body = await request.json()
+    const validation = loginSchema.safeParse(body)
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: 'Invalid input.', details: validation.error.flatten() },
+        { status: 400 }
+      )
+    }
 
+    const { email, password } = validation.data
+    logger.info(`Login attempt for user: ${email}`) // Use logger instead of console.log
     const result = await loginUser({ email, password })
 
     if (!result.success) {
@@ -54,7 +64,8 @@ export async function POST(request) {
 
     return response
   } catch (error) {
-    console.error('[API Login Route Error]', error)
+    sendErrorAlert(error, { origin: 'LOGIN_API_ROUTE' })
+    logger.error({ err: error }, '[API Login Route Error]')
     return NextResponse.json(
       { error: 'An internal server error occurred.' },
       { status: 500 }

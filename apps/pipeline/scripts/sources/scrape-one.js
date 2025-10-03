@@ -1,12 +1,10 @@
-'use server'
-
+// apps/pipeline/scripts/sources/scrape-one.js
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
-import mongoose from 'mongoose'
-import { initializeScriptEnv } from '../seed/lib/script-init.js' // The centralized initializer
-import { logger } from '@headlines/utils-server/node'
+import { initializeScriptEnv } from '../seed/lib/script-init.js'
+import { logger } from '@headlines/utils-shared'
 import { truncateString } from '@headlines/utils-shared'
-import { Source } from '@headlines/models'
+import { getAllSources } from '@headlines/data-access'
 import {
   scrapeSiteForHeadlines,
   scrapeArticleContent,
@@ -26,18 +24,17 @@ async function scrapeOne() {
   const sourceName = argv.source
 
   try {
-    // The initializeScriptEnv function handles db connection, config loading, and logger setup.
     await initializeScriptEnv()
-
     logger.info(`🚀 Starting single source scrape for: "${sourceName}"`)
 
-    const source = await Source.findOne({
-      name: new RegExp(`^${sourceName}$`, 'i'),
-    }).lean()
-    if (!source) {
+    const sourcesResult = await getAllSources({
+      filter: { name: new RegExp(`^${sourceName}$`, 'i') },
+    })
+    if (!sourcesResult.success || sourcesResult.data.length === 0) {
       logger.error(`❌ Source "${sourceName}" not found in the database.`)
       return
     }
+    const source = sourcesResult.data[0]
 
     logger.info('🔬 Source Configuration:\n' + JSON.stringify(source, null, 2))
 
@@ -90,11 +87,6 @@ async function scrapeOne() {
       { err: error },
       'A critical error occurred during the scrape-one script.'
     )
-  } finally {
-    if (mongoose.connection.readyState === 1) {
-      await mongoose.disconnect()
-      logger.info('Database connection closed.')
-    }
   }
 }
 

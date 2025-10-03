@@ -1,5 +1,5 @@
 // apps/pipeline/src/utils/pipelineLogger.js (version 4.1.0)
-import { logger } from '@headlines/utils-server'
+import { logger } from '@headlines/utils-shared'
 import moment from 'moment'
 import 'moment-duration-format'
 import {

@@ -5,7 +5,7 @@ import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionBatchHeadlineAssessment } from '@headlines/prompts'
 import { getHeadlineModel } from '../lib/langchain.js' // Use the specific model for headlines
 import { safeInvoke } from '../lib/safeInvoke.js'
-import { batchHeadlineAssessmentSchema } from '../schemas/index.js'
+import { batchHeadlineAssessmentSchema } from '@headlines/models/schemas'
 
 const systemPrompt = [
   instructionBatchHeadlineAssessment.whoYouAre,

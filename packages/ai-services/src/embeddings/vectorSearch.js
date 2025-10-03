@@ -1,7 +1,6 @@
 // packages/ai-services/src/embeddings/vectorSearch.js
-'use server'
 import { Pinecone } from '@pinecone-database/pinecone'
-import { logger } from '@headlines/utils-server'
+import { logger } from '@headlines/utils-shared'
 import { generateEmbedding } from './embeddings.js'
 import { env } from '@headlines/config'
 

@@ -1,6 +1,6 @@
-// Full Path: headlines/packages/utils-server/src/mailer.js
+// packages/utils-server/src/mailer.js
 import nodemailer from 'nodemailer'
-import { logger } from './logger.js'
+import { logger } from '@headlines/utils-shared' // CORRECTED IMPORT PATH
 import { safeExecute } from './helpers.js'
 import { SMTP_CONFIG } from '@headlines/config'
 import { Subscriber } from '@headlines/models'
@@ -58,21 +58,15 @@ export async function sendGenericEmail({ to, subject, html, emailType = 'Generic
     html,
   }
 
-  // --- START DEFINITIVE FIX ---
-  // Apply BCC logic ONLY for non-supervisor reports.
   if (emailType !== 'SupervisorReport') {
     const allAdminEmails = await getAdminEmails()
-
-    // Filter out the primary recipient from the BCC list if they are an admin.
     const bccList = allAdminEmails.filter(
       (adminEmail) => adminEmail.toLowerCase() !== to.toLowerCase()
     )
-
     if (bccList && bccList.length > 0) {
       mailOptions.bcc = bccList.join(',')
     }
   }
-  // --- END DEFINITIVE FIX ---
 
   const result = await sendEmail(mailOptions, emailType)
   return result.success || false

@@ -1,6 +1,7 @@
 // apps/pipeline/src/pipeline/4_clusterAndSynthesize.js
-import { truncateString } from '@headlines/utils-shared'
-import { logger, auditLogger } from '@headlines/utils-server'
+import { truncateString, logger } from '@headlines/utils-shared' // The universal, isomorphic logger
+import { auditLogger } from '@headlines/utils-server' // The server-only, file-writing audit logger
+
 import {
   clusteringChain,
   synthesisChain,
@@ -11,7 +12,7 @@ import {
 import { settings } from '@headlines/config'
 import { getConfig } from '@headlines/scraper-logic/config.js'
 
-async function synthesizeEventsFromCluster(articlesInCluster, clusterKey, runStats) {
+async function synthesizeEventsFromCluster(articlesInCluster, clusterKey, runStatsManager) {
   const config = getConfig()
   const primaryHeadline = articlesInCluster[0]?.headline || clusterKey
   const primaryCountry = articlesInCluster[0]?.country || 'Unknown'
@@ -98,7 +99,7 @@ async function synthesizeEventsFromCluster(articlesInCluster, clusterKey, runSta
       continue
     }
 
-    runStats.eventsSynthesized++
+    runStatsManager.increment('eventsSynthesized')
     const eventObject = {
       ...eventData,
       event_key: `${clusterKey}-${index}`,
@@ -116,13 +117,12 @@ async function synthesizeEventsFromCluster(articlesInCluster, clusterKey, runSta
       enrichmentSources,
     }
 
-    // --- DEFINITIVE FIX: Replace the incorrect variable 'x' with 'eventObject' ---
     const opportunityInput = {
       context_text: `Event Key: ${eventObject.event_key}\nSynthesized Event Headline: ${eventObject.synthesized_headline}\nSynthesized Event Summary: ${eventObject.synthesized_summary}\nKey Individuals already identified: ${JSON.stringify(eventObject.key_individuals)}\nSource Article Snippets: ${truncateString(combinedText, settings.LLM_CONTEXT_MAX_CHARS)}`,
     }
     const opportunityResult = await opportunityChain(opportunityInput)
 
-    runStats.synthesizedEventsForReport.push({
+    runStatsManager.push('synthesizedEventsForReport', {
       synthesized_headline: eventObject.synthesized_headline,
       highest_relevance_score: eventObject.highest_relevance_score,
     })
@@ -138,7 +138,7 @@ async function synthesizeEventsFromCluster(articlesInCluster, clusterKey, runSta
 
 export async function runClusterAndSynthesize(pipelinePayload) {
   logger.info('--- STAGE 4: CLUSTER & SYNTHESIZE ---')
-  const { runStats, enrichedArticles } = pipelinePayload
+  const { runStatsManager, enrichedArticles } = pipelinePayload // CORRECTED
 
   const articlesForProcessing = enrichedArticles.filter(
     (a) => a.relevance_article >= settings.ARTICLES_RELEVANCE_THRESHOLD
@@ -162,7 +162,7 @@ export async function runClusterAndSynthesize(pipelinePayload) {
   })
 
   const eventClusters = clusterResult.events || []
-  runStats.eventsClustered = eventClusters.length
+  runStatsManager.set('eventsClustered', eventClusters.length) // CORRECTED
   logger.info(
     { details: eventClusters },
     `Clustered ${articlesForProcessing.length} articles into ${eventClusters.length} unique events.`
@@ -180,7 +180,7 @@ export async function runClusterAndSynthesize(pipelinePayload) {
       .filter(Boolean)
     if (articlesInCluster.length > 0) {
       synthesisPromises.push(
-        synthesizeEventsFromCluster(articlesInCluster, cluster.event_key, runStats)
+        synthesizeEventsFromCluster(articlesInCluster, cluster.event_key, runStatsManager)
       )
     }
   }
@@ -196,7 +196,7 @@ export async function runClusterAndSynthesize(pipelinePayload) {
     )
     for (const article of singletonArticles) {
       const event_key = `singleton-${article.newspaper.toLowerCase().replace(/[^a-z0-9]/g, '')}-${article._id.toString()}`
-      synthesisPromises.push(synthesizeEventsFromCluster([article], event_key, runStats))
+      synthesisPromises.push(synthesizeEventsFromCluster([article], event_key, runStatsManager))
     }
   }
 

@@ -1,5 +1,5 @@
 // apps/pipeline/src/pipeline/submodules/triggerSelectorRepair.js (version 4.0)
-import { logger } from '@headlines/utils-server'
+import { logger } from '@headlines/utils-shared'
 
 export async function triggerSelectorRepair(source, htmlContent, failedSelector) {
   logger.warn(

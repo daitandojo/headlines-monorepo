@@ -1,13 +1,10 @@
-// packages/data-access/src/actions/email.js (version 1.0)
+// packages/data-access/src/core/email.js
 import { SynthesizedEvent, Opportunity, Article } from '@headlines/models'
-import dbConnect from '@headlines/data-access/dbConnect/node'
 // This import will need a proper mailer service setup, for now we mock it.
 // import { sendSingleItemEmail } from '@/lib/mailer';
 
-async function sendItemByEmail(itemId, itemType) {
+async function sendItemByEmail(itemId, itemType, userId) {
   try {
-    await dbConnect()
-
     let item
     const modelMap = {
       event: SynthesizedEvent,

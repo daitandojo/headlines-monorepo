@@ -1,8 +1,6 @@
-'use server'
-
+// packages/data-access/src/core/articles.js
 import { Article } from '@headlines/models'
 import { buildQuery } from '../queryBuilder.js'
-import dbConnect from '@headlines/data-access/dbConnect/node' // Make sure this is imported
 import mongoose from 'mongoose'
 
 const ARTICLES_PER_PAGE = 50
@@ -13,13 +11,12 @@ export async function getArticles({
   sort = 'date_desc',
   userId = null,
 }) {
-  await dbConnect() // <-- ADD THIS BACK
-  let { queryFilter, sortOptions } = await buildQuery(Article, {
+  const { queryFilter, sortOptions } = await buildQuery(Article, {
     filters,
     sort,
     userId,
   })
-  // ... rest of the function is the same
+
   const [articles, total] = await Promise.all([
     Article.find(queryFilter)
       .sort(sortOptions)
@@ -28,19 +25,48 @@ export async function getArticles({
       .lean(),
     Article.countDocuments(queryFilter),
   ])
-  // ...
+
   return { success: true, data: JSON.parse(JSON.stringify(articles)), total }
 }
 
+export async function findArticles({
+  filter = {},
+  sort = { createdAt: -1 },
+  select = '',
+  limit = 0,
+}) {
+  try {
+    const query = Article.find(filter).sort(sort).select(select)
+    if (limit > 0) {
+      query.limit(limit)
+    }
+    const articles = await query.lean()
+    return { success: true, data: JSON.parse(JSON.stringify(articles)) }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+}
+
+export async function updateArticles(filter, update) {
+  try {
+    const result = await Article.updateMany(filter, update)
+    return {
+      success: true,
+      matchedCount: result.matchedCount,
+      modifiedCount: result.modifiedCount,
+    }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+}
+
 export async function getTotalArticleCount({ filters = {}, userId = null }) {
-  await dbConnect() // <-- ADD THIS BACK
   const { queryFilter } = await buildQuery(Article, { filters, userId })
   const total = await Article.countDocuments(queryFilter)
   return { success: true, total }
 }
 
 export async function updateArticle(articleId, updateData) {
-  await dbConnect() // <-- ADD THIS BACK
   const article = await Article.findByIdAndUpdate(
     articleId,
     { $set: updateData },
@@ -51,14 +77,12 @@ export async function updateArticle(articleId, updateData) {
 }
 
 export async function deleteArticle(articleId) {
-  await dbConnect() // <-- ADD THIS BACK
   const result = await Article.findByIdAndDelete(articleId)
   if (!result) return { success: false, error: 'Article not found.' }
   return { success: true }
 }
 
 export async function getArticleDetails(articleId) {
-  await dbConnect() // <-- ADD THIS BACK
   if (!mongoose.Types.ObjectId.isValid(articleId)) {
     return { success: false, error: 'Invalid ID format.' }
   }

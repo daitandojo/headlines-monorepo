@@ -5,7 +5,7 @@ import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionTranslate } from '@headlines/prompts'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
-import { translateSchema } from '../schemas/index.js'
+import { translateSchema } from '@headlines/models/schemas'
 
 const systemPrompt = [
   instructionTranslate.whoYouAre,
