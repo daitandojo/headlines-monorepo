@@ -6,29 +6,41 @@ const nextConfig = {
     '@headlines/models',
     '@headlines/utils-shared',
   ],
-  webpack: (config, { isServer }) => {
-    // This is the crucial part. It tells Next.js to treat these packages
-    // as "external" and not to bundle them into the server-side lambda functions.
-    // This is necessary for large packages with native binaries that Vercel's
-    // bundler might otherwise exclude.
-    config.externals.push(
-      'onnxruntime-node',
+  experimental: {
+    // Tell Next.js these packages should NOT be bundled into serverless functions
+    serverComponentsExternalPackages: [
       '@xenova/transformers',
       'sharp',
-      'bcrypt',
-      'mongodb-client-encryption',
-      'aws4'
-    )
-
-    // This part is sometimes needed to prevent client-side bundling attempts of server-only packages.
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      'onnxruntime-node': false,
-      '@xenova/transformers': false,
+      'onnxruntime-node',
+    ],
+  },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // Mark these as external so they're loaded from node_modules at runtime
+      // This prevents webpack from trying to bundle them
+      config.externals.push({
+        '@xenova/transformers': '@xenova/transformers',
+        'onnxruntime-node': 'commonjs onnxruntime-node',
+        sharp: 'commonjs sharp',
+        bcrypt: 'commonjs bcrypt',
+        'mongodb-client-encryption': 'commonjs mongodb-client-encryption',
+        aws4: 'commonjs aws4',
+      })
+    } else {
+      // Prevent client-side bundling of server-only packages
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@xenova/transformers': false,
+        'onnxruntime-node': false,
+        sharp: false,
+        bcrypt: false,
+      }
     }
 
     return config
   },
+  // Disable minification for problematic packages or configure terser to handle async
+  swcMinify: true, // Use SWC instead of Terser (better async support)
 }
 
 export default nextConfig

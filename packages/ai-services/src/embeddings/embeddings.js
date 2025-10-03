@@ -1,5 +1,4 @@
 // src/lib/embeddings.js (Enhanced version with query expansion and caching)
-import { pipeline } from '@xenova/transformers';
 
 // In-memory cache for embeddings (consider Redis for production)
 const embeddingCache = new Map();
