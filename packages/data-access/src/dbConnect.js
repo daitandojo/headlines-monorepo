@@ -1,34 +1,10 @@
 // packages/data-access/src/dbConnect.js
-import mongoose from 'mongoose'
+import { env } from '@headlines/config/node'
+import dbConnectCore from './dbConnectCore.js'
+import { logger } from '@headlines/utils-shared'
 
-// A weak map to cache the connection promise per URI
-const connectionCache = new WeakMap()
-
-// This is the core, environment-agnostic connection logic.
-export default async function dbConnect(MONGO_URI, logger) {
-  if (!MONGO_URI) {
-    throw new Error('MONGO_URI must be provided to dbConnect.')
-  }
-
-  if (mongoose.connection.readyState >= 1) {
-    return
-  }
-
-  // Use a cache to prevent multiple concurrent connection attempts
-  let connPromise = connectionCache.get(mongoose)
-  if (!connPromise) {
-    connPromise = mongoose.connect(MONGO_URI, { bufferCommands: false })
-    connectionCache.set(mongoose, connPromise)
-  }
-
-  try {
-    await connPromise
-  } catch (e) {
-    if (logger) {
-      logger.error({ err: e }, '[dbConnect] MongoDB connection failed.')
-    } else {
-      console.error('[dbConnect] MongoDB connection failed.', e)
-    }
-    throw e
-  }
+// This is the Node.js-specific implementation of dbConnect.
+// It uses the core logic but provides the environment variables from the Node.js context.
+export default function dbConnect() {
+  return dbConnectCore(env.MONGO_URI, logger)
 }

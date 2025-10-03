@@ -4,7 +4,7 @@ import { configure as configureScraperLogic } from '@headlines/scraper-logic/con
 import { env, populateSettings, settings } from '@headlines/config'
 import { refreshConfig, configStore } from '../config/dynamicConfig.js'
 import dbConnect from '@headlines/data-access/dbConnect/node'
-import { deleteAllSince } from '@headlines/data-access' // CORRECTED IMPORT
+import { deleteAllSince } from '@headlines/data-access'
 import * as aiServices from '@headlines/ai-services'
 import { performDatabaseHousekeeping } from '../utils/housekeeping.js'
 import { configurePush } from '@headlines/scraper-logic/push/client.js'

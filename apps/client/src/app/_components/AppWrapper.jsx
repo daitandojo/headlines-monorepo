@@ -1,18 +1,17 @@
-// File: apps/client/src/app/_components/AppWrapper.jsx
+// apps/client/src/app/_components/AppWrapper.jsx
+import 'server-only'
 import { cookies } from 'next/headers'
 import { verifySession } from '@/lib/auth/server'
 import { AuthProvider } from '@/lib/auth/AuthProvider'
-import { AppShell } from './AppShell'
 
 async function getUser() {
   try {
-    const cookieStore = await cookies()
-    // Your verifySession logic here
-    const { user } = await verifySession()
+    const cookieStore = cookies()
+    const { user } = await verifySession(cookieStore)
     return user
   } catch (error) {
-    // During static generation, cookies() will fail
-    // Return null user for static pages
+    // This can happen during build time or if cookies are unavailable.
+    // Gracefully return null.
     return null
   }
 }
@@ -20,9 +19,6 @@ async function getUser() {
 export async function AppWrapper({ children }) {
   const user = await getUser()
 
-  return (
-    <AuthProvider initialUser={user}>
-      <AppShell>{children}</AppShell>
-    </AuthProvider>
-  )
+  // The AuthProvider client component receives the initial user state from the server.
+  return <AuthProvider initialUser={user}>{children}</AuthProvider>
 }

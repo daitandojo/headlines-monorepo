@@ -59,7 +59,15 @@ export function DataView({
   const searchParams = useSearchParams()
   const queryClient = useQueryClient()
   const { user } = useAuth()
-  const { setEventTotal, setArticleTotal, setOpportunityTotal } = useAppStore()
+
+  const { setTotals, eventTotal, articleTotal, opportunityTotal } = useAppStore()
+
+  const initialTotal = useMemo(() => {
+    if (queryKeyPrefix === 'events') return eventTotal
+    if (queryKeyPrefix === 'articles') return articleTotal
+    if (queryKeyPrefix === 'opportunities') return opportunityTotal
+    return initialData?.length || 0
+  }, [queryKeyPrefix, eventTotal, articleTotal, opportunityTotal, initialData])
 
   const q = searchParams.get('q') || ''
   const sort = searchParams.get('sort') || sortOptions[0].value
@@ -81,22 +89,26 @@ export function DataView({
       lastPage?.data?.length > 0 ? allPages.length + 1 : undefined,
     initialPageParam: 1,
     initialData: {
-      pages: [{ data: initialData || [], total: initialData?.length || 0 }],
+      pages: [
+        {
+          data: initialData || [],
+          total: initialTotal,
+        },
+      ],
       pageParams: [1],
     },
     enabled: !!user,
     staleTime: 60 * 1000,
   })
 
-  // EFFECT TO UPDATE GLOBAL STATE WITH TOTALS
   useEffect(() => {
     const total = data?.pages?.[0]?.total
     if (typeof total === 'number') {
-      if (queryKeyPrefix === 'events') setEventTotal(total)
-      if (queryKeyPrefix === 'articles') setArticleTotal(total)
-      if (queryKeyPrefix === 'opportunities') setOpportunityTotal(total)
+      if (queryKeyPrefix === 'events') setTotals({ eventTotal: total })
+      if (queryKeyPrefix === 'articles') setTotals({ articleTotal: total })
+      if (queryKeyPrefix === 'opportunities') setTotals({ opportunityTotal: total })
     }
-  }, [data, queryKeyPrefix, setEventTotal, setArticleTotal, setOpportunityTotal])
+  }, [data, queryKeyPrefix, setTotals])
 
   const { mutate: performInteraction } = useMutation({
     mutationFn: updateUserInteraction,

@@ -1,31 +1,17 @@
 // apps/client/src/app/(client)/layout.js
-'use server'
+import { Header } from '@/components/client/shared/Header'
+import { MainNavTabs } from '@/components/client/shared/MainNavTabs'
 
-import { getDashboardStats, getGlobalCountries } from '@headlines/data-access/next'
-import { ClientLayoutWrapper } from './client-layout-wrapper'
-import { StoreInitializer } from './_components/StoreInitializer'
-
-export default async function ClientLayout({ children }) {
-  // Re-fetch all stats on the server for initial hydration.
-  const [statsResult, countriesResult] = await Promise.all([
-    getDashboardStats().catch((e) => ({ success: false, data: null })),
-    getGlobalCountries().catch((e) => ({ success: false, data: [] })),
-  ])
-
-  const initialTotals = {
-    articleTotal: statsResult.data?.articles?.total || 0,
-    eventTotal: statsResult.data?.events?.total || 0,
-    opportunityTotal: statsResult.data?.opportunities?.total || 0,
-  }
-
-  const serverProps = {
-    globalCountries: countriesResult.data || [],
-  }
-
+// This is now a simple, synchronous layout component.
+export default function ClientLayout({ children }) {
   return (
-    <>
-      <StoreInitializer totals={initialTotals} />
-      <ClientLayoutWrapper serverProps={serverProps}>{children}</ClientLayoutWrapper>
-    </>
+    <div className="container mx-auto p-4 md:p-8 flex flex-col min-h-screen">
+      {/* The Header component will get its data from the client-side AuthProvider/Zustand store */}
+      <Header />
+      <div className="sticky top-[5px] z-30 my-4">
+        <MainNavTabs />
+      </div>
+      <main className="flex-grow flex flex-col mt-0 min-h-0">{children}</main>
+    </div>
   )
 }

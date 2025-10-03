@@ -12,9 +12,7 @@ const useAppStore = create(
       eventTotal: 0,
       articleTotal: 0,
       opportunityTotal: 0,
-      setEventTotal: (total) => set({ eventTotal: total }),
-      setArticleTotal: (total) => set({ articleTotal: total }),
-      setOpportunityTotal: (total) => set({ opportunityTotal: total }),
+      setTotals: (totals) => set((state) => ({ ...state, ...totals })),
 
       // --- Chat State ---
       chats: [],
@@ -82,21 +80,29 @@ const useAppStore = create(
       name: 'headlines-app-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
-        // Only persist chat and preferences, not transient totals
         chats: state.chats,
         activeChatId: state.activeChatId,
         deletePreferences: state.deletePreferences,
       }),
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error('An error occurred during Zustand storage rehydration:', error)
+        }
+      },
     }
   )
 )
 
-// A simple hook to prevent rendering until the client has mounted and the store is hydrated.
 const useHasHydrated = () => {
-  const [hydrated, setHydrated] = useState(false)
+  const [hydrated, setHydrated] = useState(useAppStore.persist.hasHydrated)
 
   useEffect(() => {
-    setHydrated(true)
+    const unsubFinishHydration = useAppStore.persist.onFinishHydration(() =>
+      setHydrated(true)
+    )
+    return () => {
+      unsubFinishHydration()
+    }
   }, [])
 
   return hydrated
