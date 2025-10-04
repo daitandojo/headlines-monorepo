@@ -4,7 +4,7 @@
 import { cookies } from 'next/headers'
 import { verifySession } from '@/lib/auth/server'
 import { ClientRedirect } from '@/components/client/shared/ClientRedirect'
-import LandingPage from './(public)/page'
+import LandingPage from '@/components/landing/LandingPage.jsx'
 
 export default async function RootPage() {
   const cookieStore = cookies()
