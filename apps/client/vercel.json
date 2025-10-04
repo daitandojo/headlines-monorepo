@@ -1,6 +1,5 @@
 {
-  "buildCommand": "pnpm --filter @headlines/client build",
+  "buildCommand": "pnpm --filter @headlines/client... build",
   "installCommand": "pnpm install",
-  "framework": "nextjs",
   "outputDirectory": "apps/client/.next"
 }
