@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm --filter @headlines/client... build",
+  "buildCommand": "pnpm install --shamefully-hoist && pnpm --filter @headlines/client... build",
   "installCommand": "pnpm install --shamefully-hoist",
   "framework": "nextjs"
 }
