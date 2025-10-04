@@ -1,5 +1,0 @@
-{
-  "buildCommand": "pnpm --filter @headlines/client... build",
-  "installCommand": "pnpm install",
-  "outputDirectory": "apps/client/.next"
-}
