@@ -41,7 +41,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-03T23:13:25.883Z
+**Generated**: 2025-10-04T15:31:18.574Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/data-access
 **Total Files**: 30
 **Package**: @headlines/data-access@1.0.0
@@ -599,10 +599,10 @@ export async function generateChatTitle(messages) {
 ```
 
 ## 📄 src/core/dashboard.js
-*Lines: 135, Size: 3.52 KB*
+*Lines: 153, Size: 4.13 KB*
 
 ```javascript
-// packages/data-access/src/core/dashboard.js
+// packages/data-access/src/core/dashboard.js (MODIFIED)
 import {
   Source,
   Subscriber,
@@ -656,7 +656,7 @@ export async function getDashboardStats() {
       opportunities: opportunityStats[0] || { total: 0 },
     }
 
-    delete stats.sources._id // Clean up aggregation artifact
+    delete stats.sources._id
     delete stats.users._id
     delete stats.watchlist._id
     delete stats.articles._id
@@ -666,6 +666,26 @@ export async function getDashboardStats() {
     return { success: true, data: stats }
   } catch (e) {
     return { success: false, error: 'Failed to fetch dashboard stats.' }
+  }
+}
+
+// NEW FUNCTION: Fetches all unique country strings used in the main collections.
+export async function getDistinctCountries() {
+  try {
+    const [articleCountries, eventCountries, oppCountries] = await Promise.all([
+      Article.distinct('country'),
+      SynthesizedEvent.distinct('country'),
+      Opportunity.distinct('basedIn'),
+    ])
+
+    const allCountries = [...articleCountries, ...eventCountries, ...oppCountries]
+      .flat()
+      .filter(Boolean) // Flatten arrays and remove any null/undefined values
+
+    const uniqueCountries = [...new Set(allCountries)].sort()
+    return { success: true, data: uniqueCountries }
+  } catch (e) {
+    return { success: false, error: 'Failed to fetch distinct countries.' }
   }
 }
 
@@ -712,13 +732,11 @@ export async function getPublicTickerEvents() {
       .select('country synthesized_headline')
       .lean()
 
-    // Anonymize and format for the ticker
     const formattedEvents = events.map((event) => {
       let headline = event.synthesized_headline
-      // Replace specific names with generic roles
       headline = headline.replace(
         /\b([A-Z][a-z]+(?: [A-Z][a-z]+)+)\b/g,
-        'A private investor'
+        'a private investor'
       )
       headline = headline.replace(
         /\b([A-Z][A-Z\s-]+[A-Z])\b/g,
@@ -2041,260 +2059,233 @@ export default async function dbConnectCore(MONGO_URI, logger) {
 ```
 
 ## 📄 src/index.js
-*Lines: 105, Size: 2.25 KB*
+*Lines: 97, Size: 5.37 KB*
 
 ```javascript
-// packages/data-access/src/index.js
-import { env } from '@headlines/config/node'
-import dbConnectCore from './dbConnect.js'
+// packages/data-access/src/index.js (DEFINITIVE FIX - No HOC)
+import dbConnect from './dbConnect.js'
 import * as core from './core/index.js'
 import { buildQuery } from './queryBuilder.js'
 
-function dbConnect() {
-  return dbConnectCore(env.MONGO_URI)
-}
+// --- Explicit Wrappers for Each Core Function ---
 
-function withDbConnect(fn) {
-  return async (...args) => {
+// A helper to avoid rewriting the same pattern repeatedly
+const wrap =
+  (fn) =>
+  async (...args) => {
     await dbConnect()
     return fn(...args)
   }
-}
 
 // Wrap and export all core functions for Node.js environment
-const nodeExports = {}
-for (const key in core) {
-  if (typeof core[key] === 'function') {
-    nodeExports[key] = withDbConnect(core[key])
-  }
-}
+export const createSubscriber = wrap(core.createSubscriber)
+export const updateSubscriber = wrap(core.updateSubscriber)
+export const deleteSubscriber = wrap(core.deleteSubscriber)
+export const createCountry = wrap(core.createCountry)
+export const updateCountry = wrap(core.updateCountry)
+export const createSource = wrap(core.createSource)
+export const updateSource = wrap(core.updateSource)
+export const getAllCountries = wrap(core.getAllCountries)
+export const findSubscribers = wrap(core.findSubscribers)
+export const getAllSubscribers = wrap(core.getAllSubscribers)
+export const getAllSources = wrap(core.getAllSources)
+export const getAllWatchlistEntities = wrap(core.getAllWatchlistEntities)
+export const getSuggestions = wrap(core.getSuggestions)
+export const getArticles = wrap(core.getArticles)
+export const findArticles = wrap(core.findArticles)
+export const updateArticles = wrap(core.updateArticles)
+export const getTotalArticleCount = wrap(core.getTotalArticleCount)
+export const updateArticle = wrap(core.updateArticle)
+export const deleteArticle = wrap(core.deleteArticle)
+export const getArticleDetails = wrap(core.getArticleDetails)
+export const createSubscriberWithPassword = wrap(core.createSubscriberWithPassword)
+export const updateSubscriberPassword = wrap(core.updateSubscriberPassword)
+export const loginUser = wrap(core.loginUser)
+export const generateChatTitle = wrap(core.generateChatTitle)
+export const getDashboardStats = wrap(core.getDashboardStats)
+export const getDistinctCountries = wrap(core.getDistinctCountries)
+export const getGlobalCountries = wrap(core.getGlobalCountries)
+export const getPublicTickerEvents = wrap(core.getPublicTickerEvents)
+export const getEvents = wrap(core.getEvents)
+export const findEvents = wrap(core.findEvents)
+export const updateEvents = wrap(core.updateEvents)
+export const getEventDetails = wrap(core.getEventDetails)
+export const updateEvent = wrap(core.updateEvent)
+export const deleteEvent = wrap(core.deleteEvent)
+export const getTotalEventCount = wrap(core.getTotalEventCount)
+export const generateExport = wrap(core.generateExport)
+export const getDistinctOpportunityFields = wrap(core.getDistinctOpportunityFields)
+export const updateOpportunities = wrap(core.updateOpportunities)
+export const getTotalOpportunitiesCount = wrap(core.getTotalOpportunitiesCount)
+export const getOpportunities = wrap(core.getOpportunities)
+export const getOpportunityDetails = wrap(core.getOpportunityDetails)
+export const updateOpportunity = wrap(core.updateOpportunity)
+export const deleteOpportunity = wrap(core.deleteOpportunity)
+export const updateSourceAnalyticsBatch = wrap(core.updateSourceAnalyticsBatch)
+export const findSourcesForScraping = wrap(core.findSourcesForScraping)
+export const performHousekeeping = wrap(core.performHousekeeping)
+export const bulkWriteEvents = wrap(core.bulkWriteEvents)
+export const bulkWriteArticles = wrap(core.bulkWriteArticles)
+export const findEventsByKeys = wrap(core.findEventsByKeys)
+export const findArticlesByLinks = wrap(core.findArticlesByLinks)
+export const getActiveWatchlistEntityNames = wrap(core.getActiveWatchlistEntityNames)
+export const bulkWriteWatchlistSuggestions = wrap(core.bulkWriteWatchlistSuggestions)
+export const linkOpportunityToEvent = wrap(core.linkOpportunityToEvent)
+export const unlinkOpportunityFromEvent = wrap(core.unlinkOpportunityFromEvent)
+export const getSettings = wrap(core.getSettings)
+export const updateSettings = wrap(core.updateSettings) // No revalidation needed in Node
+export const upsertSubscriber = wrap(core.upsertSubscriber)
+export const getAllPushSubscriptions = wrap(core.getAllPushSubscriptions)
+export const deletePushSubscription = wrap(core.deletePushSubscription)
+export const getCurrentSubscriber = wrap(core.getCurrentSubscriber)
+export const savePushSubscription = wrap(core.savePushSubscription)
+export const updateUserProfile = wrap(core.updateUserProfile)
+export const updateUserInteraction = wrap(core.updateUserInteraction)
+export const processUploadedArticle = wrap(core.processUploadedArticle)
+export const clearDiscardedItems = wrap(core.clearDiscardedItems)
+export const getRecentRunVerdicts = wrap(core.getRecentRunVerdicts)
+export const getRunVerdictById = wrap(core.getRunVerdictById)
+export const findWatchlistEntities = wrap(core.findWatchlistEntities)
+export const updateWatchlistEntities = wrap(core.updateWatchlistEntities)
+export const createWatchlistEntity = wrap(core.createWatchlistEntity)
+export const updateWatchlistEntity = wrap(core.updateWatchlistEntity)
+export const deleteWatchlistEntity = wrap(core.deleteWatchlistEntity)
+export const updateWatchlistSuggestion = wrap(core.updateWatchlistSuggestion)
+export const processWatchlistSuggestion = wrap(core.processWatchlistSuggestion)
+export const deleteAllSince = wrap(core.deleteAllSince)
+export const resetAllSourceAnalytics = wrap(core.resetAllSourceAnalytics)
+export const resetEventsEmailedStatusSince = wrap(core.resetEventsEmailedStatusSince)
 
-export const {
-  createSubscriber,
-  updateSubscriber,
-  deleteSubscriber,
-  createCountry,
-  updateCountry,
-  createSource,
-  updateSource,
-  getAllCountries,
-  findSubscribers,
-  getAllSubscribers,
-  getAllSources,
-  getAllWatchlistEntities,
-  getSuggestions,
-  getArticles,
-  findArticles,
-  updateArticles,
-  getTotalArticleCount,
-  updateArticle,
-  deleteArticle,
-  getArticleDetails,
-  createSubscriberWithPassword,
-  updateSubscriberPassword,
-  loginUser,
-  generateChatTitle,
-  getDashboardStats,
-  getGlobalCountries,
-  getEvents,
-  findEvents,
-  updateEvents,
-  getEventDetails,
-  updateEvent,
-  deleteEvent,
-  getTotalEventCount,
-  generateExport,
-  getDistinctOpportunityFields,
-  updateOpportunities,
-  getTotalOpportunitiesCount,
-  getOpportunities,
-  getOpportunityDetails,
-  updateOpportunity,
-  deleteOpportunity,
-  updateSourceAnalyticsBatch,
-  findSourcesForScraping,
-  performHousekeeping,
-  bulkWriteEvents,
-  bulkWriteArticles,
-  findEventsByKeys,
-  findArticlesByLinks,
-  getActiveWatchlistEntityNames,
-  bulkWriteWatchlistSuggestions,
-  linkOpportunityToEvent,
-  unlinkOpportunityFromEvent,
-  getSettings,
-  updateSettings,
-  upsertSubscriber,
-  getAllPushSubscriptions,
-  deletePushSubscription,
-  getCurrentSubscriber,
-  savePushSubscription,
-  updateUserProfile,
-  updateUserInteraction,
-  processUploadedArticle,
-  clearDiscardedItems,
-  getRecentRunVerdicts,
-  getRunVerdictById,
-  findWatchlistEntities,
-  updateWatchlistEntities,
-  createWatchlistEntity,
-  updateWatchlistEntity,
-  deleteWatchlistEntity,
-  updateWatchlistSuggestion,
-  processWatchlistSuggestion,
-  deleteAllSince,
-  resetAllSourceAnalytics,
-  resetEventsEmailedStatusSince,
-} = nodeExports
-
+// Export non-wrapped utilities
 export { buildQuery }
 
 ```
 
 ## 📄 src/next.js
-*Lines: 121, Size: 2.83 KB*
+*Lines: 108, Size: 5.62 KB*
 
 ```javascript
-// packages/data-access/src/next.js
+// packages/data-access/src/next.js (DEFINITIVE FIX - No HOC)
 import 'server-only'
-import { env } from '@headlines/config/next'
-import dbConnectCore from './dbConnect.js'
+import dbConnect from './dbConnect.next.js'
 import * as core from './core/index.js'
-import { buildQuery } from './queryBuilder.js'
 import { revalidatePath } from './revalidate.js'
+import { buildQuery } from './queryBuilder.js'
 
-function dbConnect() {
-  return dbConnectCore(env.MONGO_URI)
-}
+// --- Explicit Wrappers for Each Core Function ---
 
-function withDbConnect(fn) {
-  return async (...args) => {
+// A helper to avoid rewriting the same pattern repeatedly
+const wrap =
+  (fn) =>
+  async (...args) => {
     await dbConnect()
     return fn(...args)
   }
-}
 
-// Wrap all core functions
-const wrappedCore = {}
-for (const key in core) {
-  if (typeof core[key] === 'function') {
-    wrappedCore[key] = withDbConnect(core[key])
-  }
-}
+// Wrap each function individually
+export const createSubscriber = wrap(core.createSubscriber)
+export const updateSubscriber = wrap(core.updateSubscriber)
+export const deleteSubscriber = wrap(core.deleteSubscriber)
+export const createCountry = wrap(core.createCountry)
+export const updateCountry = wrap(core.updateCountry)
+export const createSource = wrap(core.createSource)
+export const updateSource = wrap(core.updateSource)
+export const getAllCountries = wrap(core.getAllCountries)
+export const findSubscribers = wrap(core.findSubscribers)
+export const getAllSubscribers = wrap(core.getAllSubscribers)
+export const getAllSources = wrap(core.getAllSources)
+export const getAllWatchlistEntities = wrap(core.getAllWatchlistEntities)
+export const getSuggestions = wrap(core.getSuggestions)
+export const getArticles = wrap(core.getArticles)
+export const findArticles = wrap(core.findArticles)
+export const updateArticles = wrap(core.updateArticles)
+export const getTotalArticleCount = wrap(core.getTotalArticleCount)
+export const updateArticle = wrap(core.updateArticle)
+export const deleteArticle = wrap(core.deleteArticle)
+export const getArticleDetails = wrap(core.getArticleDetails)
+export const createSubscriberWithPassword = wrap(core.createSubscriberWithPassword)
+export const updateSubscriberPassword = wrap(core.updateSubscriberPassword)
+export const loginUser = wrap(core.loginUser)
+export const generateChatTitle = wrap(core.generateChatTitle)
+export const getDashboardStats = wrap(core.getDashboardStats)
+export const getDistinctCountries = wrap(core.getDistinctCountries)
+export const getGlobalCountries = wrap(core.getGlobalCountries)
+export const getPublicTickerEvents = wrap(core.getPublicTickerEvents)
+export const getEvents = wrap(core.getEvents)
+export const findEvents = wrap(core.findEvents)
+export const updateEvents = wrap(core.updateEvents)
+export const getEventDetails = wrap(core.getEventDetails)
+export const updateEvent = wrap(core.updateEvent)
+export const deleteEvent = wrap(core.deleteEvent)
+export const getTotalEventCount = wrap(core.getTotalEventCount)
+export const generateExport = wrap(core.generateExport)
+export const getDistinctOpportunityFields = wrap(core.getDistinctOpportunityFields)
+export const updateOpportunities = wrap(core.updateOpportunities)
+export const getTotalOpportunitiesCount = wrap(core.getTotalOpportunitiesCount)
+export const getOpportunities = wrap(core.getOpportunities)
+export const getOpportunityDetails = wrap(core.getOpportunityDetails)
+export const updateOpportunity = wrap(core.updateOpportunity)
+export const deleteOpportunity = wrap(core.deleteOpportunity)
+export const updateSourceAnalyticsBatch = wrap(core.updateSourceAnalyticsBatch)
+export const findSourcesForScraping = wrap(core.findSourcesForScraping)
+export const performHousekeeping = wrap(core.performHousekeeping)
+export const bulkWriteEvents = wrap(core.bulkWriteEvents)
+export const bulkWriteArticles = wrap(core.bulkWriteArticles)
+export const findEventsByKeys = wrap(core.findEventsByKeys)
+export const findArticlesByLinks = wrap(core.findArticlesByLinks)
+export const getActiveWatchlistEntityNames = wrap(core.getActiveWatchlistEntityNames)
+export const bulkWriteWatchlistSuggestions = wrap(core.bulkWriteWatchlistSuggestions)
+export const linkOpportunityToEvent = wrap(core.linkOpportunityToEvent)
+export const unlinkOpportunityFromEvent = wrap(core.unlinkOpportunityFromEvent)
+export const getSettings = wrap(core.getSettings)
+export const upsertSubscriber = wrap(core.upsertSubscriber)
+export const getAllPushSubscriptions = wrap(core.getAllPushSubscriptions)
+export const deletePushSubscription = wrap(core.deletePushSubscription)
+export const getCurrentSubscriber = wrap(core.getCurrentSubscriber)
+export const savePushSubscription = wrap(core.savePushSubscription)
+export const updateUserProfile = wrap(core.updateUserProfile)
+export const updateUserInteraction = wrap(core.updateUserInteraction)
+export const processUploadedArticle = wrap(core.processUploadedArticle)
+export const clearDiscardedItems = wrap(core.clearDiscardedItems)
+export const getRecentRunVerdicts = wrap(core.getRecentRunVerdicts)
+export const getRunVerdictById = wrap(core.getRunVerdictById)
+export const findWatchlistEntities = wrap(core.findWatchlistEntities)
+export const updateWatchlistEntities = wrap(core.updateWatchlistEntities)
+export const createWatchlistEntity = wrap(core.createWatchlistEntity)
+export const updateWatchlistEntity = wrap(core.updateWatchlistEntity)
+export const deleteWatchlistEntity = wrap(core.deleteWatchlistEntity)
+export const updateWatchlistSuggestion = wrap(core.updateWatchlistSuggestion)
+export const processWatchlistSuggestion = wrap(core.processWatchlistSuggestion)
+export const deleteAllSince = wrap(core.deleteAllSince)
+export const resetAllSourceAnalytics = wrap(core.resetAllSourceAnalytics)
+export const resetEventsEmailedStatusSince = wrap(core.resetEventsEmailedStatusSince)
 
-// --- START OF THE FIX ---
-// Create a special wrapper for updateSettings that adds revalidation
-const originalUpdateSettings = wrappedCore.updateSettings
-wrappedCore.updateSettings = async (...args) => {
-  const result = await originalUpdateSettings(...args)
+// Special wrapper for updateSettings to include revalidation
+export const updateSettings = async (...args) => {
+  await dbConnect()
+  const result = await core.updateSettings(...args)
   if (result.success) {
     await revalidatePath('/admin/settings')
   }
   return result
 }
-// --- END OF THE FIX ---
 
-// Explicitly export everything to avoid issues with module systems
-export const {
-  createSubscriber,
-  updateSubscriber,
-  deleteSubscriber,
-  createCountry,
-  updateCountry,
-  createSource,
-  updateSource,
-  getAllCountries,
-  findSubscribers,
-  getAllSubscribers,
-  getAllSources,
-  getAllWatchlistEntities,
-  getSuggestions,
-  getArticles,
-  findArticles,
-  updateArticles,
-  getTotalArticleCount,
-  updateArticle,
-  deleteArticle,
-  getArticleDetails,
-  createSubscriberWithPassword,
-  updateSubscriberPassword,
-  loginUser,
-  generateChatTitle,
-  getDashboardStats,
-  getGlobalCountries,
-  getPublicTickerEvents, // <-- EXPORT NEW FUNCTION
-  getEvents,
-  findEvents,
-  updateEvents,
-  getEventDetails,
-  updateEvent,
-  deleteEvent,
-  getTotalEventCount,
-  generateExport,
-  getDistinctOpportunityFields,
-  updateOpportunities,
-  getTotalOpportunitiesCount,
-  getOpportunities,
-  getOpportunityDetails,
-  updateOpportunity,
-  deleteOpportunity,
-  updateSourceAnalyticsBatch,
-  findSourcesForScraping,
-  performHousekeeping,
-  bulkWriteEvents,
-  bulkWriteArticles,
-  findEventsByKeys,
-  findArticlesByLinks,
-  getActiveWatchlistEntityNames,
-  bulkWriteWatchlistSuggestions,
-  linkOpportunityToEvent,
-  unlinkOpportunityFromEvent,
-  getSettings,
-  updateSettings, // This now exports the wrapped version
-  upsertSubscriber,
-  getAllPushSubscriptions,
-  deletePushSubscription,
-  getCurrentSubscriber,
-  savePushSubscription,
-  updateUserProfile,
-  updateUserInteraction,
-  processUploadedArticle,
-  clearDiscardedItems,
-  getRecentRunVerdicts,
-  getRunVerdictById,
-  findWatchlistEntities,
-  updateWatchlistEntities,
-  createWatchlistEntity,
-  updateWatchlistEntity,
-  deleteWatchlistEntity,
-  updateWatchlistSuggestion,
-  processWatchlistSuggestion,
-  deleteAllSince,
-  resetAllSourceAnalytics,
-  resetEventsEmailedStatusSince,
-} = wrappedCore
-
+// Export non-wrapped utilities
 export { buildQuery, revalidatePath }
 
 ```
 
 ## 📄 src/queryBuilder.js
-*Lines: 96, Size: 3.1 KB*
+*Lines: 90, Size: 2.76 KB*
 
 ```javascript
-// packages/data-access/src/queryBuilder.js (version 2.0.0)
+// packages/data-access/src/queryBuilder.js (version 2.1.0 - Multi-country support)
 import { Subscriber } from '@headlines/models'
-// ARCHITECTURAL REFACTORING: This component is now isomorphic (shared).
-// It no longer imports any environment-specific modules like dbConnect.
-// The responsibility for establishing a database connection now lies with the
-// application entry point (e.g., the API handler or pipeline stage) that calls this function.
 
 export async function buildQuery(
   model,
   { filters = {}, sort = 'date_desc', baseQuery = {}, userId = null }
 ) {
-  // The `await dbConnect()` call has been removed.
-
   const andConditions = [{ ...baseQuery }]
   let user = null
 

@@ -5,12 +5,10 @@ import {
   getAllCountries,
 } from '@headlines/data-access'
 import WatchlistClientPage from './WatchlistClientPage'
-import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
 
 export default async function WatchlistPage({ searchParams }) {
-  await dbConnect()
   const page = parseInt(searchParams.page || '1', 10)
   const sort = searchParams.sort || null
   const columnFilters = searchParams.filters ? JSON.parse(searchParams.filters) : []

@@ -8,12 +8,10 @@ import { SignUpFlow } from './_components/SignUpFlow'
 import { AboutSection } from './_components/AboutSection'
 import { StatsSection } from './_components/StatsSection'
 import { Footer } from './_components/Footer'
-import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
 
 export default async function LandingPage() {
-  await dbConnect() // ACTION: Add this line
   const tickerResult = await getPublicTickerEvents()
   const tickerEvents = tickerResult.success ? tickerResult.data : []
 

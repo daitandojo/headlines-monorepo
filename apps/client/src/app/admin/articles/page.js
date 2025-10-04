@@ -1,12 +1,10 @@
 // apps/client/src/app/admin/articles/page.js
 import { getArticles } from '@headlines/data-access/next' // CORRECTED
 import ArticlesClientPage from './ArticlesClientPage'
-import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
 
 export default async function ArticlesPage({ searchParams }) {
-  await dbConnect()
   const page = parseInt(searchParams.page || '1', 10)
   const sort = searchParams.sort || null
   const columnFilters = searchParams.filters ? JSON.parse(searchParams.filters) : []

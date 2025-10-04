@@ -16,7 +16,6 @@ import {
 import { ArrowLeft, User, MapPin, Briefcase, Mail, Zap, ExternalLink } from 'lucide-react'
 import { format } from 'date-fns'
 import { getCountryFlag } from '@headlines/utils-shared'
-import dbConnect from '@headlines/data-access/dbConnect/next' // Import dbConnect
 
 function TimelineItem({ event, isLast }) {
   return (
@@ -54,7 +53,6 @@ function TimelineItem({ event, isLast }) {
 }
 
 export default async function OpportunityDossierPage({ params }) {
-  await dbConnect() // ACTION: Add this line
   const { opportunityId } = params
   const { success, data: opportunity } = await getOpportunityDetails(opportunityId)
 

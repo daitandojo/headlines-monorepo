@@ -5,7 +5,6 @@ import {
   getAllSources,
 } from '@headlines/data-access/next'
 import DashboardClientPage from './DashboardClientPage'
-import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,7 +29,6 @@ async function getPageData() {
 }
 
 export default async function AdminDashboardPage() {
-  await dbConnect() // ACTION: Add this line
   const { stats, runs, sources, error } = await getPageData()
 
   if (error) {

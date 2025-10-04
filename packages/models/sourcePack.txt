@@ -55,7 +55,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-03T23:13:25.886Z
+**Generated**: 2025-10-04T15:31:18.577Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/models
 **Total Files**: 45
 **Package**: @headlines/models@2.0.0
@@ -94,10 +94,10 @@ headlines/
 ```
 
 ## 📄 src/Article.js
-*Lines: 79, Size: 2.45 KB*
+*Lines: 79, Size: 2.51 KB*
 
 ```javascript
-// packages/models/src/Article.js (version 2.0.2)
+// packages/models/src/Article.js (version 2.1.0 - Multi-country support)
 import mongoose from 'mongoose'
 import { ARTICLE_STATUSES } from './prompt-constants.js'
 
@@ -120,7 +120,7 @@ const ArticleSchema = new Schema(
     link: { type: String, required: true, unique: true, trim: true },
     newspaper: { type: String, required: true, trim: true },
     source: { type: String, required: true, trim: true },
-    country: { type: String, trim: true, index: true },
+    country: { type: [String], trim: true, index: true }, // MODIFIED: Changed to array of strings
     imageUrl: { type: String, trim: true },
     relevance_headline: { type: Number, required: true, min: 0, max: 100 },
     assessment_headline: { type: String, required: true, trim: true },
@@ -214,10 +214,10 @@ export default models.Country || model('Country', CountrySchema)
 ```
 
 ## 📄 src/Opportunity.js
-*Lines: 30, Size: 1.06 KB*
+*Lines: 30, Size: 1.12 KB*
 
 ```javascript
-// packages/models/src/Opportunity.js (version 9.0.0)
+// packages/models/src/Opportunity.js (version 9.1.0 - Multi-country support)
 import mongoose from 'mongoose'
 const { Schema, model, models } = mongoose
 
@@ -234,7 +234,7 @@ const OpportunitySchema = new Schema(
   {
     reachOutTo: { type: String, required: true, trim: true, unique: true, index: true },
     contactDetails: { type: ContactDetailsSchema },
-    basedIn: { type: String, trim: true, index: true },
+    basedIn: { type: [String], trim: true, index: true }, // MODIFIED: Changed to array of strings
     city: { type: String, trim: true, required: false },
     whyContact: { type: [String], required: true },
     likelyMMDollarWealth: { type: Number, required: true, default: 0 },
@@ -352,10 +352,10 @@ export default models.Setting || model('Setting', SettingSchema)
 ```
 
 ## 📄 src/Source.js
-*Lines: 65, Size: 2.15 KB*
+*Lines: 66, Size: 2.25 KB*
 
 ```javascript
-// packages/models/src/Source.js (version 7.0.0)
+// packages/models/src/Source.js (version 7.2.0 - ledeSelector removed)
 import mongoose from 'mongoose'
 import {
   SOURCE_STATUSES,
@@ -407,6 +407,7 @@ const SourceSchema = new Schema(
     headlineSelector: { type: [String], required: false, default: [] },
     linkSelector: { type: String, required: false, trim: true },
     headlineTextSelector: { type: String, required: false, trim: true },
+    // ledeSelector: { type: [String], required: false, default: [] }, // REMOVED
     articleSelector: { type: [String], required: false, default: [] },
     lastScrapedAt: { type: Date, required: false, index: true },
     lastSuccessAt: { type: Date, required: false },
@@ -537,10 +538,10 @@ export default models.Subscriber || model('Subscriber', SubscriberSchema)
 ```
 
 ## 📄 src/SynthesizedEvent.js
-*Lines: 74, Size: 2.33 KB*
+*Lines: 74, Size: 2.39 KB*
 
 ```javascript
-// packages/models/src/SynthesizedEvent.js (version 8.0.2)
+// packages/models/src/SynthesizedEvent.js (version 8.1.0 - Multi-country support)
 import mongoose from 'mongoose'
 const { Schema, model, models } = mongoose
 
@@ -550,7 +551,7 @@ const SourceArticleSchema = new Schema(
     link: { type: String, required: true, trim: true },
     newspaper: { type: String, required: true, trim: true },
     imageUrl: { type: String, trim: true },
-    country: { type: String, trim: true }
+    country: { type: String, trim: true },
   },
   { _id: false }
 )
@@ -573,7 +574,7 @@ const SynthesizedEventSchema = new Schema(
     advisorSummary: { type: String, trim: true },
     ai_assessment_reason: { type: String, trim: true },
     eventClassification: { type: String, trim: true },
-    country: { type: String, required: true, index: true },
+    country: { type: [String], required: true, index: true }, // MODIFIED: Changed to array of strings
     source_articles: { type: [SourceArticleSchema], required: true },
     highest_relevance_score: { type: Number, required: true, min: 0, max: 100 },
     key_individuals: { type: [KeyIndividualSchema], default: [] },
@@ -1233,10 +1234,10 @@ export const selectorRepairSchema = z.object({
 ```
 
 ## 📄 src/schemas/synthesisSchema.js
-*Lines: 27, Size: 819 Bytes*
+*Lines: 27, Size: 860 Bytes*
 
 ```javascript
-// packages/ai-services/src/schemas/synthesisSchema.js (version 1.1)
+// packages/models/src/schemas/synthesisSchema.js (CORRECTED)
 import { z } from 'zod'
 
 export const synthesisSchema = z.object({
@@ -1248,9 +1249,9 @@ export const synthesisSchema = z.object({
         .string()
         .min(1)
         .describe('The one-sentence actionable summary for wealth advisors.'),
-      // DEFINITIVE FIX: Add the new classification field to the schema.
       eventClassification: z.string().min(1).describe("The event's classification type."),
-      country: z.string().min(1),
+      // DEFINITIVE FIX: The 'country' field must now be an array of strings.
+      country: z.array(z.string()).min(1, 'Country array cannot be empty.'),
       key_individuals: z.array(
         z.object({
           name: z.string(),

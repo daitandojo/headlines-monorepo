@@ -1,25 +1,25 @@
 # 🎯 MONOREPO SOURCE PACK
 
-**Generated**: 2025-10-03T23:13:25.897Z
+**Generated**: 2025-10-04T15:31:18.588Z
 **Packages**: 11
-**Total Files**: 525
-**Total Lines**: 35,029
+**Total Files**: 529
+**Total Lines**: 35,441
 
 ---
 
 ## 📚 TABLE OF CONTENTS
 
-1. **client** (197 files, 14,047 lines)
-2. **pipeline** (106 files, 10,813 lines)
+1. **client** (198 files, 14,170 lines)
+2. **pipeline** (109 files, 11,101 lines)
 3. **server** (4 files, 141 lines)
 4. **ai-services** (54 files, 3,197 lines)
 5. **config** (6 files, 205 lines)
-6. **data-access** (30 files, 2,245 lines)
-7. **models** (45 files, 1,036 lines)
-8. **prompts** (31 files, 1,009 lines)
-9. **scraper-logic** (29 files, 1,484 lines)
+6. **data-access** (30 files, 2,236 lines)
+7. **models** (45 files, 1,037 lines)
+8. **prompts** (31 files, 1,013 lines)
+9. **scraper-logic** (29 files, 1,486 lines)
 10. **utils-server** (13 files, 509 lines)
-11. **utils-shared** (10 files, 343 lines)
+11. **utils-shared** (10 files, 346 lines)
 
 ---
 
@@ -27,7 +27,7 @@
 
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 209 files, 90 directories
+Total: 210 files, 90 directories
 
 ```
 headlines/
@@ -236,6 +236,7 @@ headlines/
 │   │   │   │   ├── 📄 EventContextDialog.jsx
 │   │   │   │   ├── 📄 EventList.jsx
 │   │   │   │   ├── 📄 EventListWrapper.jsx
+│   │   │   │   ├── 📄 KeyIndividualsDialog.jsx
 │   │   │   │   └── 📄 SynthesizedEventCard.jsx
 │   │   │   ├── 📁 opportunities/
 │   │   │   │   ├── 📄 OpportunityCard.jsx
@@ -334,9 +335,9 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-03T23:13:25.844Z
+**Generated**: 2025-10-04T15:31:18.535Z
 **Repository Path**: /home/mark/Repos/projects/headlines/apps/client
-**Total Files**: 197
+**Total Files**: 198
 **Package**: @headlines/client@1.0.0
 
 
@@ -730,13 +731,13 @@ self.addEventListener('notificationclick', (event) => {
 ```
 
 ## 📄 src/app/(client)/articles/page.js
-*Lines: 43, Size: 1.28 KB*
+*Lines: 43, Size: 1.26 KB*
 
 ```javascript
 // apps/client/src/app/(client)/articles/page.js
 import { DataView } from '@/components/client/shared/DataView'
-import { getArticles } from '@headlines/data-access/next' // CORRECTED IMPORT
-import { getUserIdFromSession } from '@/lib/auth/server' // CORRECTED IMPORT
+import { getArticles } from '@headlines/data-access/next'
+import { getUserIdFromSession } from '@/lib/auth/server'
 import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
@@ -747,7 +748,7 @@ const sortOptions = [
 ]
 
 export default async function ArticlesPage({ searchParams }) {
-  await dbConnect()
+  await dbConnect() // ACTION: Add this line
   const userId = await getUserIdFromSession()
   let initialArticles = []
 
@@ -794,14 +795,14 @@ export default function ChatPage() {
 ```
 
 ## 📄 src/app/(client)/events/page.js
-*Lines: 43, Size: 1.28 KB*
+*Lines: 43, Size: 1.33 KB*
 
 ```javascript
-// apps/client/src/app/(client)/events/page.js
+// apps/client/src/app/(client)/events/page.js (CORRECTED)
 import { DataView } from '@/components/client/shared/DataView'
-import { getEvents } from '@headlines/data-access/next' // CORRECTED IMPORT
-import { getUserIdFromSession } from '@/lib/auth/server' // CORRECTED IMPORT
-import dbConnect from '@headlines/data-access/dbConnect/next'
+import { getEvents } from '@headlines/data-access/next'
+import { getUserIdFromSession } from '@/lib/auth/server'
+import dbConnect from '@headlines/data-access/dbConnect/next' // Import dbConnect
 
 export const dynamic = 'force-dynamic'
 
@@ -811,7 +812,7 @@ const sortOptions = [
 ]
 
 export default async function EventsPage({ searchParams }) {
-  await dbConnect()
+  await dbConnect() // ACTION: Add this line to connect before any data access
   const userId = await getUserIdFromSession()
   let initialEvents = []
 
@@ -867,12 +868,10 @@ export default function ClientLayout({ children }) {
 ```
 
 ## 📄 src/app/(client)/opportunities/[opportunityId]/page.js
-*Lines: 144, Size: 4.9 KB*
+*Lines: 144, Size: 5.12 KB*
 
 ```javascript
-// apps/client/src/app/(client)/opportunities/[opportunityId]/page.js
-
-
+// apps/client/src/app/(client)/opportunities/[opportunityId]/page.js (CORRECTED)
 export const dynamic = 'force-dynamic'
 
 import { getOpportunityDetails } from '@headlines/data-access/next'
@@ -890,6 +889,7 @@ import {
 import { ArrowLeft, User, MapPin, Briefcase, Mail, Zap, ExternalLink } from 'lucide-react'
 import { format } from 'date-fns'
 import { getCountryFlag } from '@headlines/utils-shared'
+import dbConnect from '@headlines/data-access/dbConnect/next' // Import dbConnect
 
 function TimelineItem({ event, isLast }) {
   return (
@@ -927,6 +927,7 @@ function TimelineItem({ event, isLast }) {
 }
 
 export default async function OpportunityDossierPage({ params }) {
+  await dbConnect() // ACTION: Add this line
   const { opportunityId } = params
   const { success, data: opportunity } = await getOpportunityDetails(opportunityId)
 
@@ -935,7 +936,7 @@ export default async function OpportunityDossierPage({ params }) {
   }
 
   const { contactDetails } = opportunity
-  const flag = getCountryFlag(opportunity.basedIn)
+  const flags = (opportunity.basedIn || []).map((c) => getCountryFlag(c)).join(' ') // Use flags for array
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -975,10 +976,10 @@ export default async function OpportunityDossierPage({ params }) {
             {(opportunity.city || opportunity.basedIn) && (
               <span className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-slate-500" />
-                <span className="text-xl mr-1">{flag}</span>
+                <span className="text-xl mr-1">{flags}</span>
                 {opportunity.city}
-                {opportunity.city && opportunity.basedIn ? ', ' : ''}
-                {opportunity.basedIn}
+                {opportunity.city && opportunity.basedIn?.length > 0 ? ', ' : ''}
+                {(opportunity.basedIn || []).join(', ')}
               </span>
             )}
             {contactDetails?.email && (
@@ -1017,12 +1018,12 @@ export default async function OpportunityDossierPage({ params }) {
 ```
 
 ## 📄 src/app/(client)/opportunities/page.js
-*Lines: 44, Size: 1.34 KB*
+*Lines: 44, Size: 1.35 KB*
 
 ```javascript
 // apps/client/src/app/(client)/opportunities/page.js
 import { DataView } from '@/components/client/shared/DataView'
-import { getOpportunities } from '@headlines/data-access/next' // CORRECTED
+import { getOpportunities } from '@headlines/data-access/next'
 import { getUserIdFromSession } from '@/lib/auth/server'
 import dbConnect from '@headlines/data-access/dbConnect/next'
 
@@ -1032,7 +1033,7 @@ const sortOptions = [
 ]
 
 export default async function OpportunitiesPage({ searchParams }) {
-  await dbConnect()
+  await dbConnect() // ACTION: Add this line
   const userId = await getUserIdFromSession()
   let initialOpportunities = []
 
@@ -1067,19 +1068,19 @@ export default async function OpportunitiesPage({ searchParams }) {
 ```
 
 ## 📄 src/app/(client)/settings/page.js
-*Lines: 26, Size: 787 Bytes*
+*Lines: 26, Size: 896 Bytes*
 
 ```javascript
-// File: apps/client/src/app/(client)/settings/page.js
-
-// 'use server'
-
-import { getGlobalCountries } from '@headlines/data-access/next' // CORRECTED
+// File: apps/client/src/app/(client)/settings/page.js (CORRECTED)
+import { getGlobalCountries } from '@headlines/data-access/next'
 import { SettingsForm } from '@/components/client/settings/SettingsForm'
+import dbConnect from '@headlines/data-access/dbConnect/next' // Import dbConnect
 
 export const dynamic = 'force-dynamic'
 
 export default async function SettingsPage() {
+  await dbConnect() // ACTION: Add this line
+
   // Fetch all countries with event counts to pass to the editor
   const { data: allCountries } = await getGlobalCountries()
 
@@ -1430,7 +1431,7 @@ export function GlobalCoverage() {
 ```
 
 ## 📄 src/app/(public)/_components/Hero.jsx
-*Lines: 152, Size: 6.14 KB*
+*Lines: 152, Size: 6.09 KB*
 
 ```jsx
 // apps/client/src/app/(public)/_components/Hero.jsx
@@ -1535,7 +1536,7 @@ export function Hero({ tickerEvents }) {
               <FeatureCard
                 icon={<Target className="h-6 w-6 text-green-400" />}
                 title="Prospect Dossiers"
-                description="Move from signal to a fully qualified mandate with AI-generated dossiers on key individuals, complete with estimated liquidity and outreach points."
+                description="AI-generated dossiers on key individuals, complete with estimated liquidity and outreach points."
                 delay={0.3}
               />
               <FeatureCard
@@ -2320,7 +2321,7 @@ export default function PublicLayout({ children }) {
 ```
 
 ## 📄 src/app/(public)/page.jsx
-*Lines: 35, Size: 1.22 KB*
+*Lines: 35, Size: 1.24 KB*
 
 ```jsx
 // apps/client/src/app/(public)/page.jsx
@@ -2338,7 +2339,7 @@ import dbConnect from '@headlines/data-access/dbConnect/next'
 export const dynamic = 'force-dynamic'
 
 export default async function LandingPage() {
-  await dbConnect()
+  await dbConnect() // ACTION: Add this line
   const tickerResult = await getPublicTickerEvents()
   const tickerEvents = tickerResult.success ? tickerResult.data : []
 
@@ -2725,9 +2726,10 @@ export async function deleteArticleAction(articleId) {
 ```
 
 ## 📄 src/app/admin/articles/columns.jsx
-*Lines: 135, Size: 4.13 KB*
+*Lines: 140, Size: 4.29 KB*
 
 ```jsx
+// apps/client/src/app/admin/articles/columns.jsx (Multi-country support)
 'use client'
 
 import React from 'react'
@@ -2774,8 +2776,6 @@ export const columns = (onUpdate, onDelete) => [
     accessorKey: 'headline',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Headline" />,
     cell: ({ row }) => (
-      // --- START OF UI FIX ---
-      // Apply max-width and allow the EditableCell's internal truncate to work
       <div className="max-w-[400px] xl:max-w-[600px]">
         <EditableCell
           initialValue={row.original.headline}
@@ -2783,7 +2783,6 @@ export const columns = (onUpdate, onDelete) => [
           useTextarea={true}
         />
       </div>
-      // --- END OF UI FIX ---
     ),
     minSize: 400,
   },
@@ -2791,7 +2790,6 @@ export const columns = (onUpdate, onDelete) => [
     accessorKey: 'newspaper',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Source" />,
     cell: ({ row }) => (
-      // --- UI FIX ---
       <div className="max-w-[180px]">
         <EditableCell
           initialValue={row.original.newspaper}
@@ -2805,11 +2803,19 @@ export const columns = (onUpdate, onDelete) => [
     accessorKey: 'country',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Country" />,
     cell: ({ row }) => (
-      // --- UI FIX ---
       <div className="max-w-[150px]">
+        {/* MODIFIED: EditableCell now handles arrays via join/split */}
         <EditableCell
-          initialValue={row.original.country}
-          onSave={(newValue) => onUpdate(row.original, { country: newValue })}
+          initialValue={(row.original.country || []).join(', ')}
+          onSave={(newValue) =>
+            onUpdate(row.original, {
+              country: newValue
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean),
+            })
+          }
+          placeholder="Add countries..."
         />
       </div>
     ),
@@ -3101,15 +3107,15 @@ export default function DashboardClientPage({
 ```
 
 ## 📄 src/app/admin/dashboard/page.jsx
-*Lines: 54, Size: 1.46 KB*
+*Lines: 53, Size: 1.38 KB*
 
 ```jsx
-// File: apps/client/src/app/admin/dashboard/page.jsx (version 2.5 - FINAL)
+// File: apps/client/src/app/admin/dashboard/page.jsx (CORRECTED)
 import {
   getDashboardStats,
   getRecentRunVerdicts,
   getAllSources,
-} from '@headlines/data-access/next' // CORRECTED
+} from '@headlines/data-access/next'
 import DashboardClientPage from './DashboardClientPage'
 import dbConnect from '@headlines/data-access/dbConnect/next'
 
@@ -3117,7 +3123,6 @@ export const dynamic = 'force-dynamic'
 
 async function getPageData() {
   try {
-    // The data-access functions now reliably handle their own connections.
     const [statsResult, verdictsResult, sourcesResult] = await Promise.all([
       getDashboardStats(),
       getRecentRunVerdicts(),
@@ -3137,7 +3142,7 @@ async function getPageData() {
 }
 
 export default async function AdminDashboardPage() {
-  await dbConnect()
+  await dbConnect() // ACTION: Add this line
   const { stats, runs, sources, error } = await getPageData()
 
   if (error) {
@@ -3161,10 +3166,10 @@ export default async function AdminDashboardPage() {
 ```
 
 ## 📄 src/app/admin/events/EventsClientPage.jsx
-*Lines: 158, Size: 5.28 KB*
+*Lines: 160, Size: 5.45 KB*
 
 ```jsx
-// apps/client/src/app/admin/events/EventsClientPage.jsx
+// apps/client/src/app/admin/events/EventsClientPage.jsx (MODIFIED)
 'use client'
 
 import { useState, useCallback } from 'react'
@@ -3181,7 +3186,8 @@ import { EventListItem, ListHeader } from './columns'
 import { handleExport } from '@/lib/api-client'
 import { deleteEventAction, updateEventAction, getEventDetailsAction } from './actions'
 
-export default function EventsClientPage({ initialEvents, total }) {
+// ACTION: Accept the new `availableCountries` prop
+export default function EventsClientPage({ initialEvents, total, availableCountries }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -3305,6 +3311,7 @@ export default function EventsClientPage({ initialEvents, total }) {
                 onDelete={handleDelete}
                 isExpanded={expandedItemId === event._id}
                 onDetailsNeeded={handleFetchDetails}
+                availableCountries={availableCountries} // ACTION: Pass prop down to list item
               />
             ))}
           </Accordion>
@@ -3364,10 +3371,10 @@ export async function getEventDetailsAction(eventId) {
 ```
 
 ## 📄 src/app/admin/events/columns.jsx
-*Lines: 246, Size: 8.26 KB*
+*Lines: 243, Size: 8.04 KB*
 
 ```jsx
-// File: client/src/app/admin/events/columns.jsx
+// apps/client/src/app/admin/events/columns.jsx (MODIFIED with MultiSelect)
 'use client'
 
 import React, { useState, useCallback } from 'react'
@@ -3390,6 +3397,7 @@ import {
   CardFooter,
   Label,
   Textarea,
+  MultiSelect, // ACTION: Import MultiSelect
 } from '@/components/shared'
 import { Loader2, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
@@ -3421,11 +3429,12 @@ export const EventListItem = ({
   onDelete,
   isExpanded,
   onDetailsNeeded,
+  availableCountries, // ACTION: Accept the new prop
 }) => {
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
 
   const loadDetails = useCallback(async () => {
-    if (event.details) return // Already loaded
+    if (event.details) return
     setIsLoadingDetails(true)
     try {
       await onDetailsNeeded(event._id)
@@ -3445,12 +3454,13 @@ export const EventListItem = ({
   return (
     <AccordionItem value={event._id} className="border-b border-white/10 group">
       <AccordionTrigger className="w-full text-left hover:bg-white/5 px-2 hover:no-underline">
-        {/* AccordionTrigger content remains the same */}
         <div className="flex items-center w-full text-sm">
           <div className="w-[180px] flex-shrink-0 text-muted-foreground group-hover:text-foreground">
             {format(new Date(event.createdAt), 'dd MMM yyyy, HH:mm')}
           </div>
-          <div className="w-[140px] flex-shrink-0">{event.country}</div>
+          <div className="w-[140px] flex-shrink-0">
+            {(event.country || []).join(', ')}
+          </div>
           <div className="w-[180px] flex-shrink-0">
             {event.eventClassification || 'N/A'}
           </div>
@@ -3487,14 +3497,16 @@ export const EventListItem = ({
                   />
                 </FormField>
 
-                {/* --- START OF THE LAYOUT FIX --- */}
                 <div className="grid grid-cols-3 gap-4">
                   <FormField label="Country">
-                    <EditableCell
-                      initialValue={event.details.country}
-                      onSave={(newValue) =>
-                        onUpdate(event.details, { country: newValue })
+                    {/* ACTION: Replace EditableCell with MultiSelect */}
+                    <MultiSelect
+                      options={availableCountries}
+                      selected={event.details.country || []}
+                      onChange={(newCountries) =>
+                        onUpdate(event.details, { country: newCountries.sort() })
                       }
+                      placeholder="Select countries..."
                     />
                   </FormField>
                   <FormField label="Classification">
@@ -3527,7 +3539,6 @@ export const EventListItem = ({
                     />
                   </FormField>
                 </div>
-                {/* --- END OF THE LAYOUT FIX --- */}
 
                 <FormField label="Synthesized Summary">
                   <EditableCell
@@ -3562,7 +3573,6 @@ export const EventListItem = ({
 }
 
 export const ListHeader = ({ sorting, setSorting }) => {
-  // This is a mock table instance to reuse the DataTableColumnHeader component
   const mockColumn = (id) => ({
     getCanSort: () => true,
     getIsSorted: () =>
@@ -3572,15 +3582,9 @@ export const ListHeader = ({ sorting, setSorting }) => {
           ? 'asc'
           : false,
     toggleSorting: (desc) => setSorting([{ id, desc }]),
-
-    // --- START OF THE FIX ---
-    // Add the missing functions that DataTableColumnHeader expects.
-    // Since this custom list view doesn't support filtering, we can
-    // make these functions do nothing or return default values.
-    getCanFilter: () => false, // This will prevent the filter input from rendering
+    getCanFilter: () => false,
     getFilterValue: () => undefined,
-    setFilterValue: () => {}, // No-op
-    // --- END OF THE FIX ---
+    setFilterValue: () => {},
   })
 
   return (
@@ -3616,12 +3620,12 @@ export const ListHeader = ({ sorting, setSorting }) => {
 ```
 
 ## 📄 src/app/admin/events/page.jsx
-*Lines: 25, Size: 777 Bytes*
+*Lines: 28, Size: 955 Bytes*
 
 ```jsx
-// apps/client/src/app/admin/events/page.jsx
-import { getEvents } from '@headlines/data-access'
-import EventsClientPage from './EventsClientPage' // New client component
+// apps/client/src/app/admin/events/page.jsx (MODIFIED)
+import { getEvents, getDistinctCountries } from '@headlines/data-access/next'
+import EventsClientPage from './EventsClientPage'
 import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
@@ -3630,16 +3634,19 @@ export default async function EventsPage({ searchParams }) {
   await dbConnect()
   const page = parseInt(searchParams.page || '1', 10)
   const sort = searchParams.sort || null
-
-  // The custom list view for events doesn't support columnFilters, so we pass an empty object.
   const filters = {}
 
-  const result = await getEvents({ page, filters, sort })
+  // ACTION: Fetch both events and the list of available countries concurrently.
+  const [eventsResult, countriesResult] = await Promise.all([
+    getEvents({ page, filters, sort }),
+    getDistinctCountries(),
+  ])
 
   return (
     <EventsClientPage
-      initialEvents={result.success ? result.data : []}
-      total={result.success ? result.total : 0}
+      initialEvents={eventsResult.success ? eventsResult.data : []}
+      total={eventsResult.success ? eventsResult.total : 0}
+      availableCountries={countriesResult.success ? countriesResult.data : []}
     />
   )
 }
@@ -3851,9 +3858,10 @@ export async function deleteOpportunityAction(opportunityId) {
 ```
 
 ## 📄 src/app/admin/opportunities/columns.jsx
-*Lines: 109, Size: 2.92 KB*
+*Lines: 119, Size: 3.25 KB*
 
 ```jsx
+// apps/client/src/app/admin/opportunities/columns.jsx (Multi-country support)
 'use client'
 
 import React from 'react'
@@ -3931,9 +3939,18 @@ export const columns = (onUpdate, onDelete) => [
     accessorKey: 'basedIn',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Country" />,
     cell: ({ row }) => (
+      // MODIFIED: EditableCell now handles arrays via join/split
       <EditableCell
-        initialValue={row.original.basedIn}
-        onSave={(newValue) => onUpdate(row.original, { basedIn: newValue })}
+        initialValue={(row.original.basedIn || []).join(', ')}
+        onSave={(newValue) =>
+          onUpdate(row.original, {
+            basedIn: newValue
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean),
+          })
+        }
+        placeholder="Add countries..."
       />
     ),
     size: 150,
@@ -8620,11 +8637,10 @@ export function ThemeToggle() {
 ```
 
 ## 📄 src/components/client/articles/ArticleCard.jsx
-*Lines: 202, Size: 7.77 KB*
+*Lines: 203, Size: 7.91 KB*
 
 ```jsx
-// File: apps/client/src/components/client/ArticleCard.jsx
-
+// File: apps/client/src/components/client/articles/ArticleCard.jsx (Multi-country support)
 'use client'
 
 import { useState, useTransition } from 'react'
@@ -8639,7 +8655,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
   ConfirmationDialog,
-} from '@/components/shared' // <-- CORRECT IMPORT
+} from '@/components/shared'
 import { Trash2, ExternalLink, Users, Mail, Building, Briefcase } from 'lucide-react'
 import { getCountryFlag } from '@headlines/utils-shared'
 import { SwipeToDelete } from '../shared/SwipeToDelete'
@@ -8676,7 +8692,7 @@ export const ArticleCard = ({ article, onDelete }) => {
     }
   }
 
-  const flag = getCountryFlag(article.country)
+  const flags = (article.country || []).map((c) => getCountryFlag(c)).join(' ') // MODIFIED
   const relevanceScore = article.relevance_article || article.relevance_headline
 
   return (
@@ -8709,7 +8725,8 @@ export const ArticleCard = ({ article, onDelete }) => {
                     >
                       {relevanceScore}
                     </Badge>
-                    <span className="text-lg hidden sm:inline">{flag}</span>
+                    <span className="text-lg hidden sm:inline">{flags}</span>{' '}
+                    {/* MODIFIED */}
                     <p className="text-xs sm:text-sm text-slate-300 truncate shadow-black drop-shadow-lg">
                       {article.newspaper}
                     </p>
@@ -8751,7 +8768,8 @@ export const ArticleCard = ({ article, onDelete }) => {
                 <AccordionTrigger className="p-0 hover:no-underline text-left">
                   <div className="flex-grow min-w-0">
                     <p className="font-serif font-bold text-base sm:text-lg text-white line-clamp-3 shadow-black drop-shadow-lg">
-                      <span className="text-lg sm:hidden mr-2">{flag}</span>
+                      <span className="text-lg sm:hidden mr-2">{flags}</span>{' '}
+                      {/* MODIFIED */}
                       {article.headline_en || `(en N/S): ${article.headline}`}
                     </p>
                   </div>
@@ -9486,11 +9504,10 @@ export function CountrySubscriptionEditor({
 ```
 
 ## 📄 src/components/client/countries/GlobalCountrySelector.jsx
-*Lines: 136, Size: 4.54 KB*
+*Lines: 136, Size: 4.59 KB*
 
 ```jsx
-// File: apps/client/src/components/client/GlobalCountrySelector.jsx (Corrected and Unabridged)
-
+// apps/client/src/components/client/countries/GlobalCountrySelector.jsx (CORRECTED)
 'use client'
 import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -9558,9 +9575,10 @@ export function GlobalCountrySelector({ allCountries }) {
 
   const renderIcon = () => {
     if (!user) return <Globe className="h-5 w-5" />
-    const userCountryNames = user.countries || []
-    if (userCountryNames.length === 1) {
-      return <span className="text-xl">{getCountryFlag(userCountryNames[0].name)}</span>
+    const userCountries = user.countries || []
+    if (userCountries.length === 1) {
+      // DEFINITIVE FIX: Pass the .name property, not the whole object.
+      return <span className="text-xl">{getCountryFlag(userCountries[0].name)}</span>
     }
     return <Globe className="h-5 w-5" />
   }
@@ -9628,11 +9646,10 @@ export function GlobalCountrySelector({ allCountries }) {
 ```
 
 ## 📄 src/components/client/events/EventCardDesktop.jsx
-*Lines: 111, Size: 4.11 KB*
+*Lines: 123, Size: 4.49 KB*
 
 ```jsx
-// File: apps/client/src/components/client/events/EventCardDesktop.jsx
-
+// File: apps/client/src/components/client/events/EventCardDesktop.jsx (Handler Corrected)
 'use client'
 
 import {
@@ -9655,9 +9672,15 @@ const getRelevanceBadgeClass = (score) => {
   return 'bg-slate-500/20 text-slate-300 border border-slate-500/30'
 }
 
-export function EventCardDesktop({ event, onChat, onDelete, isPending }) {
+export function EventCardDesktop({
+  event,
+  onChat,
+  onDelete,
+  onShowIndividuals,
+  isPending,
+}) {
   if (!event) return null
-  const flag = getCountryFlag(event.country)
+  const flags = (event.country || []).map((c) => getCountryFlag(c)).join(' ')
   const primaryImageUrl = event.source_articles?.find((a) => a.imageUrl)?.imageUrl
 
   return (
@@ -9676,7 +9699,7 @@ export function EventCardDesktop({ event, onChat, onDelete, isPending }) {
           </div>
           <div className="flex-grow min-w-0 pr-20">
             <h3 className="font-serif font-bold text-xl text-slate-100 mb-2">
-              <span className="text-2xl mr-3 align-middle">{flag}</span>
+              <span className="text-2xl mr-3 align-middle">{flags}</span>
               {event.synthesized_headline}
             </h3>
             <p className="text-slate-300 leading-relaxed">{event.synthesized_summary}</p>
@@ -9724,12 +9747,19 @@ export function EventCardDesktop({ event, onChat, onDelete, isPending }) {
         </div>
         <div className="mt-4 pt-4 border-t border-slate-800/50 flex flex-col sm:flex-row justify-between items-start gap-4">
           {event.key_individuals && event.key_individuals.length > 0 && (
-            <div className="flex items-start gap-3 text-slate-400">
-              <Users className="h-5 w-5 mt-0.5 shrink-0 text-slate-500" />
-              <p className="text-sm font-medium text-slate-300">
-                {event.key_individuals.length} Key Individual(s) Identified
-              </p>
-            </div>
+            // DEFINITIVE FIX: Ensure the onClick handler is correctly passed to the Button.
+            <Button
+              variant="ghost"
+              className="p-0 h-auto text-left text-slate-400 hover:text-slate-200"
+              onClick={onShowIndividuals}
+            >
+              <div className="flex items-start gap-3">
+                <Users className="h-5 w-5 mt-0.5 shrink-0 text-slate-500" />
+                <p className="text-sm font-medium text-slate-300">
+                  {event.key_individuals.length} Key Individual(s) Identified
+                </p>
+              </div>
+            </Button>
           )}
           {event.ai_assessment_reason && (
             <p className="text-xs text-slate-500 italic sm:text-right flex-grow">
@@ -9820,11 +9850,10 @@ export function EventCardDetails({ event }) {
 ```
 
 ## 📄 src/components/client/events/EventCardMobile.jsx
-*Lines: 105, Size: 3.78 KB*
+*Lines: 117, Size: 4.16 KB*
 
 ```jsx
-// File: apps/client/src/components/client/events/EventCardMobile.jsx
-
+// File: apps/client/src/components/client/events/EventCardMobile.jsx (Handler Corrected)
 'use client'
 
 import { Badge, Button } from '@/components/shared'
@@ -9838,9 +9867,15 @@ const getRelevanceBadgeClass = (score) => {
   return 'bg-slate-500/20 text-slate-300 border border-slate-500/30'
 }
 
-export function EventCardMobile({ event, onChat, onDelete, isPending }) {
+export function EventCardMobile({
+  event,
+  onChat,
+  onDelete,
+  onShowIndividuals,
+  isPending,
+}) {
   if (!event) return null
-  const flag = getCountryFlag(event.country)
+  const flags = (event.country || []).map((c) => getCountryFlag(c)).join(' ')
   const primaryImageUrl = event.source_articles?.find((a) => a.imageUrl)?.imageUrl
 
   return (
@@ -9893,7 +9928,7 @@ export function EventCardMobile({ event, onChat, onDelete, isPending }) {
               primaryImageUrl ? 'text-white drop-shadow-lg' : 'text-slate-100'
             )}
           >
-            <span className="text-xl mr-2 align-middle">{flag}</span>
+            <span className="text-xl mr-2 align-middle">{flags}</span>
             {event.synthesized_headline}
           </h3>
         </div>
@@ -9910,12 +9945,19 @@ export function EventCardMobile({ event, onChat, onDelete, isPending }) {
         </p>
         <div className="mt-4 pt-4 border-t border-slate-800/50 flex flex-col justify-between items-start gap-4">
           {event.key_individuals && event.key_individuals.length > 0 && (
-            <div className="flex items-start gap-3 text-slate-400">
-              <Users className="h-5 w-5 mt-0.5 shrink-0 text-slate-500" />
-              <p className="text-sm font-medium text-slate-300">
-                {event.key_individuals.length} Key Individual(s) Identified
-              </p>
-            </div>
+            // DEFINITIVE FIX: Ensure the onClick handler is correctly passed to the Button.
+            <Button
+              variant="ghost"
+              className="p-0 h-auto text-left text-slate-400 hover:text-slate-200"
+              onClick={onShowIndividuals}
+            >
+              <div className="flex items-start gap-3">
+                <Users className="h-5 w-5 mt-0.5 shrink-0 text-slate-500" />
+                <p className="text-sm font-medium text-slate-300">
+                  {event.key_individuals.length} Key Individual(s) Identified
+                </p>
+              </div>
+            </Button>
           )}
           {event.ai_assessment_reason && (
             <p className="text-xs text-slate-500 italic sm:text-right flex-grow">
@@ -10100,11 +10142,84 @@ export function EventListWrapper({
 
 ```
 
-## 📄 src/components/client/events/SynthesizedEventCard.jsx
-*Lines: 100, Size: 3.32 KB*
+## 📄 src/components/client/events/KeyIndividualsDialog.jsx
+*Lines: 67, Size: 2.33 KB*
 
 ```jsx
-// File: apps/client/src/components/client/SynthesizedEventCard.jsx (Restored)
+// apps/client/src/components/client/events/KeyIndividualsDialog.jsx (NEW FILE)
+'use client'
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/shared'
+import { Users, Mail, Building, Briefcase } from 'lucide-react'
+
+export function KeyIndividualsDialog({ individuals, open, onOpenChange }) {
+  if (!individuals || individuals.length === 0) {
+    return null
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg bg-slate-900 border-slate-700">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-blue-400" />
+            Key Individuals Identified
+          </DialogTitle>
+          <DialogDescription>
+            The following individuals were identified by the AI as principal actors in
+            this event.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-4 space-y-3 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+          {individuals.map((person, index) => (
+            <div
+              key={index}
+              className="p-3 rounded-md bg-slate-800/50 border border-slate-700/50"
+            >
+              <p className="font-bold text-slate-100 flex items-center gap-2">
+                <Users className="h-4 w-4 text-slate-400" /> {person.name}
+              </p>
+              <div className="pl-6 space-y-1 mt-1 text-sm text-slate-400">
+                {person.role_in_event && (
+                  <p className="flex items-center gap-2">
+                    <Briefcase className="h-3 w-3" /> {person.role_in_event}
+                  </p>
+                )}
+                {person.company && (
+                  <p className="flex items-center gap-2">
+                    <Building className="h-3 w-3" /> {person.company}
+                  </p>
+                )}
+                {person.email_suggestion && (
+                  <a
+                    href={`mailto:${person.email_suggestion}`}
+                    className="flex items-center gap-2 text-blue-400 hover:underline"
+                  >
+                    <Mail className="h-3 w-3" /> {person.email_suggestion}
+                  </a>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+```
+
+## 📄 src/components/client/events/SynthesizedEventCard.jsx
+*Lines: 117, Size: 3.98 KB*
+
+```jsx
+// File: apps/client/src/components/client/events/SynthesizedEventCard.jsx (CORRECTED)
 'use client'
 
 import { useState, useTransition } from 'react'
@@ -10112,20 +10227,22 @@ import { useRouter } from 'next/navigation'
 import { AccordionContent, AccordionItem, ConfirmationDialog } from '@/components/shared'
 import useAppStore from '@/lib/store/use-app-store'
 import { SwipeToDelete } from '../shared/SwipeToDelete'
-import { EventCardDesktop } from '../events/EventCardDesktop'
-import { EventCardMobile } from '../events/EventCardMobile'
-import { EventCardDetails } from '../events/EventCardDetails'
+import { EventCardDesktop } from './EventCardDesktop'
+import { EventCardMobile } from './EventCardMobile'
+import { EventCardDetails } from './EventCardDetails'
+import { KeyIndividualsDialog } from './KeyIndividualsDialog'
 import { useAuth } from '@/lib/auth/client'
 import { toast } from 'sonner'
 
 export const SynthesizedEventCard = ({
   event,
-  onDelete, // <-- Changed from onSwipeLeft
+  onDelete,
   onFavoriteToggle,
   isFavorited,
 }) => {
   const [isPending, startTransition] = useTransition()
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false)
+  const [isIndividualsDialogOpen, setIsIndividualsDialogOpen] = useState(false) // State is here
   const setChatContextPrompt = useAppStore((state) => state.setChatContextPrompt)
   const router = useRouter()
   const { user } = useAuth()
@@ -10138,7 +10255,7 @@ export const SynthesizedEventCard = ({
 
   const handleSwipeRight = () => {
     if (isFavorited) {
-      setIsEmailDialogOpen(true) // <-- Un-commented
+      setIsEmailDialogOpen(true)
     } else {
       toast.info('Item must be favorited to email.')
     }
@@ -10156,6 +10273,12 @@ export const SynthesizedEventCard = ({
     onFavoriteToggle(event._id, !isFavorited)
   }
 
+  // DEFINITIVE FIX: This handler now correctly opens the dialog.
+  const handleShowIndividuals = (e) => {
+    e.stopPropagation() // Prevent the main accordion from toggling
+    setIsIndividualsDialogOpen(true)
+  }
+
   return (
     <>
       <div className="relative w-full">
@@ -10170,6 +10293,7 @@ export const SynthesizedEventCard = ({
                 onChat={handleChatAboutEvent}
                 onDelete={performDelete}
                 onFavorite={handleFavorite}
+                onShowIndividuals={handleShowIndividuals} // Pass the handler
                 isFavorited={isFavorited}
                 isPending={isPending}
               />
@@ -10178,6 +10302,7 @@ export const SynthesizedEventCard = ({
                 onChat={handleChatAboutEvent}
                 onDelete={performDelete}
                 onFavorite={handleFavorite}
+                onShowIndividuals={handleShowIndividuals} // Pass the handler
                 isFavorited={isFavorited}
                 isPending={isPending}
               />
@@ -10188,7 +10313,14 @@ export const SynthesizedEventCard = ({
           </AccordionContent>
         </AccordionItem>
       </div>
-      {/* Un-commented this block */}
+
+      {/* DEFINITIVE FIX: Render the dialog and control it with state */}
+      <KeyIndividualsDialog
+        individuals={event.key_individuals}
+        open={isIndividualsDialogOpen}
+        onOpenChange={setIsIndividualsDialogOpen}
+      />
+
       <ConfirmationDialog
         open={isEmailDialogOpen}
         onOpenChange={setIsEmailDialogOpen}
@@ -10207,11 +10339,10 @@ export const SynthesizedEventCard = ({
 ```
 
 ## 📄 src/components/client/opportunities/OpportunityCard.jsx
-*Lines: 188, Size: 7.03 KB*
+*Lines: 187, Size: 7.16 KB*
 
 ```jsx
-// File: apps/client/src/components/client/OpportunityCard.jsx
-
+// File: apps/client/src/components/client/opportunities/OpportunityCard.jsx (Multi-country support)
 'use client'
 
 import { useState, useTransition } from 'react'
@@ -10261,7 +10392,7 @@ export function OpportunityCard({ opportunity, onDelete }) {
   const reasonsToContact = Array.isArray(opportunity.whyContact)
     ? opportunity.whyContact
     : [opportunity.whyContact]
-  const flag = getCountryFlag(opportunity.basedIn)
+  const flags = (opportunity.basedIn || []).map((c) => getCountryFlag(c)).join(' ') // MODIFIED
 
   return (
     <>
@@ -10288,10 +10419,10 @@ export function OpportunityCard({ opportunity, onDelete }) {
                     {(opportunity.city || opportunity.basedIn) && (
                       <p className="text-xs text-slate-400 flex items-center gap-2 pl-6">
                         <MapPin className="h-3 w-3" />
-                        <span className="text-base mr-1">{flag}</span>
+                        <span className="text-base mr-1">{flags}</span> {/* MODIFIED */}
                         {opportunity.city}
                         {opportunity.city && opportunity.basedIn ? ', ' : ''}
-                        {opportunity.basedIn}
+                        {(opportunity.basedIn || []).join(', ')} {/* MODIFIED */}
                       </p>
                     )}
                   </div>
@@ -13227,16 +13358,16 @@ export {
 ```
 
 ## 📄 src/components/shared/elements/sonner.jsx
-*Lines: 40, Size: 1.08 KB*
+*Lines: 39, Size: 1.02 KB*
 
 ```jsx
 'use client'
-// import { useTheme } from 'next-themes'
-// import { Toaster as Sonner } from 'sonner'
+import { useTheme } from 'next-themes'
+import { Toaster as Sonner } from 'sonner'
 import { useEffect, useState } from 'react'
 
 const Toaster = ({ ...props }) => {
-  // const { theme = 'system' } = useTheme()
+  const { theme = 'system' } = useTheme()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -13249,22 +13380,21 @@ const Toaster = ({ ...props }) => {
   }
 
   return (
-    <>HELLO</>
-    // <Sonner
-    //   theme={theme}
-    //   className="toaster group"
-    //   toastOptions={{
-    //     classNames: {
-    //       toast:
-    //         'group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg',
-    //       description: 'group-[.toast]:text-muted-foreground',
-    //       actionButton:
-    //         'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground',
-    //       cancelButton: 'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground',
-    //     },
-    //   }}
-    //   {...props}
-    // />
+    <Sonner
+      theme={theme}
+      className="toaster group"
+      toastOptions={{
+        classNames: {
+          toast:
+            'group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg',
+          description: 'group-[.toast]:text-muted-foreground',
+          actionButton:
+            'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground',
+          cancelButton: 'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground',
+        },
+      }}
+      {...props}
+    />
   )
 }
 
@@ -15581,7 +15711,7 @@ module.exports = {
 
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 106 files, 31 directories
+Total: 109 files, 31 directories
 
 ```
 headlines/
@@ -15607,7 +15737,9 @@ headlines/
 │   │   ├── 📄 V1_Fix_Scraper_Selectors.js
 │   │   ├── 📄 V2_Clean_Opportunity_Reasons.js
 │   │   ├── 📄 V3_Fix_E24_Scraper.js
-│   │   └── 📄 V4_Fix_E24_Scraper_Definitive.js
+│   │   ├── 📄 V4_Fix_E24_Scraper_Definitive.js
+│   │   ├── 📄 V5_Convert_Country_To_Array.js
+│   │   └── 📄 V6_Remove_LedeSelector.js
 │   ├── 📁 push/
 │   │   └── 📄 send-test-push.js
 │   ├── 📁 results/
@@ -15708,6 +15840,7 @@ headlines/
 │   │   ├── 📄 6_suggestNewWatchlistEntities.js
 │   │   └── 📄 7_selfHealAndOptimize.js
 │   ├── 📁 utils/
+│   │   ├── 📄 articleTraceLogger.js
 │   │   ├── 📄 auditLogger.js
 │   │   ├── 📄 errorStream.js
 │   │   ├── 📄 housekeeping.js
@@ -15726,9 +15859,9 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-03T23:13:25.866Z
+**Generated**: 2025-10-04T15:31:18.557Z
 **Repository Path**: /home/mark/Repos/projects/headlines/apps/pipeline
-**Total Files**: 106
+**Total Files**: 109
 **Package**: @headlines/pipeline@1.0.0
 
 
@@ -17143,29 +17276,154 @@ runMigration()
 
 ```
 
+## 📄 scripts/migrations/V5_Convert_Country_To_Array.js
+*Lines: 78, Size: 2.35 KB*
+
+```javascript
+// packages/pipeline/scripts/migrations/V5_Convert_Country_To_Array.js
+import mongoose from 'mongoose'
+import { Article, SynthesizedEvent, Opportunity } from '@headlines/models'
+import dbConnect from '@headlines/data-access/dbConnect/node'
+import { logger } from '@headlines/utils-shared'
+import colors from 'ansi-colors'
+
+async function migrateCollection(model, fieldName) {
+  logger.info(
+    `Checking collection '${model.collection.collectionName}' for field '${fieldName}'...`
+  )
+  const filter = { [fieldName]: { $type: 'string' } }
+  const count = await model.countDocuments(filter)
+
+  if (count === 0) {
+    logger.info(`  ✅ No documents to migrate in '${model.collection.collectionName}'.`)
+    return
+  }
+
+  logger.warn(
+    `  Found ${count} documents to migrate in '${model.collection.collectionName}'.`
+  )
+
+  const bulkOps = []
+  // DEFINITIVE FIX: Use .lean() to get raw JS objects, bypassing Mongoose's type coercion.
+  const cursor = model.find(filter).lean().cursor()
+
+  for await (const doc of cursor) {
+    const currentValue = doc[fieldName]
+
+    // Now, currentValue will be the actual string from the DB (e.g., "Denmark"),
+    // not an array that Mongoose created in memory (e.g., ["Denmark"]).
+    if (typeof currentValue === 'string') {
+      bulkOps.push({
+        updateOne: {
+          filter: { _id: doc._id },
+          update: { $set: { [fieldName]: [currentValue] } },
+        },
+      })
+    }
+  }
+
+  if (bulkOps.length > 0) {
+    const result = await model.bulkWrite(bulkOps)
+    logger.info(
+      colors.green(`  ✅ Successfully modified ${result.modifiedCount} documents.`)
+    )
+  } else {
+    // This message should no longer appear with the .lean() fix.
+    logger.warn(
+      `  Warning: Found ${count} documents but processed 0. This may indicate an issue.`
+    )
+  }
+}
+
+async function runMigration() {
+  logger.info(
+    '🚀 Starting V5 Migration: Convert `country` and `basedIn` fields to arrays...'
+  )
+  await dbConnect()
+
+  try {
+    await migrateCollection(Article, 'country')
+    await migrateCollection(SynthesizedEvent, 'country')
+    await migrateCollection(Opportunity, 'basedIn')
+
+    logger.info('✅ Migration V5 completed successfully.')
+  } catch (error) {
+    logger.fatal({ err: error }, '❌ Migration V5 failed!')
+  } finally {
+    if (mongoose.connection.readyState === 1) {
+      await mongoose.disconnect()
+    }
+  }
+}
+
+runMigration()
+
+```
+
+## 📄 scripts/migrations/V6_Remove_LedeSelector.js
+*Lines: 31, Size: 822 Bytes*
+
+```javascript
+import mongoose from 'mongoose'
+import { Source } from '@headlines/models'
+import dbConnect from '@headlines/data-access/dbConnect/node'
+import { logger } from '@headlines/utils-shared'
+
+async function runMigration() {
+  logger.info(
+    '🚀 Starting V6 Migration: Remove deprecated `ledeSelector` field from Sources...'
+  )
+  await dbConnect()
+
+  try {
+    const result = await Source.updateMany(
+      { ledeSelector: { $exists: true } },
+      { $unset: { ledeSelector: '' } }
+    )
+
+    logger.info(
+      `✅ Migration V6 completed. Removed 'ledeSelector' field from ${result.modifiedCount} documents.`
+    )
+  } catch (error) {
+    logger.fatal({ err: error }, '❌ Migration V6 failed!')
+  } finally {
+    if (mongoose.connection.readyState === 1) {
+      await mongoose.disconnect()
+    }
+  }
+}
+
+runMigration()
+
+```
+
 ## 📄 scripts/mongo-backup.sh
-*Lines: 56, Size: 1.31 KB*
+*Lines: 59, Size: 1.54 KB*
 
 ```bash
 #!/bin/bash
-# mongo-backup.sh (version 1.0)
+# mongo-backup.sh (version 1.1 - Robust .env parsing)
 # This script dumps all relevant collections to a timestamped directory.
 
 # --- Configuration ---
 BACKUP_DIR="apps/pipeline/backup"
 TIMESTAMP=$(date +"%Y-%m-%dT%H-%M-%S")
 TARGET_DIR="$BACKUP_DIR/$TIMESTAMP"
+ENV_FILE="./.env"
 
-# Load MONGO_URI from the root .env file
-if [ -f "./.env" ]; then
-    export $(grep -v '^#' .env | xargs)
-else
+# --- Pre-flight Checks & Robust .env Loading ---
+if [ ! -f "$ENV_FILE" ]; then
     echo "❌ Error: .env file not found in the monorepo root."
     exit 1
 fi
 
+# CORRECTED: Robustly export variables line-by-line, skipping comments and empty lines.
+set -a # Automatically export all variables
+source <(grep -v '^#' "$ENV_FILE" | sed -e '/^$/d' -e 's/\r$//')
+set +a
+
 if [ -z "$MONGO_URI" ]; then
-    echo "❌ Error: MONGO_URI is not set in your .env file."
+    echo "❌ Error: MONGO_URI is not set or could not be read from your .env file."
     exit 1
 fi
 
@@ -17202,7 +17460,6 @@ done
 
 echo "✅ Backup complete. All collections saved to $TARGET_DIR"
 exit 0
-
 ```
 
 ## 📄 scripts/mongo-restore.sh
@@ -22960,10 +23217,10 @@ export const SUPERVISOR_EMAIL_CONFIG = {
 ```
 
 ## 📄 src/modules/dataStore/index.js
-*Lines: 188, Size: 6.84 KB*
+*Lines: 190, Size: 7.02 KB*
 
 ```javascript
-// apps/pipeline/src/modules/dataStore/index.js (version 6.1.0)
+// apps/pipeline/src/modules/dataStore/index.js (CORRECTED - Handles empty articles array)
 import { Pinecone } from '@pinecone-database/pinecone'
 import { logger } from '@headlines/utils-shared'
 import { generateEmbedding } from '@headlines/ai-services'
@@ -22983,7 +23240,7 @@ const pc = new Pinecone({ apiKey: PINECONE_API_KEY })
 const pineconeIndex = pc.index(PINECONE_INDEX_NAME)
 
 export async function savePipelineResults(
-  articlesToSave,
+  articlesToSave, // This may now be an empty array
   eventsToSave,
   savedOpportunities
 ) {
@@ -23019,7 +23276,7 @@ export async function savePipelineResults(
       for (const event of savedEvents) {
         const textToEmbed = `${event.synthesized_headline}\n${event.synthesized_summary}`
         const embedding = await generateEmbedding(textToEmbed)
-        const eventDate = event.event_date ? new Date(event.event_date) : new Date() // Robust date handling
+        const eventDate = event.event_date ? new Date(event.event_date) : new Date()
         pineconeVectors.push({
           id: `event_${event._id.toString()}`,
           values: embedding,
@@ -23027,7 +23284,9 @@ export async function savePipelineResults(
             type: 'event',
             headline: event.synthesized_headline,
             summary: event.synthesized_summary,
-            country: event.country,
+            country: Array.isArray(event.country)
+              ? event.country.join(', ')
+              : event.country, // Handle array
             event_date: eventDate.toISOString(),
             key_individuals: (event.key_individuals || []).map((p) => p.name).join(', '),
           },
@@ -23035,6 +23294,7 @@ export async function savePipelineResults(
       }
     }
 
+    // ACTION: This block will now often be skipped, which is correct.
     if (articlesToSave && articlesToSave.length > 0) {
       const articleOps = []
       const eventKeyToIdMap = new Map(savedEvents.map((e) => [e.event_key, e._id]))
@@ -23047,7 +23307,6 @@ export async function savePipelineResults(
       }
 
       for (const article of articlesToSave) {
-        // Embed the AI-generated summary, not the full text
         if (article.relevance_article && article.assessment_article) {
           const textToEmbed = `${article.headline}\n${article.assessment_article}`
           article.embedding = await generateEmbedding(textToEmbed)
@@ -23062,7 +23321,9 @@ export async function savePipelineResults(
               headline: article.headline,
               summary: article.assessment_article || 'No summary.',
               newspaper: article.newspaper,
-              country: article.country,
+              country: Array.isArray(article.country)
+                ? article.country.join(', ')
+                : article.country,
             },
           })
         }
@@ -23071,13 +23332,10 @@ export async function savePipelineResults(
         if (eventKey) article.synthesizedEventId = eventKeyToIdMap.get(eventKey)
 
         const { _id, ...dataToSet } = article
-        // Delete articleContent before saving
         delete dataToSet.articleContent
         Object.keys(dataToSet).forEach(
           (key) => dataToSet[key] === undefined && delete dataToSet[key]
         )
-        if (dataToSet.relevance_headline <= 25 && dataToSet.relevance_article <= 25)
-          delete dataToSet.articleContent
         delete dataToSet.embedding
         articleOps.push({
           updateOne: {
@@ -23106,7 +23364,7 @@ export async function savePipelineResults(
             type: 'opportunity',
             headline: opp.reachOutTo,
             summary: opp.whyContact.join(' '),
-            country: opp.basedIn,
+            country: Array.isArray(opp.basedIn) ? opp.basedIn.join(', ') : opp.basedIn,
           },
         })
       }
@@ -23126,6 +23384,7 @@ export async function savePipelineResults(
   }
 }
 
+// ... (filterFreshArticles function remains unchanged) ...
 export async function filterFreshArticles(articles, isRefreshMode = false) {
   if (!articles || articles.length === 0) return []
   const scrapedLinks = articles.map((a) => a.link)
@@ -24239,21 +24498,21 @@ export async function sendBulkEmails(emailQueue) {
 ```
 
 ## 📄 src/modules/email/index.js
-*Lines: 51, Size: 1.56 KB*
+*Lines: 51, Size: 1.7 KB*
 
 ```javascript
-// AFTER
-// apps/pipeline/src/modules/email/index.js (Corrected)
+// apps/pipeline/src/modules/email/index.js (MODIFIED to accept traces)
 import { logger } from '@headlines/utils-shared'
-import { sendGenericEmail } from '@headlines/utils-server' // <-- CORRECT IMPORT
+import { sendGenericEmail } from '@headlines/utils-server'
 import { Subscriber } from '@headlines/models'
 import { createSupervisorEmailBody } from './components/supervisor/supervisorEmailBodyBuilder.js'
 
 /**
  * Coordinates sending the supervisor report email.
  * @param {Object} runStats - Statistics about the current pipeline run.
+ * @param {Array<Object>} articleTraces - Detailed traces for each processed article.
  */
-export async function sendSupervisorReportEmail(runStats) {
+export async function sendSupervisorReportEmail(runStats, articleTraces = []) {
   if (!runStats) {
     logger.error('No runStats provided for supervisor report. Skipping email.')
     return
@@ -24276,8 +24535,8 @@ export async function sendSupervisorReportEmail(runStats) {
       return
     }
 
-    // Generate the complex HTML body
-    const emailBody = await createSupervisorEmailBody(runStats)
+    // Generate the complex HTML body, now including the article traces
+    const emailBody = await createSupervisorEmailBody(runStats, articleTraces)
 
     // Send the email using the shared mailer
     await sendGenericEmail({
@@ -24701,21 +24960,21 @@ export async function sendBulkPushNotifications(pushQueue) {
 ```
 
 ## 📄 src/orchestrator.js
-*Lines: 141, Size: 5.24 KB*
+*Lines: 146, Size: 5.39 KB*
 
 ```javascript
-// apps/pipeline/src/orchestrator.js
+// apps/pipeline/src/orchestrator.js (MODIFIED)
 import { logger } from '@headlines/utils-shared'
 import { tokenTracker, apiCallTracker } from '@headlines/utils-server'
 import { logFinalReport } from './utils/pipelineLogger.js'
 import { RunStatsManager } from './utils/runStatsManager.js'
+import { ArticleTraceLogger } from './utils/articleTraceLogger.js'
 import { runPreFlightChecks } from './pipeline/1_preflight.js'
 import { runScrapeAndFilter } from './pipeline/2_scrapeAndFilter.js'
 import { runAssessAndEnrich } from './pipeline/3_assessAndEnrich.js'
 import { runClusterAndSynthesize } from './pipeline/4_clusterAndSynthesize.js'
 import { runCommitAndNotify } from './pipeline/5_commitAndNotify.js'
 import { suggestNewWatchlistEntities } from './pipeline/6_suggestNewWatchlistEntities.js'
-import { runSelfHealAndOptimize } from './pipeline/7_selfHealAndOptimize.js'
 import { updateSourceAnalytics } from './pipeline/submodules/commit/4_updateSourceAnalytics.js'
 import { settings } from '@headlines/config'
 import { RunVerdict } from '@headlines/models'
@@ -24751,10 +25010,13 @@ export async function runPipeline(options) {
 
   apiCallTracker.reset()
   const runStatsManager = new RunStatsManager()
+  const articleTraceLogger = new ArticleTraceLogger()
+  await articleTraceLogger.initialize()
 
   let currentPayload = {
     ...options,
     runStatsManager,
+    articleTraceLogger,
     dbConnection: false,
   }
 
@@ -24819,14 +25081,15 @@ export async function runPipeline(options) {
           'No new events were synthesized. Skipping commit and notification stages, but sending a supervisor report.'
         )
         const { sendSupervisorReportEmail } = await import('./modules/email/index.js')
-        await sendSupervisorReportEmail(runStatsManager.getStats())
+        await sendSupervisorReportEmail(
+          runStatsManager.getStats(),
+          articleTraceLogger.getAllTraces()
+        )
       }
     }
   } catch (error) {
     success = false
     runStatsManager.push('errors', `ORCHESTRATOR_FATAL: ${error.message}`)
-
-    // Send a critical alert for unhandled exceptions in the main pipeline
     sendErrorAlert(error, {
       origin: 'PIPELINE_ORCHESTRATOR',
       runOptions: options,
@@ -24841,6 +25104,7 @@ export async function runPipeline(options) {
 
     await saveRunVerdict(currentPayload, durationInSeconds)
     await logFinalReport(runStatsManager.getStats(), durationInSeconds)
+    await articleTraceLogger.writeAllTraces()
   }
   return { success }
 }
@@ -25138,14 +25402,16 @@ export async function runScrapeAndFilter(pipelinePayload) {
 ```
 
 ## 📄 src/pipeline/3_assessAndEnrich.js
-*Lines: 283, Size: 9.69 KB*
+*Lines: 329, Size: 11.26 KB*
 
 ```javascript
-// apps/pipeline/src/pipeline/3_assessAndEnrich.js
+// apps/pipeline/src/pipeline/3_assessAndEnrich.js (with Enhanced Audit Logging)
 import { truncateString, sleep } from '@headlines/utils-shared'
 import { logger } from '@headlines/utils-shared'
+import { auditLogger } from '@headlines/utils-server'
 import { settings } from '@headlines/config/node'
-import { Article, WatchlistEntity } from '@headlines/models'
+import { WatchlistEntity } from '@headlines/models'
+import { bulkWriteArticles } from '@headlines/data-access'
 import { batchHeadlineChain } from '@headlines/ai-services/node'
 import { processSingleArticle } from './submodules/processSingleArticle.js'
 import pLimit from 'p-limit'
@@ -25200,7 +25466,7 @@ function findWatchlistHits(text, country, watchlistEntities) {
 
 export async function runAssessAndEnrich(pipelinePayload) {
   logger.info('--- STAGE 3: ASSESS & ENRICH ---')
-  const { runStatsManager, articlesForPipeline } = pipelinePayload // CORRECTED
+  const { runStatsManager, articlesForPipeline, articleTraceLogger } = pipelinePayload
 
   if (!articlesForPipeline || articlesForPipeline.length === 0) {
     pipelinePayload.enrichedArticles = []
@@ -25214,10 +25480,6 @@ export async function runAssessAndEnrich(pipelinePayload) {
   )
   const realArticles = articlesForPipeline.filter(
     (a) => a.source !== 'Richlist Ingestion'
-  )
-
-  logger.info(
-    `Processing ${realArticles.length} real articles and ${syntheticArticles.length} synthetic articles.`
   )
 
   let assessedCandidates = []
@@ -25283,6 +25545,21 @@ export async function runAssessAndEnrich(pipelinePayload) {
 
         const results = await withRetry(batchProcessor)
         assessedCandidates.push(...results)
+
+        auditLogger.info(
+          {
+            context: {
+              batch_number: index + 1,
+              input_headlines: batch.map((a) => a.headline),
+              output_assessments: results.map((r) => ({
+                headline: r.headline,
+                score: r.relevance_headline,
+                assessment: r.assessment_headline,
+              })),
+            },
+          },
+          'Headline Assessment Batch Processed'
+        )
       } catch (batchError) {
         logger.error(
           { err: batchError },
@@ -25314,10 +25591,18 @@ export async function runAssessAndEnrich(pipelinePayload) {
     }
   }
 
-  runStatsManager.set('headlinesAssessed', assessedCandidates.length) // CORRECTED
+  runStatsManager.set('headlinesAssessed', assessedCandidates.length)
 
   logger.info('--- Headline Assessment Complete ---')
   assessedCandidates.forEach((article) => {
+    if (article.relevance_headline >= settings.HEADLINES_RELEVANCE_THRESHOLD) {
+      articleTraceLogger.startTrace(article)
+      articleTraceLogger.addStage(article._id, 'Headline Assessment', {
+        score: article.relevance_headline,
+        assessment: article.assessment_headline,
+        hits: article.hits.map((h) => h.entity.name),
+      })
+    }
     const status =
       article.relevance_headline >= settings.HEADLINES_RELEVANCE_THRESHOLD
         ? 'PASSED'
@@ -25331,7 +25616,7 @@ export async function runAssessAndEnrich(pipelinePayload) {
   const relevantCandidates = assessedCandidates.filter(
     (a) => a.relevance_headline >= settings.HEADLINES_RELEVANCE_THRESHOLD
   )
-  runStatsManager.set('relevantHeadlines', relevantCandidates.length) // CORRECTED
+  runStatsManager.set('relevantHeadlines', relevantCandidates.length)
 
   const enrichmentQueue = [...relevantCandidates, ...syntheticArticles]
 
@@ -25340,6 +25625,22 @@ export async function runAssessAndEnrich(pipelinePayload) {
   )
   if (enrichmentQueue.length === 0) {
     pipelinePayload.enrichedArticles = []
+    const articlesToPersist = assessedCandidates.map(
+      ({ articleContent, ...rest }) => rest
+    )
+    if (articlesToPersist.length > 0) {
+      const bulkOps = articlesToPersist.map((article) => ({
+        updateOne: {
+          filter: { link: article.link },
+          update: { $set: article },
+          upsert: true,
+        },
+      }))
+      await bulkWriteArticles(bulkOps)
+      logger.info(
+        `Persisted ${articlesToPersist.length} assessed articles to prevent re-scraping.`
+      )
+    }
     return { success: true, payload: pipelinePayload }
   }
 
@@ -25355,8 +25656,8 @@ export async function runAssessAndEnrich(pipelinePayload) {
   const results = await Promise.all(processingPromises)
 
   const enrichedArticles = []
-  const articleUpdates = []
-  let enrichmentOutcomes = [] // Local variable
+  const allProcessedArticles = []
+  let enrichmentOutcomes = []
 
   logger.info('--- Full Article Enrichment Results ---')
   results.forEach((result, index) => {
@@ -25369,6 +25670,16 @@ export async function runAssessAndEnrich(pipelinePayload) {
         result.lifecycleEvent,
       ],
     }
+    delete finalArticleState.articleContent
+    allProcessedArticles.push(finalArticleState)
+
+    articleTraceLogger.addStage(originalArticle._id, 'Content Enrichment', {
+      outcome: result.lifecycleEvent.status,
+      reason: result.lifecycleEvent.reason,
+      content_snippet: result.contentPreview,
+      llm_assessment: result.article,
+    })
+
     const outcome = result.lifecycleEvent.status
 
     enrichmentOutcomes.push({
@@ -25394,26 +25705,25 @@ export async function runAssessAndEnrich(pipelinePayload) {
         `❌ [${outcome.toUpperCase()}] "${truncateString(originalArticle.headline, 60)}" - Reason: ${result.lifecycleEvent.reason}`
       )
     }
-
-    if (result.article || result.lifecycleEvent) {
-      articleUpdates.push({
-        updateOne: {
-          filter: { _id: originalArticle._id },
-          update: { $set: finalArticleState },
-        },
-      })
-    }
   })
 
-  runStatsManager.set('enrichmentOutcomes', enrichmentOutcomes) // CORRECTED
-
-  if (articleUpdates.length > 0) {
-    // In-memory articles don't exist in DB yet, so bulkWrite won't work.
-    // This state is now managed entirely within the payload.
+  if (allProcessedArticles.length > 0) {
+    const bulkOps = allProcessedArticles.map((article) => ({
+      updateOne: {
+        filter: { link: article.link },
+        update: { $set: article },
+        upsert: true,
+      },
+    }))
+    await bulkWriteArticles(bulkOps)
+    logger.info(
+      `Persisted ${allProcessedArticles.length} processed articles to prevent re-scraping.`
+    )
   }
 
-  runStatsManager.set('articlesEnriched', enrichedArticles.length) // CORRECTED
-  runStatsManager.set('relevantArticles', enrichedArticles.length) // CORRECTED
+  runStatsManager.set('enrichmentOutcomes', enrichmentOutcomes)
+  runStatsManager.set('articlesEnriched', enrichedArticles.length)
+  runStatsManager.set('relevantArticles', enrichedArticles.length)
 
   logger.info(
     `Enrichment complete. Successfully enriched ${enrichedArticles.length} of ${enrichmentQueue.length} candidates.`
@@ -25427,13 +25737,12 @@ export async function runAssessAndEnrich(pipelinePayload) {
 ```
 
 ## 📄 src/pipeline/4_clusterAndSynthesize.js
-*Lines: 216, Size: 7.84 KB*
+*Lines: 238, Size: 8.09 KB*
 
 ```javascript
-// apps/pipeline/src/pipeline/4_clusterAndSynthesize.js
-import { truncateString, logger } from '@headlines/utils-shared' // The universal, isomorphic logger
-import { auditLogger } from '@headlines/utils-server' // The server-only, file-writing audit logger
-
+// apps/pipeline/src/pipeline/4_clusterAndSynthesize.js (with Enhanced Audit Logging)
+import { truncateString, logger } from '@headlines/utils-shared'
+import { auditLogger } from '@headlines/utils-server'
 import {
   clusteringChain,
   synthesisChain,
@@ -25444,10 +25753,15 @@ import {
 import { settings } from '@headlines/config'
 import { getConfig } from '@headlines/scraper-logic/config.js'
 
-async function synthesizeEventsFromCluster(articlesInCluster, clusterKey, runStatsManager) {
+async function synthesizeEventsFromCluster(
+  articlesInCluster,
+  clusterKey,
+  runStatsManager,
+  articleTraceLogger
+) {
   const config = getConfig()
   const primaryHeadline = articlesInCluster[0]?.headline || clusterKey
-  const primaryCountry = articlesInCluster[0]?.country || 'Unknown'
+  const primaryCountry = (articlesInCluster[0]?.country || [])[0] || 'Unknown'
   logger.info(
     `--- [ Synthesizing from Cluster: "${truncateString(primaryHeadline, 60)}" ] ---`
   )
@@ -25495,17 +25809,22 @@ async function synthesizeEventsFromCluster(articlesInCluster, clusterKey, runSta
     '[ LATEST NEWS CONTEXT (NewsAPI) ]': newsApiContext,
   }
 
-  auditLogger.info(
-    { context: { synthesis_input: synthesisInput } },
-    `Synthesis Context for: "${primaryHeadline}"`
-  )
+  for (const article of uniqueArticlesInCluster) {
+    articleTraceLogger.addStage(article._id, 'Synthesis Context', {
+      cluster_key: clusterKey,
+      full_context: synthesisInput,
+    })
+  }
+
   const synthesisResult = await synthesisChain({
     context_json_string: JSON.stringify(synthesisInput),
   })
-  auditLogger.info(
-    { context: { llm_output: synthesisResult } },
-    `Synthesis Verdict for: "${primaryHeadline}"`
-  )
+
+  for (const article of uniqueArticlesInCluster) {
+    articleTraceLogger.addStage(article._id, 'Synthesis LLM Output', {
+      llm_output: synthesisResult,
+    })
+  }
 
   if (!synthesisResult || synthesisResult.error || !synthesisResult.events) {
     logger.warn({ details: synthesisResult?.error }, 'Synthesis failed for cluster.')
@@ -25570,7 +25889,7 @@ async function synthesizeEventsFromCluster(articlesInCluster, clusterKey, runSta
 
 export async function runClusterAndSynthesize(pipelinePayload) {
   logger.info('--- STAGE 4: CLUSTER & SYNTHESIZE ---')
-  const { runStatsManager, enrichedArticles } = pipelinePayload // CORRECTED
+  const { runStatsManager, enrichedArticles, articleTraceLogger } = pipelinePayload
 
   const articlesForProcessing = enrichedArticles.filter(
     (a) => a.relevance_article >= settings.ARTICLES_RELEVANCE_THRESHOLD
@@ -25594,7 +25913,7 @@ export async function runClusterAndSynthesize(pipelinePayload) {
   })
 
   const eventClusters = clusterResult.events || []
-  runStatsManager.set('eventsClustered', eventClusters.length) // CORRECTED
+  runStatsManager.set('eventsClustered', eventClusters.length)
   logger.info(
     { details: eventClusters },
     `Clustered ${articlesForProcessing.length} articles into ${eventClusters.length} unique events.`
@@ -25612,7 +25931,12 @@ export async function runClusterAndSynthesize(pipelinePayload) {
       .filter(Boolean)
     if (articlesInCluster.length > 0) {
       synthesisPromises.push(
-        synthesizeEventsFromCluster(articlesInCluster, cluster.event_key, runStatsManager)
+        synthesizeEventsFromCluster(
+          articlesInCluster,
+          cluster.event_key,
+          runStatsManager,
+          articleTraceLogger
+        )
       )
     }
   }
@@ -25628,7 +25952,14 @@ export async function runClusterAndSynthesize(pipelinePayload) {
     )
     for (const article of singletonArticles) {
       const event_key = `singleton-${article.newspaper.toLowerCase().replace(/[^a-z0-9]/g, '')}-${article._id.toString()}`
-      synthesisPromises.push(synthesizeEventsFromCluster([article], event_key, runStatsManager))
+      synthesisPromises.push(
+        synthesizeEventsFromCluster(
+          [article],
+          event_key,
+          runStatsManager,
+          articleTraceLogger
+        )
+      )
     }
   }
 
@@ -25646,6 +25977,7 @@ export async function runClusterAndSynthesize(pipelinePayload) {
   pipelinePayload.opportunitiesToSave = opportunitiesToSave
   return { success: true, payload: pipelinePayload }
 }
+
 ```
 
 ## 📄 src/pipeline/5_commitAndNotify.js
@@ -25820,18 +26152,20 @@ export async function runSelfHealAndOptimize(pipelinePayload) {
 ```
 
 ## 📄 src/pipeline/submodules/commit/1_judgeOutput.js
-*Lines: 77, Size: 2.44 KB*
+*Lines: 99, Size: 3.2 KB*
 
 ```javascript
-// apps/pipeline/src/pipeline/submodules/commit/1_judgeOutput.js
-import { logger } from '@headlines/utils-shared' // CORRECTED IMPORT
+// apps/pipeline/src/pipeline/submodules/commit/1_judgeOutput.js (with Enhanced Audit Logging)
+import { logger } from '@headlines/utils-shared'
+import { auditLogger } from '@headlines/utils-server'
 import { judgeChain } from '@headlines/ai-services'
 
 export async function judgeAndFilterOutput(pipelinePayload, fatalQualities) {
   const {
     synthesizedEvents: initialEvents = [],
     opportunitiesToSave: initialOpportunities = [],
-    runStatsManager, // CORRECTED
+    runStatsManager,
+    articleTraceLogger,
   } = pipelinePayload
 
   logger.info(
@@ -25854,11 +26188,16 @@ export async function judgeAndFilterOutput(pipelinePayload, fatalQualities) {
     events: lightweightEvents,
     opportunities: lightweightOpportunities,
   }
+
+  auditLogger.info({ context: { judge_input: payloadForJudge } }, 'Judge Agent Input')
+
   const judgeVerdict = await judgeChain({
     payload_json_string: JSON.stringify(payloadForJudge),
   })
 
-  runStatsManager.set('judgeVerdict', judgeVerdict) // CORRECTED
+  auditLogger.info({ context: { judge_output: judgeVerdict } }, 'Judge Agent Output')
+
+  runStatsManager.set('judgeVerdict', judgeVerdict)
 
   if (judgeVerdict.error) {
     logger.error(
@@ -25867,6 +26206,21 @@ export async function judgeAndFilterOutput(pipelinePayload, fatalQualities) {
     )
     return { finalEvents: initialEvents, finalOpportunities: initialOpportunities }
   }
+
+  initialEvents.forEach((event) => {
+    const identifier = `Event: ${event.synthesized_headline}`
+    const verdict = judgeVerdict.event_judgements.find((j) => j.identifier === identifier)
+    if (verdict) {
+      event.source_articles.forEach((sourceArticle) => {
+        const articleInMap = (pipelinePayload.enrichedArticles || []).find(
+          (a) => a.link === sourceArticle.link
+        )
+        if (articleInMap) {
+          articleTraceLogger.addStage(articleInMap._id, 'Judge Verdict', { verdict })
+        }
+      })
+    }
+  })
 
   const fatalQualitiesSet = new Set(fatalQualities)
 
@@ -25903,10 +26257,10 @@ export async function judgeAndFilterOutput(pipelinePayload, fatalQualities) {
 ```
 
 ## 📄 src/pipeline/submodules/commit/2_saveResults.js
-*Lines: 72, Size: 2.43 KB*
+*Lines: 62, Size: 1.99 KB*
 
 ```javascript
-// apps/pipeline/src/pipeline/submodules/commit/2_saveResults.js (version 2.1.1)
+// apps/pipeline/src/pipeline/submodules/commit/2_saveResults.js (CORRECTED - Article saving removed)
 import mongoose from 'mongoose'
 import { savePipelineResults } from '../../../modules/dataStore/index.js'
 import { enrichAndLinkOpportunities } from '../opportunityUpserter.js'
@@ -25917,19 +26271,10 @@ export async function saveResultsToDb(
   finalEventsToSave,
   finalOpportunitiesToSave
 ) {
-  const { assessedCandidates, isDryRun, runStats } = pipelinePayload
+  const { isDryRun, runStats } = pipelinePayload
 
-  // --- START LOGIC FIX ---
-  // The articles to be saved are no longer just 'assessedCandidates'.
-  // We need to find the specific articles that were successfully processed
-  // into the final, approved events.
-  const finalEventArticleLinks = new Set(
-    finalEventsToSave.flatMap((event) => event.source_articles.map((a) => a.link))
-  )
-  const articlesToSave = (pipelinePayload.enrichedArticles || []).filter((article) =>
-    finalEventArticleLinks.has(article.link)
-  )
-  // --- END LOGIC FIX ---
+  // The logic for determining articlesToSave has been removed.
+  // The articles have already been saved in Stage 3.
 
   if (isDryRun) {
     logger.warn('DRY RUN: Simulating database save.')
@@ -25940,11 +26285,12 @@ export async function saveResultsToDb(
     return {
       savedEvents,
       savedOpportunities: finalOpportunitiesToSave,
-      articlesSavedCount: articlesToSave.length,
+      articlesSavedCount: 0, // This is no longer this stage's responsibility
     }
   }
 
-  const commitResult = await savePipelineResults(articlesToSave, finalEventsToSave)
+  // ACTION: Call savePipelineResults with an empty array for articles.
+  const commitResult = await savePipelineResults([], finalEventsToSave)
 
   if (commitResult.success) {
     const savedEvents = commitResult.savedEvents
@@ -25953,12 +26299,10 @@ export async function saveResultsToDb(
         finalOpportunitiesToSave,
         savedEvents
       )
-      // The `savePipelineResults` and `enrichAndLinkOpportunities` functions
-      // already return lean objects, so no need for JSON stringify/parse.
       return {
         savedEvents,
         savedOpportunities,
-        articlesSavedCount: articlesToSave.length,
+        articlesSavedCount: 0, // No longer this stage's responsibility
       }
     } catch (error) {
       logger.error(
@@ -25969,7 +26313,7 @@ export async function saveResultsToDb(
       return {
         savedEvents,
         savedOpportunities: [],
-        articlesSavedCount: articlesToSave.length,
+        articlesSavedCount: 0,
       }
     }
   } else {
@@ -26535,6 +26879,101 @@ export async function triggerSelectorRepair(source, htmlContent, failedSelector)
   )
   // This function is now a no-op.
   return
+}
+
+```
+
+## 📄 src/utils/articleTraceLogger.js
+*Lines: 89, Size: 2.65 KB*
+
+```javascript
+// apps/pipeline/src/utils/articleTraceLogger.js (NEW FILE)
+import fs from 'fs/promises'
+import path from 'path'
+import { EOL } from 'os'
+import { format } from 'util'
+import { logger } from '@headlines/utils-shared'
+
+// A simple utility to sanitize filenames
+function sanitizeFilename(name) {
+  if (!name || typeof name !== 'string') {
+    return `invalid_filename_${Date.now()}`
+  }
+  return name.replace(/[^a-z0-9_.-]/gi, '_').substring(0, 150)
+}
+
+export class ArticleTraceLogger {
+  constructor() {
+    this.runId = new Date().toISOString().replace(/:/g, '-').replace(/\..+/, '')
+    this.baseDir = path.resolve(process.cwd(), 'apps/pipeline/logs/articles', this.runId)
+    this.traces = new Map()
+    this.initialized = false
+  }
+
+  async initialize() {
+    try {
+      await fs.mkdir(this.baseDir, { recursive: true })
+      this.initialized = true
+    } catch (error) {
+      logger.error({ err: error }, 'Failed to create article trace log directory.')
+    }
+  }
+
+  startTrace(article) {
+    if (!this.initialized || !article?._id) return
+    const trace = {
+      _id: article._id.toString(),
+      headline: article.headline,
+      link: article.link,
+      source: article.newspaper,
+      stages: [],
+    }
+    this.traces.set(article._id.toString(), trace)
+  }
+
+  addStage(articleId, stageName, data) {
+    if (!this.initialized) return
+    const id = typeof articleId === 'string' ? articleId : articleId?.toString()
+    if (!id) return
+    const trace = this.traces.get(id)
+    if (trace) {
+      trace.stages.push({ name: stageName, data, timestamp: new Date() })
+    }
+  }
+
+  async writeAllTraces() {
+    if (!this.initialized) return
+
+    for (const [articleId, trace] of this.traces.entries()) {
+      let content = `ARTICLE TRACE: ${trace.headline}${EOL}`
+      content += `Source: ${trace.source}${EOL}`
+      content += `Link: ${trace.link}${EOL}`
+      content += `============================================================${EOL}${EOL}`
+
+      trace.stages.forEach((stage) => {
+        content += `--- STAGE: ${stage.name.toUpperCase()} (${stage.timestamp.toISOString()}) ---${EOL}`
+        content += `${format(stage.data, { depth: null })}${EOL}${EOL}`
+      })
+
+      const filename = sanitizeFilename(`${trace.headline}.log`)
+      const filePath = path.join(this.baseDir, filename)
+      try {
+        await fs.writeFile(filePath, content)
+      } catch (error) {
+        logger.error(
+          { err: error, file: filePath },
+          'Failed to write article trace file.'
+        )
+      }
+    }
+    logger.info(
+      `Wrote ${this.traces.size} detailed article trace logs to: ${this.baseDir}`
+    )
+  }
+
+  getAllTraces() {
+    return Array.from(this.traces.values())
+  }
 }
 
 ```
@@ -27208,7 +27647,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-03T23:13:25.873Z
+**Generated**: 2025-10-04T15:31:18.565Z
 **Repository Path**: /home/mark/Repos/projects/headlines/apps/server
 **Total Files**: 4
 **Package**: @headlines/server@1.0.0
@@ -27463,7 +27902,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-03T23:13:25.877Z
+**Generated**: 2025-10-04T15:31:18.569Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/ai-services
 **Total Files**: 54
 **Package**: @headlines/ai-services@1.0.0
@@ -31017,7 +31456,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-03T23:13:25.881Z
+**Generated**: 2025-10-04T15:31:18.572Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/config
 **Total Files**: 6
 **Package**: @headlines/config@3.0.0
@@ -31317,7 +31756,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-03T23:13:25.883Z
+**Generated**: 2025-10-04T15:31:18.574Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/data-access
 **Total Files**: 30
 **Package**: @headlines/data-access@1.0.0
@@ -31875,10 +32314,10 @@ export async function generateChatTitle(messages) {
 ```
 
 ## 📄 src/core/dashboard.js
-*Lines: 135, Size: 3.52 KB*
+*Lines: 153, Size: 4.13 KB*
 
 ```javascript
-// packages/data-access/src/core/dashboard.js
+// packages/data-access/src/core/dashboard.js (MODIFIED)
 import {
   Source,
   Subscriber,
@@ -31932,7 +32371,7 @@ export async function getDashboardStats() {
       opportunities: opportunityStats[0] || { total: 0 },
     }
 
-    delete stats.sources._id // Clean up aggregation artifact
+    delete stats.sources._id
     delete stats.users._id
     delete stats.watchlist._id
     delete stats.articles._id
@@ -31942,6 +32381,26 @@ export async function getDashboardStats() {
     return { success: true, data: stats }
   } catch (e) {
     return { success: false, error: 'Failed to fetch dashboard stats.' }
+  }
+}
+
+// NEW FUNCTION: Fetches all unique country strings used in the main collections.
+export async function getDistinctCountries() {
+  try {
+    const [articleCountries, eventCountries, oppCountries] = await Promise.all([
+      Article.distinct('country'),
+      SynthesizedEvent.distinct('country'),
+      Opportunity.distinct('basedIn'),
+    ])
+
+    const allCountries = [...articleCountries, ...eventCountries, ...oppCountries]
+      .flat()
+      .filter(Boolean) // Flatten arrays and remove any null/undefined values
+
+    const uniqueCountries = [...new Set(allCountries)].sort()
+    return { success: true, data: uniqueCountries }
+  } catch (e) {
+    return { success: false, error: 'Failed to fetch distinct countries.' }
   }
 }
 
@@ -31988,13 +32447,11 @@ export async function getPublicTickerEvents() {
       .select('country synthesized_headline')
       .lean()
 
-    // Anonymize and format for the ticker
     const formattedEvents = events.map((event) => {
       let headline = event.synthesized_headline
-      // Replace specific names with generic roles
       headline = headline.replace(
         /\b([A-Z][a-z]+(?: [A-Z][a-z]+)+)\b/g,
-        'A private investor'
+        'a private investor'
       )
       headline = headline.replace(
         /\b([A-Z][A-Z\s-]+[A-Z])\b/g,
@@ -33317,260 +33774,233 @@ export default async function dbConnectCore(MONGO_URI, logger) {
 ```
 
 ## 📄 src/index.js
-*Lines: 105, Size: 2.25 KB*
+*Lines: 97, Size: 5.37 KB*
 
 ```javascript
-// packages/data-access/src/index.js
-import { env } from '@headlines/config/node'
-import dbConnectCore from './dbConnect.js'
+// packages/data-access/src/index.js (DEFINITIVE FIX - No HOC)
+import dbConnect from './dbConnect.js'
 import * as core from './core/index.js'
 import { buildQuery } from './queryBuilder.js'
 
-function dbConnect() {
-  return dbConnectCore(env.MONGO_URI)
-}
+// --- Explicit Wrappers for Each Core Function ---
 
-function withDbConnect(fn) {
-  return async (...args) => {
+// A helper to avoid rewriting the same pattern repeatedly
+const wrap =
+  (fn) =>
+  async (...args) => {
     await dbConnect()
     return fn(...args)
   }
-}
 
 // Wrap and export all core functions for Node.js environment
-const nodeExports = {}
-for (const key in core) {
-  if (typeof core[key] === 'function') {
-    nodeExports[key] = withDbConnect(core[key])
-  }
-}
+export const createSubscriber = wrap(core.createSubscriber)
+export const updateSubscriber = wrap(core.updateSubscriber)
+export const deleteSubscriber = wrap(core.deleteSubscriber)
+export const createCountry = wrap(core.createCountry)
+export const updateCountry = wrap(core.updateCountry)
+export const createSource = wrap(core.createSource)
+export const updateSource = wrap(core.updateSource)
+export const getAllCountries = wrap(core.getAllCountries)
+export const findSubscribers = wrap(core.findSubscribers)
+export const getAllSubscribers = wrap(core.getAllSubscribers)
+export const getAllSources = wrap(core.getAllSources)
+export const getAllWatchlistEntities = wrap(core.getAllWatchlistEntities)
+export const getSuggestions = wrap(core.getSuggestions)
+export const getArticles = wrap(core.getArticles)
+export const findArticles = wrap(core.findArticles)
+export const updateArticles = wrap(core.updateArticles)
+export const getTotalArticleCount = wrap(core.getTotalArticleCount)
+export const updateArticle = wrap(core.updateArticle)
+export const deleteArticle = wrap(core.deleteArticle)
+export const getArticleDetails = wrap(core.getArticleDetails)
+export const createSubscriberWithPassword = wrap(core.createSubscriberWithPassword)
+export const updateSubscriberPassword = wrap(core.updateSubscriberPassword)
+export const loginUser = wrap(core.loginUser)
+export const generateChatTitle = wrap(core.generateChatTitle)
+export const getDashboardStats = wrap(core.getDashboardStats)
+export const getDistinctCountries = wrap(core.getDistinctCountries)
+export const getGlobalCountries = wrap(core.getGlobalCountries)
+export const getPublicTickerEvents = wrap(core.getPublicTickerEvents)
+export const getEvents = wrap(core.getEvents)
+export const findEvents = wrap(core.findEvents)
+export const updateEvents = wrap(core.updateEvents)
+export const getEventDetails = wrap(core.getEventDetails)
+export const updateEvent = wrap(core.updateEvent)
+export const deleteEvent = wrap(core.deleteEvent)
+export const getTotalEventCount = wrap(core.getTotalEventCount)
+export const generateExport = wrap(core.generateExport)
+export const getDistinctOpportunityFields = wrap(core.getDistinctOpportunityFields)
+export const updateOpportunities = wrap(core.updateOpportunities)
+export const getTotalOpportunitiesCount = wrap(core.getTotalOpportunitiesCount)
+export const getOpportunities = wrap(core.getOpportunities)
+export const getOpportunityDetails = wrap(core.getOpportunityDetails)
+export const updateOpportunity = wrap(core.updateOpportunity)
+export const deleteOpportunity = wrap(core.deleteOpportunity)
+export const updateSourceAnalyticsBatch = wrap(core.updateSourceAnalyticsBatch)
+export const findSourcesForScraping = wrap(core.findSourcesForScraping)
+export const performHousekeeping = wrap(core.performHousekeeping)
+export const bulkWriteEvents = wrap(core.bulkWriteEvents)
+export const bulkWriteArticles = wrap(core.bulkWriteArticles)
+export const findEventsByKeys = wrap(core.findEventsByKeys)
+export const findArticlesByLinks = wrap(core.findArticlesByLinks)
+export const getActiveWatchlistEntityNames = wrap(core.getActiveWatchlistEntityNames)
+export const bulkWriteWatchlistSuggestions = wrap(core.bulkWriteWatchlistSuggestions)
+export const linkOpportunityToEvent = wrap(core.linkOpportunityToEvent)
+export const unlinkOpportunityFromEvent = wrap(core.unlinkOpportunityFromEvent)
+export const getSettings = wrap(core.getSettings)
+export const updateSettings = wrap(core.updateSettings) // No revalidation needed in Node
+export const upsertSubscriber = wrap(core.upsertSubscriber)
+export const getAllPushSubscriptions = wrap(core.getAllPushSubscriptions)
+export const deletePushSubscription = wrap(core.deletePushSubscription)
+export const getCurrentSubscriber = wrap(core.getCurrentSubscriber)
+export const savePushSubscription = wrap(core.savePushSubscription)
+export const updateUserProfile = wrap(core.updateUserProfile)
+export const updateUserInteraction = wrap(core.updateUserInteraction)
+export const processUploadedArticle = wrap(core.processUploadedArticle)
+export const clearDiscardedItems = wrap(core.clearDiscardedItems)
+export const getRecentRunVerdicts = wrap(core.getRecentRunVerdicts)
+export const getRunVerdictById = wrap(core.getRunVerdictById)
+export const findWatchlistEntities = wrap(core.findWatchlistEntities)
+export const updateWatchlistEntities = wrap(core.updateWatchlistEntities)
+export const createWatchlistEntity = wrap(core.createWatchlistEntity)
+export const updateWatchlistEntity = wrap(core.updateWatchlistEntity)
+export const deleteWatchlistEntity = wrap(core.deleteWatchlistEntity)
+export const updateWatchlistSuggestion = wrap(core.updateWatchlistSuggestion)
+export const processWatchlistSuggestion = wrap(core.processWatchlistSuggestion)
+export const deleteAllSince = wrap(core.deleteAllSince)
+export const resetAllSourceAnalytics = wrap(core.resetAllSourceAnalytics)
+export const resetEventsEmailedStatusSince = wrap(core.resetEventsEmailedStatusSince)
 
-export const {
-  createSubscriber,
-  updateSubscriber,
-  deleteSubscriber,
-  createCountry,
-  updateCountry,
-  createSource,
-  updateSource,
-  getAllCountries,
-  findSubscribers,
-  getAllSubscribers,
-  getAllSources,
-  getAllWatchlistEntities,
-  getSuggestions,
-  getArticles,
-  findArticles,
-  updateArticles,
-  getTotalArticleCount,
-  updateArticle,
-  deleteArticle,
-  getArticleDetails,
-  createSubscriberWithPassword,
-  updateSubscriberPassword,
-  loginUser,
-  generateChatTitle,
-  getDashboardStats,
-  getGlobalCountries,
-  getEvents,
-  findEvents,
-  updateEvents,
-  getEventDetails,
-  updateEvent,
-  deleteEvent,
-  getTotalEventCount,
-  generateExport,
-  getDistinctOpportunityFields,
-  updateOpportunities,
-  getTotalOpportunitiesCount,
-  getOpportunities,
-  getOpportunityDetails,
-  updateOpportunity,
-  deleteOpportunity,
-  updateSourceAnalyticsBatch,
-  findSourcesForScraping,
-  performHousekeeping,
-  bulkWriteEvents,
-  bulkWriteArticles,
-  findEventsByKeys,
-  findArticlesByLinks,
-  getActiveWatchlistEntityNames,
-  bulkWriteWatchlistSuggestions,
-  linkOpportunityToEvent,
-  unlinkOpportunityFromEvent,
-  getSettings,
-  updateSettings,
-  upsertSubscriber,
-  getAllPushSubscriptions,
-  deletePushSubscription,
-  getCurrentSubscriber,
-  savePushSubscription,
-  updateUserProfile,
-  updateUserInteraction,
-  processUploadedArticle,
-  clearDiscardedItems,
-  getRecentRunVerdicts,
-  getRunVerdictById,
-  findWatchlistEntities,
-  updateWatchlistEntities,
-  createWatchlistEntity,
-  updateWatchlistEntity,
-  deleteWatchlistEntity,
-  updateWatchlistSuggestion,
-  processWatchlistSuggestion,
-  deleteAllSince,
-  resetAllSourceAnalytics,
-  resetEventsEmailedStatusSince,
-} = nodeExports
-
+// Export non-wrapped utilities
 export { buildQuery }
 
 ```
 
 ## 📄 src/next.js
-*Lines: 121, Size: 2.83 KB*
+*Lines: 108, Size: 5.62 KB*
 
 ```javascript
-// packages/data-access/src/next.js
+// packages/data-access/src/next.js (DEFINITIVE FIX - No HOC)
 import 'server-only'
-import { env } from '@headlines/config/next'
-import dbConnectCore from './dbConnect.js'
+import dbConnect from './dbConnect.next.js'
 import * as core from './core/index.js'
-import { buildQuery } from './queryBuilder.js'
 import { revalidatePath } from './revalidate.js'
+import { buildQuery } from './queryBuilder.js'
 
-function dbConnect() {
-  return dbConnectCore(env.MONGO_URI)
-}
+// --- Explicit Wrappers for Each Core Function ---
 
-function withDbConnect(fn) {
-  return async (...args) => {
+// A helper to avoid rewriting the same pattern repeatedly
+const wrap =
+  (fn) =>
+  async (...args) => {
     await dbConnect()
     return fn(...args)
   }
-}
 
-// Wrap all core functions
-const wrappedCore = {}
-for (const key in core) {
-  if (typeof core[key] === 'function') {
-    wrappedCore[key] = withDbConnect(core[key])
-  }
-}
+// Wrap each function individually
+export const createSubscriber = wrap(core.createSubscriber)
+export const updateSubscriber = wrap(core.updateSubscriber)
+export const deleteSubscriber = wrap(core.deleteSubscriber)
+export const createCountry = wrap(core.createCountry)
+export const updateCountry = wrap(core.updateCountry)
+export const createSource = wrap(core.createSource)
+export const updateSource = wrap(core.updateSource)
+export const getAllCountries = wrap(core.getAllCountries)
+export const findSubscribers = wrap(core.findSubscribers)
+export const getAllSubscribers = wrap(core.getAllSubscribers)
+export const getAllSources = wrap(core.getAllSources)
+export const getAllWatchlistEntities = wrap(core.getAllWatchlistEntities)
+export const getSuggestions = wrap(core.getSuggestions)
+export const getArticles = wrap(core.getArticles)
+export const findArticles = wrap(core.findArticles)
+export const updateArticles = wrap(core.updateArticles)
+export const getTotalArticleCount = wrap(core.getTotalArticleCount)
+export const updateArticle = wrap(core.updateArticle)
+export const deleteArticle = wrap(core.deleteArticle)
+export const getArticleDetails = wrap(core.getArticleDetails)
+export const createSubscriberWithPassword = wrap(core.createSubscriberWithPassword)
+export const updateSubscriberPassword = wrap(core.updateSubscriberPassword)
+export const loginUser = wrap(core.loginUser)
+export const generateChatTitle = wrap(core.generateChatTitle)
+export const getDashboardStats = wrap(core.getDashboardStats)
+export const getDistinctCountries = wrap(core.getDistinctCountries)
+export const getGlobalCountries = wrap(core.getGlobalCountries)
+export const getPublicTickerEvents = wrap(core.getPublicTickerEvents)
+export const getEvents = wrap(core.getEvents)
+export const findEvents = wrap(core.findEvents)
+export const updateEvents = wrap(core.updateEvents)
+export const getEventDetails = wrap(core.getEventDetails)
+export const updateEvent = wrap(core.updateEvent)
+export const deleteEvent = wrap(core.deleteEvent)
+export const getTotalEventCount = wrap(core.getTotalEventCount)
+export const generateExport = wrap(core.generateExport)
+export const getDistinctOpportunityFields = wrap(core.getDistinctOpportunityFields)
+export const updateOpportunities = wrap(core.updateOpportunities)
+export const getTotalOpportunitiesCount = wrap(core.getTotalOpportunitiesCount)
+export const getOpportunities = wrap(core.getOpportunities)
+export const getOpportunityDetails = wrap(core.getOpportunityDetails)
+export const updateOpportunity = wrap(core.updateOpportunity)
+export const deleteOpportunity = wrap(core.deleteOpportunity)
+export const updateSourceAnalyticsBatch = wrap(core.updateSourceAnalyticsBatch)
+export const findSourcesForScraping = wrap(core.findSourcesForScraping)
+export const performHousekeeping = wrap(core.performHousekeeping)
+export const bulkWriteEvents = wrap(core.bulkWriteEvents)
+export const bulkWriteArticles = wrap(core.bulkWriteArticles)
+export const findEventsByKeys = wrap(core.findEventsByKeys)
+export const findArticlesByLinks = wrap(core.findArticlesByLinks)
+export const getActiveWatchlistEntityNames = wrap(core.getActiveWatchlistEntityNames)
+export const bulkWriteWatchlistSuggestions = wrap(core.bulkWriteWatchlistSuggestions)
+export const linkOpportunityToEvent = wrap(core.linkOpportunityToEvent)
+export const unlinkOpportunityFromEvent = wrap(core.unlinkOpportunityFromEvent)
+export const getSettings = wrap(core.getSettings)
+export const upsertSubscriber = wrap(core.upsertSubscriber)
+export const getAllPushSubscriptions = wrap(core.getAllPushSubscriptions)
+export const deletePushSubscription = wrap(core.deletePushSubscription)
+export const getCurrentSubscriber = wrap(core.getCurrentSubscriber)
+export const savePushSubscription = wrap(core.savePushSubscription)
+export const updateUserProfile = wrap(core.updateUserProfile)
+export const updateUserInteraction = wrap(core.updateUserInteraction)
+export const processUploadedArticle = wrap(core.processUploadedArticle)
+export const clearDiscardedItems = wrap(core.clearDiscardedItems)
+export const getRecentRunVerdicts = wrap(core.getRecentRunVerdicts)
+export const getRunVerdictById = wrap(core.getRunVerdictById)
+export const findWatchlistEntities = wrap(core.findWatchlistEntities)
+export const updateWatchlistEntities = wrap(core.updateWatchlistEntities)
+export const createWatchlistEntity = wrap(core.createWatchlistEntity)
+export const updateWatchlistEntity = wrap(core.updateWatchlistEntity)
+export const deleteWatchlistEntity = wrap(core.deleteWatchlistEntity)
+export const updateWatchlistSuggestion = wrap(core.updateWatchlistSuggestion)
+export const processWatchlistSuggestion = wrap(core.processWatchlistSuggestion)
+export const deleteAllSince = wrap(core.deleteAllSince)
+export const resetAllSourceAnalytics = wrap(core.resetAllSourceAnalytics)
+export const resetEventsEmailedStatusSince = wrap(core.resetEventsEmailedStatusSince)
 
-// --- START OF THE FIX ---
-// Create a special wrapper for updateSettings that adds revalidation
-const originalUpdateSettings = wrappedCore.updateSettings
-wrappedCore.updateSettings = async (...args) => {
-  const result = await originalUpdateSettings(...args)
+// Special wrapper for updateSettings to include revalidation
+export const updateSettings = async (...args) => {
+  await dbConnect()
+  const result = await core.updateSettings(...args)
   if (result.success) {
     await revalidatePath('/admin/settings')
   }
   return result
 }
-// --- END OF THE FIX ---
 
-// Explicitly export everything to avoid issues with module systems
-export const {
-  createSubscriber,
-  updateSubscriber,
-  deleteSubscriber,
-  createCountry,
-  updateCountry,
-  createSource,
-  updateSource,
-  getAllCountries,
-  findSubscribers,
-  getAllSubscribers,
-  getAllSources,
-  getAllWatchlistEntities,
-  getSuggestions,
-  getArticles,
-  findArticles,
-  updateArticles,
-  getTotalArticleCount,
-  updateArticle,
-  deleteArticle,
-  getArticleDetails,
-  createSubscriberWithPassword,
-  updateSubscriberPassword,
-  loginUser,
-  generateChatTitle,
-  getDashboardStats,
-  getGlobalCountries,
-  getPublicTickerEvents, // <-- EXPORT NEW FUNCTION
-  getEvents,
-  findEvents,
-  updateEvents,
-  getEventDetails,
-  updateEvent,
-  deleteEvent,
-  getTotalEventCount,
-  generateExport,
-  getDistinctOpportunityFields,
-  updateOpportunities,
-  getTotalOpportunitiesCount,
-  getOpportunities,
-  getOpportunityDetails,
-  updateOpportunity,
-  deleteOpportunity,
-  updateSourceAnalyticsBatch,
-  findSourcesForScraping,
-  performHousekeeping,
-  bulkWriteEvents,
-  bulkWriteArticles,
-  findEventsByKeys,
-  findArticlesByLinks,
-  getActiveWatchlistEntityNames,
-  bulkWriteWatchlistSuggestions,
-  linkOpportunityToEvent,
-  unlinkOpportunityFromEvent,
-  getSettings,
-  updateSettings, // This now exports the wrapped version
-  upsertSubscriber,
-  getAllPushSubscriptions,
-  deletePushSubscription,
-  getCurrentSubscriber,
-  savePushSubscription,
-  updateUserProfile,
-  updateUserInteraction,
-  processUploadedArticle,
-  clearDiscardedItems,
-  getRecentRunVerdicts,
-  getRunVerdictById,
-  findWatchlistEntities,
-  updateWatchlistEntities,
-  createWatchlistEntity,
-  updateWatchlistEntity,
-  deleteWatchlistEntity,
-  updateWatchlistSuggestion,
-  processWatchlistSuggestion,
-  deleteAllSince,
-  resetAllSourceAnalytics,
-  resetEventsEmailedStatusSince,
-} = wrappedCore
-
+// Export non-wrapped utilities
 export { buildQuery, revalidatePath }
 
 ```
 
 ## 📄 src/queryBuilder.js
-*Lines: 96, Size: 3.1 KB*
+*Lines: 90, Size: 2.76 KB*
 
 ```javascript
-// packages/data-access/src/queryBuilder.js (version 2.0.0)
+// packages/data-access/src/queryBuilder.js (version 2.1.0 - Multi-country support)
 import { Subscriber } from '@headlines/models'
-// ARCHITECTURAL REFACTORING: This component is now isomorphic (shared).
-// It no longer imports any environment-specific modules like dbConnect.
-// The responsibility for establishing a database connection now lies with the
-// application entry point (e.g., the API handler or pipeline stage) that calls this function.
 
 export async function buildQuery(
   model,
   { filters = {}, sort = 'date_desc', baseQuery = {}, userId = null }
 ) {
-  // The `await dbConnect()` call has been removed.
-
   const andConditions = [{ ...baseQuery }]
   let user = null
 
@@ -33815,7 +34245,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-03T23:13:25.886Z
+**Generated**: 2025-10-04T15:31:18.577Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/models
 **Total Files**: 45
 **Package**: @headlines/models@2.0.0
@@ -33854,10 +34284,10 @@ headlines/
 ```
 
 ## 📄 src/Article.js
-*Lines: 79, Size: 2.45 KB*
+*Lines: 79, Size: 2.51 KB*
 
 ```javascript
-// packages/models/src/Article.js (version 2.0.2)
+// packages/models/src/Article.js (version 2.1.0 - Multi-country support)
 import mongoose from 'mongoose'
 import { ARTICLE_STATUSES } from './prompt-constants.js'
 
@@ -33880,7 +34310,7 @@ const ArticleSchema = new Schema(
     link: { type: String, required: true, unique: true, trim: true },
     newspaper: { type: String, required: true, trim: true },
     source: { type: String, required: true, trim: true },
-    country: { type: String, trim: true, index: true },
+    country: { type: [String], trim: true, index: true }, // MODIFIED: Changed to array of strings
     imageUrl: { type: String, trim: true },
     relevance_headline: { type: Number, required: true, min: 0, max: 100 },
     assessment_headline: { type: String, required: true, trim: true },
@@ -33974,10 +34404,10 @@ export default models.Country || model('Country', CountrySchema)
 ```
 
 ## 📄 src/Opportunity.js
-*Lines: 30, Size: 1.06 KB*
+*Lines: 30, Size: 1.12 KB*
 
 ```javascript
-// packages/models/src/Opportunity.js (version 9.0.0)
+// packages/models/src/Opportunity.js (version 9.1.0 - Multi-country support)
 import mongoose from 'mongoose'
 const { Schema, model, models } = mongoose
 
@@ -33994,7 +34424,7 @@ const OpportunitySchema = new Schema(
   {
     reachOutTo: { type: String, required: true, trim: true, unique: true, index: true },
     contactDetails: { type: ContactDetailsSchema },
-    basedIn: { type: String, trim: true, index: true },
+    basedIn: { type: [String], trim: true, index: true }, // MODIFIED: Changed to array of strings
     city: { type: String, trim: true, required: false },
     whyContact: { type: [String], required: true },
     likelyMMDollarWealth: { type: Number, required: true, default: 0 },
@@ -34112,10 +34542,10 @@ export default models.Setting || model('Setting', SettingSchema)
 ```
 
 ## 📄 src/Source.js
-*Lines: 65, Size: 2.15 KB*
+*Lines: 66, Size: 2.25 KB*
 
 ```javascript
-// packages/models/src/Source.js (version 7.0.0)
+// packages/models/src/Source.js (version 7.2.0 - ledeSelector removed)
 import mongoose from 'mongoose'
 import {
   SOURCE_STATUSES,
@@ -34167,6 +34597,7 @@ const SourceSchema = new Schema(
     headlineSelector: { type: [String], required: false, default: [] },
     linkSelector: { type: String, required: false, trim: true },
     headlineTextSelector: { type: String, required: false, trim: true },
+    // ledeSelector: { type: [String], required: false, default: [] }, // REMOVED
     articleSelector: { type: [String], required: false, default: [] },
     lastScrapedAt: { type: Date, required: false, index: true },
     lastSuccessAt: { type: Date, required: false },
@@ -34297,10 +34728,10 @@ export default models.Subscriber || model('Subscriber', SubscriberSchema)
 ```
 
 ## 📄 src/SynthesizedEvent.js
-*Lines: 74, Size: 2.33 KB*
+*Lines: 74, Size: 2.39 KB*
 
 ```javascript
-// packages/models/src/SynthesizedEvent.js (version 8.0.2)
+// packages/models/src/SynthesizedEvent.js (version 8.1.0 - Multi-country support)
 import mongoose from 'mongoose'
 const { Schema, model, models } = mongoose
 
@@ -34310,7 +34741,7 @@ const SourceArticleSchema = new Schema(
     link: { type: String, required: true, trim: true },
     newspaper: { type: String, required: true, trim: true },
     imageUrl: { type: String, trim: true },
-    country: { type: String, trim: true }
+    country: { type: String, trim: true },
   },
   { _id: false }
 )
@@ -34333,7 +34764,7 @@ const SynthesizedEventSchema = new Schema(
     advisorSummary: { type: String, trim: true },
     ai_assessment_reason: { type: String, trim: true },
     eventClassification: { type: String, trim: true },
-    country: { type: String, required: true, index: true },
+    country: { type: [String], required: true, index: true }, // MODIFIED: Changed to array of strings
     source_articles: { type: [SourceArticleSchema], required: true },
     highest_relevance_score: { type: Number, required: true, min: 0, max: 100 },
     key_individuals: { type: [KeyIndividualSchema], default: [] },
@@ -34993,10 +35424,10 @@ export const selectorRepairSchema = z.object({
 ```
 
 ## 📄 src/schemas/synthesisSchema.js
-*Lines: 27, Size: 819 Bytes*
+*Lines: 27, Size: 860 Bytes*
 
 ```javascript
-// packages/ai-services/src/schemas/synthesisSchema.js (version 1.1)
+// packages/models/src/schemas/synthesisSchema.js (CORRECTED)
 import { z } from 'zod'
 
 export const synthesisSchema = z.object({
@@ -35008,9 +35439,9 @@ export const synthesisSchema = z.object({
         .string()
         .min(1)
         .describe('The one-sentence actionable summary for wealth advisors.'),
-      // DEFINITIVE FIX: Add the new classification field to the schema.
       eventClassification: z.string().min(1).describe("The event's classification type."),
-      country: z.string().min(1),
+      // DEFINITIVE FIX: The 'country' field must now be an array of strings.
+      country: z.array(z.string()).min(1, 'Country array cannot be empty.'),
       key_individuals: z.array(
         z.object({
           name: z.string(),
@@ -35181,7 +35612,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-03T23:13:25.889Z
+**Generated**: 2025-10-04T15:31:18.580Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/prompts
 **Total Files**: 31
 **Package**: @headlines/prompts@1.0.0
@@ -35661,17 +36092,20 @@ export const getInstructionArticle = () => ({
 ```
 
 ## 📄 src/instructionArticlePreAssessment.js
-*Lines: 24, Size: 2.4 KB*
+*Lines: 27, Size: 2.5 KB*
 
 ```javascript
-// packages/prompts/src/instructionArticlePreAssessment.js (version 2.4)
+// packages/prompts/src/instructionArticlePreAssessment.js (version 2.5 - IPO & Bankruptcy Fix)
 export const instructionArticlePreAssessment = {
   whoYouAre: `You are a "Triage" analyst for a financial intelligence firm. You are extremely fast and cost-effective. Your only job is to perform a high-level classification of an article's content.`,
   whatYouDo: `You will read the full text of a news article and determine if its core subject matter is relevant to private wealth. You do not extract details; you only classify.`,
   classificationFramework: `
 1.  **Analyze the Core Event:** Read the provided text to understand the main event.
 2.  **Assign a Classification (with NUANCE):**
-    -   **"private"**: The article is about a transaction, event, or profile involving a privately-held company, a named wealthy individual, or a family. **CRITICAL:** Also classify as "private" if it's a significant legal, regulatory, or financial dispute involving a major company (like Google, Nets, etc.) or a named wealthy individual, as this is vital contextual intelligence. A potential future liquidity event (like IPO plans) for a major private company is also classified as "private".
+    -   **"private"**: The article is about a transaction, event, or profile involving a privately-held company, a named wealthy individual, or a family. **CRITICAL:** This classification ALSO includes:
+        -   Significant legal, regulatory, or financial disputes involving a major company or a named wealthy individual.
+        -   Concrete plans for a future liquidity event (like an **IPO** or stated intention to sell) for a major private company.
+        -   News of financial distress or **bankruptcy** that directly impacts a named founder or private owner.
     -   **"public"**: The article is about a publicly-traded company's routine operations, such as earnings reports, stock price movements, or transactions between two public entities where no specific private beneficiary or major dispute is mentioned.
     -   **"corporate"**: The article is about general business news, such as product launches, new hires (non-founder/owner), partnerships, or corporate strategy that does not directly imply a liquidity event for private owners or a major dispute.
 3.  **Be Strict, but Aware:** Your purpose is to filter out low-value noise. However, do not filter out high-value contextual intelligence. If an article provides too little information to be certain but seems potentially relevant (e.g., mentions a "founder" without a name), you MUST err on the side of caution and classify it as "private" to allow for a more detailed second-stage analysis.
@@ -36164,10 +36598,10 @@ export const instructionSourceName = {
 ```
 
 ## 📄 src/instructionSynthesize.js
-*Lines: 33, Size: 3.29 KB*
+*Lines: 34, Size: 3.49 KB*
 
 ```javascript
-// packages/prompts/src/instructionSynthesize.js
+// packages/prompts/src/instructionSynthesize.js (version 2.0 - Multi-country & Global Entity support)
 export const instructionSynthesize = {
   whoYouAre:
     'You are an expert financial journalist working for an exclusive executive briefing service in English. Your task is to perform targeted information extraction and synthesis.',
@@ -36176,13 +36610,13 @@ export const instructionSynthesize = {
   guidelines: [
     '1. **IDENTIFY ALL CORE EVENTS:** The provided text may describe multiple distinct wealth events. Your first task is to identify every single one. An article about a company sale might also mention a recent founder dividend payment; these are two separate events.',
     '2. **RUTHLESSLY IGNORE PERIPHERAL NOISE:** For each event you identify, your synthesized headline and summary MUST focus exclusively on that event.',
-    // DEFINITIVE FIX: Add a new, explicit rule for determining the country.
-    `3. **DETERMINE COUNTRY (CRITICAL):** For each event, you MUST determine the primary country. The country of the SOURCE newspaper is the most important clue. If the event text explicitly mentions another country (e.g., "French billionaires"), that is the correct country. If there's a conflict, the text's country takes precedence. The final value MUST be a fully-written, UN-recognized sovereign country name (e.g., 'United Kingdom', 'United States of America'), or one of the special regions 'Global', 'Europe', 'Scandinavia', or 'Unknown'. You are FORBIDDEN from using abbreviations or adding extra text.`,
-    '4. **CONSOLIDATE KEY INDIVIDUALS:** For each event, identify and list the key individuals involved in that specific event.',
-    '5. **SYNTHESIZE HEADLINE & SUMMARY:** For each event, write a new, dense, factual headline and a concise summary (max 4 sentences, under 90 words).',
-    '6. **CREATE ADVISOR SUMMARY (CRITICAL):** For each event, you MUST write an `advisor_summary`. This is a single, concise sentence that directly answers "Why is this relevant to a wealth advisor?" and focuses on the event\'s implication.',
-    '7. **CLASSIFY THE EVENT (CRITICAL):** For each event, you MUST provide an `eventClassification` from this exact list: ["New Wealth", "Future Wealth", "Wealth Mentioned", "Legal/Dispute", "Background", "Other"]. "New Wealth" is for direct liquidity events. "Future Wealth" is for planned IPOs or sales. "Wealth Mentioned" is for rich list profiles.',
-    '8. **FORBIDDEN PHRASES:** NEVER state that "context was not available" or mention any limitations.',
+    '3. **DETERMINE ALL RELEVANT COUNTRIES (CRITICAL):** For each event, you MUST identify ALL relevant jurisdictions. The source newspaper\'s country is a primary clue, HOWEVER if the text explicitly mentions (individuals in) other countries playing a significant role (e.g., a London court ruling on a Danish matter), you MUST include both. The final value MUST be an ARRAY of fully-written, UN-recognized sovereign country names. Example: ["United Kingdom", "Denmark"].',
+    "4. **SUBJECT-CENTRIC GEOGRAPHY (GLOBAL ENTITY RULE):** If the primary subject of the event is a globally recognized entity (e.g., Elon Musk, OpenAI, Google), you MUST prioritize their primary country of operation (e.g., \"United States of America\") over the source newspaper's country. You can still include the source's country if it adds important context, but the entity's primary country MUST be present.",
+    '5. **CONSOLIDATE KEY INDIVIDUALS:** For each event, identify and list the key individuals involved in that specific event.',
+    '6. **SYNTHESIZE HEADLINE & SUMMARY:** For each event, write a new, dense, factual headline and a concise summary (max 4 sentences, under 90 words).',
+    '7. **CREATE ADVISOR SUMMARY (CRITICAL):** For each event, you MUST write an `advisor_summary`. This is a single, concise sentence that directly answers "Why is this relevant to a wealth advisor?" and focuses on the event\'s implication.',
+    '8. **CLASSIFY THE EVENT (CRITICAL):** For each event, you MUST provide an `eventClassification` from this exact list: ["New Wealth", "Future Wealth", "Wealth Mentioned", "Legal/Dispute", "Background", "Other"]. "New Wealth" is for direct liquidity events. "Future Wealth" is for planned IPOs or sales. "Wealth Mentioned" is for rich list profiles.',
+    '9. **FORBIDDEN PHRASES:** NEVER state that "context was not available" or mention any limitations.',
   ],
   outputFormatDescription: `
     Respond ONLY with a valid JSON object with a single key "events", which is an array of event objects. If you find no events, return an empty array.
@@ -36193,13 +36627,14 @@ export const instructionSynthesize = {
           "summary": "New, synthesized summary for the FIRST event.",
           "advisor_summary": "The one-sentence actionable summary for the FIRST event.",
           "eventClassification": "The classification string for the FIRST event.",
-          "country": "The single, primary country from the allowed list for the FIRST event.",
+          "country": ["United Kingdom", "Denmark"],
           "key_individuals": [ {{ "name": "...", "role_in_event": "...", "company": "...", "email_suggestion": "..." }} ]
         }}
       ]
     }}
   `,
 }
+
 ```
 
 ## 📄 src/instructionTranslate.js
@@ -36438,7 +36873,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-03T23:13:25.892Z
+**Generated**: 2025-10-04T15:31:18.583Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/scraper-logic
 **Total Files**: 29
 **Package**: @headlines/scraper-logic@2.0.0
@@ -37014,10 +37449,10 @@ export const BROWSER_HEADERS = {
 ```
 
 ## 📄 src/scraper/contentScraper.js
-*Lines: 121, Size: 3.92 KB*
+*Lines: 123, Size: 4.1 KB*
 
 ```javascript
-// packages/scraper-logic/src/scraper/contentScraper.js (version 4.5.0)
+// packages/scraper-logic/src/scraper/contentScraper.js (version 5.0.0 - Unified Selector Strategy)
 import * as cheerio from 'cheerio'
 import fs from 'fs/promises'
 import path from 'path'
@@ -37027,8 +37462,7 @@ import { Readability } from '@mozilla/readability'
 import { getConfig } from '../config.js'
 import { fetchPageWithPlaywright } from '../browser.js'
 import { contentExtractorRegistry } from './extractors/index.js'
-
-import { settings } from '@headlines/config/node';
+import { settings } from '@headlines/config/node'
 
 async function saveDebugHtml(filename, html) {
   const config = getConfig()
@@ -37048,19 +37482,12 @@ async function saveDebugHtml(filename, html) {
 function extractWithReadability(url, html) {
   try {
     const virtualConsole = new VirtualConsole()
-    // Suppress CSS parsing errors which are common and noisy
     virtualConsole.on('cssParseError', () => {})
-
-    // --- START OF THE FIX ---
-    // Tell JSDOM not to fetch external resources like images, scripts, or stylesheets.
-    // This prevents it from trying to use the 'canvas' package which is not available.
     const doc = new JSDOM(html, {
       url,
       virtualConsole,
-      resources: 'usable', // This is the key change
+      resources: 'usable',
     })
-    // --- END OF THE FIX ---
-
     const reader = new Readability(doc.window.document)
     const article = reader.parse()
     return article?.textContent || null
@@ -37075,14 +37502,10 @@ export async function scrapeArticleContent(article, source) {
     source.extractionMethod === 'custom' &&
     contentExtractorRegistry[source.extractorKey]
   ) {
-    const customContentExtractor = contentExtractorRegistry[source.extractorKey]
-    return await customContentExtractor(article, source)
+    return await contentExtractorRegistry[source.extractorKey](article, source)
   }
 
-  if (
-    article.rssContent &&
-    article.rssContent.length >= settings.MIN_ARTICLE_CHARS
-  ) {
+  if (article.rssContent && article.rssContent.length >= settings.MIN_ARTICLE_CHARS) {
     article.articleContent = { contents: [article.rssContent] }
     return article
   }
@@ -37092,24 +37515,38 @@ export async function scrapeArticleContent(article, source) {
     return { ...article, enrichment_error: 'Playwright failed to fetch page HTML' }
   }
 
-  let contentText = extractWithReadability(article.link, html)
-  let extractionMethod = 'Readability.js'
+  const $ = cheerio.load(html)
+  let contentParts = []
+  let extractionMethod = 'None'
+  let contentText = ''
 
+  // DEFINITIVE FIX: Unified Selector Strategy
+  // If articleSelector is defined, use it as the primary, authoritative method.
+  const selectors = Array.isArray(source.articleSelector)
+    ? source.articleSelector
+    : [source.articleSelector].filter(Boolean)
+
+  if (selectors.length > 0) {
+    extractionMethod = 'Cheerio Multi-Selector'
+    for (const selector of selectors) {
+      // Grab text from each matching element and push to the array
+      $(selector).each((_, el) => {
+        const text = $(el).text().replace(/\s+/g, ' ').trim()
+        if (text) {
+          contentParts.push(text)
+        }
+      })
+    }
+    // Join the unique parts together. Using a Set handles cases where selectors might overlap.
+    contentText = [...new Set(contentParts)].join('\n\n')
+  }
+
+  // Fallback to Readability.js ONLY if the selector-based method fails or is not configured.
   if (!contentText || contentText.length < settings.MIN_ARTICLE_CHARS) {
-    const $ = cheerio.load(html)
-    const selectors = Array.isArray(source.articleSelector)
-      ? source.articleSelector
-      : [source.articleSelector].filter(Boolean)
-    if (selectors.length > 0) {
-      const contentParts = []
-      for (const selector of selectors) {
-        const extractedText = $(selector).text().replace(/\s+/g, ' ').trim()
-        if (extractedText) contentParts.push(extractedText)
-      }
-      if (contentParts.length > 0) {
-        contentText = contentParts.join('\n\n')
-        extractionMethod = 'Cheerio Selector'
-      }
+    const readabilityText = extractWithReadability(article.link, html)
+    if (readabilityText && readabilityText.length > contentText.length) {
+      contentText = readabilityText
+      extractionMethod = 'Readability.js Fallback'
     }
   }
 
@@ -38136,7 +38573,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-03T23:13:25.895Z
+**Generated**: 2025-10-04T15:31:18.585Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/utils-server
 **Total Files**: 13
 **Package**: @headlines/utils-server@5.0.0
@@ -38761,7 +39198,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-03T23:13:25.896Z
+**Generated**: 2025-10-04T15:31:18.587Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/utils-shared
 **Total Files**: 10
 **Package**: @headlines/utils-shared@2.0.0
@@ -38852,10 +39289,10 @@ export const apiCallTracker = new ApiCallTracker()
 ```
 
 ## 📄 src/countries.js
-*Lines: 30, Size: 994 Bytes*
+*Lines: 33, Size: 1.09 KB*
 
 ```javascript
-// packages/utils-shared/src/countries.js (NEW FILE)
+// packages/utils-shared/src/countries.js (CORRECTED)
 import isoCountryFlags from './data/countries.json' with { type: 'json' }
 
 const defaultFlag = '🌍'
@@ -38875,7 +39312,10 @@ for (const [name, iso] of countryNameToIsoMap.entries()) {
 }
 
 export function getCountryFlag(countryName) {
-  if (!countryName) return defaultFlag
+  // DEFINITIVE FIX: Add a type check to prevent crashes on invalid input.
+  if (!countryName || typeof countryName !== 'string') {
+    return defaultFlag
+  }
   for (const [key, value] of countryNameToIsoMap.entries()) {
     if (key.toLowerCase() === countryName.trim().toLowerCase()) {
       const flag = isoToFlagMap.get(value)

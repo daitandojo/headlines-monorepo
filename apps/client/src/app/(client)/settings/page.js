@@ -1,13 +1,10 @@
 // File: apps/client/src/app/(client)/settings/page.js (CORRECTED)
 import { getGlobalCountries } from '@headlines/data-access/next'
 import { SettingsForm } from '@/components/client/settings/SettingsForm'
-import dbConnect from '@headlines/data-access/dbConnect/next' // Import dbConnect
 
 export const dynamic = 'force-dynamic'
 
 export default async function SettingsPage() {
-  await dbConnect() // ACTION: Add this line
-
   // Fetch all countries with event counts to pass to the editor
   const { data: allCountries } = await getGlobalCountries()
 

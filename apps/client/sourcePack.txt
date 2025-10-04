@@ -1,6 +1,6 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 209 files, 90 directories
+Total: 210 files, 90 directories
 
 ```
 headlines/
@@ -209,6 +209,7 @@ headlines/
 │   │   │   │   ├── 📄 EventContextDialog.jsx
 │   │   │   │   ├── 📄 EventList.jsx
 │   │   │   │   ├── 📄 EventListWrapper.jsx
+│   │   │   │   ├── 📄 KeyIndividualsDialog.jsx
 │   │   │   │   └── 📄 SynthesizedEventCard.jsx
 │   │   │   ├── 📁 opportunities/
 │   │   │   │   ├── 📄 OpportunityCard.jsx
@@ -307,9 +308,9 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-03T23:13:25.844Z
+**Generated**: 2025-10-04T15:31:18.535Z
 **Repository Path**: /home/mark/Repos/projects/headlines/apps/client
-**Total Files**: 197
+**Total Files**: 198
 **Package**: @headlines/client@1.0.0
 
 
@@ -703,13 +704,13 @@ self.addEventListener('notificationclick', (event) => {
 ```
 
 ## 📄 src/app/(client)/articles/page.js
-*Lines: 43, Size: 1.28 KB*
+*Lines: 43, Size: 1.26 KB*
 
 ```javascript
 // apps/client/src/app/(client)/articles/page.js
 import { DataView } from '@/components/client/shared/DataView'
-import { getArticles } from '@headlines/data-access/next' // CORRECTED IMPORT
-import { getUserIdFromSession } from '@/lib/auth/server' // CORRECTED IMPORT
+import { getArticles } from '@headlines/data-access/next'
+import { getUserIdFromSession } from '@/lib/auth/server'
 import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
@@ -720,7 +721,7 @@ const sortOptions = [
 ]
 
 export default async function ArticlesPage({ searchParams }) {
-  await dbConnect()
+  await dbConnect() // ACTION: Add this line
   const userId = await getUserIdFromSession()
   let initialArticles = []
 
@@ -767,14 +768,14 @@ export default function ChatPage() {
 ```
 
 ## 📄 src/app/(client)/events/page.js
-*Lines: 43, Size: 1.28 KB*
+*Lines: 43, Size: 1.33 KB*
 
 ```javascript
-// apps/client/src/app/(client)/events/page.js
+// apps/client/src/app/(client)/events/page.js (CORRECTED)
 import { DataView } from '@/components/client/shared/DataView'
-import { getEvents } from '@headlines/data-access/next' // CORRECTED IMPORT
-import { getUserIdFromSession } from '@/lib/auth/server' // CORRECTED IMPORT
-import dbConnect from '@headlines/data-access/dbConnect/next'
+import { getEvents } from '@headlines/data-access/next'
+import { getUserIdFromSession } from '@/lib/auth/server'
+import dbConnect from '@headlines/data-access/dbConnect/next' // Import dbConnect
 
 export const dynamic = 'force-dynamic'
 
@@ -784,7 +785,7 @@ const sortOptions = [
 ]
 
 export default async function EventsPage({ searchParams }) {
-  await dbConnect()
+  await dbConnect() // ACTION: Add this line to connect before any data access
   const userId = await getUserIdFromSession()
   let initialEvents = []
 
@@ -840,12 +841,10 @@ export default function ClientLayout({ children }) {
 ```
 
 ## 📄 src/app/(client)/opportunities/[opportunityId]/page.js
-*Lines: 144, Size: 4.9 KB*
+*Lines: 144, Size: 5.12 KB*
 
 ```javascript
-// apps/client/src/app/(client)/opportunities/[opportunityId]/page.js
-
-
+// apps/client/src/app/(client)/opportunities/[opportunityId]/page.js (CORRECTED)
 export const dynamic = 'force-dynamic'
 
 import { getOpportunityDetails } from '@headlines/data-access/next'
@@ -863,6 +862,7 @@ import {
 import { ArrowLeft, User, MapPin, Briefcase, Mail, Zap, ExternalLink } from 'lucide-react'
 import { format } from 'date-fns'
 import { getCountryFlag } from '@headlines/utils-shared'
+import dbConnect from '@headlines/data-access/dbConnect/next' // Import dbConnect
 
 function TimelineItem({ event, isLast }) {
   return (
@@ -900,6 +900,7 @@ function TimelineItem({ event, isLast }) {
 }
 
 export default async function OpportunityDossierPage({ params }) {
+  await dbConnect() // ACTION: Add this line
   const { opportunityId } = params
   const { success, data: opportunity } = await getOpportunityDetails(opportunityId)
 
@@ -908,7 +909,7 @@ export default async function OpportunityDossierPage({ params }) {
   }
 
   const { contactDetails } = opportunity
-  const flag = getCountryFlag(opportunity.basedIn)
+  const flags = (opportunity.basedIn || []).map((c) => getCountryFlag(c)).join(' ') // Use flags for array
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -948,10 +949,10 @@ export default async function OpportunityDossierPage({ params }) {
             {(opportunity.city || opportunity.basedIn) && (
               <span className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-slate-500" />
-                <span className="text-xl mr-1">{flag}</span>
+                <span className="text-xl mr-1">{flags}</span>
                 {opportunity.city}
-                {opportunity.city && opportunity.basedIn ? ', ' : ''}
-                {opportunity.basedIn}
+                {opportunity.city && opportunity.basedIn?.length > 0 ? ', ' : ''}
+                {(opportunity.basedIn || []).join(', ')}
               </span>
             )}
             {contactDetails?.email && (
@@ -990,12 +991,12 @@ export default async function OpportunityDossierPage({ params }) {
 ```
 
 ## 📄 src/app/(client)/opportunities/page.js
-*Lines: 44, Size: 1.34 KB*
+*Lines: 44, Size: 1.35 KB*
 
 ```javascript
 // apps/client/src/app/(client)/opportunities/page.js
 import { DataView } from '@/components/client/shared/DataView'
-import { getOpportunities } from '@headlines/data-access/next' // CORRECTED
+import { getOpportunities } from '@headlines/data-access/next'
 import { getUserIdFromSession } from '@/lib/auth/server'
 import dbConnect from '@headlines/data-access/dbConnect/next'
 
@@ -1005,7 +1006,7 @@ const sortOptions = [
 ]
 
 export default async function OpportunitiesPage({ searchParams }) {
-  await dbConnect()
+  await dbConnect() // ACTION: Add this line
   const userId = await getUserIdFromSession()
   let initialOpportunities = []
 
@@ -1040,19 +1041,19 @@ export default async function OpportunitiesPage({ searchParams }) {
 ```
 
 ## 📄 src/app/(client)/settings/page.js
-*Lines: 26, Size: 787 Bytes*
+*Lines: 26, Size: 896 Bytes*
 
 ```javascript
-// File: apps/client/src/app/(client)/settings/page.js
-
-// 'use server'
-
-import { getGlobalCountries } from '@headlines/data-access/next' // CORRECTED
+// File: apps/client/src/app/(client)/settings/page.js (CORRECTED)
+import { getGlobalCountries } from '@headlines/data-access/next'
 import { SettingsForm } from '@/components/client/settings/SettingsForm'
+import dbConnect from '@headlines/data-access/dbConnect/next' // Import dbConnect
 
 export const dynamic = 'force-dynamic'
 
 export default async function SettingsPage() {
+  await dbConnect() // ACTION: Add this line
+
   // Fetch all countries with event counts to pass to the editor
   const { data: allCountries } = await getGlobalCountries()
 
@@ -1403,7 +1404,7 @@ export function GlobalCoverage() {
 ```
 
 ## 📄 src/app/(public)/_components/Hero.jsx
-*Lines: 152, Size: 6.14 KB*
+*Lines: 152, Size: 6.09 KB*
 
 ```jsx
 // apps/client/src/app/(public)/_components/Hero.jsx
@@ -1508,7 +1509,7 @@ export function Hero({ tickerEvents }) {
               <FeatureCard
                 icon={<Target className="h-6 w-6 text-green-400" />}
                 title="Prospect Dossiers"
-                description="Move from signal to a fully qualified mandate with AI-generated dossiers on key individuals, complete with estimated liquidity and outreach points."
+                description="AI-generated dossiers on key individuals, complete with estimated liquidity and outreach points."
                 delay={0.3}
               />
               <FeatureCard
@@ -2293,7 +2294,7 @@ export default function PublicLayout({ children }) {
 ```
 
 ## 📄 src/app/(public)/page.jsx
-*Lines: 35, Size: 1.22 KB*
+*Lines: 35, Size: 1.24 KB*
 
 ```jsx
 // apps/client/src/app/(public)/page.jsx
@@ -2311,7 +2312,7 @@ import dbConnect from '@headlines/data-access/dbConnect/next'
 export const dynamic = 'force-dynamic'
 
 export default async function LandingPage() {
-  await dbConnect()
+  await dbConnect() // ACTION: Add this line
   const tickerResult = await getPublicTickerEvents()
   const tickerEvents = tickerResult.success ? tickerResult.data : []
 
@@ -2698,9 +2699,10 @@ export async function deleteArticleAction(articleId) {
 ```
 
 ## 📄 src/app/admin/articles/columns.jsx
-*Lines: 135, Size: 4.13 KB*
+*Lines: 140, Size: 4.29 KB*
 
 ```jsx
+// apps/client/src/app/admin/articles/columns.jsx (Multi-country support)
 'use client'
 
 import React from 'react'
@@ -2747,8 +2749,6 @@ export const columns = (onUpdate, onDelete) => [
     accessorKey: 'headline',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Headline" />,
     cell: ({ row }) => (
-      // --- START OF UI FIX ---
-      // Apply max-width and allow the EditableCell's internal truncate to work
       <div className="max-w-[400px] xl:max-w-[600px]">
         <EditableCell
           initialValue={row.original.headline}
@@ -2756,7 +2756,6 @@ export const columns = (onUpdate, onDelete) => [
           useTextarea={true}
         />
       </div>
-      // --- END OF UI FIX ---
     ),
     minSize: 400,
   },
@@ -2764,7 +2763,6 @@ export const columns = (onUpdate, onDelete) => [
     accessorKey: 'newspaper',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Source" />,
     cell: ({ row }) => (
-      // --- UI FIX ---
       <div className="max-w-[180px]">
         <EditableCell
           initialValue={row.original.newspaper}
@@ -2778,11 +2776,19 @@ export const columns = (onUpdate, onDelete) => [
     accessorKey: 'country',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Country" />,
     cell: ({ row }) => (
-      // --- UI FIX ---
       <div className="max-w-[150px]">
+        {/* MODIFIED: EditableCell now handles arrays via join/split */}
         <EditableCell
-          initialValue={row.original.country}
-          onSave={(newValue) => onUpdate(row.original, { country: newValue })}
+          initialValue={(row.original.country || []).join(', ')}
+          onSave={(newValue) =>
+            onUpdate(row.original, {
+              country: newValue
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean),
+            })
+          }
+          placeholder="Add countries..."
         />
       </div>
     ),
@@ -3074,15 +3080,15 @@ export default function DashboardClientPage({
 ```
 
 ## 📄 src/app/admin/dashboard/page.jsx
-*Lines: 54, Size: 1.46 KB*
+*Lines: 53, Size: 1.38 KB*
 
 ```jsx
-// File: apps/client/src/app/admin/dashboard/page.jsx (version 2.5 - FINAL)
+// File: apps/client/src/app/admin/dashboard/page.jsx (CORRECTED)
 import {
   getDashboardStats,
   getRecentRunVerdicts,
   getAllSources,
-} from '@headlines/data-access/next' // CORRECTED
+} from '@headlines/data-access/next'
 import DashboardClientPage from './DashboardClientPage'
 import dbConnect from '@headlines/data-access/dbConnect/next'
 
@@ -3090,7 +3096,6 @@ export const dynamic = 'force-dynamic'
 
 async function getPageData() {
   try {
-    // The data-access functions now reliably handle their own connections.
     const [statsResult, verdictsResult, sourcesResult] = await Promise.all([
       getDashboardStats(),
       getRecentRunVerdicts(),
@@ -3110,7 +3115,7 @@ async function getPageData() {
 }
 
 export default async function AdminDashboardPage() {
-  await dbConnect()
+  await dbConnect() // ACTION: Add this line
   const { stats, runs, sources, error } = await getPageData()
 
   if (error) {
@@ -3134,10 +3139,10 @@ export default async function AdminDashboardPage() {
 ```
 
 ## 📄 src/app/admin/events/EventsClientPage.jsx
-*Lines: 158, Size: 5.28 KB*
+*Lines: 160, Size: 5.45 KB*
 
 ```jsx
-// apps/client/src/app/admin/events/EventsClientPage.jsx
+// apps/client/src/app/admin/events/EventsClientPage.jsx (MODIFIED)
 'use client'
 
 import { useState, useCallback } from 'react'
@@ -3154,7 +3159,8 @@ import { EventListItem, ListHeader } from './columns'
 import { handleExport } from '@/lib/api-client'
 import { deleteEventAction, updateEventAction, getEventDetailsAction } from './actions'
 
-export default function EventsClientPage({ initialEvents, total }) {
+// ACTION: Accept the new `availableCountries` prop
+export default function EventsClientPage({ initialEvents, total, availableCountries }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -3278,6 +3284,7 @@ export default function EventsClientPage({ initialEvents, total }) {
                 onDelete={handleDelete}
                 isExpanded={expandedItemId === event._id}
                 onDetailsNeeded={handleFetchDetails}
+                availableCountries={availableCountries} // ACTION: Pass prop down to list item
               />
             ))}
           </Accordion>
@@ -3337,10 +3344,10 @@ export async function getEventDetailsAction(eventId) {
 ```
 
 ## 📄 src/app/admin/events/columns.jsx
-*Lines: 246, Size: 8.26 KB*
+*Lines: 243, Size: 8.04 KB*
 
 ```jsx
-// File: client/src/app/admin/events/columns.jsx
+// apps/client/src/app/admin/events/columns.jsx (MODIFIED with MultiSelect)
 'use client'
 
 import React, { useState, useCallback } from 'react'
@@ -3363,6 +3370,7 @@ import {
   CardFooter,
   Label,
   Textarea,
+  MultiSelect, // ACTION: Import MultiSelect
 } from '@/components/shared'
 import { Loader2, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
@@ -3394,11 +3402,12 @@ export const EventListItem = ({
   onDelete,
   isExpanded,
   onDetailsNeeded,
+  availableCountries, // ACTION: Accept the new prop
 }) => {
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
 
   const loadDetails = useCallback(async () => {
-    if (event.details) return // Already loaded
+    if (event.details) return
     setIsLoadingDetails(true)
     try {
       await onDetailsNeeded(event._id)
@@ -3418,12 +3427,13 @@ export const EventListItem = ({
   return (
     <AccordionItem value={event._id} className="border-b border-white/10 group">
       <AccordionTrigger className="w-full text-left hover:bg-white/5 px-2 hover:no-underline">
-        {/* AccordionTrigger content remains the same */}
         <div className="flex items-center w-full text-sm">
           <div className="w-[180px] flex-shrink-0 text-muted-foreground group-hover:text-foreground">
             {format(new Date(event.createdAt), 'dd MMM yyyy, HH:mm')}
           </div>
-          <div className="w-[140px] flex-shrink-0">{event.country}</div>
+          <div className="w-[140px] flex-shrink-0">
+            {(event.country || []).join(', ')}
+          </div>
           <div className="w-[180px] flex-shrink-0">
             {event.eventClassification || 'N/A'}
           </div>
@@ -3460,14 +3470,16 @@ export const EventListItem = ({
                   />
                 </FormField>
 
-                {/* --- START OF THE LAYOUT FIX --- */}
                 <div className="grid grid-cols-3 gap-4">
                   <FormField label="Country">
-                    <EditableCell
-                      initialValue={event.details.country}
-                      onSave={(newValue) =>
-                        onUpdate(event.details, { country: newValue })
+                    {/* ACTION: Replace EditableCell with MultiSelect */}
+                    <MultiSelect
+                      options={availableCountries}
+                      selected={event.details.country || []}
+                      onChange={(newCountries) =>
+                        onUpdate(event.details, { country: newCountries.sort() })
                       }
+                      placeholder="Select countries..."
                     />
                   </FormField>
                   <FormField label="Classification">
@@ -3500,7 +3512,6 @@ export const EventListItem = ({
                     />
                   </FormField>
                 </div>
-                {/* --- END OF THE LAYOUT FIX --- */}
 
                 <FormField label="Synthesized Summary">
                   <EditableCell
@@ -3535,7 +3546,6 @@ export const EventListItem = ({
 }
 
 export const ListHeader = ({ sorting, setSorting }) => {
-  // This is a mock table instance to reuse the DataTableColumnHeader component
   const mockColumn = (id) => ({
     getCanSort: () => true,
     getIsSorted: () =>
@@ -3545,15 +3555,9 @@ export const ListHeader = ({ sorting, setSorting }) => {
           ? 'asc'
           : false,
     toggleSorting: (desc) => setSorting([{ id, desc }]),
-
-    // --- START OF THE FIX ---
-    // Add the missing functions that DataTableColumnHeader expects.
-    // Since this custom list view doesn't support filtering, we can
-    // make these functions do nothing or return default values.
-    getCanFilter: () => false, // This will prevent the filter input from rendering
+    getCanFilter: () => false,
     getFilterValue: () => undefined,
-    setFilterValue: () => {}, // No-op
-    // --- END OF THE FIX ---
+    setFilterValue: () => {},
   })
 
   return (
@@ -3589,12 +3593,12 @@ export const ListHeader = ({ sorting, setSorting }) => {
 ```
 
 ## 📄 src/app/admin/events/page.jsx
-*Lines: 25, Size: 777 Bytes*
+*Lines: 28, Size: 955 Bytes*
 
 ```jsx
-// apps/client/src/app/admin/events/page.jsx
-import { getEvents } from '@headlines/data-access'
-import EventsClientPage from './EventsClientPage' // New client component
+// apps/client/src/app/admin/events/page.jsx (MODIFIED)
+import { getEvents, getDistinctCountries } from '@headlines/data-access/next'
+import EventsClientPage from './EventsClientPage'
 import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
@@ -3603,16 +3607,19 @@ export default async function EventsPage({ searchParams }) {
   await dbConnect()
   const page = parseInt(searchParams.page || '1', 10)
   const sort = searchParams.sort || null
-
-  // The custom list view for events doesn't support columnFilters, so we pass an empty object.
   const filters = {}
 
-  const result = await getEvents({ page, filters, sort })
+  // ACTION: Fetch both events and the list of available countries concurrently.
+  const [eventsResult, countriesResult] = await Promise.all([
+    getEvents({ page, filters, sort }),
+    getDistinctCountries(),
+  ])
 
   return (
     <EventsClientPage
-      initialEvents={result.success ? result.data : []}
-      total={result.success ? result.total : 0}
+      initialEvents={eventsResult.success ? eventsResult.data : []}
+      total={eventsResult.success ? eventsResult.total : 0}
+      availableCountries={countriesResult.success ? countriesResult.data : []}
     />
   )
 }
@@ -3824,9 +3831,10 @@ export async function deleteOpportunityAction(opportunityId) {
 ```
 
 ## 📄 src/app/admin/opportunities/columns.jsx
-*Lines: 109, Size: 2.92 KB*
+*Lines: 119, Size: 3.25 KB*
 
 ```jsx
+// apps/client/src/app/admin/opportunities/columns.jsx (Multi-country support)
 'use client'
 
 import React from 'react'
@@ -3904,9 +3912,18 @@ export const columns = (onUpdate, onDelete) => [
     accessorKey: 'basedIn',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Country" />,
     cell: ({ row }) => (
+      // MODIFIED: EditableCell now handles arrays via join/split
       <EditableCell
-        initialValue={row.original.basedIn}
-        onSave={(newValue) => onUpdate(row.original, { basedIn: newValue })}
+        initialValue={(row.original.basedIn || []).join(', ')}
+        onSave={(newValue) =>
+          onUpdate(row.original, {
+            basedIn: newValue
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean),
+          })
+        }
+        placeholder="Add countries..."
       />
     ),
     size: 150,
@@ -8593,11 +8610,10 @@ export function ThemeToggle() {
 ```
 
 ## 📄 src/components/client/articles/ArticleCard.jsx
-*Lines: 202, Size: 7.77 KB*
+*Lines: 203, Size: 7.91 KB*
 
 ```jsx
-// File: apps/client/src/components/client/ArticleCard.jsx
-
+// File: apps/client/src/components/client/articles/ArticleCard.jsx (Multi-country support)
 'use client'
 
 import { useState, useTransition } from 'react'
@@ -8612,7 +8628,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
   ConfirmationDialog,
-} from '@/components/shared' // <-- CORRECT IMPORT
+} from '@/components/shared'
 import { Trash2, ExternalLink, Users, Mail, Building, Briefcase } from 'lucide-react'
 import { getCountryFlag } from '@headlines/utils-shared'
 import { SwipeToDelete } from '../shared/SwipeToDelete'
@@ -8649,7 +8665,7 @@ export const ArticleCard = ({ article, onDelete }) => {
     }
   }
 
-  const flag = getCountryFlag(article.country)
+  const flags = (article.country || []).map((c) => getCountryFlag(c)).join(' ') // MODIFIED
   const relevanceScore = article.relevance_article || article.relevance_headline
 
   return (
@@ -8682,7 +8698,8 @@ export const ArticleCard = ({ article, onDelete }) => {
                     >
                       {relevanceScore}
                     </Badge>
-                    <span className="text-lg hidden sm:inline">{flag}</span>
+                    <span className="text-lg hidden sm:inline">{flags}</span>{' '}
+                    {/* MODIFIED */}
                     <p className="text-xs sm:text-sm text-slate-300 truncate shadow-black drop-shadow-lg">
                       {article.newspaper}
                     </p>
@@ -8724,7 +8741,8 @@ export const ArticleCard = ({ article, onDelete }) => {
                 <AccordionTrigger className="p-0 hover:no-underline text-left">
                   <div className="flex-grow min-w-0">
                     <p className="font-serif font-bold text-base sm:text-lg text-white line-clamp-3 shadow-black drop-shadow-lg">
-                      <span className="text-lg sm:hidden mr-2">{flag}</span>
+                      <span className="text-lg sm:hidden mr-2">{flags}</span>{' '}
+                      {/* MODIFIED */}
                       {article.headline_en || `(en N/S): ${article.headline}`}
                     </p>
                   </div>
@@ -9459,11 +9477,10 @@ export function CountrySubscriptionEditor({
 ```
 
 ## 📄 src/components/client/countries/GlobalCountrySelector.jsx
-*Lines: 136, Size: 4.54 KB*
+*Lines: 136, Size: 4.59 KB*
 
 ```jsx
-// File: apps/client/src/components/client/GlobalCountrySelector.jsx (Corrected and Unabridged)
-
+// apps/client/src/components/client/countries/GlobalCountrySelector.jsx (CORRECTED)
 'use client'
 import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -9531,9 +9548,10 @@ export function GlobalCountrySelector({ allCountries }) {
 
   const renderIcon = () => {
     if (!user) return <Globe className="h-5 w-5" />
-    const userCountryNames = user.countries || []
-    if (userCountryNames.length === 1) {
-      return <span className="text-xl">{getCountryFlag(userCountryNames[0].name)}</span>
+    const userCountries = user.countries || []
+    if (userCountries.length === 1) {
+      // DEFINITIVE FIX: Pass the .name property, not the whole object.
+      return <span className="text-xl">{getCountryFlag(userCountries[0].name)}</span>
     }
     return <Globe className="h-5 w-5" />
   }
@@ -9601,11 +9619,10 @@ export function GlobalCountrySelector({ allCountries }) {
 ```
 
 ## 📄 src/components/client/events/EventCardDesktop.jsx
-*Lines: 111, Size: 4.11 KB*
+*Lines: 123, Size: 4.49 KB*
 
 ```jsx
-// File: apps/client/src/components/client/events/EventCardDesktop.jsx
-
+// File: apps/client/src/components/client/events/EventCardDesktop.jsx (Handler Corrected)
 'use client'
 
 import {
@@ -9628,9 +9645,15 @@ const getRelevanceBadgeClass = (score) => {
   return 'bg-slate-500/20 text-slate-300 border border-slate-500/30'
 }
 
-export function EventCardDesktop({ event, onChat, onDelete, isPending }) {
+export function EventCardDesktop({
+  event,
+  onChat,
+  onDelete,
+  onShowIndividuals,
+  isPending,
+}) {
   if (!event) return null
-  const flag = getCountryFlag(event.country)
+  const flags = (event.country || []).map((c) => getCountryFlag(c)).join(' ')
   const primaryImageUrl = event.source_articles?.find((a) => a.imageUrl)?.imageUrl
 
   return (
@@ -9649,7 +9672,7 @@ export function EventCardDesktop({ event, onChat, onDelete, isPending }) {
           </div>
           <div className="flex-grow min-w-0 pr-20">
             <h3 className="font-serif font-bold text-xl text-slate-100 mb-2">
-              <span className="text-2xl mr-3 align-middle">{flag}</span>
+              <span className="text-2xl mr-3 align-middle">{flags}</span>
               {event.synthesized_headline}
             </h3>
             <p className="text-slate-300 leading-relaxed">{event.synthesized_summary}</p>
@@ -9697,12 +9720,19 @@ export function EventCardDesktop({ event, onChat, onDelete, isPending }) {
         </div>
         <div className="mt-4 pt-4 border-t border-slate-800/50 flex flex-col sm:flex-row justify-between items-start gap-4">
           {event.key_individuals && event.key_individuals.length > 0 && (
-            <div className="flex items-start gap-3 text-slate-400">
-              <Users className="h-5 w-5 mt-0.5 shrink-0 text-slate-500" />
-              <p className="text-sm font-medium text-slate-300">
-                {event.key_individuals.length} Key Individual(s) Identified
-              </p>
-            </div>
+            // DEFINITIVE FIX: Ensure the onClick handler is correctly passed to the Button.
+            <Button
+              variant="ghost"
+              className="p-0 h-auto text-left text-slate-400 hover:text-slate-200"
+              onClick={onShowIndividuals}
+            >
+              <div className="flex items-start gap-3">
+                <Users className="h-5 w-5 mt-0.5 shrink-0 text-slate-500" />
+                <p className="text-sm font-medium text-slate-300">
+                  {event.key_individuals.length} Key Individual(s) Identified
+                </p>
+              </div>
+            </Button>
           )}
           {event.ai_assessment_reason && (
             <p className="text-xs text-slate-500 italic sm:text-right flex-grow">
@@ -9793,11 +9823,10 @@ export function EventCardDetails({ event }) {
 ```
 
 ## 📄 src/components/client/events/EventCardMobile.jsx
-*Lines: 105, Size: 3.78 KB*
+*Lines: 117, Size: 4.16 KB*
 
 ```jsx
-// File: apps/client/src/components/client/events/EventCardMobile.jsx
-
+// File: apps/client/src/components/client/events/EventCardMobile.jsx (Handler Corrected)
 'use client'
 
 import { Badge, Button } from '@/components/shared'
@@ -9811,9 +9840,15 @@ const getRelevanceBadgeClass = (score) => {
   return 'bg-slate-500/20 text-slate-300 border border-slate-500/30'
 }
 
-export function EventCardMobile({ event, onChat, onDelete, isPending }) {
+export function EventCardMobile({
+  event,
+  onChat,
+  onDelete,
+  onShowIndividuals,
+  isPending,
+}) {
   if (!event) return null
-  const flag = getCountryFlag(event.country)
+  const flags = (event.country || []).map((c) => getCountryFlag(c)).join(' ')
   const primaryImageUrl = event.source_articles?.find((a) => a.imageUrl)?.imageUrl
 
   return (
@@ -9866,7 +9901,7 @@ export function EventCardMobile({ event, onChat, onDelete, isPending }) {
               primaryImageUrl ? 'text-white drop-shadow-lg' : 'text-slate-100'
             )}
           >
-            <span className="text-xl mr-2 align-middle">{flag}</span>
+            <span className="text-xl mr-2 align-middle">{flags}</span>
             {event.synthesized_headline}
           </h3>
         </div>
@@ -9883,12 +9918,19 @@ export function EventCardMobile({ event, onChat, onDelete, isPending }) {
         </p>
         <div className="mt-4 pt-4 border-t border-slate-800/50 flex flex-col justify-between items-start gap-4">
           {event.key_individuals && event.key_individuals.length > 0 && (
-            <div className="flex items-start gap-3 text-slate-400">
-              <Users className="h-5 w-5 mt-0.5 shrink-0 text-slate-500" />
-              <p className="text-sm font-medium text-slate-300">
-                {event.key_individuals.length} Key Individual(s) Identified
-              </p>
-            </div>
+            // DEFINITIVE FIX: Ensure the onClick handler is correctly passed to the Button.
+            <Button
+              variant="ghost"
+              className="p-0 h-auto text-left text-slate-400 hover:text-slate-200"
+              onClick={onShowIndividuals}
+            >
+              <div className="flex items-start gap-3">
+                <Users className="h-5 w-5 mt-0.5 shrink-0 text-slate-500" />
+                <p className="text-sm font-medium text-slate-300">
+                  {event.key_individuals.length} Key Individual(s) Identified
+                </p>
+              </div>
+            </Button>
           )}
           {event.ai_assessment_reason && (
             <p className="text-xs text-slate-500 italic sm:text-right flex-grow">
@@ -10073,11 +10115,84 @@ export function EventListWrapper({
 
 ```
 
-## 📄 src/components/client/events/SynthesizedEventCard.jsx
-*Lines: 100, Size: 3.32 KB*
+## 📄 src/components/client/events/KeyIndividualsDialog.jsx
+*Lines: 67, Size: 2.33 KB*
 
 ```jsx
-// File: apps/client/src/components/client/SynthesizedEventCard.jsx (Restored)
+// apps/client/src/components/client/events/KeyIndividualsDialog.jsx (NEW FILE)
+'use client'
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/shared'
+import { Users, Mail, Building, Briefcase } from 'lucide-react'
+
+export function KeyIndividualsDialog({ individuals, open, onOpenChange }) {
+  if (!individuals || individuals.length === 0) {
+    return null
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg bg-slate-900 border-slate-700">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-blue-400" />
+            Key Individuals Identified
+          </DialogTitle>
+          <DialogDescription>
+            The following individuals were identified by the AI as principal actors in
+            this event.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-4 space-y-3 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+          {individuals.map((person, index) => (
+            <div
+              key={index}
+              className="p-3 rounded-md bg-slate-800/50 border border-slate-700/50"
+            >
+              <p className="font-bold text-slate-100 flex items-center gap-2">
+                <Users className="h-4 w-4 text-slate-400" /> {person.name}
+              </p>
+              <div className="pl-6 space-y-1 mt-1 text-sm text-slate-400">
+                {person.role_in_event && (
+                  <p className="flex items-center gap-2">
+                    <Briefcase className="h-3 w-3" /> {person.role_in_event}
+                  </p>
+                )}
+                {person.company && (
+                  <p className="flex items-center gap-2">
+                    <Building className="h-3 w-3" /> {person.company}
+                  </p>
+                )}
+                {person.email_suggestion && (
+                  <a
+                    href={`mailto:${person.email_suggestion}`}
+                    className="flex items-center gap-2 text-blue-400 hover:underline"
+                  >
+                    <Mail className="h-3 w-3" /> {person.email_suggestion}
+                  </a>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+```
+
+## 📄 src/components/client/events/SynthesizedEventCard.jsx
+*Lines: 117, Size: 3.98 KB*
+
+```jsx
+// File: apps/client/src/components/client/events/SynthesizedEventCard.jsx (CORRECTED)
 'use client'
 
 import { useState, useTransition } from 'react'
@@ -10085,20 +10200,22 @@ import { useRouter } from 'next/navigation'
 import { AccordionContent, AccordionItem, ConfirmationDialog } from '@/components/shared'
 import useAppStore from '@/lib/store/use-app-store'
 import { SwipeToDelete } from '../shared/SwipeToDelete'
-import { EventCardDesktop } from '../events/EventCardDesktop'
-import { EventCardMobile } from '../events/EventCardMobile'
-import { EventCardDetails } from '../events/EventCardDetails'
+import { EventCardDesktop } from './EventCardDesktop'
+import { EventCardMobile } from './EventCardMobile'
+import { EventCardDetails } from './EventCardDetails'
+import { KeyIndividualsDialog } from './KeyIndividualsDialog'
 import { useAuth } from '@/lib/auth/client'
 import { toast } from 'sonner'
 
 export const SynthesizedEventCard = ({
   event,
-  onDelete, // <-- Changed from onSwipeLeft
+  onDelete,
   onFavoriteToggle,
   isFavorited,
 }) => {
   const [isPending, startTransition] = useTransition()
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false)
+  const [isIndividualsDialogOpen, setIsIndividualsDialogOpen] = useState(false) // State is here
   const setChatContextPrompt = useAppStore((state) => state.setChatContextPrompt)
   const router = useRouter()
   const { user } = useAuth()
@@ -10111,7 +10228,7 @@ export const SynthesizedEventCard = ({
 
   const handleSwipeRight = () => {
     if (isFavorited) {
-      setIsEmailDialogOpen(true) // <-- Un-commented
+      setIsEmailDialogOpen(true)
     } else {
       toast.info('Item must be favorited to email.')
     }
@@ -10129,6 +10246,12 @@ export const SynthesizedEventCard = ({
     onFavoriteToggle(event._id, !isFavorited)
   }
 
+  // DEFINITIVE FIX: This handler now correctly opens the dialog.
+  const handleShowIndividuals = (e) => {
+    e.stopPropagation() // Prevent the main accordion from toggling
+    setIsIndividualsDialogOpen(true)
+  }
+
   return (
     <>
       <div className="relative w-full">
@@ -10143,6 +10266,7 @@ export const SynthesizedEventCard = ({
                 onChat={handleChatAboutEvent}
                 onDelete={performDelete}
                 onFavorite={handleFavorite}
+                onShowIndividuals={handleShowIndividuals} // Pass the handler
                 isFavorited={isFavorited}
                 isPending={isPending}
               />
@@ -10151,6 +10275,7 @@ export const SynthesizedEventCard = ({
                 onChat={handleChatAboutEvent}
                 onDelete={performDelete}
                 onFavorite={handleFavorite}
+                onShowIndividuals={handleShowIndividuals} // Pass the handler
                 isFavorited={isFavorited}
                 isPending={isPending}
               />
@@ -10161,7 +10286,14 @@ export const SynthesizedEventCard = ({
           </AccordionContent>
         </AccordionItem>
       </div>
-      {/* Un-commented this block */}
+
+      {/* DEFINITIVE FIX: Render the dialog and control it with state */}
+      <KeyIndividualsDialog
+        individuals={event.key_individuals}
+        open={isIndividualsDialogOpen}
+        onOpenChange={setIsIndividualsDialogOpen}
+      />
+
       <ConfirmationDialog
         open={isEmailDialogOpen}
         onOpenChange={setIsEmailDialogOpen}
@@ -10180,11 +10312,10 @@ export const SynthesizedEventCard = ({
 ```
 
 ## 📄 src/components/client/opportunities/OpportunityCard.jsx
-*Lines: 188, Size: 7.03 KB*
+*Lines: 187, Size: 7.16 KB*
 
 ```jsx
-// File: apps/client/src/components/client/OpportunityCard.jsx
-
+// File: apps/client/src/components/client/opportunities/OpportunityCard.jsx (Multi-country support)
 'use client'
 
 import { useState, useTransition } from 'react'
@@ -10234,7 +10365,7 @@ export function OpportunityCard({ opportunity, onDelete }) {
   const reasonsToContact = Array.isArray(opportunity.whyContact)
     ? opportunity.whyContact
     : [opportunity.whyContact]
-  const flag = getCountryFlag(opportunity.basedIn)
+  const flags = (opportunity.basedIn || []).map((c) => getCountryFlag(c)).join(' ') // MODIFIED
 
   return (
     <>
@@ -10261,10 +10392,10 @@ export function OpportunityCard({ opportunity, onDelete }) {
                     {(opportunity.city || opportunity.basedIn) && (
                       <p className="text-xs text-slate-400 flex items-center gap-2 pl-6">
                         <MapPin className="h-3 w-3" />
-                        <span className="text-base mr-1">{flag}</span>
+                        <span className="text-base mr-1">{flags}</span> {/* MODIFIED */}
                         {opportunity.city}
                         {opportunity.city && opportunity.basedIn ? ', ' : ''}
-                        {opportunity.basedIn}
+                        {(opportunity.basedIn || []).join(', ')} {/* MODIFIED */}
                       </p>
                     )}
                   </div>
@@ -13200,16 +13331,16 @@ export {
 ```
 
 ## 📄 src/components/shared/elements/sonner.jsx
-*Lines: 40, Size: 1.08 KB*
+*Lines: 39, Size: 1.02 KB*
 
 ```jsx
 'use client'
-// import { useTheme } from 'next-themes'
-// import { Toaster as Sonner } from 'sonner'
+import { useTheme } from 'next-themes'
+import { Toaster as Sonner } from 'sonner'
 import { useEffect, useState } from 'react'
 
 const Toaster = ({ ...props }) => {
-  // const { theme = 'system' } = useTheme()
+  const { theme = 'system' } = useTheme()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -13222,22 +13353,21 @@ const Toaster = ({ ...props }) => {
   }
 
   return (
-    <>HELLO</>
-    // <Sonner
-    //   theme={theme}
-    //   className="toaster group"
-    //   toastOptions={{
-    //     classNames: {
-    //       toast:
-    //         'group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg',
-    //       description: 'group-[.toast]:text-muted-foreground',
-    //       actionButton:
-    //         'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground',
-    //       cancelButton: 'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground',
-    //     },
-    //   }}
-    //   {...props}
-    // />
+    <Sonner
+      theme={theme}
+      className="toaster group"
+      toastOptions={{
+        classNames: {
+          toast:
+            'group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg',
+          description: 'group-[.toast]:text-muted-foreground',
+          actionButton:
+            'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground',
+          cancelButton: 'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground',
+        },
+      }}
+      {...props}
+    />
   )
 }
 

@@ -3,12 +3,8 @@ export const dynamic = 'force-dynamic'
 import { PageHeader } from '@/components/shared'
 import { getAllSubscribers, getAllCountries } from '@headlines/data-access'
 import UsersClientPage from './UsersClientPage'
-import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export default async function UsersPage() {
-  // Establish the database connection ONCE at the start of the page render.
-  await dbConnect()
-
   const [usersResult, countriesResult] = await Promise.all([
     getAllSubscribers({}),
     getAllCountries(),

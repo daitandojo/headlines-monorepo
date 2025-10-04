@@ -1,12 +1,10 @@
 // apps/client/src/app/admin/events/page.jsx (MODIFIED)
 import { getEvents, getDistinctCountries } from '@headlines/data-access/next'
 import EventsClientPage from './EventsClientPage'
-import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
 
 export default async function EventsPage({ searchParams }) {
-  await dbConnect()
   const page = parseInt(searchParams.page || '1', 10)
   const sort = searchParams.sort || null
   const filters = {}

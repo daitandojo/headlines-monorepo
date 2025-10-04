@@ -1,6 +1,6 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 106 files, 31 directories
+Total: 109 files, 31 directories
 
 ```
 headlines/
@@ -26,7 +26,9 @@ headlines/
 │   │   ├── 📄 V1_Fix_Scraper_Selectors.js
 │   │   ├── 📄 V2_Clean_Opportunity_Reasons.js
 │   │   ├── 📄 V3_Fix_E24_Scraper.js
-│   │   └── 📄 V4_Fix_E24_Scraper_Definitive.js
+│   │   ├── 📄 V4_Fix_E24_Scraper_Definitive.js
+│   │   ├── 📄 V5_Convert_Country_To_Array.js
+│   │   └── 📄 V6_Remove_LedeSelector.js
 │   ├── 📁 push/
 │   │   └── 📄 send-test-push.js
 │   ├── 📁 results/
@@ -127,6 +129,7 @@ headlines/
 │   │   ├── 📄 6_suggestNewWatchlistEntities.js
 │   │   └── 📄 7_selfHealAndOptimize.js
 │   ├── 📁 utils/
+│   │   ├── 📄 articleTraceLogger.js
 │   │   ├── 📄 auditLogger.js
 │   │   ├── 📄 errorStream.js
 │   │   ├── 📄 housekeeping.js
@@ -145,9 +148,9 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-03T23:13:25.866Z
+**Generated**: 2025-10-04T15:31:18.557Z
 **Repository Path**: /home/mark/Repos/projects/headlines/apps/pipeline
-**Total Files**: 106
+**Total Files**: 109
 **Package**: @headlines/pipeline@1.0.0
 
 
@@ -1562,29 +1565,154 @@ runMigration()
 
 ```
 
+## 📄 scripts/migrations/V5_Convert_Country_To_Array.js
+*Lines: 78, Size: 2.35 KB*
+
+```javascript
+// packages/pipeline/scripts/migrations/V5_Convert_Country_To_Array.js
+import mongoose from 'mongoose'
+import { Article, SynthesizedEvent, Opportunity } from '@headlines/models'
+import dbConnect from '@headlines/data-access/dbConnect/node'
+import { logger } from '@headlines/utils-shared'
+import colors from 'ansi-colors'
+
+async function migrateCollection(model, fieldName) {
+  logger.info(
+    `Checking collection '${model.collection.collectionName}' for field '${fieldName}'...`
+  )
+  const filter = { [fieldName]: { $type: 'string' } }
+  const count = await model.countDocuments(filter)
+
+  if (count === 0) {
+    logger.info(`  ✅ No documents to migrate in '${model.collection.collectionName}'.`)
+    return
+  }
+
+  logger.warn(
+    `  Found ${count} documents to migrate in '${model.collection.collectionName}'.`
+  )
+
+  const bulkOps = []
+  // DEFINITIVE FIX: Use .lean() to get raw JS objects, bypassing Mongoose's type coercion.
+  const cursor = model.find(filter).lean().cursor()
+
+  for await (const doc of cursor) {
+    const currentValue = doc[fieldName]
+
+    // Now, currentValue will be the actual string from the DB (e.g., "Denmark"),
+    // not an array that Mongoose created in memory (e.g., ["Denmark"]).
+    if (typeof currentValue === 'string') {
+      bulkOps.push({
+        updateOne: {
+          filter: { _id: doc._id },
+          update: { $set: { [fieldName]: [currentValue] } },
+        },
+      })
+    }
+  }
+
+  if (bulkOps.length > 0) {
+    const result = await model.bulkWrite(bulkOps)
+    logger.info(
+      colors.green(`  ✅ Successfully modified ${result.modifiedCount} documents.`)
+    )
+  } else {
+    // This message should no longer appear with the .lean() fix.
+    logger.warn(
+      `  Warning: Found ${count} documents but processed 0. This may indicate an issue.`
+    )
+  }
+}
+
+async function runMigration() {
+  logger.info(
+    '🚀 Starting V5 Migration: Convert `country` and `basedIn` fields to arrays...'
+  )
+  await dbConnect()
+
+  try {
+    await migrateCollection(Article, 'country')
+    await migrateCollection(SynthesizedEvent, 'country')
+    await migrateCollection(Opportunity, 'basedIn')
+
+    logger.info('✅ Migration V5 completed successfully.')
+  } catch (error) {
+    logger.fatal({ err: error }, '❌ Migration V5 failed!')
+  } finally {
+    if (mongoose.connection.readyState === 1) {
+      await mongoose.disconnect()
+    }
+  }
+}
+
+runMigration()
+
+```
+
+## 📄 scripts/migrations/V6_Remove_LedeSelector.js
+*Lines: 31, Size: 822 Bytes*
+
+```javascript
+import mongoose from 'mongoose'
+import { Source } from '@headlines/models'
+import dbConnect from '@headlines/data-access/dbConnect/node'
+import { logger } from '@headlines/utils-shared'
+
+async function runMigration() {
+  logger.info(
+    '🚀 Starting V6 Migration: Remove deprecated `ledeSelector` field from Sources...'
+  )
+  await dbConnect()
+
+  try {
+    const result = await Source.updateMany(
+      { ledeSelector: { $exists: true } },
+      { $unset: { ledeSelector: '' } }
+    )
+
+    logger.info(
+      `✅ Migration V6 completed. Removed 'ledeSelector' field from ${result.modifiedCount} documents.`
+    )
+  } catch (error) {
+    logger.fatal({ err: error }, '❌ Migration V6 failed!')
+  } finally {
+    if (mongoose.connection.readyState === 1) {
+      await mongoose.disconnect()
+    }
+  }
+}
+
+runMigration()
+
+```
+
 ## 📄 scripts/mongo-backup.sh
-*Lines: 56, Size: 1.31 KB*
+*Lines: 59, Size: 1.54 KB*
 
 ```bash
 #!/bin/bash
-# mongo-backup.sh (version 1.0)
+# mongo-backup.sh (version 1.1 - Robust .env parsing)
 # This script dumps all relevant collections to a timestamped directory.
 
 # --- Configuration ---
 BACKUP_DIR="apps/pipeline/backup"
 TIMESTAMP=$(date +"%Y-%m-%dT%H-%M-%S")
 TARGET_DIR="$BACKUP_DIR/$TIMESTAMP"
+ENV_FILE="./.env"
 
-# Load MONGO_URI from the root .env file
-if [ -f "./.env" ]; then
-    export $(grep -v '^#' .env | xargs)
-else
+# --- Pre-flight Checks & Robust .env Loading ---
+if [ ! -f "$ENV_FILE" ]; then
     echo "❌ Error: .env file not found in the monorepo root."
     exit 1
 fi
 
+# CORRECTED: Robustly export variables line-by-line, skipping comments and empty lines.
+set -a # Automatically export all variables
+source <(grep -v '^#' "$ENV_FILE" | sed -e '/^$/d' -e 's/\r$//')
+set +a
+
 if [ -z "$MONGO_URI" ]; then
-    echo "❌ Error: MONGO_URI is not set in your .env file."
+    echo "❌ Error: MONGO_URI is not set or could not be read from your .env file."
     exit 1
 fi
 
@@ -1621,7 +1749,6 @@ done
 
 echo "✅ Backup complete. All collections saved to $TARGET_DIR"
 exit 0
-
 ```
 
 ## 📄 scripts/mongo-restore.sh
@@ -7379,10 +7506,10 @@ export const SUPERVISOR_EMAIL_CONFIG = {
 ```
 
 ## 📄 src/modules/dataStore/index.js
-*Lines: 188, Size: 6.84 KB*
+*Lines: 190, Size: 7.02 KB*
 
 ```javascript
-// apps/pipeline/src/modules/dataStore/index.js (version 6.1.0)
+// apps/pipeline/src/modules/dataStore/index.js (CORRECTED - Handles empty articles array)
 import { Pinecone } from '@pinecone-database/pinecone'
 import { logger } from '@headlines/utils-shared'
 import { generateEmbedding } from '@headlines/ai-services'
@@ -7402,7 +7529,7 @@ const pc = new Pinecone({ apiKey: PINECONE_API_KEY })
 const pineconeIndex = pc.index(PINECONE_INDEX_NAME)
 
 export async function savePipelineResults(
-  articlesToSave,
+  articlesToSave, // This may now be an empty array
   eventsToSave,
   savedOpportunities
 ) {
@@ -7438,7 +7565,7 @@ export async function savePipelineResults(
       for (const event of savedEvents) {
         const textToEmbed = `${event.synthesized_headline}\n${event.synthesized_summary}`
         const embedding = await generateEmbedding(textToEmbed)
-        const eventDate = event.event_date ? new Date(event.event_date) : new Date() // Robust date handling
+        const eventDate = event.event_date ? new Date(event.event_date) : new Date()
         pineconeVectors.push({
           id: `event_${event._id.toString()}`,
           values: embedding,
@@ -7446,7 +7573,9 @@ export async function savePipelineResults(
             type: 'event',
             headline: event.synthesized_headline,
             summary: event.synthesized_summary,
-            country: event.country,
+            country: Array.isArray(event.country)
+              ? event.country.join(', ')
+              : event.country, // Handle array
             event_date: eventDate.toISOString(),
             key_individuals: (event.key_individuals || []).map((p) => p.name).join(', '),
           },
@@ -7454,6 +7583,7 @@ export async function savePipelineResults(
       }
     }
 
+    // ACTION: This block will now often be skipped, which is correct.
     if (articlesToSave && articlesToSave.length > 0) {
       const articleOps = []
       const eventKeyToIdMap = new Map(savedEvents.map((e) => [e.event_key, e._id]))
@@ -7466,7 +7596,6 @@ export async function savePipelineResults(
       }
 
       for (const article of articlesToSave) {
-        // Embed the AI-generated summary, not the full text
         if (article.relevance_article && article.assessment_article) {
           const textToEmbed = `${article.headline}\n${article.assessment_article}`
           article.embedding = await generateEmbedding(textToEmbed)
@@ -7481,7 +7610,9 @@ export async function savePipelineResults(
               headline: article.headline,
               summary: article.assessment_article || 'No summary.',
               newspaper: article.newspaper,
-              country: article.country,
+              country: Array.isArray(article.country)
+                ? article.country.join(', ')
+                : article.country,
             },
           })
         }
@@ -7490,13 +7621,10 @@ export async function savePipelineResults(
         if (eventKey) article.synthesizedEventId = eventKeyToIdMap.get(eventKey)
 
         const { _id, ...dataToSet } = article
-        // Delete articleContent before saving
         delete dataToSet.articleContent
         Object.keys(dataToSet).forEach(
           (key) => dataToSet[key] === undefined && delete dataToSet[key]
         )
-        if (dataToSet.relevance_headline <= 25 && dataToSet.relevance_article <= 25)
-          delete dataToSet.articleContent
         delete dataToSet.embedding
         articleOps.push({
           updateOne: {
@@ -7525,7 +7653,7 @@ export async function savePipelineResults(
             type: 'opportunity',
             headline: opp.reachOutTo,
             summary: opp.whyContact.join(' '),
-            country: opp.basedIn,
+            country: Array.isArray(opp.basedIn) ? opp.basedIn.join(', ') : opp.basedIn,
           },
         })
       }
@@ -7545,6 +7673,7 @@ export async function savePipelineResults(
   }
 }
 
+// ... (filterFreshArticles function remains unchanged) ...
 export async function filterFreshArticles(articles, isRefreshMode = false) {
   if (!articles || articles.length === 0) return []
   const scrapedLinks = articles.map((a) => a.link)
@@ -8658,21 +8787,21 @@ export async function sendBulkEmails(emailQueue) {
 ```
 
 ## 📄 src/modules/email/index.js
-*Lines: 51, Size: 1.56 KB*
+*Lines: 51, Size: 1.7 KB*
 
 ```javascript
-// AFTER
-// apps/pipeline/src/modules/email/index.js (Corrected)
+// apps/pipeline/src/modules/email/index.js (MODIFIED to accept traces)
 import { logger } from '@headlines/utils-shared'
-import { sendGenericEmail } from '@headlines/utils-server' // <-- CORRECT IMPORT
+import { sendGenericEmail } from '@headlines/utils-server'
 import { Subscriber } from '@headlines/models'
 import { createSupervisorEmailBody } from './components/supervisor/supervisorEmailBodyBuilder.js'
 
 /**
  * Coordinates sending the supervisor report email.
  * @param {Object} runStats - Statistics about the current pipeline run.
+ * @param {Array<Object>} articleTraces - Detailed traces for each processed article.
  */
-export async function sendSupervisorReportEmail(runStats) {
+export async function sendSupervisorReportEmail(runStats, articleTraces = []) {
   if (!runStats) {
     logger.error('No runStats provided for supervisor report. Skipping email.')
     return
@@ -8695,8 +8824,8 @@ export async function sendSupervisorReportEmail(runStats) {
       return
     }
 
-    // Generate the complex HTML body
-    const emailBody = await createSupervisorEmailBody(runStats)
+    // Generate the complex HTML body, now including the article traces
+    const emailBody = await createSupervisorEmailBody(runStats, articleTraces)
 
     // Send the email using the shared mailer
     await sendGenericEmail({
@@ -9120,21 +9249,21 @@ export async function sendBulkPushNotifications(pushQueue) {
 ```
 
 ## 📄 src/orchestrator.js
-*Lines: 141, Size: 5.24 KB*
+*Lines: 146, Size: 5.39 KB*
 
 ```javascript
-// apps/pipeline/src/orchestrator.js
+// apps/pipeline/src/orchestrator.js (MODIFIED)
 import { logger } from '@headlines/utils-shared'
 import { tokenTracker, apiCallTracker } from '@headlines/utils-server'
 import { logFinalReport } from './utils/pipelineLogger.js'
 import { RunStatsManager } from './utils/runStatsManager.js'
+import { ArticleTraceLogger } from './utils/articleTraceLogger.js'
 import { runPreFlightChecks } from './pipeline/1_preflight.js'
 import { runScrapeAndFilter } from './pipeline/2_scrapeAndFilter.js'
 import { runAssessAndEnrich } from './pipeline/3_assessAndEnrich.js'
 import { runClusterAndSynthesize } from './pipeline/4_clusterAndSynthesize.js'
 import { runCommitAndNotify } from './pipeline/5_commitAndNotify.js'
 import { suggestNewWatchlistEntities } from './pipeline/6_suggestNewWatchlistEntities.js'
-import { runSelfHealAndOptimize } from './pipeline/7_selfHealAndOptimize.js'
 import { updateSourceAnalytics } from './pipeline/submodules/commit/4_updateSourceAnalytics.js'
 import { settings } from '@headlines/config'
 import { RunVerdict } from '@headlines/models'
@@ -9170,10 +9299,13 @@ export async function runPipeline(options) {
 
   apiCallTracker.reset()
   const runStatsManager = new RunStatsManager()
+  const articleTraceLogger = new ArticleTraceLogger()
+  await articleTraceLogger.initialize()
 
   let currentPayload = {
     ...options,
     runStatsManager,
+    articleTraceLogger,
     dbConnection: false,
   }
 
@@ -9238,14 +9370,15 @@ export async function runPipeline(options) {
           'No new events were synthesized. Skipping commit and notification stages, but sending a supervisor report.'
         )
         const { sendSupervisorReportEmail } = await import('./modules/email/index.js')
-        await sendSupervisorReportEmail(runStatsManager.getStats())
+        await sendSupervisorReportEmail(
+          runStatsManager.getStats(),
+          articleTraceLogger.getAllTraces()
+        )
       }
     }
   } catch (error) {
     success = false
     runStatsManager.push('errors', `ORCHESTRATOR_FATAL: ${error.message}`)
-
-    // Send a critical alert for unhandled exceptions in the main pipeline
     sendErrorAlert(error, {
       origin: 'PIPELINE_ORCHESTRATOR',
       runOptions: options,
@@ -9260,6 +9393,7 @@ export async function runPipeline(options) {
 
     await saveRunVerdict(currentPayload, durationInSeconds)
     await logFinalReport(runStatsManager.getStats(), durationInSeconds)
+    await articleTraceLogger.writeAllTraces()
   }
   return { success }
 }
@@ -9557,14 +9691,16 @@ export async function runScrapeAndFilter(pipelinePayload) {
 ```
 
 ## 📄 src/pipeline/3_assessAndEnrich.js
-*Lines: 283, Size: 9.69 KB*
+*Lines: 329, Size: 11.26 KB*
 
 ```javascript
-// apps/pipeline/src/pipeline/3_assessAndEnrich.js
+// apps/pipeline/src/pipeline/3_assessAndEnrich.js (with Enhanced Audit Logging)
 import { truncateString, sleep } from '@headlines/utils-shared'
 import { logger } from '@headlines/utils-shared'
+import { auditLogger } from '@headlines/utils-server'
 import { settings } from '@headlines/config/node'
-import { Article, WatchlistEntity } from '@headlines/models'
+import { WatchlistEntity } from '@headlines/models'
+import { bulkWriteArticles } from '@headlines/data-access'
 import { batchHeadlineChain } from '@headlines/ai-services/node'
 import { processSingleArticle } from './submodules/processSingleArticle.js'
 import pLimit from 'p-limit'
@@ -9619,7 +9755,7 @@ function findWatchlistHits(text, country, watchlistEntities) {
 
 export async function runAssessAndEnrich(pipelinePayload) {
   logger.info('--- STAGE 3: ASSESS & ENRICH ---')
-  const { runStatsManager, articlesForPipeline } = pipelinePayload // CORRECTED
+  const { runStatsManager, articlesForPipeline, articleTraceLogger } = pipelinePayload
 
   if (!articlesForPipeline || articlesForPipeline.length === 0) {
     pipelinePayload.enrichedArticles = []
@@ -9633,10 +9769,6 @@ export async function runAssessAndEnrich(pipelinePayload) {
   )
   const realArticles = articlesForPipeline.filter(
     (a) => a.source !== 'Richlist Ingestion'
-  )
-
-  logger.info(
-    `Processing ${realArticles.length} real articles and ${syntheticArticles.length} synthetic articles.`
   )
 
   let assessedCandidates = []
@@ -9702,6 +9834,21 @@ export async function runAssessAndEnrich(pipelinePayload) {
 
         const results = await withRetry(batchProcessor)
         assessedCandidates.push(...results)
+
+        auditLogger.info(
+          {
+            context: {
+              batch_number: index + 1,
+              input_headlines: batch.map((a) => a.headline),
+              output_assessments: results.map((r) => ({
+                headline: r.headline,
+                score: r.relevance_headline,
+                assessment: r.assessment_headline,
+              })),
+            },
+          },
+          'Headline Assessment Batch Processed'
+        )
       } catch (batchError) {
         logger.error(
           { err: batchError },
@@ -9733,10 +9880,18 @@ export async function runAssessAndEnrich(pipelinePayload) {
     }
   }
 
-  runStatsManager.set('headlinesAssessed', assessedCandidates.length) // CORRECTED
+  runStatsManager.set('headlinesAssessed', assessedCandidates.length)
 
   logger.info('--- Headline Assessment Complete ---')
   assessedCandidates.forEach((article) => {
+    if (article.relevance_headline >= settings.HEADLINES_RELEVANCE_THRESHOLD) {
+      articleTraceLogger.startTrace(article)
+      articleTraceLogger.addStage(article._id, 'Headline Assessment', {
+        score: article.relevance_headline,
+        assessment: article.assessment_headline,
+        hits: article.hits.map((h) => h.entity.name),
+      })
+    }
     const status =
       article.relevance_headline >= settings.HEADLINES_RELEVANCE_THRESHOLD
         ? 'PASSED'
@@ -9750,7 +9905,7 @@ export async function runAssessAndEnrich(pipelinePayload) {
   const relevantCandidates = assessedCandidates.filter(
     (a) => a.relevance_headline >= settings.HEADLINES_RELEVANCE_THRESHOLD
   )
-  runStatsManager.set('relevantHeadlines', relevantCandidates.length) // CORRECTED
+  runStatsManager.set('relevantHeadlines', relevantCandidates.length)
 
   const enrichmentQueue = [...relevantCandidates, ...syntheticArticles]
 
@@ -9759,6 +9914,22 @@ export async function runAssessAndEnrich(pipelinePayload) {
   )
   if (enrichmentQueue.length === 0) {
     pipelinePayload.enrichedArticles = []
+    const articlesToPersist = assessedCandidates.map(
+      ({ articleContent, ...rest }) => rest
+    )
+    if (articlesToPersist.length > 0) {
+      const bulkOps = articlesToPersist.map((article) => ({
+        updateOne: {
+          filter: { link: article.link },
+          update: { $set: article },
+          upsert: true,
+        },
+      }))
+      await bulkWriteArticles(bulkOps)
+      logger.info(
+        `Persisted ${articlesToPersist.length} assessed articles to prevent re-scraping.`
+      )
+    }
     return { success: true, payload: pipelinePayload }
   }
 
@@ -9774,8 +9945,8 @@ export async function runAssessAndEnrich(pipelinePayload) {
   const results = await Promise.all(processingPromises)
 
   const enrichedArticles = []
-  const articleUpdates = []
-  let enrichmentOutcomes = [] // Local variable
+  const allProcessedArticles = []
+  let enrichmentOutcomes = []
 
   logger.info('--- Full Article Enrichment Results ---')
   results.forEach((result, index) => {
@@ -9788,6 +9959,16 @@ export async function runAssessAndEnrich(pipelinePayload) {
         result.lifecycleEvent,
       ],
     }
+    delete finalArticleState.articleContent
+    allProcessedArticles.push(finalArticleState)
+
+    articleTraceLogger.addStage(originalArticle._id, 'Content Enrichment', {
+      outcome: result.lifecycleEvent.status,
+      reason: result.lifecycleEvent.reason,
+      content_snippet: result.contentPreview,
+      llm_assessment: result.article,
+    })
+
     const outcome = result.lifecycleEvent.status
 
     enrichmentOutcomes.push({
@@ -9813,26 +9994,25 @@ export async function runAssessAndEnrich(pipelinePayload) {
         `❌ [${outcome.toUpperCase()}] "${truncateString(originalArticle.headline, 60)}" - Reason: ${result.lifecycleEvent.reason}`
       )
     }
-
-    if (result.article || result.lifecycleEvent) {
-      articleUpdates.push({
-        updateOne: {
-          filter: { _id: originalArticle._id },
-          update: { $set: finalArticleState },
-        },
-      })
-    }
   })
 
-  runStatsManager.set('enrichmentOutcomes', enrichmentOutcomes) // CORRECTED
-
-  if (articleUpdates.length > 0) {
-    // In-memory articles don't exist in DB yet, so bulkWrite won't work.
-    // This state is now managed entirely within the payload.
+  if (allProcessedArticles.length > 0) {
+    const bulkOps = allProcessedArticles.map((article) => ({
+      updateOne: {
+        filter: { link: article.link },
+        update: { $set: article },
+        upsert: true,
+      },
+    }))
+    await bulkWriteArticles(bulkOps)
+    logger.info(
+      `Persisted ${allProcessedArticles.length} processed articles to prevent re-scraping.`
+    )
   }
 
-  runStatsManager.set('articlesEnriched', enrichedArticles.length) // CORRECTED
-  runStatsManager.set('relevantArticles', enrichedArticles.length) // CORRECTED
+  runStatsManager.set('enrichmentOutcomes', enrichmentOutcomes)
+  runStatsManager.set('articlesEnriched', enrichedArticles.length)
+  runStatsManager.set('relevantArticles', enrichedArticles.length)
 
   logger.info(
     `Enrichment complete. Successfully enriched ${enrichedArticles.length} of ${enrichmentQueue.length} candidates.`
@@ -9846,13 +10026,12 @@ export async function runAssessAndEnrich(pipelinePayload) {
 ```
 
 ## 📄 src/pipeline/4_clusterAndSynthesize.js
-*Lines: 216, Size: 7.84 KB*
+*Lines: 238, Size: 8.09 KB*
 
 ```javascript
-// apps/pipeline/src/pipeline/4_clusterAndSynthesize.js
-import { truncateString, logger } from '@headlines/utils-shared' // The universal, isomorphic logger
-import { auditLogger } from '@headlines/utils-server' // The server-only, file-writing audit logger
-
+// apps/pipeline/src/pipeline/4_clusterAndSynthesize.js (with Enhanced Audit Logging)
+import { truncateString, logger } from '@headlines/utils-shared'
+import { auditLogger } from '@headlines/utils-server'
 import {
   clusteringChain,
   synthesisChain,
@@ -9863,10 +10042,15 @@ import {
 import { settings } from '@headlines/config'
 import { getConfig } from '@headlines/scraper-logic/config.js'
 
-async function synthesizeEventsFromCluster(articlesInCluster, clusterKey, runStatsManager) {
+async function synthesizeEventsFromCluster(
+  articlesInCluster,
+  clusterKey,
+  runStatsManager,
+  articleTraceLogger
+) {
   const config = getConfig()
   const primaryHeadline = articlesInCluster[0]?.headline || clusterKey
-  const primaryCountry = articlesInCluster[0]?.country || 'Unknown'
+  const primaryCountry = (articlesInCluster[0]?.country || [])[0] || 'Unknown'
   logger.info(
     `--- [ Synthesizing from Cluster: "${truncateString(primaryHeadline, 60)}" ] ---`
   )
@@ -9914,17 +10098,22 @@ async function synthesizeEventsFromCluster(articlesInCluster, clusterKey, runSta
     '[ LATEST NEWS CONTEXT (NewsAPI) ]': newsApiContext,
   }
 
-  auditLogger.info(
-    { context: { synthesis_input: synthesisInput } },
-    `Synthesis Context for: "${primaryHeadline}"`
-  )
+  for (const article of uniqueArticlesInCluster) {
+    articleTraceLogger.addStage(article._id, 'Synthesis Context', {
+      cluster_key: clusterKey,
+      full_context: synthesisInput,
+    })
+  }
+
   const synthesisResult = await synthesisChain({
     context_json_string: JSON.stringify(synthesisInput),
   })
-  auditLogger.info(
-    { context: { llm_output: synthesisResult } },
-    `Synthesis Verdict for: "${primaryHeadline}"`
-  )
+
+  for (const article of uniqueArticlesInCluster) {
+    articleTraceLogger.addStage(article._id, 'Synthesis LLM Output', {
+      llm_output: synthesisResult,
+    })
+  }
 
   if (!synthesisResult || synthesisResult.error || !synthesisResult.events) {
     logger.warn({ details: synthesisResult?.error }, 'Synthesis failed for cluster.')
@@ -9989,7 +10178,7 @@ async function synthesizeEventsFromCluster(articlesInCluster, clusterKey, runSta
 
 export async function runClusterAndSynthesize(pipelinePayload) {
   logger.info('--- STAGE 4: CLUSTER & SYNTHESIZE ---')
-  const { runStatsManager, enrichedArticles } = pipelinePayload // CORRECTED
+  const { runStatsManager, enrichedArticles, articleTraceLogger } = pipelinePayload
 
   const articlesForProcessing = enrichedArticles.filter(
     (a) => a.relevance_article >= settings.ARTICLES_RELEVANCE_THRESHOLD
@@ -10013,7 +10202,7 @@ export async function runClusterAndSynthesize(pipelinePayload) {
   })
 
   const eventClusters = clusterResult.events || []
-  runStatsManager.set('eventsClustered', eventClusters.length) // CORRECTED
+  runStatsManager.set('eventsClustered', eventClusters.length)
   logger.info(
     { details: eventClusters },
     `Clustered ${articlesForProcessing.length} articles into ${eventClusters.length} unique events.`
@@ -10031,7 +10220,12 @@ export async function runClusterAndSynthesize(pipelinePayload) {
       .filter(Boolean)
     if (articlesInCluster.length > 0) {
       synthesisPromises.push(
-        synthesizeEventsFromCluster(articlesInCluster, cluster.event_key, runStatsManager)
+        synthesizeEventsFromCluster(
+          articlesInCluster,
+          cluster.event_key,
+          runStatsManager,
+          articleTraceLogger
+        )
       )
     }
   }
@@ -10047,7 +10241,14 @@ export async function runClusterAndSynthesize(pipelinePayload) {
     )
     for (const article of singletonArticles) {
       const event_key = `singleton-${article.newspaper.toLowerCase().replace(/[^a-z0-9]/g, '')}-${article._id.toString()}`
-      synthesisPromises.push(synthesizeEventsFromCluster([article], event_key, runStatsManager))
+      synthesisPromises.push(
+        synthesizeEventsFromCluster(
+          [article],
+          event_key,
+          runStatsManager,
+          articleTraceLogger
+        )
+      )
     }
   }
 
@@ -10065,6 +10266,7 @@ export async function runClusterAndSynthesize(pipelinePayload) {
   pipelinePayload.opportunitiesToSave = opportunitiesToSave
   return { success: true, payload: pipelinePayload }
 }
+
 ```
 
 ## 📄 src/pipeline/5_commitAndNotify.js
@@ -10239,18 +10441,20 @@ export async function runSelfHealAndOptimize(pipelinePayload) {
 ```
 
 ## 📄 src/pipeline/submodules/commit/1_judgeOutput.js
-*Lines: 77, Size: 2.44 KB*
+*Lines: 99, Size: 3.2 KB*
 
 ```javascript
-// apps/pipeline/src/pipeline/submodules/commit/1_judgeOutput.js
-import { logger } from '@headlines/utils-shared' // CORRECTED IMPORT
+// apps/pipeline/src/pipeline/submodules/commit/1_judgeOutput.js (with Enhanced Audit Logging)
+import { logger } from '@headlines/utils-shared'
+import { auditLogger } from '@headlines/utils-server'
 import { judgeChain } from '@headlines/ai-services'
 
 export async function judgeAndFilterOutput(pipelinePayload, fatalQualities) {
   const {
     synthesizedEvents: initialEvents = [],
     opportunitiesToSave: initialOpportunities = [],
-    runStatsManager, // CORRECTED
+    runStatsManager,
+    articleTraceLogger,
   } = pipelinePayload
 
   logger.info(
@@ -10273,11 +10477,16 @@ export async function judgeAndFilterOutput(pipelinePayload, fatalQualities) {
     events: lightweightEvents,
     opportunities: lightweightOpportunities,
   }
+
+  auditLogger.info({ context: { judge_input: payloadForJudge } }, 'Judge Agent Input')
+
   const judgeVerdict = await judgeChain({
     payload_json_string: JSON.stringify(payloadForJudge),
   })
 
-  runStatsManager.set('judgeVerdict', judgeVerdict) // CORRECTED
+  auditLogger.info({ context: { judge_output: judgeVerdict } }, 'Judge Agent Output')
+
+  runStatsManager.set('judgeVerdict', judgeVerdict)
 
   if (judgeVerdict.error) {
     logger.error(
@@ -10286,6 +10495,21 @@ export async function judgeAndFilterOutput(pipelinePayload, fatalQualities) {
     )
     return { finalEvents: initialEvents, finalOpportunities: initialOpportunities }
   }
+
+  initialEvents.forEach((event) => {
+    const identifier = `Event: ${event.synthesized_headline}`
+    const verdict = judgeVerdict.event_judgements.find((j) => j.identifier === identifier)
+    if (verdict) {
+      event.source_articles.forEach((sourceArticle) => {
+        const articleInMap = (pipelinePayload.enrichedArticles || []).find(
+          (a) => a.link === sourceArticle.link
+        )
+        if (articleInMap) {
+          articleTraceLogger.addStage(articleInMap._id, 'Judge Verdict', { verdict })
+        }
+      })
+    }
+  })
 
   const fatalQualitiesSet = new Set(fatalQualities)
 
@@ -10322,10 +10546,10 @@ export async function judgeAndFilterOutput(pipelinePayload, fatalQualities) {
 ```
 
 ## 📄 src/pipeline/submodules/commit/2_saveResults.js
-*Lines: 72, Size: 2.43 KB*
+*Lines: 62, Size: 1.99 KB*
 
 ```javascript
-// apps/pipeline/src/pipeline/submodules/commit/2_saveResults.js (version 2.1.1)
+// apps/pipeline/src/pipeline/submodules/commit/2_saveResults.js (CORRECTED - Article saving removed)
 import mongoose from 'mongoose'
 import { savePipelineResults } from '../../../modules/dataStore/index.js'
 import { enrichAndLinkOpportunities } from '../opportunityUpserter.js'
@@ -10336,19 +10560,10 @@ export async function saveResultsToDb(
   finalEventsToSave,
   finalOpportunitiesToSave
 ) {
-  const { assessedCandidates, isDryRun, runStats } = pipelinePayload
+  const { isDryRun, runStats } = pipelinePayload
 
-  // --- START LOGIC FIX ---
-  // The articles to be saved are no longer just 'assessedCandidates'.
-  // We need to find the specific articles that were successfully processed
-  // into the final, approved events.
-  const finalEventArticleLinks = new Set(
-    finalEventsToSave.flatMap((event) => event.source_articles.map((a) => a.link))
-  )
-  const articlesToSave = (pipelinePayload.enrichedArticles || []).filter((article) =>
-    finalEventArticleLinks.has(article.link)
-  )
-  // --- END LOGIC FIX ---
+  // The logic for determining articlesToSave has been removed.
+  // The articles have already been saved in Stage 3.
 
   if (isDryRun) {
     logger.warn('DRY RUN: Simulating database save.')
@@ -10359,11 +10574,12 @@ export async function saveResultsToDb(
     return {
       savedEvents,
       savedOpportunities: finalOpportunitiesToSave,
-      articlesSavedCount: articlesToSave.length,
+      articlesSavedCount: 0, // This is no longer this stage's responsibility
     }
   }
 
-  const commitResult = await savePipelineResults(articlesToSave, finalEventsToSave)
+  // ACTION: Call savePipelineResults with an empty array for articles.
+  const commitResult = await savePipelineResults([], finalEventsToSave)
 
   if (commitResult.success) {
     const savedEvents = commitResult.savedEvents
@@ -10372,12 +10588,10 @@ export async function saveResultsToDb(
         finalOpportunitiesToSave,
         savedEvents
       )
-      // The `savePipelineResults` and `enrichAndLinkOpportunities` functions
-      // already return lean objects, so no need for JSON stringify/parse.
       return {
         savedEvents,
         savedOpportunities,
-        articlesSavedCount: articlesToSave.length,
+        articlesSavedCount: 0, // No longer this stage's responsibility
       }
     } catch (error) {
       logger.error(
@@ -10388,7 +10602,7 @@ export async function saveResultsToDb(
       return {
         savedEvents,
         savedOpportunities: [],
-        articlesSavedCount: articlesToSave.length,
+        articlesSavedCount: 0,
       }
     }
   } else {
@@ -10954,6 +11168,101 @@ export async function triggerSelectorRepair(source, htmlContent, failedSelector)
   )
   // This function is now a no-op.
   return
+}
+
+```
+
+## 📄 src/utils/articleTraceLogger.js
+*Lines: 89, Size: 2.65 KB*
+
+```javascript
+// apps/pipeline/src/utils/articleTraceLogger.js (NEW FILE)
+import fs from 'fs/promises'
+import path from 'path'
+import { EOL } from 'os'
+import { format } from 'util'
+import { logger } from '@headlines/utils-shared'
+
+// A simple utility to sanitize filenames
+function sanitizeFilename(name) {
+  if (!name || typeof name !== 'string') {
+    return `invalid_filename_${Date.now()}`
+  }
+  return name.replace(/[^a-z0-9_.-]/gi, '_').substring(0, 150)
+}
+
+export class ArticleTraceLogger {
+  constructor() {
+    this.runId = new Date().toISOString().replace(/:/g, '-').replace(/\..+/, '')
+    this.baseDir = path.resolve(process.cwd(), 'apps/pipeline/logs/articles', this.runId)
+    this.traces = new Map()
+    this.initialized = false
+  }
+
+  async initialize() {
+    try {
+      await fs.mkdir(this.baseDir, { recursive: true })
+      this.initialized = true
+    } catch (error) {
+      logger.error({ err: error }, 'Failed to create article trace log directory.')
+    }
+  }
+
+  startTrace(article) {
+    if (!this.initialized || !article?._id) return
+    const trace = {
+      _id: article._id.toString(),
+      headline: article.headline,
+      link: article.link,
+      source: article.newspaper,
+      stages: [],
+    }
+    this.traces.set(article._id.toString(), trace)
+  }
+
+  addStage(articleId, stageName, data) {
+    if (!this.initialized) return
+    const id = typeof articleId === 'string' ? articleId : articleId?.toString()
+    if (!id) return
+    const trace = this.traces.get(id)
+    if (trace) {
+      trace.stages.push({ name: stageName, data, timestamp: new Date() })
+    }
+  }
+
+  async writeAllTraces() {
+    if (!this.initialized) return
+
+    for (const [articleId, trace] of this.traces.entries()) {
+      let content = `ARTICLE TRACE: ${trace.headline}${EOL}`
+      content += `Source: ${trace.source}${EOL}`
+      content += `Link: ${trace.link}${EOL}`
+      content += `============================================================${EOL}${EOL}`
+
+      trace.stages.forEach((stage) => {
+        content += `--- STAGE: ${stage.name.toUpperCase()} (${stage.timestamp.toISOString()}) ---${EOL}`
+        content += `${format(stage.data, { depth: null })}${EOL}${EOL}`
+      })
+
+      const filename = sanitizeFilename(`${trace.headline}.log`)
+      const filePath = path.join(this.baseDir, filename)
+      try {
+        await fs.writeFile(filePath, content)
+      } catch (error) {
+        logger.error(
+          { err: error, file: filePath },
+          'Failed to write article trace file.'
+        )
+      }
+    }
+    logger.info(
+      `Wrote ${this.traces.size} detailed article trace logs to: ${this.baseDir}`
+    )
+  }
+
+  getAllTraces() {
+    return Array.from(this.traces.values())
+  }
 }
 
 ```

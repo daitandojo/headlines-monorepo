@@ -2,7 +2,6 @@
 import { DataView } from '@/components/client/shared/DataView'
 import { getArticles } from '@headlines/data-access/next'
 import { getUserIdFromSession } from '@/lib/auth/server'
-import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +11,6 @@ const sortOptions = [
 ]
 
 export default async function ArticlesPage({ searchParams }) {
-  await dbConnect() // ACTION: Add this line
   const userId = await getUserIdFromSession()
   let initialArticles = []
 
