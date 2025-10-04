@@ -2,7 +2,7 @@
 const nextConfig = {
   transpilePackages: [
     '@headlines/config',
-    '@headlines/data-access',
+    // '@headlines/data-access', // <-- REMOVED
     '@headlines/models',
     '@headlines/utils-shared',
   ],
@@ -10,6 +10,7 @@ const nextConfig = {
     // Tell Next.js these packages should NOT be bundled into serverless functions
     serverComponentsExternalPackages: [
       '@headlines/ai-services',
+      '@headlines/data-access', // <-- ADDED HERE
       '@headlines/scraper-logic',
       '@headlines/utils-server',
       '@headlines/prompts',
