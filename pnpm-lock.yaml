@@ -383,18 +383,12 @@ importers:
       '@pinecone-database/pinecone':
         specifier: ^2.2.2
         version: 2.2.2
-      '@xenova/transformers':
-        specifier: ^2.17.2
-        version: 2.17.2
       bcryptjs:
         specifier: ^2.4.3
         version: 2.4.3
       mongoose:
         specifier: ^8.4.1
         version: 8.19.0
-      openai:
-        specifier: ^4.29.2
-        version: 4.104.0(encoding@0.1.13)(ws@8.18.3)(zod@3.25.76)
 
   packages/models:
     dependencies:
@@ -4664,18 +4658,6 @@ packages:
   onnxruntime-web@1.14.0:
     resolution: {integrity: sha512-Kcqf43UMfW8mCydVGcX9OMXI2VN17c0p6XvR7IPSZzBf/6lteBzXHvcEVWDPmCKuGombl997HgLqj91F11DzXw==}
 
-  openai@4.104.0:
-    resolution: {integrity: sha512-p99EFNsA/yX6UhVO93f5kJsDRLAg+CTA2RBqdHK4RtK8u5IJw32Hyb2dTGKbnnFmnuoBv5r7Z2CURI9sGZpSuA==}
-    hasBin: true
-    peerDependencies:
-      ws: ^8.18.0
-      zod: ^3.23.8
-    peerDependenciesMeta:
-      ws:
-        optional: true
-      zod:
-        optional: true
-
   openai@5.12.2:
     resolution: {integrity: sha512-xqzHHQch5Tws5PcKR2xsZGX9xtch+JQFz5zb14dGqlshmmDAFBFEWmeIpf7wVqWV+w7Emj7jRgkNJakyKE0tYQ==}
     hasBin: true
@@ -7366,7 +7348,7 @@ snapshots:
 
   '@types/node-fetch@2.6.13':
     dependencies:
-      '@types/node': 18.19.129
+      '@types/node': 24.6.2
       form-data: 4.0.4
 
   '@types/node@18.19.129':
@@ -10455,21 +10437,6 @@ snapshots:
       onnx-proto: 4.0.4
       onnxruntime-common: 1.14.0
       platform: 1.3.6
-
-  openai@4.104.0(encoding@0.1.13)(ws@8.18.3)(zod@3.25.76):
-    dependencies:
-      '@types/node': 18.19.129
-      '@types/node-fetch': 2.6.13
-      abort-controller: 3.0.0
-      agentkeepalive: 4.6.0
-      form-data-encoder: 1.7.2
-      formdata-node: 4.4.1
-      node-fetch: 2.7.0(encoding@0.1.13)
-    optionalDependencies:
-      ws: 8.18.3
-      zod: 3.25.76
-    transitivePeerDependencies:
-      - encoding
 
   openai@5.12.2(ws@8.18.3)(zod@3.25.76):
     optionalDependencies:
