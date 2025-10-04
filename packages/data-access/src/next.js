@@ -1,13 +1,12 @@
-// packages/data-access/src/next.js (DEFINITIVE FIX - No HOC)
+// packages/data-access/src/next.js
 import 'server-only'
 import dbConnect from './dbConnect.next.js'
 import * as core from './core/index.js'
 import { revalidatePath } from './revalidate.js'
 import { buildQuery } from './queryBuilder.js'
+import * as aiServices from '@headlines/ai-services/next'
 
-// --- Explicit Wrappers for Each Core Function ---
-
-// A helper to avoid rewriting the same pattern repeatedly
+// This is the Next.js entry point. It wraps core functions and injects Next.js-safe AI services.
 const wrap =
   (fn) =>
   async (...args) => {
@@ -15,11 +14,27 @@ const wrap =
     return fn(...args)
   }
 
-// Wrap each function individually
+// --- Functions that need AI services injected ---
+export const generateChatTitle = wrap((...args) =>
+  core.generateChatTitle(...args, { ...aiServices })
+)
+export const addKnowledge = wrap((...args) =>
+  core.addKnowledge(...args, { ...aiServices })
+)
+export const processUploadedArticle = wrap((...args) =>
+  core.processUploadedArticle(...args, { ...aiServices })
+)
+export const suggestSections = wrap((...args) =>
+  core.suggestSections(...args, { ...aiServices })
+)
+
+// --- All other functions that don't need AI services ---
+// (This is a simplified representation; the full file has all exports)
 export const createSubscriber = wrap(core.createSubscriber)
 export const updateSubscriber = wrap(core.updateSubscriber)
 export const deleteSubscriber = wrap(core.deleteSubscriber)
 export const createCountry = wrap(core.createCountry)
+// ... export all other functions from core, wrapped with dbConnect
 export const updateCountry = wrap(core.updateCountry)
 export const createSource = wrap(core.createSource)
 export const updateSource = wrap(core.updateSource)
@@ -39,7 +54,6 @@ export const getArticleDetails = wrap(core.getArticleDetails)
 export const createSubscriberWithPassword = wrap(core.createSubscriberWithPassword)
 export const updateSubscriberPassword = wrap(core.updateSubscriberPassword)
 export const loginUser = wrap(core.loginUser)
-export const generateChatTitle = wrap(core.generateChatTitle)
 export const getDashboardStats = wrap(core.getDashboardStats)
 export const getDistinctCountries = wrap(core.getDistinctCountries)
 export const getGlobalCountries = wrap(core.getGlobalCountries)
@@ -78,7 +92,6 @@ export const getCurrentSubscriber = wrap(core.getCurrentSubscriber)
 export const savePushSubscription = wrap(core.savePushSubscription)
 export const updateUserProfile = wrap(core.updateUserProfile)
 export const updateUserInteraction = wrap(core.updateUserInteraction)
-export const processUploadedArticle = wrap(core.processUploadedArticle)
 export const clearDiscardedItems = wrap(core.clearDiscardedItems)
 export const getRecentRunVerdicts = wrap(core.getRecentRunVerdicts)
 export const getRunVerdictById = wrap(core.getRunVerdictById)
@@ -103,5 +116,4 @@ export const updateSettings = async (...args) => {
   return result
 }
 
-// Export non-wrapped utilities
 export { buildQuery, revalidatePath }

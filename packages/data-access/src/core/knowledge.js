@@ -2,7 +2,6 @@
 import { Pinecone } from '@pinecone-database/pinecone'
 import mongoose from 'mongoose'
 import { Article } from '@headlines/models'
-import { generateEmbedding } from '@headlines/ai-services'
 import { env } from '@headlines/config'
 
 let pineconeIndex
@@ -14,7 +13,8 @@ function getPineconeIndex() {
   return pineconeIndex
 }
 
-export async function addKnowledge(data) {
+// This function is now "pure" - it accepts generateEmbedding as an argument.
+export async function addKnowledge(data, { generateEmbedding }) {
   const { headline, business_summary, source, country, link } = data
   console.log(`[Add Knowledge] Attempting to add new knowledge: "${headline}"`)
 

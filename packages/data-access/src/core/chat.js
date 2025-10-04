@@ -1,12 +1,12 @@
 // packages/data-access/src/core/chat.js
-import { callLanguageModel } from '@headlines/ai-services'
 import { settings } from '@headlines/config'
 
 const TITLE_GENERATOR_MODEL = settings.LLM_MODEL_UTILITY
 
 const TITLE_GENERATOR_PROMPT = `You are a title generation AI. Your task is to read a conversation and create a concise, 5-word-or-less title that accurately summarizes the main topic. Example Title: "Anders Holch Povlsen's Bestseller"`
 
-export async function generateChatTitle(messages) {
+// This function is now "pure" - it accepts callLanguageModel as an argument.
+export async function generateChatTitle(messages, { callLanguageModel }) {
   if (!messages || messages.length < 2) {
     return { success: false, error: 'Not enough messages to generate a title.' }
   }

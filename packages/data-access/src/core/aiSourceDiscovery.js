@@ -1,11 +1,11 @@
-// packages/data-access/src/actions/aiSourceDiscovery.js
-import { callLanguageModel } from '@headlines/ai-services'
+// packages/data-access/src/core/aiSourceDiscovery.js
 import { instructionSourceDiscovery } from '@headlines/prompts'
 import { settings } from '@headlines/config'
 
 const AI_AGENT_MODEL = settings.LLM_MODEL_UTILITY
 
-export async function suggestSections(url) {
+// This function is now "pure" - it accepts callLanguageModel as an argument.
+export async function suggestSections(url, { callLanguageModel }) {
   const scrapeResult = {
     success: true,
     content: '<div>Mock Content</div>',

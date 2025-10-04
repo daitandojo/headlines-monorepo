@@ -1,9 +1,13 @@
 // packages/data-access/src/core/upload.js
 import { revalidatePath } from '../revalidate.js'
 import { SynthesizedEvent, Opportunity } from '@headlines/models'
-import { synthesizeEvent, generateOpportunitiesFromEvent } from '@headlines/ai-services'
 
-export async function processUploadedArticle(item, userId) {
+// This function is now "pure" - it accepts the AI services it needs as arguments.
+export async function processUploadedArticle(
+  item,
+  userId,
+  { synthesizeEvent, generateOpportunitiesFromEvent }
+) {
   if (!userId) {
     return { success: false, error: 'Authentication required' }
   }
