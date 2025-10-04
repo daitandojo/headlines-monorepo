@@ -1,5 +1,5 @@
-// apps/client/postcss.config.mjs
-export default {
+// apps/client/postcss.config.cjs
+module.exports = {
   plugins: {
     tailwindcss: {},
     autoprefixer: {},
