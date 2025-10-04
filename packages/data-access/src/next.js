@@ -1,18 +1,19 @@
-// packages/data-access/src/next.js (CORRECTED with getDistinctCountries export)
+// packages/data-access/src/next.js (CORRECTED)
 import 'server-only'
 import { env } from '@headlines/config/next'
-import dbConnectCore from './dbConnect.js'
+import dbConnect from './dbConnect.next.js' // DEFINITIVE FIX: Import the Next.js-specific connector
 import * as core from './core/index.js'
 import { buildQuery } from './queryBuilder.js'
 import { revalidatePath } from './revalidate.js'
 
-function dbConnect() {
-  return dbConnectCore(env.MONGO_URI)
-}
+// This function is no longer needed here, as the wrapper will use the imported dbConnect
+// function dbConnect() {
+//   return dbConnectCore(env.MONGO_URI)
+// }
 
 function withDbConnect(fn) {
   return async (...args) => {
-    await dbConnect()
+    await dbConnect() // This now correctly calls the Next.js-specific dbConnect
     return fn(...args)
   }
 }
@@ -61,7 +62,7 @@ export const {
   loginUser,
   generateChatTitle,
   getDashboardStats,
-  getDistinctCountries, // ACTION: Add the new function to the export list
+  getDistinctCountries,
   getGlobalCountries,
   getPublicTickerEvents,
   getEvents,

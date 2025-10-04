@@ -1,12 +1,7 @@
-// packages/data-access/src/index.js
-import { env } from '@headlines/config/node'
-import dbConnectCore from './dbConnect.js'
+// packages/data-access/src/index.js (CORRECTED)
+import dbConnect from './dbConnect.js' // Ensures it uses the Node.js connector
 import * as core from './core/index.js'
 import { buildQuery } from './queryBuilder.js'
-
-function dbConnect() {
-  return dbConnectCore(env.MONGO_URI)
-}
 
 function withDbConnect(fn) {
   return async (...args) => {
@@ -49,7 +44,9 @@ export const {
   loginUser,
   generateChatTitle,
   getDashboardStats,
+  getDistinctCountries,
   getGlobalCountries,
+  getPublicTickerEvents,
   getEvents,
   findEvents,
   updateEvents,
