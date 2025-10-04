@@ -1,5 +1,4 @@
-// File: apps/client/src/components/client/OpportunityCard.jsx
-
+// File: apps/client/src/components/client/opportunities/OpportunityCard.jsx (Multi-country support)
 'use client'
 
 import { useState, useTransition } from 'react'
@@ -49,7 +48,7 @@ export function OpportunityCard({ opportunity, onDelete }) {
   const reasonsToContact = Array.isArray(opportunity.whyContact)
     ? opportunity.whyContact
     : [opportunity.whyContact]
-  const flag = getCountryFlag(opportunity.basedIn)
+  const flags = (opportunity.basedIn || []).map((c) => getCountryFlag(c)).join(' ') // MODIFIED
 
   return (
     <>
@@ -76,10 +75,10 @@ export function OpportunityCard({ opportunity, onDelete }) {
                     {(opportunity.city || opportunity.basedIn) && (
                       <p className="text-xs text-slate-400 flex items-center gap-2 pl-6">
                         <MapPin className="h-3 w-3" />
-                        <span className="text-base mr-1">{flag}</span>
+                        <span className="text-base mr-1">{flags}</span> {/* MODIFIED */}
                         {opportunity.city}
                         {opportunity.city && opportunity.basedIn ? ', ' : ''}
-                        {opportunity.basedIn}
+                        {(opportunity.basedIn || []).join(', ')} {/* MODIFIED */}
                       </p>
                     )}
                   </div>

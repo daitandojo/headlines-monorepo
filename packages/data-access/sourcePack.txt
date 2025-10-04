@@ -1,6 +1,6 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 29 files, 3 directories
+Total: 30 files, 3 directories
 
 ```
 headlines/
@@ -31,6 +31,7 @@ headlines/
 │   │   └── 📄 dev-user.js
 │   ├── 📄 dbConnect.js
 │   ├── 📄 dbConnect.next.js
+│   ├── 📄 dbConnectCore.js
 │   ├── 📄 index.js
 │   ├── 📄 next.js
 │   ├── 📄 queryBuilder.js
@@ -40,9 +41,9 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-03T20:17:04.609Z
+**Generated**: 2025-10-03T23:13:25.883Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/data-access
-**Total Files**: 29
+**Total Files**: 30
 **Package**: @headlines/data-access@1.0.0
 **Description**: Shared, server-only data access logic for the Headlines monorepo.
 
@@ -52,7 +53,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 26, Size: 769 Bytes*
+*Lines: 28, Size: 816 Bytes*
 
 ```json
 {
@@ -66,7 +67,8 @@ headlines/
     ".": "./src/index.js",
     "./node": "./src/index.js",
     "./next": "./src/next.js",
-    "./dbConnect/next": "./src/dbConnect.next.js"
+    "./dbConnect/next": "./src/dbConnect.next.js",
+    "./dbConnect/node": "./src/dbConnect.js"
   },
   "dependencies": {
     "@xenova/transformers": "^2.17.2",
@@ -81,6 +83,7 @@ headlines/
     "openai": "^4.29.2"
   }
 }
+
 ```
 
 ## 📄 src/core/admin.js
@@ -475,7 +478,7 @@ export async function getArticleDetails(articleId) {
 ```
 
 ## 📄 src/core/auth.js
-*Lines: 74, Size: 2.3 KB*
+*Lines: 82, Size: 2.54 KB*
 
 ```javascript
 // packages/data-access/src/core/auth.js
@@ -491,6 +494,14 @@ export async function createSubscriberWithPassword(userData) {
   try {
     const salt = await bcryptjs.genSalt(SALT_WORK_FACTOR)
     userData.password = await bcryptjs.hash(userData.password, salt)
+
+    // Set trial expiration if applicable
+    if (userData.subscriptionTier === 'trial') {
+      const trialEndDate = new Date()
+      trialEndDate.setDate(trialEndDate.getDate() + 30)
+      userData.subscriptionExpiresAt = trialEndDate
+    }
+
     const newUser = new Subscriber(userData)
     await newUser.save()
     const { password, ...userPayload } = newUser.toObject()
@@ -588,7 +599,7 @@ export async function generateChatTitle(messages) {
 ```
 
 ## 📄 src/core/dashboard.js
-*Lines: 99, Size: 2.51 KB*
+*Lines: 135, Size: 3.52 KB*
 
 ```javascript
 // packages/data-access/src/core/dashboard.js
@@ -687,6 +698,42 @@ export async function getGlobalCountries() {
     return { success: true, data: JSON.parse(JSON.stringify(countries)) }
   } catch (e) {
     return { success: false, error: 'Failed to fetch global countries.' }
+  }
+}
+
+export async function getPublicTickerEvents() {
+  try {
+    const events = await SynthesizedEvent.find({
+      highest_relevance_score: { $gte: 85 },
+      eventClassification: 'New Wealth',
+    })
+      .sort({ createdAt: -1 })
+      .limit(15)
+      .select('country synthesized_headline')
+      .lean()
+
+    // Anonymize and format for the ticker
+    const formattedEvents = events.map((event) => {
+      let headline = event.synthesized_headline
+      // Replace specific names with generic roles
+      headline = headline.replace(
+        /\b([A-Z][a-z]+(?: [A-Z][a-z]+)+)\b/g,
+        'A private investor'
+      )
+      headline = headline.replace(
+        /\b([A-Z][A-Z\s-]+[A-Z])\b/g,
+        'a privately-held company'
+      )
+      return {
+        _id: event._id,
+        country: event.country,
+        headline: headline,
+      }
+    })
+
+    return { success: true, data: JSON.parse(JSON.stringify(formattedEvents)) }
+  } catch (e) {
+    return { success: false, error: 'Failed to fetch public ticker events.' }
   }
 }
 
@@ -1918,19 +1965,54 @@ export async function processWatchlistSuggestion({ suggestionId, action }) {
 ```
 
 ## 📄 src/dbConnect.js
-*Lines: 35, Size: 942 Bytes*
+*Lines: 11, Size: 421 Bytes*
 
 ```javascript
 // packages/data-access/src/dbConnect.js
+import { env } from '@headlines/config/node'
+import dbConnectCore from './dbConnectCore.js'
+import { logger } from '@headlines/utils-shared'
+
+// This is the Node.js-specific implementation of dbConnect.
+// It uses the core logic but provides the environment variables from the Node.js context.
+export default function dbConnect() {
+  return dbConnectCore(env.MONGO_URI, logger)
+}
+
+```
+
+## 📄 src/dbConnect.next.js
+*Lines: 12, Size: 447 Bytes*
+
+```javascript
+// packages/data-access/src/dbConnect.next.js
+import 'server-only'
+import { env } from '@headlines/config/next'
+import dbConnectCore from './dbConnectCore.js'
+import { logger } from '@headlines/utils-shared'
+
+// This is the Next.js-specific implementation of dbConnect.
+// It uses the core logic but provides the environment variables from the Next.js context.
+export default function dbConnect() {
+  return dbConnectCore(env.MONGO_URI, logger)
+}
+
+```
+
+## 📄 src/dbConnectCore.js
+*Lines: 35, Size: 962 Bytes*
+
+```javascript
+// packages/data-access/src/dbConnectCore.js
 import mongoose from 'mongoose'
 
 // A weak map to cache the connection promise per URI
 const connectionCache = new WeakMap()
 
 // This is the core, environment-agnostic connection logic.
-export default async function dbConnect(MONGO_URI, logger) {
+export default async function dbConnectCore(MONGO_URI, logger) {
   if (!MONGO_URI) {
-    throw new Error('MONGO_URI must be provided to dbConnect.')
+    throw new Error('MONGO_URI must be provided to dbConnectCore.')
   }
 
   if (mongoose.connection.readyState >= 1) {
@@ -1948,30 +2030,12 @@ export default async function dbConnect(MONGO_URI, logger) {
     await connPromise
   } catch (e) {
     if (logger) {
-      logger.error({ err: e }, '[dbConnect] MongoDB connection failed.')
+      logger.error({ err: e }, '[dbConnectCore] MongoDB connection failed.')
     } else {
-      console.error('[dbConnect] MongoDB connection failed.', e)
+      console.error('[dbConnectCore] MongoDB connection failed.', e)
     }
     throw e
   }
-}
-
-```
-
-## 📄 src/dbConnect.next.js
-*Lines: 12, Size: 443 Bytes*
-
-```javascript
-// packages/data-access/src/dbConnect.next.js
-import 'server-only'
-import { env } from '@headlines/config/next'
-import dbConnectCore from './dbConnect.js'
-import { logger } from '@headlines/utils-shared'
-
-// This is the Next.js-specific implementation of dbConnect.
-// It uses the core logic but provides the environment variables from the Next.js context.
-export default function dbConnect() {
-  return dbConnectCore(env.MONGO_URI, logger)
 }
 
 ```
@@ -2088,7 +2152,7 @@ export { buildQuery }
 ```
 
 ## 📄 src/next.js
-*Lines: 120, Size: 2.78 KB*
+*Lines: 121, Size: 2.83 KB*
 
 ```javascript
 // packages/data-access/src/next.js
@@ -2158,6 +2222,7 @@ export const {
   generateChatTitle,
   getDashboardStats,
   getGlobalCountries,
+  getPublicTickerEvents, // <-- EXPORT NEW FUNCTION
   getEvents,
   findEvents,
   updateEvents,

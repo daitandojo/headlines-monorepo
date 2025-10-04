@@ -1,5 +1,4 @@
-// File: apps/client/src/components/client/events/EventCardDesktop.jsx
-
+// File: apps/client/src/components/client/events/EventCardDesktop.jsx (Multi-country support)
 'use client'
 
 import {
@@ -24,7 +23,7 @@ const getRelevanceBadgeClass = (score) => {
 
 export function EventCardDesktop({ event, onChat, onDelete, isPending }) {
   if (!event) return null
-  const flag = getCountryFlag(event.country)
+  const flags = (event.country || []).map((c) => getCountryFlag(c)).join(' ') // MODIFIED
   const primaryImageUrl = event.source_articles?.find((a) => a.imageUrl)?.imageUrl
 
   return (
@@ -43,7 +42,7 @@ export function EventCardDesktop({ event, onChat, onDelete, isPending }) {
           </div>
           <div className="flex-grow min-w-0 pr-20">
             <h3 className="font-serif font-bold text-xl text-slate-100 mb-2">
-              <span className="text-2xl mr-3 align-middle">{flag}</span>
+              <span className="text-2xl mr-3 align-middle">{flags}</span> {/* MODIFIED */}
               {event.synthesized_headline}
             </h3>
             <p className="text-slate-300 leading-relaxed">{event.synthesized_summary}</p>

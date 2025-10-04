@@ -1,4 +1,4 @@
-// packages/models/src/Article.js (version 2.0.2)
+// packages/models/src/Article.js (version 2.1.0 - Multi-country support)
 import mongoose from 'mongoose'
 import { ARTICLE_STATUSES } from './prompt-constants.js'
 
@@ -21,7 +21,7 @@ const ArticleSchema = new Schema(
     link: { type: String, required: true, unique: true, trim: true },
     newspaper: { type: String, required: true, trim: true },
     source: { type: String, required: true, trim: true },
-    country: { type: String, trim: true, index: true },
+    country: { type: [String], trim: true, index: true }, // MODIFIED: Changed to array of strings
     imageUrl: { type: String, trim: true },
     relevance_headline: { type: Number, required: true, min: 0, max: 100 },
     assessment_headline: { type: String, required: true, trim: true },

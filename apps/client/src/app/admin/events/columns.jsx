@@ -1,4 +1,4 @@
-// File: client/src/app/admin/events/columns.jsx
+// apps/client/src/app/admin/events/columns.jsx (Multi-country support)
 'use client'
 
 import React, { useState, useCallback } from 'react'
@@ -76,12 +76,13 @@ export const EventListItem = ({
   return (
     <AccordionItem value={event._id} className="border-b border-white/10 group">
       <AccordionTrigger className="w-full text-left hover:bg-white/5 px-2 hover:no-underline">
-        {/* AccordionTrigger content remains the same */}
         <div className="flex items-center w-full text-sm">
           <div className="w-[180px] flex-shrink-0 text-muted-foreground group-hover:text-foreground">
             {format(new Date(event.createdAt), 'dd MMM yyyy, HH:mm')}
           </div>
-          <div className="w-[140px] flex-shrink-0">{event.country}</div>
+          <div className="w-[140px] flex-shrink-0">
+            {(event.country || []).join(', ')} {/* MODIFIED */}
+          </div>
           <div className="w-[180px] flex-shrink-0">
             {event.eventClassification || 'N/A'}
           </div>
@@ -118,14 +119,20 @@ export const EventListItem = ({
                   />
                 </FormField>
 
-                {/* --- START OF THE LAYOUT FIX --- */}
                 <div className="grid grid-cols-3 gap-4">
                   <FormField label="Country">
+                    {/* MODIFIED: EditableCell now handles arrays via join/split */}
                     <EditableCell
-                      initialValue={event.details.country}
+                      initialValue={(event.details.country || []).join(', ')}
                       onSave={(newValue) =>
-                        onUpdate(event.details, { country: newValue })
+                        onUpdate(event.details, {
+                          country: newValue
+                            .split(',')
+                            .map((s) => s.trim())
+                            .filter(Boolean),
+                        })
                       }
+                      placeholder="Add countries..."
                     />
                   </FormField>
                   <FormField label="Classification">
@@ -158,7 +165,6 @@ export const EventListItem = ({
                     />
                   </FormField>
                 </div>
-                {/* --- END OF THE LAYOUT FIX --- */}
 
                 <FormField label="Synthesized Summary">
                   <EditableCell
@@ -193,7 +199,6 @@ export const EventListItem = ({
 }
 
 export const ListHeader = ({ sorting, setSorting }) => {
-  // This is a mock table instance to reuse the DataTableColumnHeader component
   const mockColumn = (id) => ({
     getCanSort: () => true,
     getIsSorted: () =>
@@ -203,15 +208,9 @@ export const ListHeader = ({ sorting, setSorting }) => {
           ? 'asc'
           : false,
     toggleSorting: (desc) => setSorting([{ id, desc }]),
-
-    // --- START OF THE FIX ---
-    // Add the missing functions that DataTableColumnHeader expects.
-    // Since this custom list view doesn't support filtering, we can
-    // make these functions do nothing or return default values.
-    getCanFilter: () => false, // This will prevent the filter input from rendering
+    getCanFilter: () => false,
     getFilterValue: () => undefined,
-    setFilterValue: () => {}, // No-op
-    // --- END OF THE FIX ---
+    setFilterValue: () => {},
   })
 
   return (

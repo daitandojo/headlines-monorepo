@@ -1,5 +1,4 @@
-// File: apps/client/src/components/client/ArticleCard.jsx
-
+// File: apps/client/src/components/client/articles/ArticleCard.jsx (Multi-country support)
 'use client'
 
 import { useState, useTransition } from 'react'
@@ -14,7 +13,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
   ConfirmationDialog,
-} from '@/components/shared' // <-- CORRECT IMPORT
+} from '@/components/shared'
 import { Trash2, ExternalLink, Users, Mail, Building, Briefcase } from 'lucide-react'
 import { getCountryFlag } from '@headlines/utils-shared'
 import { SwipeToDelete } from '../shared/SwipeToDelete'
@@ -51,7 +50,7 @@ export const ArticleCard = ({ article, onDelete }) => {
     }
   }
 
-  const flag = getCountryFlag(article.country)
+  const flags = (article.country || []).map((c) => getCountryFlag(c)).join(' ') // MODIFIED
   const relevanceScore = article.relevance_article || article.relevance_headline
 
   return (
@@ -84,7 +83,8 @@ export const ArticleCard = ({ article, onDelete }) => {
                     >
                       {relevanceScore}
                     </Badge>
-                    <span className="text-lg hidden sm:inline">{flag}</span>
+                    <span className="text-lg hidden sm:inline">{flags}</span>{' '}
+                    {/* MODIFIED */}
                     <p className="text-xs sm:text-sm text-slate-300 truncate shadow-black drop-shadow-lg">
                       {article.newspaper}
                     </p>
@@ -126,7 +126,8 @@ export const ArticleCard = ({ article, onDelete }) => {
                 <AccordionTrigger className="p-0 hover:no-underline text-left">
                   <div className="flex-grow min-w-0">
                     <p className="font-serif font-bold text-base sm:text-lg text-white line-clamp-3 shadow-black drop-shadow-lg">
-                      <span className="text-lg sm:hidden mr-2">{flag}</span>
+                      <span className="text-lg sm:hidden mr-2">{flags}</span>{' '}
+                      {/* MODIFIED */}
                       {article.headline_en || `(en N/S): ${article.headline}`}
                     </p>
                   </div>

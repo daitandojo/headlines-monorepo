@@ -1,5 +1,4 @@
-// File: apps/client/src/components/client/events/EventCardMobile.jsx
-
+// File: apps/client/src/components/client/events/EventCardMobile.jsx (Multi-country support)
 'use client'
 
 import { Badge, Button } from '@/components/shared'
@@ -15,7 +14,7 @@ const getRelevanceBadgeClass = (score) => {
 
 export function EventCardMobile({ event, onChat, onDelete, isPending }) {
   if (!event) return null
-  const flag = getCountryFlag(event.country)
+  const flags = (event.country || []).map((c) => getCountryFlag(c)).join(' ') // MODIFIED
   const primaryImageUrl = event.source_articles?.find((a) => a.imageUrl)?.imageUrl
 
   return (
@@ -68,7 +67,7 @@ export function EventCardMobile({ event, onChat, onDelete, isPending }) {
               primaryImageUrl ? 'text-white drop-shadow-lg' : 'text-slate-100'
             )}
           >
-            <span className="text-xl mr-2 align-middle">{flag}</span>
+            <span className="text-xl mr-2 align-middle">{flags}</span> {/* MODIFIED */}
             {event.synthesized_headline}
           </h3>
         </div>

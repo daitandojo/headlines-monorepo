@@ -1,22 +1,26 @@
 #!/bin/bash
-# mongo-backup.sh (version 1.0)
+# mongo-backup.sh (version 1.1 - Robust .env parsing)
 # This script dumps all relevant collections to a timestamped directory.
 
 # --- Configuration ---
 BACKUP_DIR="apps/pipeline/backup"
 TIMESTAMP=$(date +"%Y-%m-%dT%H-%M-%S")
 TARGET_DIR="$BACKUP_DIR/$TIMESTAMP"
+ENV_FILE="./.env"
 
-# Load MONGO_URI from the root .env file
-if [ -f "./.env" ]; then
-    export $(grep -v '^#' .env | xargs)
-else
+# --- Pre-flight Checks & Robust .env Loading ---
+if [ ! -f "$ENV_FILE" ]; then
     echo "❌ Error: .env file not found in the monorepo root."
     exit 1
 fi
 
+# CORRECTED: Robustly export variables line-by-line, skipping comments and empty lines.
+set -a # Automatically export all variables
+source <(grep -v '^#' "$ENV_FILE" | sed -e '/^$/d' -e 's/\r$//')
+set +a
+
 if [ -z "$MONGO_URI" ]; then
-    echo "❌ Error: MONGO_URI is not set in your .env file."
+    echo "❌ Error: MONGO_URI is not set or could not be read from your .env file."
     exit 1
 fi
 

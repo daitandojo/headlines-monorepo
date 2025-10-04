@@ -55,7 +55,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-03T20:17:04.613Z
+**Generated**: 2025-10-03T23:13:25.886Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/models
 **Total Files**: 45
 **Package**: @headlines/models@2.0.0
@@ -1279,7 +1279,7 @@ export const translateSchema = z.object({
 ```
 
 ## 📄 src/schemas/userSchemas.js
-*Lines: 35, Size: 1.19 KB*
+*Lines: 43, Size: 1.5 KB*
 
 ```javascript
 // packages/models/src/schemas/userSchemas.js
@@ -1316,6 +1316,14 @@ export const userUpdateSchema = userCreateSchema
       .or(z.literal(''))
       .optional(),
   })
+
+export const signupSchema = z.object({
+  name: z.string().min(1, 'Full name is required'),
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  countries: z.array(z.string()).default([]),
+  plan: z.enum(['trial', 'paid']).default('trial'),
+})
 
 ```
 

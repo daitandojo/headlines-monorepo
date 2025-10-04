@@ -44,7 +44,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-03T20:17:04.621Z
+**Generated**: 2025-10-03T23:13:25.892Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/scraper-logic
 **Total Files**: 29
 **Package**: @headlines/scraper-logic@2.0.0

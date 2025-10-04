@@ -1,16 +1,10 @@
-// packages/data-access/src/queryBuilder.js (version 2.0.0)
+// packages/data-access/src/queryBuilder.js (version 2.1.0 - Multi-country support)
 import { Subscriber } from '@headlines/models'
-// ARCHITECTURAL REFACTORING: This component is now isomorphic (shared).
-// It no longer imports any environment-specific modules like dbConnect.
-// The responsibility for establishing a database connection now lies with the
-// application entry point (e.g., the API handler or pipeline stage) that calls this function.
 
 export async function buildQuery(
   model,
   { filters = {}, sort = 'date_desc', baseQuery = {}, userId = null }
 ) {
-  // The `await dbConnect()` call has been removed.
-
   const andConditions = [{ ...baseQuery }]
   let user = null
 

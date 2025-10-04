@@ -1,3 +1,4 @@
+// apps/client/src/app/admin/articles/columns.jsx (Multi-country support)
 'use client'
 
 import React from 'react'
@@ -44,8 +45,6 @@ export const columns = (onUpdate, onDelete) => [
     accessorKey: 'headline',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Headline" />,
     cell: ({ row }) => (
-      // --- START OF UI FIX ---
-      // Apply max-width and allow the EditableCell's internal truncate to work
       <div className="max-w-[400px] xl:max-w-[600px]">
         <EditableCell
           initialValue={row.original.headline}
@@ -53,7 +52,6 @@ export const columns = (onUpdate, onDelete) => [
           useTextarea={true}
         />
       </div>
-      // --- END OF UI FIX ---
     ),
     minSize: 400,
   },
@@ -61,7 +59,6 @@ export const columns = (onUpdate, onDelete) => [
     accessorKey: 'newspaper',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Source" />,
     cell: ({ row }) => (
-      // --- UI FIX ---
       <div className="max-w-[180px]">
         <EditableCell
           initialValue={row.original.newspaper}
@@ -75,11 +72,19 @@ export const columns = (onUpdate, onDelete) => [
     accessorKey: 'country',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Country" />,
     cell: ({ row }) => (
-      // --- UI FIX ---
       <div className="max-w-[150px]">
+        {/* MODIFIED: EditableCell now handles arrays via join/split */}
         <EditableCell
-          initialValue={row.original.country}
-          onSave={(newValue) => onUpdate(row.original, { country: newValue })}
+          initialValue={(row.original.country || []).join(', ')}
+          onSave={(newValue) =>
+            onUpdate(row.original, {
+              country: newValue
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean),
+            })
+          }
+          placeholder="Add countries..."
         />
       </div>
     ),

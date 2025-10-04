@@ -145,7 +145,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-03T20:17:04.590Z
+**Generated**: 2025-10-03T23:13:25.866Z
 **Repository Path**: /home/mark/Repos/projects/headlines/apps/pipeline
 **Total Files**: 106
 **Package**: @headlines/pipeline@1.0.0
@@ -9267,7 +9267,7 @@ export async function runPipeline(options) {
 ```
 
 ## 📄 src/pipeline/1_preflight.js
-*Lines: 67, Size: 2.31 KB*
+*Lines: 67, Size: 2.29 KB*
 
 ```javascript
 // apps/pipeline/src/pipeline/1_preflight.js
@@ -9276,7 +9276,7 @@ import { configure as configureScraperLogic } from '@headlines/scraper-logic/con
 import { env, populateSettings, settings } from '@headlines/config'
 import { refreshConfig, configStore } from '../config/dynamicConfig.js'
 import dbConnect from '@headlines/data-access/dbConnect/node'
-import { deleteAllSince } from '@headlines/data-access' // CORRECTED IMPORT
+import { deleteAllSince } from '@headlines/data-access'
 import * as aiServices from '@headlines/ai-services'
 import { performDatabaseHousekeeping } from '../utils/housekeeping.js'
 import { configurePush } from '@headlines/scraper-logic/push/client.js'

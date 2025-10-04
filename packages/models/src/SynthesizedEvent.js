@@ -1,4 +1,4 @@
-// packages/models/src/SynthesizedEvent.js (version 8.0.2)
+// packages/models/src/SynthesizedEvent.js (version 8.1.0 - Multi-country support)
 import mongoose from 'mongoose'
 const { Schema, model, models } = mongoose
 
@@ -8,7 +8,7 @@ const SourceArticleSchema = new Schema(
     link: { type: String, required: true, trim: true },
     newspaper: { type: String, required: true, trim: true },
     imageUrl: { type: String, trim: true },
-    country: { type: String, trim: true }
+    country: { type: String, trim: true },
   },
   { _id: false }
 )
@@ -31,7 +31,7 @@ const SynthesizedEventSchema = new Schema(
     advisorSummary: { type: String, trim: true },
     ai_assessment_reason: { type: String, trim: true },
     eventClassification: { type: String, trim: true },
-    country: { type: String, required: true, index: true },
+    country: { type: [String], required: true, index: true }, // MODIFIED: Changed to array of strings
     source_articles: { type: [SourceArticleSchema], required: true },
     highest_relevance_score: { type: Number, required: true, min: 0, max: 100 },
     key_individuals: { type: [KeyIndividualSchema], default: [] },

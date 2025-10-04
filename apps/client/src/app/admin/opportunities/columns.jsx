@@ -1,3 +1,4 @@
+// apps/client/src/app/admin/opportunities/columns.jsx (Multi-country support)
 'use client'
 
 import React from 'react'
@@ -75,9 +76,18 @@ export const columns = (onUpdate, onDelete) => [
     accessorKey: 'basedIn',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Country" />,
     cell: ({ row }) => (
+      // MODIFIED: EditableCell now handles arrays via join/split
       <EditableCell
-        initialValue={row.original.basedIn}
-        onSave={(newValue) => onUpdate(row.original, { basedIn: newValue })}
+        initialValue={(row.original.basedIn || []).join(', ')}
+        onSave={(newValue) =>
+          onUpdate(row.original, {
+            basedIn: newValue
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean),
+          })
+        }
+        placeholder="Add countries..."
       />
     ),
     size: 150,

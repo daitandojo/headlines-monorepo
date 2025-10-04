@@ -1,5 +1,6 @@
 # Monorepo-level ignores
 node_modules
+backup
 future
 logs
 quote.txt
