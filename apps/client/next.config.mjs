@@ -2,15 +2,15 @@
 const nextConfig = {
   transpilePackages: [
     '@headlines/config',
-    // '@headlines/data-access', // <-- REMOVED
     '@headlines/models',
     '@headlines/utils-shared',
   ],
   experimental: {
-    // Tell Next.js these packages should NOT be bundled into serverless functions
+    // These packages are server-only and should not be bundled into serverless functions.
+    // data-access is now here because it's no longer transpiled.
     serverComponentsExternalPackages: [
+      '@headlines/data-access',
       '@headlines/ai-services',
-      '@headlines/data-access', // <-- ADDED HERE
       '@headlines/scraper-logic',
       '@headlines/utils-server',
       '@headlines/prompts',
@@ -44,8 +44,8 @@ const nextConfig = {
 
     return config
   },
-  // Disable minification for problematic packages or configure terser to handle async
-  swcMinify: true, // Use SWC instead of Terser (better async support)
+  // Use SWC instead of Terser for better async support
+  swcMinify: true,
 }
 
 export default nextConfig

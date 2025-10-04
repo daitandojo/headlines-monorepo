@@ -1,5 +1,6 @@
+// apps/client/src/app/api/articles/route.js
 import { NextResponse } from 'next/server'
-import { getArticles, getTotalArticleCount } from '@headlines/data-access'
+import { getArticles, getTotalArticleCount } from '@headlines/data-access/next' // CORRECTED IMPORT
 import { createClientApiHandler } from '@/lib/api-handler' // Use the new client handler
 
 const handleGet = async (request, { user }) => {

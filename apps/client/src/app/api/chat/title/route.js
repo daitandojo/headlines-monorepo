@@ -1,6 +1,6 @@
 // apps/client/src/app/api/chat/title/route.js
 import { NextResponse } from 'next/server'
-import { generateChatTitle } from '@headlines/data-access/next'
+import { generateChatTitle } from '@headlines/ai-services/next' // CORRECTED IMPORT
 import { verifySession } from '@/lib/auth/server'
 import { chatSchema } from '@headlines/models/schemas'
 

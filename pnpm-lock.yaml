@@ -365,9 +365,6 @@ importers:
 
   packages/data-access:
     dependencies:
-      '@headlines/ai-services':
-        specifier: workspace:*
-        version: link:../ai-services
       '@headlines/config':
         specifier: workspace:*
         version: link:../config
@@ -380,9 +377,6 @@ importers:
       '@headlines/utils-shared':
         specifier: workspace:*
         version: link:../utils-shared
-      '@pinecone-database/pinecone':
-        specifier: ^2.2.2
-        version: 2.2.2
       bcryptjs:
         specifier: ^2.4.3
         version: 2.4.3

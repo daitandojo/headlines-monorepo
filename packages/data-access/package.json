@@ -14,11 +14,9 @@
   },
   "dependencies": {
     "@headlines/utils-shared": "workspace:*",
-    "@headlines/ai-services": "workspace:*",
     "@headlines/config": "workspace:*",
     "@headlines/prompts": "workspace:*",
     "@headlines/models": "workspace:*",
-    "@pinecone-database/pinecone": "^2.2.2",
     "bcryptjs": "^2.4.3",
     "mongoose": "^8.4.1"
   }

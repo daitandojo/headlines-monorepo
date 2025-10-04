@@ -4,7 +4,6 @@ import * as core from './core/index.js'
 import { buildQuery } from './queryBuilder.js'
 import * as aiServices from '@headlines/ai-services/node'
 
-// This is the Node.js entry point. It wraps core functions and injects Node-safe AI services.
 const wrap =
   (fn) =>
   async (...args) => {
@@ -12,27 +11,29 @@ const wrap =
     return fn(...args)
   }
 
-// --- Functions that need AI services injected ---
-export const generateChatTitle = wrap((...args) =>
-  core.generateChatTitle(...args, { ...aiServices })
-)
-export const addKnowledge = wrap((...args) =>
-  core.addKnowledge(...args, { ...aiServices })
-)
-export const processUploadedArticle = wrap((...args) =>
-  core.processUploadedArticle(...args, { ...aiServices })
-)
-export const suggestSections = wrap((...args) =>
-  core.suggestSections(...args, { ...aiServices })
-)
+// --- Functions that are now correctly imported from ai-services ---
+export const generateChatTitle = async (...args) => {
+  await dbConnect()
+  return aiServices.generateChatTitle(...args)
+}
+export const addKnowledge = async (...args) => {
+  await dbConnect()
+  return aiServices.addKnowledge(...args)
+}
+export const processUploadedArticle = async (...args) => {
+  await dbConnect()
+  return aiServices.processUploadedArticle(...args)
+}
+export const suggestSections = async (...args) => {
+  await dbConnect()
+  return aiServices.suggestSections(...args)
+}
 
-// --- All other functions that don't need AI services ---
-// (This is a simplified representation; the full file has all exports)
+// --- All other pure data-access functions ---
 export const createSubscriber = wrap(core.createSubscriber)
 export const updateSubscriber = wrap(core.updateSubscriber)
 export const deleteSubscriber = wrap(core.deleteSubscriber)
 export const createCountry = wrap(core.createCountry)
-// ... export all other functions from core, wrapped with dbConnect
 export const updateCountry = wrap(core.updateCountry)
 export const createSource = wrap(core.createSource)
 export const updateSource = wrap(core.updateSource)

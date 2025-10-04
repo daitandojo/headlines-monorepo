@@ -2,7 +2,7 @@
 'use server'
 
 import { NextResponse } from 'next/server'
-import { processUploadedArticle } from '@headlines/data-access/next'
+import { processUploadedArticle } from '@headlines/ai-services/next' // CORRECTED IMPORT
 import { createClientApiHandler } from '@/lib/api-handler'
 import { articleUploadSchema } from '@headlines/models/schemas'
 

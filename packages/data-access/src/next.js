@@ -6,7 +6,6 @@ import { revalidatePath } from './revalidate.js'
 import { buildQuery } from './queryBuilder.js'
 import * as aiServices from '@headlines/ai-services/next'
 
-// This is the Next.js entry point. It wraps core functions and injects Next.js-safe AI services.
 const wrap =
   (fn) =>
   async (...args) => {
@@ -14,27 +13,34 @@ const wrap =
     return fn(...args)
   }
 
-// --- Functions that need AI services injected ---
-export const generateChatTitle = wrap((...args) =>
-  core.generateChatTitle(...args, { ...aiServices })
-)
-export const addKnowledge = wrap((...args) =>
-  core.addKnowledge(...args, { ...aiServices })
-)
-export const processUploadedArticle = wrap((...args) =>
-  core.processUploadedArticle(...args, { ...aiServices })
-)
-export const suggestSections = wrap((...args) =>
-  core.suggestSections(...args, { ...aiServices })
-)
+// --- Functions that need AI services injected (now imported from ai-services) ---
+export const generateChatTitle = async (...args) => {
+  await dbConnect()
+  return aiServices.generateChatTitle(...args)
+}
+export const addKnowledge = async (...args) => {
+  await dbConnect()
+  return aiServices.addKnowledge(...args)
+}
+export const processUploadedArticle = async (...args) => {
+  await dbConnect()
+  const result = await aiServices.processUploadedArticle(...args)
+  if (result.success) {
+    revalidatePath('/events')
+    revalidatePath('/opportunities')
+  }
+  return result
+}
+export const suggestSections = async (...args) => {
+  await dbConnect()
+  return aiServices.suggestSections(...args)
+}
 
 // --- All other functions that don't need AI services ---
-// (This is a simplified representation; the full file has all exports)
 export const createSubscriber = wrap(core.createSubscriber)
 export const updateSubscriber = wrap(core.updateSubscriber)
 export const deleteSubscriber = wrap(core.deleteSubscriber)
 export const createCountry = wrap(core.createCountry)
-// ... export all other functions from core, wrapped with dbConnect
 export const updateCountry = wrap(core.updateCountry)
 export const createSource = wrap(core.createSource)
 export const updateSource = wrap(core.updateSource)

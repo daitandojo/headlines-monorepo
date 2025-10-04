@@ -1,26 +1,4 @@
 // packages/data-access/src/core/chat.js
-import { settings } from '@headlines/config'
-
-const TITLE_GENERATOR_MODEL = settings.LLM_MODEL_UTILITY
-
-const TITLE_GENERATOR_PROMPT = `You are a title generation AI. Your task is to read a conversation and create a concise, 5-word-or-less title that accurately summarizes the main topic. Example Title: "Anders Holch Povlsen's Bestseller"`
-
-// This function is now "pure" - it accepts callLanguageModel as an argument.
-export async function generateChatTitle(messages, { callLanguageModel }) {
-  if (!messages || messages.length < 2) {
-    return { success: false, error: 'Not enough messages to generate a title.' }
-  }
-  try {
-    const conversationText = messages.map((m) => `${m.role}: ${m.content}`).join('\n')
-    const title = await callLanguageModel({
-      modelName: TITLE_GENERATOR_MODEL,
-      systemPrompt: TITLE_GENERATOR_PROMPT,
-      userContent: conversationText,
-      isJson: false,
-    })
-    const cleanedTitle = title.trim().replace(/"/g, '')
-    return { success: true, title: cleanedTitle }
-  } catch (error) {
-    return { success: false, error: 'Failed to generate title.' }
-  }
-}
+// THIS FILE IS NOW EMPTY.
+// The logic has been moved to the @headlines/ai-services package where it belongs,
+// as it requires both data access and AI services.
