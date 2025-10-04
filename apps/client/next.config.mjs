@@ -9,6 +9,10 @@ const nextConfig = {
   experimental: {
     // Tell Next.js these packages should NOT be bundled into serverless functions
     serverComponentsExternalPackages: [
+      '@headlines/ai-services',
+      '@headlines/scraper-logic',
+      '@headlines/utils-server',
+      '@headlines/prompts',
       '@xenova/transformers',
       'sharp',
       'onnxruntime-node',
