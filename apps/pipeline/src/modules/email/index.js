@@ -1,15 +1,15 @@
-// AFTER
-// apps/pipeline/src/modules/email/index.js (Corrected)
+// apps/pipeline/src/modules/email/index.js (MODIFIED to accept traces)
 import { logger } from '@headlines/utils-shared'
-import { sendGenericEmail } from '@headlines/utils-server' // <-- CORRECT IMPORT
+import { sendGenericEmail } from '@headlines/utils-server'
 import { Subscriber } from '@headlines/models'
 import { createSupervisorEmailBody } from './components/supervisor/supervisorEmailBodyBuilder.js'
 
 /**
  * Coordinates sending the supervisor report email.
  * @param {Object} runStats - Statistics about the current pipeline run.
+ * @param {Array<Object>} articleTraces - Detailed traces for each processed article.
  */
-export async function sendSupervisorReportEmail(runStats) {
+export async function sendSupervisorReportEmail(runStats, articleTraces = []) {
   if (!runStats) {
     logger.error('No runStats provided for supervisor report. Skipping email.')
     return
@@ -32,8 +32,8 @@ export async function sendSupervisorReportEmail(runStats) {
       return
     }
 
-    // Generate the complex HTML body
-    const emailBody = await createSupervisorEmailBody(runStats)
+    // Generate the complex HTML body, now including the article traces
+    const emailBody = await createSupervisorEmailBody(runStats, articleTraces)
 
     // Send the email using the shared mailer
     await sendGenericEmail({

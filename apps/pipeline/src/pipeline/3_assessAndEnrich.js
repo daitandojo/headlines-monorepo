@@ -1,8 +1,10 @@
-// apps/pipeline/src/pipeline/3_assessAndEnrich.js
+// apps/pipeline/src/pipeline/3_assessAndEnrich.js (with Enhanced Audit Logging)
 import { truncateString, sleep } from '@headlines/utils-shared'
 import { logger } from '@headlines/utils-shared'
+import { auditLogger } from '@headlines/utils-server'
 import { settings } from '@headlines/config/node'
-import { Article, WatchlistEntity } from '@headlines/models'
+import { WatchlistEntity } from '@headlines/models'
+import { bulkWriteArticles } from '@headlines/data-access'
 import { batchHeadlineChain } from '@headlines/ai-services/node'
 import { processSingleArticle } from './submodules/processSingleArticle.js'
 import pLimit from 'p-limit'
@@ -57,7 +59,7 @@ function findWatchlistHits(text, country, watchlistEntities) {
 
 export async function runAssessAndEnrich(pipelinePayload) {
   logger.info('--- STAGE 3: ASSESS & ENRICH ---')
-  const { runStatsManager, articlesForPipeline } = pipelinePayload // CORRECTED
+  const { runStatsManager, articlesForPipeline, articleTraceLogger } = pipelinePayload
 
   if (!articlesForPipeline || articlesForPipeline.length === 0) {
     pipelinePayload.enrichedArticles = []
@@ -71,10 +73,6 @@ export async function runAssessAndEnrich(pipelinePayload) {
   )
   const realArticles = articlesForPipeline.filter(
     (a) => a.source !== 'Richlist Ingestion'
-  )
-
-  logger.info(
-    `Processing ${realArticles.length} real articles and ${syntheticArticles.length} synthetic articles.`
   )
 
   let assessedCandidates = []
@@ -140,6 +138,21 @@ export async function runAssessAndEnrich(pipelinePayload) {
 
         const results = await withRetry(batchProcessor)
         assessedCandidates.push(...results)
+
+        auditLogger.info(
+          {
+            context: {
+              batch_number: index + 1,
+              input_headlines: batch.map((a) => a.headline),
+              output_assessments: results.map((r) => ({
+                headline: r.headline,
+                score: r.relevance_headline,
+                assessment: r.assessment_headline,
+              })),
+            },
+          },
+          'Headline Assessment Batch Processed'
+        )
       } catch (batchError) {
         logger.error(
           { err: batchError },
@@ -171,10 +184,18 @@ export async function runAssessAndEnrich(pipelinePayload) {
     }
   }
 
-  runStatsManager.set('headlinesAssessed', assessedCandidates.length) // CORRECTED
+  runStatsManager.set('headlinesAssessed', assessedCandidates.length)
 
   logger.info('--- Headline Assessment Complete ---')
   assessedCandidates.forEach((article) => {
+    if (article.relevance_headline >= settings.HEADLINES_RELEVANCE_THRESHOLD) {
+      articleTraceLogger.startTrace(article)
+      articleTraceLogger.addStage(article._id, 'Headline Assessment', {
+        score: article.relevance_headline,
+        assessment: article.assessment_headline,
+        hits: article.hits.map((h) => h.entity.name),
+      })
+    }
     const status =
       article.relevance_headline >= settings.HEADLINES_RELEVANCE_THRESHOLD
         ? 'PASSED'
@@ -188,7 +209,7 @@ export async function runAssessAndEnrich(pipelinePayload) {
   const relevantCandidates = assessedCandidates.filter(
     (a) => a.relevance_headline >= settings.HEADLINES_RELEVANCE_THRESHOLD
   )
-  runStatsManager.set('relevantHeadlines', relevantCandidates.length) // CORRECTED
+  runStatsManager.set('relevantHeadlines', relevantCandidates.length)
 
   const enrichmentQueue = [...relevantCandidates, ...syntheticArticles]
 
@@ -197,6 +218,22 @@ export async function runAssessAndEnrich(pipelinePayload) {
   )
   if (enrichmentQueue.length === 0) {
     pipelinePayload.enrichedArticles = []
+    const articlesToPersist = assessedCandidates.map(
+      ({ articleContent, ...rest }) => rest
+    )
+    if (articlesToPersist.length > 0) {
+      const bulkOps = articlesToPersist.map((article) => ({
+        updateOne: {
+          filter: { link: article.link },
+          update: { $set: article },
+          upsert: true,
+        },
+      }))
+      await bulkWriteArticles(bulkOps)
+      logger.info(
+        `Persisted ${articlesToPersist.length} assessed articles to prevent re-scraping.`
+      )
+    }
     return { success: true, payload: pipelinePayload }
   }
 
@@ -212,8 +249,8 @@ export async function runAssessAndEnrich(pipelinePayload) {
   const results = await Promise.all(processingPromises)
 
   const enrichedArticles = []
-  const articleUpdates = []
-  let enrichmentOutcomes = [] // Local variable
+  const allProcessedArticles = []
+  let enrichmentOutcomes = []
 
   logger.info('--- Full Article Enrichment Results ---')
   results.forEach((result, index) => {
@@ -226,6 +263,16 @@ export async function runAssessAndEnrich(pipelinePayload) {
         result.lifecycleEvent,
       ],
     }
+    delete finalArticleState.articleContent
+    allProcessedArticles.push(finalArticleState)
+
+    articleTraceLogger.addStage(originalArticle._id, 'Content Enrichment', {
+      outcome: result.lifecycleEvent.status,
+      reason: result.lifecycleEvent.reason,
+      content_snippet: result.contentPreview,
+      llm_assessment: result.article,
+    })
+
     const outcome = result.lifecycleEvent.status
 
     enrichmentOutcomes.push({
@@ -251,26 +298,25 @@ export async function runAssessAndEnrich(pipelinePayload) {
         `❌ [${outcome.toUpperCase()}] "${truncateString(originalArticle.headline, 60)}" - Reason: ${result.lifecycleEvent.reason}`
       )
     }
-
-    if (result.article || result.lifecycleEvent) {
-      articleUpdates.push({
-        updateOne: {
-          filter: { _id: originalArticle._id },
-          update: { $set: finalArticleState },
-        },
-      })
-    }
   })
 
-  runStatsManager.set('enrichmentOutcomes', enrichmentOutcomes) // CORRECTED
-
-  if (articleUpdates.length > 0) {
-    // In-memory articles don't exist in DB yet, so bulkWrite won't work.
-    // This state is now managed entirely within the payload.
+  if (allProcessedArticles.length > 0) {
+    const bulkOps = allProcessedArticles.map((article) => ({
+      updateOne: {
+        filter: { link: article.link },
+        update: { $set: article },
+        upsert: true,
+      },
+    }))
+    await bulkWriteArticles(bulkOps)
+    logger.info(
+      `Persisted ${allProcessedArticles.length} processed articles to prevent re-scraping.`
+    )
   }
 
-  runStatsManager.set('articlesEnriched', enrichedArticles.length) // CORRECTED
-  runStatsManager.set('relevantArticles', enrichedArticles.length) // CORRECTED
+  runStatsManager.set('enrichmentOutcomes', enrichmentOutcomes)
+  runStatsManager.set('articlesEnriched', enrichedArticles.length)
+  runStatsManager.set('relevantArticles', enrichedArticles.length)
 
   logger.info(
     `Enrichment complete. Successfully enriched ${enrichedArticles.length} of ${enrichmentQueue.length} candidates.`

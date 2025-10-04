@@ -132,7 +132,7 @@ export async function getPublicTickerEvents() {
       let headline = event.synthesized_headline
       headline = headline.replace(
         /\b([A-Z][a-z]+(?: [A-Z][a-z]+)+)\b/g,
-        'A private investor'
+        'a private investor'
       )
       headline = headline.replace(
         /\b([A-Z][A-Z\s-]+[A-Z])\b/g,

@@ -1,7 +1,6 @@
-// apps/pipeline/src/pipeline/4_clusterAndSynthesize.js
-import { truncateString, logger } from '@headlines/utils-shared' // The universal, isomorphic logger
-import { auditLogger } from '@headlines/utils-server' // The server-only, file-writing audit logger
-
+// apps/pipeline/src/pipeline/4_clusterAndSynthesize.js (with Enhanced Audit Logging)
+import { truncateString, logger } from '@headlines/utils-shared'
+import { auditLogger } from '@headlines/utils-server'
 import {
   clusteringChain,
   synthesisChain,
@@ -12,10 +11,15 @@ import {
 import { settings } from '@headlines/config'
 import { getConfig } from '@headlines/scraper-logic/config.js'
 
-async function synthesizeEventsFromCluster(articlesInCluster, clusterKey, runStatsManager) {
+async function synthesizeEventsFromCluster(
+  articlesInCluster,
+  clusterKey,
+  runStatsManager,
+  articleTraceLogger
+) {
   const config = getConfig()
   const primaryHeadline = articlesInCluster[0]?.headline || clusterKey
-  const primaryCountry = articlesInCluster[0]?.country || 'Unknown'
+  const primaryCountry = (articlesInCluster[0]?.country || [])[0] || 'Unknown'
   logger.info(
     `--- [ Synthesizing from Cluster: "${truncateString(primaryHeadline, 60)}" ] ---`
   )
@@ -63,17 +67,22 @@ async function synthesizeEventsFromCluster(articlesInCluster, clusterKey, runSta
     '[ LATEST NEWS CONTEXT (NewsAPI) ]': newsApiContext,
   }
 
-  auditLogger.info(
-    { context: { synthesis_input: synthesisInput } },
-    `Synthesis Context for: "${primaryHeadline}"`
-  )
+  for (const article of uniqueArticlesInCluster) {
+    articleTraceLogger.addStage(article._id, 'Synthesis Context', {
+      cluster_key: clusterKey,
+      full_context: synthesisInput,
+    })
+  }
+
   const synthesisResult = await synthesisChain({
     context_json_string: JSON.stringify(synthesisInput),
   })
-  auditLogger.info(
-    { context: { llm_output: synthesisResult } },
-    `Synthesis Verdict for: "${primaryHeadline}"`
-  )
+
+  for (const article of uniqueArticlesInCluster) {
+    articleTraceLogger.addStage(article._id, 'Synthesis LLM Output', {
+      llm_output: synthesisResult,
+    })
+  }
 
   if (!synthesisResult || synthesisResult.error || !synthesisResult.events) {
     logger.warn({ details: synthesisResult?.error }, 'Synthesis failed for cluster.')
@@ -138,7 +147,7 @@ async function synthesizeEventsFromCluster(articlesInCluster, clusterKey, runSta
 
 export async function runClusterAndSynthesize(pipelinePayload) {
   logger.info('--- STAGE 4: CLUSTER & SYNTHESIZE ---')
-  const { runStatsManager, enrichedArticles } = pipelinePayload // CORRECTED
+  const { runStatsManager, enrichedArticles, articleTraceLogger } = pipelinePayload
 
   const articlesForProcessing = enrichedArticles.filter(
     (a) => a.relevance_article >= settings.ARTICLES_RELEVANCE_THRESHOLD
@@ -162,7 +171,7 @@ export async function runClusterAndSynthesize(pipelinePayload) {
   })
 
   const eventClusters = clusterResult.events || []
-  runStatsManager.set('eventsClustered', eventClusters.length) // CORRECTED
+  runStatsManager.set('eventsClustered', eventClusters.length)
   logger.info(
     { details: eventClusters },
     `Clustered ${articlesForProcessing.length} articles into ${eventClusters.length} unique events.`
@@ -180,7 +189,12 @@ export async function runClusterAndSynthesize(pipelinePayload) {
       .filter(Boolean)
     if (articlesInCluster.length > 0) {
       synthesisPromises.push(
-        synthesizeEventsFromCluster(articlesInCluster, cluster.event_key, runStatsManager)
+        synthesizeEventsFromCluster(
+          articlesInCluster,
+          cluster.event_key,
+          runStatsManager,
+          articleTraceLogger
+        )
       )
     }
   }
@@ -196,7 +210,14 @@ export async function runClusterAndSynthesize(pipelinePayload) {
     )
     for (const article of singletonArticles) {
       const event_key = `singleton-${article.newspaper.toLowerCase().replace(/[^a-z0-9]/g, '')}-${article._id.toString()}`
-      synthesisPromises.push(synthesizeEventsFromCluster([article], event_key, runStatsManager))
+      synthesisPromises.push(
+        synthesizeEventsFromCluster(
+          [article],
+          event_key,
+          runStatsManager,
+          articleTraceLogger
+        )
+      )
     }
   }
 

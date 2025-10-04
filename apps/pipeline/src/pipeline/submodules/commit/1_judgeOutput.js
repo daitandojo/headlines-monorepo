@@ -1,12 +1,14 @@
-// apps/pipeline/src/pipeline/submodules/commit/1_judgeOutput.js
-import { logger } from '@headlines/utils-shared' // CORRECTED IMPORT
+// apps/pipeline/src/pipeline/submodules/commit/1_judgeOutput.js (with Enhanced Audit Logging)
+import { logger } from '@headlines/utils-shared'
+import { auditLogger } from '@headlines/utils-server'
 import { judgeChain } from '@headlines/ai-services'
 
 export async function judgeAndFilterOutput(pipelinePayload, fatalQualities) {
   const {
     synthesizedEvents: initialEvents = [],
     opportunitiesToSave: initialOpportunities = [],
-    runStatsManager, // CORRECTED
+    runStatsManager,
+    articleTraceLogger,
   } = pipelinePayload
 
   logger.info(
@@ -29,11 +31,16 @@ export async function judgeAndFilterOutput(pipelinePayload, fatalQualities) {
     events: lightweightEvents,
     opportunities: lightweightOpportunities,
   }
+
+  auditLogger.info({ context: { judge_input: payloadForJudge } }, 'Judge Agent Input')
+
   const judgeVerdict = await judgeChain({
     payload_json_string: JSON.stringify(payloadForJudge),
   })
 
-  runStatsManager.set('judgeVerdict', judgeVerdict) // CORRECTED
+  auditLogger.info({ context: { judge_output: judgeVerdict } }, 'Judge Agent Output')
+
+  runStatsManager.set('judgeVerdict', judgeVerdict)
 
   if (judgeVerdict.error) {
     logger.error(
@@ -42,6 +49,21 @@ export async function judgeAndFilterOutput(pipelinePayload, fatalQualities) {
     )
     return { finalEvents: initialEvents, finalOpportunities: initialOpportunities }
   }
+
+  initialEvents.forEach((event) => {
+    const identifier = `Event: ${event.synthesized_headline}`
+    const verdict = judgeVerdict.event_judgements.find((j) => j.identifier === identifier)
+    if (verdict) {
+      event.source_articles.forEach((sourceArticle) => {
+        const articleInMap = (pipelinePayload.enrichedArticles || []).find(
+          (a) => a.link === sourceArticle.link
+        )
+        if (articleInMap) {
+          articleTraceLogger.addStage(articleInMap._id, 'Judge Verdict', { verdict })
+        }
+      })
+    }
+  })
 
   const fatalQualitiesSet = new Set(fatalQualities)
 

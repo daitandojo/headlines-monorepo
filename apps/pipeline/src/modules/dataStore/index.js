@@ -1,4 +1,4 @@
-// apps/pipeline/src/modules/dataStore/index.js (version 6.1.0)
+// apps/pipeline/src/modules/dataStore/index.js (CORRECTED - Handles empty articles array)
 import { Pinecone } from '@pinecone-database/pinecone'
 import { logger } from '@headlines/utils-shared'
 import { generateEmbedding } from '@headlines/ai-services'
@@ -18,7 +18,7 @@ const pc = new Pinecone({ apiKey: PINECONE_API_KEY })
 const pineconeIndex = pc.index(PINECONE_INDEX_NAME)
 
 export async function savePipelineResults(
-  articlesToSave,
+  articlesToSave, // This may now be an empty array
   eventsToSave,
   savedOpportunities
 ) {
@@ -54,7 +54,7 @@ export async function savePipelineResults(
       for (const event of savedEvents) {
         const textToEmbed = `${event.synthesized_headline}\n${event.synthesized_summary}`
         const embedding = await generateEmbedding(textToEmbed)
-        const eventDate = event.event_date ? new Date(event.event_date) : new Date() // Robust date handling
+        const eventDate = event.event_date ? new Date(event.event_date) : new Date()
         pineconeVectors.push({
           id: `event_${event._id.toString()}`,
           values: embedding,
@@ -62,7 +62,9 @@ export async function savePipelineResults(
             type: 'event',
             headline: event.synthesized_headline,
             summary: event.synthesized_summary,
-            country: event.country,
+            country: Array.isArray(event.country)
+              ? event.country.join(', ')
+              : event.country, // Handle array
             event_date: eventDate.toISOString(),
             key_individuals: (event.key_individuals || []).map((p) => p.name).join(', '),
           },
@@ -70,6 +72,7 @@ export async function savePipelineResults(
       }
     }
 
+    // ACTION: This block will now often be skipped, which is correct.
     if (articlesToSave && articlesToSave.length > 0) {
       const articleOps = []
       const eventKeyToIdMap = new Map(savedEvents.map((e) => [e.event_key, e._id]))
@@ -82,7 +85,6 @@ export async function savePipelineResults(
       }
 
       for (const article of articlesToSave) {
-        // Embed the AI-generated summary, not the full text
         if (article.relevance_article && article.assessment_article) {
           const textToEmbed = `${article.headline}\n${article.assessment_article}`
           article.embedding = await generateEmbedding(textToEmbed)
@@ -97,7 +99,9 @@ export async function savePipelineResults(
               headline: article.headline,
               summary: article.assessment_article || 'No summary.',
               newspaper: article.newspaper,
-              country: article.country,
+              country: Array.isArray(article.country)
+                ? article.country.join(', ')
+                : article.country,
             },
           })
         }
@@ -106,13 +110,10 @@ export async function savePipelineResults(
         if (eventKey) article.synthesizedEventId = eventKeyToIdMap.get(eventKey)
 
         const { _id, ...dataToSet } = article
-        // Delete articleContent before saving
         delete dataToSet.articleContent
         Object.keys(dataToSet).forEach(
           (key) => dataToSet[key] === undefined && delete dataToSet[key]
         )
-        if (dataToSet.relevance_headline <= 25 && dataToSet.relevance_article <= 25)
-          delete dataToSet.articleContent
         delete dataToSet.embedding
         articleOps.push({
           updateOne: {
@@ -141,7 +142,7 @@ export async function savePipelineResults(
             type: 'opportunity',
             headline: opp.reachOutTo,
             summary: opp.whyContact.join(' '),
-            country: opp.basedIn,
+            country: Array.isArray(opp.basedIn) ? opp.basedIn.join(', ') : opp.basedIn,
           },
         })
       }
@@ -161,6 +162,7 @@ export async function savePipelineResults(
   }
 }
 
+// ... (filterFreshArticles function remains unchanged) ...
 export async function filterFreshArticles(articles, isRefreshMode = false) {
   if (!articles || articles.length === 0) return []
   const scrapedLinks = articles.map((a) => a.link)

@@ -1,4 +1,4 @@
-// packages/ai-services/src/schemas/synthesisSchema.js (version 1.1)
+// packages/models/src/schemas/synthesisSchema.js (CORRECTED)
 import { z } from 'zod'
 
 export const synthesisSchema = z.object({
@@ -10,9 +10,9 @@ export const synthesisSchema = z.object({
         .string()
         .min(1)
         .describe('The one-sentence actionable summary for wealth advisors.'),
-      // DEFINITIVE FIX: Add the new classification field to the schema.
       eventClassification: z.string().min(1).describe("The event's classification type."),
-      country: z.string().min(1),
+      // DEFINITIVE FIX: The 'country' field must now be an array of strings.
+      country: z.array(z.string()).min(1, 'Country array cannot be empty.'),
       key_individuals: z.array(
         z.object({
           name: z.string(),

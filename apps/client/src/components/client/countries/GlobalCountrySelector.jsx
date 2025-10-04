@@ -1,5 +1,4 @@
-// File: apps/client/src/components/client/GlobalCountrySelector.jsx (Corrected and Unabridged)
-
+// apps/client/src/components/client/countries/GlobalCountrySelector.jsx (CORRECTED)
 'use client'
 import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -67,9 +66,10 @@ export function GlobalCountrySelector({ allCountries }) {
 
   const renderIcon = () => {
     if (!user) return <Globe className="h-5 w-5" />
-    const userCountryNames = user.countries || []
-    if (userCountryNames.length === 1) {
-      return <span className="text-xl">{getCountryFlag(userCountryNames[0].name)}</span>
+    const userCountries = user.countries || []
+    if (userCountries.length === 1) {
+      // DEFINITIVE FIX: Pass the .name property, not the whole object.
+      return <span className="text-xl">{getCountryFlag(userCountries[0].name)}</span>
     }
     return <Globe className="h-5 w-5" />
   }

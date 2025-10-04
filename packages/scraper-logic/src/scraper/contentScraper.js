@@ -1,4 +1,4 @@
-// packages/scraper-logic/src/scraper/contentScraper.js (version 4.5.0)
+// packages/scraper-logic/src/scraper/contentScraper.js (version 5.0.0 - Unified Selector Strategy)
 import * as cheerio from 'cheerio'
 import fs from 'fs/promises'
 import path from 'path'
@@ -8,8 +8,7 @@ import { Readability } from '@mozilla/readability'
 import { getConfig } from '../config.js'
 import { fetchPageWithPlaywright } from '../browser.js'
 import { contentExtractorRegistry } from './extractors/index.js'
-
-import { settings } from '@headlines/config/node';
+import { settings } from '@headlines/config/node'
 
 async function saveDebugHtml(filename, html) {
   const config = getConfig()
@@ -29,19 +28,12 @@ async function saveDebugHtml(filename, html) {
 function extractWithReadability(url, html) {
   try {
     const virtualConsole = new VirtualConsole()
-    // Suppress CSS parsing errors which are common and noisy
     virtualConsole.on('cssParseError', () => {})
-
-    // --- START OF THE FIX ---
-    // Tell JSDOM not to fetch external resources like images, scripts, or stylesheets.
-    // This prevents it from trying to use the 'canvas' package which is not available.
     const doc = new JSDOM(html, {
       url,
       virtualConsole,
-      resources: 'usable', // This is the key change
+      resources: 'usable',
     })
-    // --- END OF THE FIX ---
-
     const reader = new Readability(doc.window.document)
     const article = reader.parse()
     return article?.textContent || null
@@ -56,14 +48,10 @@ export async function scrapeArticleContent(article, source) {
     source.extractionMethod === 'custom' &&
     contentExtractorRegistry[source.extractorKey]
   ) {
-    const customContentExtractor = contentExtractorRegistry[source.extractorKey]
-    return await customContentExtractor(article, source)
+    return await contentExtractorRegistry[source.extractorKey](article, source)
   }
 
-  if (
-    article.rssContent &&
-    article.rssContent.length >= settings.MIN_ARTICLE_CHARS
-  ) {
+  if (article.rssContent && article.rssContent.length >= settings.MIN_ARTICLE_CHARS) {
     article.articleContent = { contents: [article.rssContent] }
     return article
   }
@@ -73,24 +61,38 @@ export async function scrapeArticleContent(article, source) {
     return { ...article, enrichment_error: 'Playwright failed to fetch page HTML' }
   }
 
-  let contentText = extractWithReadability(article.link, html)
-  let extractionMethod = 'Readability.js'
+  const $ = cheerio.load(html)
+  let contentParts = []
+  let extractionMethod = 'None'
+  let contentText = ''
 
+  // DEFINITIVE FIX: Unified Selector Strategy
+  // If articleSelector is defined, use it as the primary, authoritative method.
+  const selectors = Array.isArray(source.articleSelector)
+    ? source.articleSelector
+    : [source.articleSelector].filter(Boolean)
+
+  if (selectors.length > 0) {
+    extractionMethod = 'Cheerio Multi-Selector'
+    for (const selector of selectors) {
+      // Grab text from each matching element and push to the array
+      $(selector).each((_, el) => {
+        const text = $(el).text().replace(/\s+/g, ' ').trim()
+        if (text) {
+          contentParts.push(text)
+        }
+      })
+    }
+    // Join the unique parts together. Using a Set handles cases where selectors might overlap.
+    contentText = [...new Set(contentParts)].join('\n\n')
+  }
+
+  // Fallback to Readability.js ONLY if the selector-based method fails or is not configured.
   if (!contentText || contentText.length < settings.MIN_ARTICLE_CHARS) {
-    const $ = cheerio.load(html)
-    const selectors = Array.isArray(source.articleSelector)
-      ? source.articleSelector
-      : [source.articleSelector].filter(Boolean)
-    if (selectors.length > 0) {
-      const contentParts = []
-      for (const selector of selectors) {
-        const extractedText = $(selector).text().replace(/\s+/g, ' ').trim()
-        if (extractedText) contentParts.push(extractedText)
-      }
-      if (contentParts.length > 0) {
-        contentText = contentParts.join('\n\n')
-        extractionMethod = 'Cheerio Selector'
-      }
+    const readabilityText = extractWithReadability(article.link, html)
+    if (readabilityText && readabilityText.length > contentText.length) {
+      contentText = readabilityText
+      extractionMethod = 'Readability.js Fallback'
     }
   }
 

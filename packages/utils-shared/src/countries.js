@@ -1,4 +1,4 @@
-// packages/utils-shared/src/countries.js (NEW FILE)
+// packages/utils-shared/src/countries.js (CORRECTED)
 import isoCountryFlags from './data/countries.json' with { type: 'json' }
 
 const defaultFlag = '🌍'
@@ -18,7 +18,10 @@ for (const [name, iso] of countryNameToIsoMap.entries()) {
 }
 
 export function getCountryFlag(countryName) {
-  if (!countryName) return defaultFlag
+  // DEFINITIVE FIX: Add a type check to prevent crashes on invalid input.
+  if (!countryName || typeof countryName !== 'string') {
+    return defaultFlag
+  }
   for (const [key, value] of countryNameToIsoMap.entries()) {
     if (key.toLowerCase() === countryName.trim().toLowerCase()) {
       const flag = isoToFlagMap.get(value)

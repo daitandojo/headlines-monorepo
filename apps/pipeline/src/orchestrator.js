@@ -1,15 +1,15 @@
-// apps/pipeline/src/orchestrator.js
+// apps/pipeline/src/orchestrator.js (MODIFIED)
 import { logger } from '@headlines/utils-shared'
 import { tokenTracker, apiCallTracker } from '@headlines/utils-server'
 import { logFinalReport } from './utils/pipelineLogger.js'
 import { RunStatsManager } from './utils/runStatsManager.js'
+import { ArticleTraceLogger } from './utils/articleTraceLogger.js'
 import { runPreFlightChecks } from './pipeline/1_preflight.js'
 import { runScrapeAndFilter } from './pipeline/2_scrapeAndFilter.js'
 import { runAssessAndEnrich } from './pipeline/3_assessAndEnrich.js'
 import { runClusterAndSynthesize } from './pipeline/4_clusterAndSynthesize.js'
 import { runCommitAndNotify } from './pipeline/5_commitAndNotify.js'
 import { suggestNewWatchlistEntities } from './pipeline/6_suggestNewWatchlistEntities.js'
-import { runSelfHealAndOptimize } from './pipeline/7_selfHealAndOptimize.js'
 import { updateSourceAnalytics } from './pipeline/submodules/commit/4_updateSourceAnalytics.js'
 import { settings } from '@headlines/config'
 import { RunVerdict } from '@headlines/models'
@@ -45,10 +45,13 @@ export async function runPipeline(options) {
 
   apiCallTracker.reset()
   const runStatsManager = new RunStatsManager()
+  const articleTraceLogger = new ArticleTraceLogger()
+  await articleTraceLogger.initialize()
 
   let currentPayload = {
     ...options,
     runStatsManager,
+    articleTraceLogger,
     dbConnection: false,
   }
 
@@ -113,14 +116,15 @@ export async function runPipeline(options) {
           'No new events were synthesized. Skipping commit and notification stages, but sending a supervisor report.'
         )
         const { sendSupervisorReportEmail } = await import('./modules/email/index.js')
-        await sendSupervisorReportEmail(runStatsManager.getStats())
+        await sendSupervisorReportEmail(
+          runStatsManager.getStats(),
+          articleTraceLogger.getAllTraces()
+        )
       }
     }
   } catch (error) {
     success = false
     runStatsManager.push('errors', `ORCHESTRATOR_FATAL: ${error.message}`)
-
-    // Send a critical alert for unhandled exceptions in the main pipeline
     sendErrorAlert(error, {
       origin: 'PIPELINE_ORCHESTRATOR',
       runOptions: options,
@@ -135,6 +139,7 @@ export async function runPipeline(options) {
 
     await saveRunVerdict(currentPayload, durationInSeconds)
     await logFinalReport(runStatsManager.getStats(), durationInSeconds)
+    await articleTraceLogger.writeAllTraces()
   }
   return { success }
 }

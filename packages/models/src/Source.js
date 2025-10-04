@@ -1,4 +1,4 @@
-// packages/models/src/Source.js (version 7.0.0)
+// packages/models/src/Source.js (version 7.2.0 - ledeSelector removed)
 import mongoose from 'mongoose'
 import {
   SOURCE_STATUSES,
@@ -50,6 +50,7 @@ const SourceSchema = new Schema(
     headlineSelector: { type: [String], required: false, default: [] },
     linkSelector: { type: String, required: false, trim: true },
     headlineTextSelector: { type: String, required: false, trim: true },
+    // ledeSelector: { type: [String], required: false, default: [] }, // REMOVED
     articleSelector: { type: [String], required: false, default: [] },
     lastScrapedAt: { type: Date, required: false, index: true },
     lastSuccessAt: { type: Date, required: false },
