@@ -2,5 +2,5 @@
   "buildCommand": "pnpm --filter @headlines/client... build",
   "installCommand": "pnpm install --shamefully-hoist",
   "outputDirectory": "apps/client/.next",
-  "framework": null
+  "framework": "nextjs"
 }
