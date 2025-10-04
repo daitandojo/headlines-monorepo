@@ -100,7 +100,7 @@ export function Hero({ tickerEvents }) {
               <FeatureCard
                 icon={<Target className="h-6 w-6 text-green-400" />}
                 title="Prospect Dossiers"
-                description="Move from signal to a fully qualified mandate with AI-generated dossiers on key individuals, complete with estimated liquidity and outreach points."
+                description="AI-generated dossiers on key individuals, complete with estimated liquidity and outreach points."
                 delay={0.3}
               />
               <FeatureCard
