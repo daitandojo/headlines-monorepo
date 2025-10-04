@@ -1,6 +1,4 @@
-// apps/client/src/app/(client)/opportunities/[opportunityId]/page.js
-
-
+// apps/client/src/app/(client)/opportunities/[opportunityId]/page.js (CORRECTED)
 export const dynamic = 'force-dynamic'
 
 import { getOpportunityDetails } from '@headlines/data-access/next'
@@ -18,6 +16,7 @@ import {
 import { ArrowLeft, User, MapPin, Briefcase, Mail, Zap, ExternalLink } from 'lucide-react'
 import { format } from 'date-fns'
 import { getCountryFlag } from '@headlines/utils-shared'
+import dbConnect from '@headlines/data-access/dbConnect/next' // Import dbConnect
 
 function TimelineItem({ event, isLast }) {
   return (
@@ -55,6 +54,7 @@ function TimelineItem({ event, isLast }) {
 }
 
 export default async function OpportunityDossierPage({ params }) {
+  await dbConnect() // ACTION: Add this line
   const { opportunityId } = params
   const { success, data: opportunity } = await getOpportunityDetails(opportunityId)
 
@@ -63,7 +63,7 @@ export default async function OpportunityDossierPage({ params }) {
   }
 
   const { contactDetails } = opportunity
-  const flag = getCountryFlag(opportunity.basedIn)
+  const flags = (opportunity.basedIn || []).map((c) => getCountryFlag(c)).join(' ') // Use flags for array
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -103,10 +103,10 @@ export default async function OpportunityDossierPage({ params }) {
             {(opportunity.city || opportunity.basedIn) && (
               <span className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-slate-500" />
-                <span className="text-xl mr-1">{flag}</span>
+                <span className="text-xl mr-1">{flags}</span>
                 {opportunity.city}
-                {opportunity.city && opportunity.basedIn ? ', ' : ''}
-                {opportunity.basedIn}
+                {opportunity.city && opportunity.basedIn?.length > 0 ? ', ' : ''}
+                {(opportunity.basedIn || []).join(', ')}
               </span>
             )}
             {contactDetails?.email && (

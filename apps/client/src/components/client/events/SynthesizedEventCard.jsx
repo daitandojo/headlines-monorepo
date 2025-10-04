@@ -1,4 +1,4 @@
-// File: apps/client/src/components/client/SynthesizedEventCard.jsx (Restored)
+// File: apps/client/src/components/client/events/SynthesizedEventCard.jsx (CORRECTED)
 'use client'
 
 import { useState, useTransition } from 'react'
@@ -6,20 +6,22 @@ import { useRouter } from 'next/navigation'
 import { AccordionContent, AccordionItem, ConfirmationDialog } from '@/components/shared'
 import useAppStore from '@/lib/store/use-app-store'
 import { SwipeToDelete } from '../shared/SwipeToDelete'
-import { EventCardDesktop } from '../events/EventCardDesktop'
-import { EventCardMobile } from '../events/EventCardMobile'
-import { EventCardDetails } from '../events/EventCardDetails'
+import { EventCardDesktop } from './EventCardDesktop'
+import { EventCardMobile } from './EventCardMobile'
+import { EventCardDetails } from './EventCardDetails'
+import { KeyIndividualsDialog } from './KeyIndividualsDialog'
 import { useAuth } from '@/lib/auth/client'
 import { toast } from 'sonner'
 
 export const SynthesizedEventCard = ({
   event,
-  onDelete, // <-- Changed from onSwipeLeft
+  onDelete,
   onFavoriteToggle,
   isFavorited,
 }) => {
   const [isPending, startTransition] = useTransition()
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false)
+  const [isIndividualsDialogOpen, setIsIndividualsDialogOpen] = useState(false) // State is here
   const setChatContextPrompt = useAppStore((state) => state.setChatContextPrompt)
   const router = useRouter()
   const { user } = useAuth()
@@ -32,7 +34,7 @@ export const SynthesizedEventCard = ({
 
   const handleSwipeRight = () => {
     if (isFavorited) {
-      setIsEmailDialogOpen(true) // <-- Un-commented
+      setIsEmailDialogOpen(true)
     } else {
       toast.info('Item must be favorited to email.')
     }
@@ -50,6 +52,12 @@ export const SynthesizedEventCard = ({
     onFavoriteToggle(event._id, !isFavorited)
   }
 
+  // DEFINITIVE FIX: This handler now correctly opens the dialog.
+  const handleShowIndividuals = (e) => {
+    e.stopPropagation() // Prevent the main accordion from toggling
+    setIsIndividualsDialogOpen(true)
+  }
+
   return (
     <>
       <div className="relative w-full">
@@ -64,6 +72,7 @@ export const SynthesizedEventCard = ({
                 onChat={handleChatAboutEvent}
                 onDelete={performDelete}
                 onFavorite={handleFavorite}
+                onShowIndividuals={handleShowIndividuals} // Pass the handler
                 isFavorited={isFavorited}
                 isPending={isPending}
               />
@@ -72,6 +81,7 @@ export const SynthesizedEventCard = ({
                 onChat={handleChatAboutEvent}
                 onDelete={performDelete}
                 onFavorite={handleFavorite}
+                onShowIndividuals={handleShowIndividuals} // Pass the handler
                 isFavorited={isFavorited}
                 isPending={isPending}
               />
@@ -82,7 +92,14 @@ export const SynthesizedEventCard = ({
           </AccordionContent>
         </AccordionItem>
       </div>
-      {/* Un-commented this block */}
+
+      {/* DEFINITIVE FIX: Render the dialog and control it with state */}
+      <KeyIndividualsDialog
+        individuals={event.key_individuals}
+        open={isIndividualsDialogOpen}
+        onOpenChange={setIsIndividualsDialogOpen}
+      />
+
       <ConfirmationDialog
         open={isEmailDialogOpen}
         onOpenChange={setIsEmailDialogOpen}

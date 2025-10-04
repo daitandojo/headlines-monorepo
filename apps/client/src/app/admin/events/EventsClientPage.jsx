@@ -1,4 +1,4 @@
-// apps/client/src/app/admin/events/EventsClientPage.jsx
+// apps/client/src/app/admin/events/EventsClientPage.jsx (MODIFIED)
 'use client'
 
 import { useState, useCallback } from 'react'
@@ -15,7 +15,8 @@ import { EventListItem, ListHeader } from './columns'
 import { handleExport } from '@/lib/api-client'
 import { deleteEventAction, updateEventAction, getEventDetailsAction } from './actions'
 
-export default function EventsClientPage({ initialEvents, total }) {
+// ACTION: Accept the new `availableCountries` prop
+export default function EventsClientPage({ initialEvents, total, availableCountries }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -139,6 +140,7 @@ export default function EventsClientPage({ initialEvents, total }) {
                 onDelete={handleDelete}
                 isExpanded={expandedItemId === event._id}
                 onDetailsNeeded={handleFetchDetails}
+                availableCountries={availableCountries} // ACTION: Pass prop down to list item
               />
             ))}
           </Accordion>

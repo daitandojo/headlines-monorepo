@@ -1,4 +1,4 @@
-// apps/client/src/app/admin/events/columns.jsx (Multi-country support)
+// apps/client/src/app/admin/events/columns.jsx (MODIFIED with MultiSelect)
 'use client'
 
 import React, { useState, useCallback } from 'react'
@@ -21,6 +21,7 @@ import {
   CardFooter,
   Label,
   Textarea,
+  MultiSelect, // ACTION: Import MultiSelect
 } from '@/components/shared'
 import { Loader2, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
@@ -52,11 +53,12 @@ export const EventListItem = ({
   onDelete,
   isExpanded,
   onDetailsNeeded,
+  availableCountries, // ACTION: Accept the new prop
 }) => {
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
 
   const loadDetails = useCallback(async () => {
-    if (event.details) return // Already loaded
+    if (event.details) return
     setIsLoadingDetails(true)
     try {
       await onDetailsNeeded(event._id)
@@ -81,7 +83,7 @@ export const EventListItem = ({
             {format(new Date(event.createdAt), 'dd MMM yyyy, HH:mm')}
           </div>
           <div className="w-[140px] flex-shrink-0">
-            {(event.country || []).join(', ')} {/* MODIFIED */}
+            {(event.country || []).join(', ')}
           </div>
           <div className="w-[180px] flex-shrink-0">
             {event.eventClassification || 'N/A'}
@@ -121,18 +123,14 @@ export const EventListItem = ({
 
                 <div className="grid grid-cols-3 gap-4">
                   <FormField label="Country">
-                    {/* MODIFIED: EditableCell now handles arrays via join/split */}
-                    <EditableCell
-                      initialValue={(event.details.country || []).join(', ')}
-                      onSave={(newValue) =>
-                        onUpdate(event.details, {
-                          country: newValue
-                            .split(',')
-                            .map((s) => s.trim())
-                            .filter(Boolean),
-                        })
+                    {/* ACTION: Replace EditableCell with MultiSelect */}
+                    <MultiSelect
+                      options={availableCountries}
+                      selected={event.details.country || []}
+                      onChange={(newCountries) =>
+                        onUpdate(event.details, { country: newCountries.sort() })
                       }
-                      placeholder="Add countries..."
+                      placeholder="Select countries..."
                     />
                   </FormField>
                   <FormField label="Classification">

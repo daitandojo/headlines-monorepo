@@ -1,6 +1,6 @@
 // apps/client/src/app/(client)/opportunities/page.js
 import { DataView } from '@/components/client/shared/DataView'
-import { getOpportunities } from '@headlines/data-access/next' // CORRECTED
+import { getOpportunities } from '@headlines/data-access/next'
 import { getUserIdFromSession } from '@/lib/auth/server'
 import dbConnect from '@headlines/data-access/dbConnect/next'
 
@@ -10,7 +10,7 @@ const sortOptions = [
 ]
 
 export default async function OpportunitiesPage({ searchParams }) {
-  await dbConnect()
+  await dbConnect() // ACTION: Add this line
   const userId = await getUserIdFromSession()
   let initialOpportunities = []
 

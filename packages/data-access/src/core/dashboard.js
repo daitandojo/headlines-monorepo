@@ -1,4 +1,4 @@
-// packages/data-access/src/core/dashboard.js
+// packages/data-access/src/core/dashboard.js (MODIFIED)
 import {
   Source,
   Subscriber,
@@ -52,7 +52,7 @@ export async function getDashboardStats() {
       opportunities: opportunityStats[0] || { total: 0 },
     }
 
-    delete stats.sources._id // Clean up aggregation artifact
+    delete stats.sources._id
     delete stats.users._id
     delete stats.watchlist._id
     delete stats.articles._id
@@ -62,6 +62,26 @@ export async function getDashboardStats() {
     return { success: true, data: stats }
   } catch (e) {
     return { success: false, error: 'Failed to fetch dashboard stats.' }
+  }
+}
+
+// NEW FUNCTION: Fetches all unique country strings used in the main collections.
+export async function getDistinctCountries() {
+  try {
+    const [articleCountries, eventCountries, oppCountries] = await Promise.all([
+      Article.distinct('country'),
+      SynthesizedEvent.distinct('country'),
+      Opportunity.distinct('basedIn'),
+    ])
+
+    const allCountries = [...articleCountries, ...eventCountries, ...oppCountries]
+      .flat()
+      .filter(Boolean) // Flatten arrays and remove any null/undefined values
+
+    const uniqueCountries = [...new Set(allCountries)].sort()
+    return { success: true, data: uniqueCountries }
+  } catch (e) {
+    return { success: false, error: 'Failed to fetch distinct countries.' }
   }
 }
 
@@ -108,10 +128,8 @@ export async function getPublicTickerEvents() {
       .select('country synthesized_headline')
       .lean()
 
-    // Anonymize and format for the ticker
     const formattedEvents = events.map((event) => {
       let headline = event.synthesized_headline
-      // Replace specific names with generic roles
       headline = headline.replace(
         /\b([A-Z][a-z]+(?: [A-Z][a-z]+)+)\b/g,
         'A private investor'

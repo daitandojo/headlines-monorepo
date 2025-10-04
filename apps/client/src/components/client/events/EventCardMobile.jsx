@@ -1,4 +1,4 @@
-// File: apps/client/src/components/client/events/EventCardMobile.jsx (Multi-country support)
+// File: apps/client/src/components/client/events/EventCardMobile.jsx (Handler Corrected)
 'use client'
 
 import { Badge, Button } from '@/components/shared'
@@ -12,9 +12,15 @@ const getRelevanceBadgeClass = (score) => {
   return 'bg-slate-500/20 text-slate-300 border border-slate-500/30'
 }
 
-export function EventCardMobile({ event, onChat, onDelete, isPending }) {
+export function EventCardMobile({
+  event,
+  onChat,
+  onDelete,
+  onShowIndividuals,
+  isPending,
+}) {
   if (!event) return null
-  const flags = (event.country || []).map((c) => getCountryFlag(c)).join(' ') // MODIFIED
+  const flags = (event.country || []).map((c) => getCountryFlag(c)).join(' ')
   const primaryImageUrl = event.source_articles?.find((a) => a.imageUrl)?.imageUrl
 
   return (
@@ -67,7 +73,7 @@ export function EventCardMobile({ event, onChat, onDelete, isPending }) {
               primaryImageUrl ? 'text-white drop-shadow-lg' : 'text-slate-100'
             )}
           >
-            <span className="text-xl mr-2 align-middle">{flags}</span> {/* MODIFIED */}
+            <span className="text-xl mr-2 align-middle">{flags}</span>
             {event.synthesized_headline}
           </h3>
         </div>
@@ -84,12 +90,19 @@ export function EventCardMobile({ event, onChat, onDelete, isPending }) {
         </p>
         <div className="mt-4 pt-4 border-t border-slate-800/50 flex flex-col justify-between items-start gap-4">
           {event.key_individuals && event.key_individuals.length > 0 && (
-            <div className="flex items-start gap-3 text-slate-400">
-              <Users className="h-5 w-5 mt-0.5 shrink-0 text-slate-500" />
-              <p className="text-sm font-medium text-slate-300">
-                {event.key_individuals.length} Key Individual(s) Identified
-              </p>
-            </div>
+            // DEFINITIVE FIX: Ensure the onClick handler is correctly passed to the Button.
+            <Button
+              variant="ghost"
+              className="p-0 h-auto text-left text-slate-400 hover:text-slate-200"
+              onClick={onShowIndividuals}
+            >
+              <div className="flex items-start gap-3">
+                <Users className="h-5 w-5 mt-0.5 shrink-0 text-slate-500" />
+                <p className="text-sm font-medium text-slate-300">
+                  {event.key_individuals.length} Key Individual(s) Identified
+                </p>
+              </div>
+            </Button>
           )}
           {event.ai_assessment_reason && (
             <p className="text-xs text-slate-500 italic sm:text-right flex-grow">

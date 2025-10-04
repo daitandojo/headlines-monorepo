@@ -1,4 +1,4 @@
-// packages/data-access/src/next.js
+// packages/data-access/src/next.js (CORRECTED with getDistinctCountries export)
 import 'server-only'
 import { env } from '@headlines/config/next'
 import dbConnectCore from './dbConnect.js'
@@ -25,8 +25,6 @@ for (const key in core) {
   }
 }
 
-// --- START OF THE FIX ---
-// Create a special wrapper for updateSettings that adds revalidation
 const originalUpdateSettings = wrappedCore.updateSettings
 wrappedCore.updateSettings = async (...args) => {
   const result = await originalUpdateSettings(...args)
@@ -35,7 +33,6 @@ wrappedCore.updateSettings = async (...args) => {
   }
   return result
 }
-// --- END OF THE FIX ---
 
 // Explicitly export everything to avoid issues with module systems
 export const {
@@ -64,8 +61,9 @@ export const {
   loginUser,
   generateChatTitle,
   getDashboardStats,
+  getDistinctCountries, // ACTION: Add the new function to the export list
   getGlobalCountries,
-  getPublicTickerEvents, // <-- EXPORT NEW FUNCTION
+  getPublicTickerEvents,
   getEvents,
   findEvents,
   updateEvents,
@@ -93,7 +91,7 @@ export const {
   linkOpportunityToEvent,
   unlinkOpportunityFromEvent,
   getSettings,
-  updateSettings, // This now exports the wrapped version
+  updateSettings,
   upsertSubscriber,
   getAllPushSubscriptions,
   deletePushSubscription,

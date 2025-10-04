@@ -13,7 +13,7 @@ import dbConnect from '@headlines/data-access/dbConnect/next'
 export const dynamic = 'force-dynamic'
 
 export default async function LandingPage() {
-  await dbConnect()
+  await dbConnect() // ACTION: Add this line
   const tickerResult = await getPublicTickerEvents()
   const tickerEvents = tickerResult.success ? tickerResult.data : []
 

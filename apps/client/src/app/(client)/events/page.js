@@ -1,8 +1,8 @@
-// apps/client/src/app/(client)/events/page.js
+// apps/client/src/app/(client)/events/page.js (CORRECTED)
 import { DataView } from '@/components/client/shared/DataView'
-import { getEvents } from '@headlines/data-access/next' // CORRECTED IMPORT
-import { getUserIdFromSession } from '@/lib/auth/server' // CORRECTED IMPORT
-import dbConnect from '@headlines/data-access/dbConnect/next'
+import { getEvents } from '@headlines/data-access/next'
+import { getUserIdFromSession } from '@/lib/auth/server'
+import dbConnect from '@headlines/data-access/dbConnect/next' // Import dbConnect
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +12,7 @@ const sortOptions = [
 ]
 
 export default async function EventsPage({ searchParams }) {
-  await dbConnect()
+  await dbConnect() // ACTION: Add this line to connect before any data access
   const userId = await getUserIdFromSession()
   let initialEvents = []
 

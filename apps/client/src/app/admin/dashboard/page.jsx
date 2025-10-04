@@ -1,9 +1,9 @@
-// File: apps/client/src/app/admin/dashboard/page.jsx (version 2.5 - FINAL)
+// File: apps/client/src/app/admin/dashboard/page.jsx (CORRECTED)
 import {
   getDashboardStats,
   getRecentRunVerdicts,
   getAllSources,
-} from '@headlines/data-access/next' // CORRECTED
+} from '@headlines/data-access/next'
 import DashboardClientPage from './DashboardClientPage'
 import dbConnect from '@headlines/data-access/dbConnect/next'
 
@@ -11,7 +11,6 @@ export const dynamic = 'force-dynamic'
 
 async function getPageData() {
   try {
-    // The data-access functions now reliably handle their own connections.
     const [statsResult, verdictsResult, sourcesResult] = await Promise.all([
       getDashboardStats(),
       getRecentRunVerdicts(),
@@ -31,7 +30,7 @@ async function getPageData() {
 }
 
 export default async function AdminDashboardPage() {
-  await dbConnect()
+  await dbConnect() // ACTION: Add this line
   const { stats, runs, sources, error } = await getPageData()
 
   if (error) {
