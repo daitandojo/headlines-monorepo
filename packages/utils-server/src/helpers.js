@@ -1,7 +1,5 @@
-// packages/utils-server/src/helpers.js (version 2.0.0)
-// ARCHITECTURAL REFACTORING: This file now serves as the 'core' module for helpers.
-// It contains only truly isomorphic functions that are safe to run in any JavaScript environment.
-// Node.js-specific helpers have been removed.
+// packages/utils-server/src/helpers.js
+import { logger } from '@headlines/utils-shared'
 
 /**
  * Creates a promise that rejects after a specified timeout.
@@ -37,8 +35,9 @@ export async function safeExecute(asyncFn, { errorHandler, timeout = 90000 } = {
     if (errorHandler) {
       return errorHandler(error)
     }
-    // Log the error centrally, so individual call sites don't have to.
-    console.error('An unexpected error occurred in a safeExecute block:', error)
+    // DEFINITIVE FIX: Use the injected Pino logger instead of console.error
+    // to ensure errors are captured and formatted correctly in the main log stream.
+    logger.error({ err: error }, 'An unexpected error occurred in a safeExecute block.')
     return null // Return null on failure
   }
 }

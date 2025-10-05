@@ -1,6 +1,6 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 208 files, 89 directories
+Total: 209 files, 89 directories
 
 ```
 headlines/
@@ -300,14 +300,15 @@ headlines/
 ├── 📄 jsconfig.json
 ├── 📄 next.config.mjs
 ├── 📄 package.json
+├── 📄 postcss.config.js
 └── 📄 tailwind.config.js
 ```
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-05T00:50:44.029Z
+**Generated**: 2025-10-05T19:41:33.237Z
 **Repository Path**: /home/mark/Repos/projects/headlines/apps/client
-**Total Files**: 196
+**Total Files**: 197
 **Package**: @headlines/client@1.0.0
 
 
@@ -439,19 +440,26 @@ export default eslintConfig;
 ```
 
 ## 📄 next.config.mjs
-*Lines: 52, Size: 1.51 KB*
+*Lines: 54, Size: 1.28 KB*
 
 ```
+// File: apps/client/next.config.mjs (FINAL ATTEMPT)
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Add this postcss section
+  postcss: {
+    plugins: {
+      tailwindcss: {},
+      autoprefixer: {},
+    },
+  },
   transpilePackages: [
     '@headlines/config',
     '@headlines/models',
     '@headlines/utils-shared',
   ],
   experimental: {
-    // These packages are server-only and should not be bundled into serverless functions.
-    // data-access is now here because it's no longer transpiled.
     serverComponentsExternalPackages: [
       '@headlines/data-access',
       '@headlines/ai-services',
@@ -465,8 +473,6 @@ const nextConfig = {
   },
   webpack: (config, { isServer }) => {
     if (isServer) {
-      // Mark these as external so they're loaded from node_modules at runtime
-      // This prevents webpack from trying to bundle them
       config.externals.push({
         '@xenova/transformers': '@xenova/transformers',
         'onnxruntime-node': 'commonjs onnxruntime-node',
@@ -476,7 +482,6 @@ const nextConfig = {
         aws4: 'commonjs aws4',
       })
     } else {
-      // Prevent client-side bundling of server-only packages
       config.resolve.alias = {
         ...config.resolve.alias,
         '@xenova/transformers': false,
@@ -485,10 +490,8 @@ const nextConfig = {
         bcrypt: false,
       }
     }
-
     return config
   },
-  // Use SWC instead of Terser for better async support
   swcMinify: true,
 }
 
@@ -555,13 +558,25 @@ export default nextConfig
   },
   "devDependencies": {
     "autoprefixer": "^10.4.19",
-    "eslint": "^8.57.0",
-    "eslint-config-next": "14.2.4",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.1",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "14.2.4",
     "@tailwindcss/typography": "^0.5.13",
     "tailwindcss-animate": "^1.0.7"
   }
+}
+
+```
+
+## 📄 postcss.config.js
+*Lines: 6, Size: 206 Bytes*
+
+```javascript
+// This configuration uses a function-based array for plugins,
+// which is more explicit and robust for module resolution.
+module.exports = {
+  plugins: [require('tailwindcss'), require('autoprefixer')],
 }
 
 ```
@@ -15503,21 +15518,17 @@ export default useAppStore
 ```
 
 ## 📄 tailwind.config.js
-*Lines: 100, Size: 3.05 KB*
+*Lines: 96, Size: 2.89 KB*
 
 ```javascript
-// File: apps/client/tailwind.config.js
-
 const { fontFamily } = require('tailwindcss/defaultTheme')
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ['class'],
-  plugins: [require('tailwindcss-animate'), require('@tailwindcss/typography')],
   content: [
-    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     container: {

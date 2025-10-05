@@ -1,10 +1,6 @@
-// packages/utils-server/src/helpers-next.js (version 1.0.0)
-// ARCHITECTURAL REFACTORING: This new file is a Next.js-safe "shim".
-// It explicitly re-exports only the functions from the core `helpers.js`
-// that are needed and guaranteed to be safe for the Next.js/Vercel environment.
-// It is guarded by the 'server-only' directive to prevent client-side bundling.
-
+// packages/utils-server/src/helpers-next.js
 import 'server-only'
+import { logger } from '@headlines/utils-shared'
 
 /**
  * Creates a promise that rejects after a specified timeout.
@@ -34,7 +30,8 @@ export async function safeExecute(asyncFn, { errorHandler, timeout = 90000 } = {
     if (errorHandler) {
       return errorHandler(error)
     }
-    console.error('An unexpected error occurred in a safeExecute block:', error)
+    // DEFINITIVE FIX: Use the shared logger for consistent error handling in Next.js server environments.
+    logger.error({ err: error }, 'An unexpected error occurred in a safeExecute block:')
     return null
   }
 }

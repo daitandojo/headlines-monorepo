@@ -41,7 +41,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-05T00:50:44.067Z
+**Generated**: 2025-10-05T19:41:33.278Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/data-access
 **Total Files**: 30
 **Package**: @headlines/data-access@1.0.0
@@ -53,7 +53,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 24, Size: 662 Bytes*
+*Lines: 26, Size: 752 Bytes*
 
 ```json
 {
@@ -71,10 +71,12 @@ headlines/
     "./dbConnect/node": "./src/dbConnect.js"
   },
   "dependencies": {
+    "@headlines/ai-services": "workspace:*",
     "@headlines/utils-shared": "workspace:*",
     "@headlines/config": "workspace:*",
     "@headlines/prompts": "workspace:*",
     "@headlines/models": "workspace:*",
+    "@pinecone-database/pinecone": "^2.2.2",
     "bcryptjs": "^2.4.3",
     "mongoose": "^8.4.1"
   }

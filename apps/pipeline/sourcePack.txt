@@ -177,7 +177,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-05T00:50:44.051Z
+**Generated**: 2025-10-05T19:41:33.260Z
 **Repository Path**: /home/mark/Repos/projects/headlines/apps/pipeline
 **Total Files**: 109
 **Package**: @headlines/pipeline@1.0.0

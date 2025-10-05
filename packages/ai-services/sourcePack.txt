@@ -72,7 +72,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-05T00:50:44.062Z
+**Generated**: 2025-10-05T19:41:33.273Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/ai-services
 **Total Files**: 54
 **Package**: @headlines/ai-services@1.0.0
@@ -84,7 +84,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 35, Size: 946 Bytes*
+*Lines: 36, Size: 973 Bytes*
 
 ```json
 {
@@ -103,8 +103,8 @@ headlines/
     "@headlines/config": "workspace:*",
     "@headlines/models": "workspace:*",
     "@headlines/prompts": "workspace:*",
-    "@headlines/utils-shared": "workspace:*",
     "@headlines/utils-server": "workspace:*",
+    "@headlines/utils-shared": "workspace:*",
     "@langchain/community": "*",
     "@langchain/core": "*",
     "@langchain/openai": "*",
@@ -113,6 +113,7 @@ headlines/
     "@xenova/transformers": "^2.17.2",
     "axios": "^1.7.2",
     "langchain": "*",
+    "mongoose": "^8.19.0",
     "newsapi": "^2.4.1",
     "openai": "^5.22.0",
     "p-limit": "^5.0.0",

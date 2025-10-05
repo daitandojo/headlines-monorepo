@@ -1,14 +1,9 @@
-// File: apps/client/next.config.mjs (FINAL ATTEMPT)
+// File: apps/client/next.config.mjs
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Add this postcss section
-  postcss: {
-    plugins: {
-      tailwindcss: {},
-      autoprefixer: {},
-    },
-  },
+  // The invalid 'postcss' key has been removed from this configuration.
+  // Next.js will automatically use postcss.config.js.
   transpilePackages: [
     '@headlines/config',
     '@headlines/models',

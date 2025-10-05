@@ -76,7 +76,11 @@ export async function processUploadedArticle(item, userId) {
     }
 
     const synthesizedResult = await synthesizeEvent([enrichedArticle], [], '', '')
-    if (!synthesizedResult || !synthesizedResult.events || synthesizedResult.events.length === 0) {
+    if (
+      !synthesizedResult ||
+      !synthesizedResult.events ||
+      synthesizedResult.events.length === 0
+    ) {
       throw new Error('AI failed to synthesize an event from the provided text.')
     }
     const eventData = synthesizedResult.events[0]
@@ -85,14 +89,20 @@ export async function processUploadedArticle(item, userId) {
       ...eventData,
       event_key: `manual-${new Date().toISOString()}`,
       highest_relevance_score: 100,
-      source_articles: [{ headline: item.headline, link: '#manual', newspaper: 'Manual Upload' }],
+      source_articles: [
+        { headline: item.headline, link: '#manual', newspaper: 'Manual Upload' },
+      ],
     })
 
-    const opportunitiesToSave = await generateOpportunitiesFromEvent(eventToSave, [enrichedArticle])
+    const opportunitiesToSave = await generateOpportunitiesFromEvent(eventToSave, [
+      enrichedArticle,
+    ])
 
     await eventToSave.save()
     if (opportunitiesToSave.length > 0) {
-      await Opportunity.insertMany(opportunitiesToSave.map((opp) => ({ ...opp, events: [eventToSave._id] })))
+      await Opportunity.insertMany(
+        opportunitiesToSave.map((opp) => ({ ...opp, events: [eventToSave._id] }))
+      )
     }
 
     return { success: true, event: eventToSave.synthesized_headline }
@@ -103,27 +113,34 @@ export async function processUploadedArticle(item, userId) {
 }
 
 export async function addKnowledge(data) {
-    const { headline, business_summary, source, country, link } = data
-    if (!headline || !business_summary || !source || !country || !link) {
-        return { success: false, message: 'All fields are required.' }
-    }
-    try {
-        const textToEmbed = `${headline}\n${business_summary}`
-        const embedding = await generateEmbedding(textToEmbed)
-        const newArticle = new Article({
-            _id: new mongoose.Types.ObjectId(),
-            headline, link, newspaper: source, source: 'Manual Upload', country: [country],
-            relevance_headline: 100, assessment_headline: 'Manually uploaded by user.',
-            relevance_article: 100, assessment_article: business_summary,
-            embedding: embedding, key_individuals: [],
-        })
-        await newArticle.save()
-        // Pinecone logic would go here
-        return { success: true, message: 'Knowledge successfully added and embedded.' }
-    } catch (error) {
-        console.error('[Add Knowledge Error]', error)
-        return { success: false, message: 'Failed to add knowledge.' }
-    }
+  const { headline, business_summary, source, country, link } = data
+  if (!headline || !business_summary || !source || !country || !link) {
+    return { success: false, message: 'All fields are required.' }
+  }
+  try {
+    const textToEmbed = `${headline}\n${business_summary}`
+    const embedding = await generateEmbedding(textToEmbed)
+    const newArticle = new Article({
+      _id: new mongoose.Types.ObjectId(),
+      headline,
+      link,
+      newspaper: source,
+      source: 'Manual Upload',
+      country: [country],
+      relevance_headline: 100,
+      assessment_headline: 'Manually uploaded by user.',
+      relevance_article: 100,
+      assessment_article: business_summary,
+      embedding: embedding,
+      key_individuals: [],
+    })
+    await newArticle.save()
+    // Pinecone logic would go here
+    return { success: true, message: 'Knowledge successfully added and embedded.' }
+  } catch (error) {
+    console.error('[Add Knowledge Error]', error)
+    return { success: false, message: 'Failed to add knowledge.' }
+  }
 }
 
 export async function suggestSections(url) {
@@ -143,5 +160,44 @@ export async function suggestSections(url) {
 
 // --- Sanity Check Function ---
 export async function performAiSanityCheck() {
-    // ... implementation ...
+  try {
+    logger.info('🔬 Performing AI service sanity check (OpenAI)...')
+    const answer = await callLanguageModel({
+      modelName: 'gpt-3.5-turbo', // Use a standard, widely available model for the check
+      prompt: 'In one word, what is the capital of France?',
+      isJson: false,
+    })
+
+    // Handle API call failure from safeExecute
+    if (answer && answer.error) {
+      logger.fatal(
+        { details: answer.error },
+        'OpenAI sanity check failed. The API call failed or timed out. This is often due to an incorrect API key, network issues, or service outage.'
+      )
+      return false
+    }
+
+    // Handle unexpected response format
+    if (
+      !answer ||
+      typeof answer !== 'string' ||
+      !answer.trim().toLowerCase().includes('paris')
+    ) {
+      logger.fatal(
+        { details: { expected: 'paris', received: answer } },
+        `OpenAI sanity check failed. The model did not return the expected response.`
+      )
+      return false
+    }
+
+    logger.info('✅ AI service sanity check passed.')
+    return true
+  } catch (error) {
+    // This will catch any unexpected synchronous errors in the function itself.
+    logger.fatal(
+      { err: error },
+      'OpenAI sanity check failed with an unexpected exception.'
+    )
+    return false
+  }
 }
