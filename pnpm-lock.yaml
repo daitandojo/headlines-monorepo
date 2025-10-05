@@ -25,6 +25,9 @@ importers:
       '@eslint/eslintrc':
         specifier: ^3.1.0
         version: 3.3.1
+      autoprefixer:
+        specifier: ^10.4.19
+        version: 10.4.21(postcss@8.5.6)
       dotenv-cli:
         specifier: ^7.4.2
         version: 7.4.4
@@ -37,9 +40,15 @@ importers:
       eslint-plugin-import:
         specifier: ^2.29.1
         version: 2.32.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1)
+      postcss:
+        specifier: ^8.4.38
+        version: 8.5.6
       prettier:
         specifier: ^3.0.0
         version: 3.6.2
+      tailwindcss:
+        specifier: ^3.4.1
+        version: 3.4.18(yaml@2.8.1)
       typescript:
         specifier: ^5.5.4
         version: 5.9.3
@@ -132,7 +141,7 @@ importers:
         version: 0.379.0(react@18.3.1)
       next:
         specifier: 14.2.4
-        version: 14.2.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 14.2.4(@playwright/test@1.55.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next-themes:
         specifier: ^0.3.0
         version: 0.3.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -167,21 +176,12 @@ importers:
         specifier: ^5.0.8
         version: 5.0.8(@types/react@19.2.0)(react@18.3.1)
     devDependencies:
-      autoprefixer:
-        specifier: ^10.4.19
-        version: 10.4.21(postcss@8.5.6)
       eslint:
         specifier: ^8.57.0
         version: 8.57.1
       eslint-config-next:
         specifier: 14.2.4
         version: 14.2.4(eslint@8.57.1)(typescript@5.9.3)
-      postcss:
-        specifier: ^8.4.38
-        version: 8.5.6
-      tailwindcss:
-        specifier: ^3.4.1
-        version: 3.4.18(yaml@2.8.1)
 
   apps/pipeline:
     dependencies:
@@ -10280,7 +10280,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  next@14.2.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  next@14.2.4(@playwright/test@1.55.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       '@next/env': 14.2.4
       '@swc/helpers': 0.5.5
@@ -10301,6 +10301,7 @@ snapshots:
       '@next/swc-win32-arm64-msvc': 14.2.4
       '@next/swc-win32-ia32-msvc': 14.2.4
       '@next/swc-win32-x64-msvc': 14.2.4
+      '@playwright/test': 1.55.1
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
