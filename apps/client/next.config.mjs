@@ -1,13 +1,20 @@
+// File: apps/client/next.config.mjs (FINAL ATTEMPT)
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Add this postcss section
+  postcss: {
+    plugins: {
+      tailwindcss: {},
+      autoprefixer: {},
+    },
+  },
   transpilePackages: [
     '@headlines/config',
     '@headlines/models',
     '@headlines/utils-shared',
   ],
   experimental: {
-    // These packages are server-only and should not be bundled into serverless functions.
-    // data-access is now here because it's no longer transpiled.
     serverComponentsExternalPackages: [
       '@headlines/data-access',
       '@headlines/ai-services',
@@ -21,8 +28,6 @@ const nextConfig = {
   },
   webpack: (config, { isServer }) => {
     if (isServer) {
-      // Mark these as external so they're loaded from node_modules at runtime
-      // This prevents webpack from trying to bundle them
       config.externals.push({
         '@xenova/transformers': '@xenova/transformers',
         'onnxruntime-node': 'commonjs onnxruntime-node',
@@ -32,7 +37,6 @@ const nextConfig = {
         aws4: 'commonjs aws4',
       })
     } else {
-      // Prevent client-side bundling of server-only packages
       config.resolve.alias = {
         ...config.resolve.alias,
         '@xenova/transformers': false,
@@ -41,10 +45,8 @@ const nextConfig = {
         bcrypt: false,
       }
     }
-
     return config
   },
-  // Use SWC instead of Terser for better async support
   swcMinify: true,
 }
 
