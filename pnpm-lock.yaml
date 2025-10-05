@@ -46,6 +46,9 @@ importers:
       postcss:
         specifier: ^8.4.38
         version: 8.5.6
+      postcss-import:
+        specifier: ^16.1.1
+        version: 16.1.1(postcss@8.5.6)
       prettier:
         specifier: ^3.0.0
         version: 3.6.2
@@ -147,7 +150,7 @@ importers:
         version: 0.379.0(react@18.3.1)
       next:
         specifier: 14.2.4
-        version: 14.2.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 14.2.4(@playwright/test@1.55.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next-themes:
         specifier: ^0.3.0
         version: 0.3.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -4850,6 +4853,12 @@ packages:
   postcss-import@15.1.0:
     resolution: {integrity: sha512-hpr+J05B2FVYUAXHeK1YyI267J/dDDhMU6B6civm8hSY1jYJnBXxzKDKDswzJmtLHryrjhnDjqqp/49t8FALew==}
     engines: {node: '>=14.0.0'}
+    peerDependencies:
+      postcss: ^8.0.0
+
+  postcss-import@16.1.1:
+    resolution: {integrity: sha512-2xVS1NCZAfjtVdvXiyegxzJ447GyqCeEI5V7ApgQVOWnros1p5lGNovJNapwPpMombyFBfqDwt7AD3n2l0KOfQ==}
+    engines: {node: '>=18.0.0'}
     peerDependencies:
       postcss: ^8.0.0
 
@@ -10295,7 +10304,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  next@14.2.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  next@14.2.4(@playwright/test@1.55.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       '@next/env': 14.2.4
       '@swc/helpers': 0.5.5
@@ -10316,6 +10325,7 @@ snapshots:
       '@next/swc-win32-arm64-msvc': 14.2.4
       '@next/swc-win32-ia32-msvc': 14.2.4
       '@next/swc-win32-x64-msvc': 14.2.4
+      '@playwright/test': 1.55.1
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
@@ -10627,6 +10637,13 @@ snapshots:
   possible-typed-array-names@1.1.0: {}
 
   postcss-import@15.1.0(postcss@8.5.6):
+    dependencies:
+      postcss: 8.5.6
+      postcss-value-parser: 4.2.0
+      read-cache: 1.0.0
+      resolve: 1.22.10
+
+  postcss-import@16.1.1(postcss@8.5.6):
     dependencies:
       postcss: 8.5.6
       postcss-value-parser: 4.2.0
