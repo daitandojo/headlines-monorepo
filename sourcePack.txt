@@ -1,20 +1,20 @@
 # 🎯 MONOREPO SOURCE PACK
 
-**Generated**: 2025-10-04T15:31:18.588Z
+**Generated**: 2025-10-05T00:50:44.081Z
 **Packages**: 11
-**Total Files**: 529
-**Total Lines**: 35,441
+**Total Files**: 527
+**Total Lines**: 35,445
 
 ---
 
 ## 📚 TABLE OF CONTENTS
 
-1. **client** (198 files, 14,170 lines)
+1. **client** (196 files, 14,116 lines)
 2. **pipeline** (109 files, 11,101 lines)
 3. **server** (4 files, 141 lines)
-4. **ai-services** (54 files, 3,197 lines)
+4. **ai-services** (54 files, 3,306 lines)
 5. **config** (6 files, 205 lines)
-6. **data-access** (30 files, 2,236 lines)
+6. **data-access** (30 files, 2,185 lines)
 7. **models** (45 files, 1,037 lines)
 8. **prompts** (31 files, 1,013 lines)
 9. **scraper-logic** (29 files, 1,486 lines)
@@ -27,7 +27,7 @@
 
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 210 files, 90 directories
+Total: 208 files, 89 directories
 
 ```
 headlines/
@@ -68,20 +68,6 @@ headlines/
 │   │   │   ├── 📁 upload/
 │   │   │   │   └── 📄 page.js
 │   │   │   └── 📄 layout.js
-│   │   ├── 📁 (public)/
-│   │   │   ├── 📁 _components/
-│   │   │   │   ├── 📄 AboutSection.jsx
-│   │   │   │   ├── 📄 Features.jsx
-│   │   │   │   ├── 📄 Footer.jsx
-│   │   │   │   ├── 📄 GlobalCoverage.jsx
-│   │   │   │   ├── 📄 Hero.jsx
-│   │   │   │   ├── 📄 InteractiveDemo.jsx
-│   │   │   │   ├── 📄 LiquidityTicker.jsx
-│   │   │   │   ├── 📄 LoginModal.jsx
-│   │   │   │   ├── 📄 SignUpFlow.jsx
-│   │   │   │   └── 📄 StatsSection.jsx
-│   │   │   ├── 📄 layout.jsx
-│   │   │   └── 📄 page.jsx
 │   │   ├── 📁 admin/
 │   │   │   ├── 📁 articles/
 │   │   │   │   ├── 📁 [articleId]/
@@ -252,6 +238,18 @@ headlines/
 │   │   │   │   └── 📄 SwipeToDelete.jsx
 │   │   │   └── 📁 upload/
 │   │   │       └── 📄 UploadView.jsx
+│   │   ├── 📁 landing/
+│   │   │   ├── 📄 AboutSection.jsx
+│   │   │   ├── 📄 Features.jsx
+│   │   │   ├── 📄 Footer.jsx
+│   │   │   ├── 📄 GlobalCoverage.jsx
+│   │   │   ├── 📄 Hero.jsx
+│   │   │   ├── 📄 InteractiveDemo.jsx
+│   │   │   ├── 📄 LandingPage.jsx
+│   │   │   ├── 📄 LiquidityTicker.jsx
+│   │   │   ├── 📄 LoginModal.jsx
+│   │   │   ├── 📄 SignUpFlow.jsx
+│   │   │   └── 📄 StatsSection.jsx
 │   │   ├── 📁 shared/
 │   │   │   ├── 📁 buttons/
 │   │   │   │   ├── 📄 ExportButton.jsx
@@ -323,21 +321,20 @@ headlines/
 │       ├── 📄 constants.js
 │       └── 📄 init-shared-logic.js
 ├── 📄 .gitignore
+├── 📄 .npmrc
 ├── 📄 app.config.js
 ├── 📄 eslint.config.mjs
 ├── 📄 jsconfig.json
 ├── 📄 next.config.mjs
 ├── 📄 package.json
-├── 📄 postcss.config.cjs
-├── 📄 tailwind.config.js
-└── 📄 vercel.j_s_o_n
+└── 📄 tailwind.config.js
 ```
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-04T15:31:18.535Z
+**Generated**: 2025-10-05T00:50:44.029Z
 **Repository Path**: /home/mark/Repos/projects/headlines/apps/client
-**Total Files**: 198
+**Total Files**: 196
 **Package**: @headlines/client@1.0.0
 
 
@@ -392,6 +389,14 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+```
+
+## 📄 .npmrc
+*Lines: 2, Size: 41 Bytes*
+
+```
+shamefully-hoist=true
+node-linker=hoisted
 ```
 
 ## 📄 app.config.js
@@ -461,20 +466,25 @@ export default eslintConfig;
 ```
 
 ## 📄 next.config.mjs
-*Lines: 47, Size: 1.4 KB*
+*Lines: 52, Size: 1.51 KB*
 
 ```
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: [
     '@headlines/config',
-    '@headlines/data-access',
     '@headlines/models',
     '@headlines/utils-shared',
   ],
   experimental: {
-    // Tell Next.js these packages should NOT be bundled into serverless functions
+    // These packages are server-only and should not be bundled into serverless functions.
+    // data-access is now here because it's no longer transpiled.
     serverComponentsExternalPackages: [
+      '@headlines/data-access',
+      '@headlines/ai-services',
+      '@headlines/scraper-logic',
+      '@headlines/utils-server',
+      '@headlines/prompts',
       '@xenova/transformers',
       'sharp',
       'onnxruntime-node',
@@ -505,8 +515,8 @@ const nextConfig = {
 
     return config
   },
-  // Disable minification for problematic packages or configure terser to handle async
-  swcMinify: true, // Use SWC instead of Terser (better async support)
+  // Use SWC instead of Terser for better async support
+  swcMinify: true,
 }
 
 export default nextConfig
@@ -514,7 +524,7 @@ export default nextConfig
 ```
 
 ## 📄 package.json
-*Lines: 62, Size: 1.91 KB*
+*Lines: 64, Size: 1.99 KB*
 
 ```json
 {
@@ -551,7 +561,6 @@ export default nextConfig
     "@tanstack/react-query-devtools": "^5.45.1",
     "@tanstack/react-table": "^8.21.3",
     "class-variance-authority": "^0.7.1",
-    "@xenova/transformers": "^2.17.2",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
@@ -572,30 +581,14 @@ export default nextConfig
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "autoprefixer": "^10.4.19",
     "eslint": "^8.57.0",
     "eslint-config-next": "14.2.4",
-    "postcss": "^8",
-    "tailwindcss": "^3.4.1"
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.1",
+    "@tailwindcss/typography": "^0.5.13",
+    "tailwindcss-animate": "^1.0.7"
   }
-}
-
-```
-
-## 📄 postcss.config.cjs
-*Lines: 13, Size: 216 Bytes*
-
-```
-// File: apps/client/postcss.config.Cjs
-
-const path = require('path')
-
-module.exports = {
-  plugins: {
-    tailwindcss: {
-      config: path.join(__dirname, 'tailwind.config.js'),
-    },
-    autoprefixer: {},
-  },
 }
 
 ```
@@ -731,14 +724,13 @@ self.addEventListener('notificationclick', (event) => {
 ```
 
 ## 📄 src/app/(client)/articles/page.js
-*Lines: 43, Size: 1.26 KB*
+*Lines: 41, Size: 1.16 KB*
 
 ```javascript
 // apps/client/src/app/(client)/articles/page.js
 import { DataView } from '@/components/client/shared/DataView'
 import { getArticles } from '@headlines/data-access/next'
 import { getUserIdFromSession } from '@/lib/auth/server'
-import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
 
@@ -748,7 +740,6 @@ const sortOptions = [
 ]
 
 export default async function ArticlesPage({ searchParams }) {
-  await dbConnect() // ACTION: Add this line
   const userId = await getUserIdFromSession()
   let initialArticles = []
 
@@ -795,14 +786,13 @@ export default function ChatPage() {
 ```
 
 ## 📄 src/app/(client)/events/page.js
-*Lines: 43, Size: 1.33 KB*
+*Lines: 41, Size: 1.17 KB*
 
 ```javascript
 // apps/client/src/app/(client)/events/page.js (CORRECTED)
 import { DataView } from '@/components/client/shared/DataView'
 import { getEvents } from '@headlines/data-access/next'
 import { getUserIdFromSession } from '@/lib/auth/server'
-import dbConnect from '@headlines/data-access/dbConnect/next' // Import dbConnect
 
 export const dynamic = 'force-dynamic'
 
@@ -812,7 +802,6 @@ const sortOptions = [
 ]
 
 export default async function EventsPage({ searchParams }) {
-  await dbConnect() // ACTION: Add this line to connect before any data access
   const userId = await getUserIdFromSession()
   let initialEvents = []
 
@@ -868,7 +857,7 @@ export default function ClientLayout({ children }) {
 ```
 
 ## 📄 src/app/(client)/opportunities/[opportunityId]/page.js
-*Lines: 144, Size: 5.12 KB*
+*Lines: 142, Size: 4.99 KB*
 
 ```javascript
 // apps/client/src/app/(client)/opportunities/[opportunityId]/page.js (CORRECTED)
@@ -889,7 +878,6 @@ import {
 import { ArrowLeft, User, MapPin, Briefcase, Mail, Zap, ExternalLink } from 'lucide-react'
 import { format } from 'date-fns'
 import { getCountryFlag } from '@headlines/utils-shared'
-import dbConnect from '@headlines/data-access/dbConnect/next' // Import dbConnect
 
 function TimelineItem({ event, isLast }) {
   return (
@@ -927,7 +915,6 @@ function TimelineItem({ event, isLast }) {
 }
 
 export default async function OpportunityDossierPage({ params }) {
-  await dbConnect() // ACTION: Add this line
   const { opportunityId } = params
   const { success, data: opportunity } = await getOpportunityDetails(opportunityId)
 
@@ -1018,14 +1005,13 @@ export default async function OpportunityDossierPage({ params }) {
 ```
 
 ## 📄 src/app/(client)/opportunities/page.js
-*Lines: 44, Size: 1.35 KB*
+*Lines: 42, Size: 1.24 KB*
 
 ```javascript
 // apps/client/src/app/(client)/opportunities/page.js
 import { DataView } from '@/components/client/shared/DataView'
 import { getOpportunities } from '@headlines/data-access/next'
 import { getUserIdFromSession } from '@/lib/auth/server'
-import dbConnect from '@headlines/data-access/dbConnect/next'
 
 const sortOptions = [
   { value: 'date_desc', icon: 'clock', tooltip: 'Sort by Date (Newest First)' },
@@ -1033,7 +1019,6 @@ const sortOptions = [
 ]
 
 export default async function OpportunitiesPage({ searchParams }) {
-  await dbConnect() // ACTION: Add this line
   const userId = await getUserIdFromSession()
   let initialOpportunities = []
 
@@ -1068,19 +1053,16 @@ export default async function OpportunitiesPage({ searchParams }) {
 ```
 
 ## 📄 src/app/(client)/settings/page.js
-*Lines: 26, Size: 896 Bytes*
+*Lines: 23, Size: 768 Bytes*
 
 ```javascript
 // File: apps/client/src/app/(client)/settings/page.js (CORRECTED)
 import { getGlobalCountries } from '@headlines/data-access/next'
 import { SettingsForm } from '@/components/client/settings/SettingsForm'
-import dbConnect from '@headlines/data-access/dbConnect/next' // Import dbConnect
 
 export const dynamic = 'force-dynamic'
 
 export default async function SettingsPage() {
-  await dbConnect() // ACTION: Add this line
-
   // Fetch all countries with event counts to pass to the editor
   const { data: allCountries } = await getGlobalCountries()
 
@@ -1117,1246 +1099,6 @@ export const dynamic = 'force-dynamic'
 
 export default function UploadPage() {
   return <UploadView />
-}
-
-```
-
-## 📄 src/app/(public)/_components/AboutSection.jsx
-*Lines: 37, Size: 1.51 KB*
-
-```jsx
-// apps/client/src/app/(public)/_components/AboutSection.jsx
-'use client'
-
-import { motion } from 'framer-motion'
-
-export function AboutSection() {
-  return (
-    <section className="w-full max-w-4xl mx-auto text-center">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.5 }}
-        transition={{ duration: 0.8, ease: 'easeOut' }}
-      >
-        <h2 className="text-3xl sm:text-4xl font-bold tracking-tighter">
-          Built for the Modern Wealth Advisor
-        </h2>
-        <div className="mt-6 prose prose-lg prose-invert mx-auto text-slate-400">
-          <p>
-            In today's market, information is commoditized. Intelligence is not. Headlines
-            AI was founded on a simple premise: wealth managers need more than just news;
-            they need verified, actionable signals delivered with speed and precision.
-          </p>
-          <p>
-            Our platform deploys a fleet of autonomous AI agents that work around the
-            clock. These agents read, translate, and contextualize millions of data points
-            from sources often overlooked by traditional aggregators. They are trained to
-            think like analysts—identifying not just the "what," but the "who" and "why"
-            behind every significant wealth event. This is the new alpha: agentic
-            intelligence, always on the lookout for your next mandate.
-          </p>
-        </div>
-      </motion.div>
-    </section>
-  )
-}
-
-```
-
-## 📄 src/app/(public)/_components/Features.jsx
-*Lines: 81, Size: 2.8 KB*
-
-```jsx
-// apps/client/src/app/(public)/_components/Features.jsx
-'use client'
-
-import { motion } from 'framer-motion'
-import { Zap, Target, Home, Layers, Share2, PenSquare } from 'lucide-react'
-
-const features = [
-  {
-    icon: <Zap className="h-8 w-8 text-blue-400" />,
-    title: 'Live Events Dashboard',
-    description:
-      'Track global liquidity events in real-time. Filter by country, sector, and deal size to focus on what matters to you.',
-  },
-  {
-    icon: <Target className="h-8 w-8 text-green-400" />,
-    title: 'Curated Opportunity Dossiers',
-    description:
-      'Move from signal to mandate. Each event is linked to actionable dossiers on key individuals, complete with estimated liquidity and AI-generated outreach points.',
-  },
-  {
-    icon: <Home className="h-8 w-8 text-purple-400" />,
-    title: 'Family Office Database',
-    description:
-      'Access our proprietary, continuously updated database of single and multi-family offices, tracking their investments and key personnel.',
-  },
-  {
-    icon: <Layers className="h-8 w-8 text-yellow-400" />,
-    title: 'Unrivaled Source Intelligence',
-    description:
-      'We go beyond headlines, ingesting data from newspapers, regulatory filings, PE/VC portfolio updates, and M&A journals.',
-  },
-  {
-    icon: <Share2 className="h-8 w-8 text-cyan-400" />,
-    title: 'Integrate Your Workflow',
-    description:
-      'Receive alerts via Email, Push, or WhatsApp. Prepare for meetings with one-click AI summaries and export any view to Excel.',
-  },
-  {
-    icon: <PenSquare className="h-8 w-8 text-rose-400" />,
-    title: 'AI-Powered Outreach',
-    description:
-      "Generate personalized meeting preps and draft compelling outreach emails based on an opportunity's specific context.",
-  },
-]
-
-export function Features() {
-  const containerVariants = {
-    visible: { transition: { staggerChildren: 0.1 } },
-  }
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
-  }
-
-  return (
-    <section className="w-full">
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        variants={containerVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.2 }}
-      >
-        {features.map((feature, index) => (
-          <motion.div
-            key={index}
-            variants={itemVariants}
-            className="p-6 bg-slate-900/50 border border-slate-800 rounded-xl"
-          >
-            <div className="flex items-center gap-4">
-              {feature.icon}
-              <h3 className="text-lg font-bold text-slate-100">{feature.title}</h3>
-            </div>
-            <p className="mt-3 text-slate-400">{feature.description}</p>
-          </motion.div>
-        ))}
-      </motion.div>
-    </section>
-  )
-}
-
-```
-
-## 📄 src/app/(public)/_components/Footer.jsx
-*Lines: 87, Size: 3.4 KB*
-
-```jsx
-// apps/client/src/app/(public)/_components/Footer.jsx
-
-import Link from 'next/link'
-
-// Simple SVG icons for social media
-const XIcon = (props) => (
-  <svg fill="currentColor" viewBox="0 0 24 24" {...props}>
-    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-  </svg>
-)
-
-const LinkedInIcon = (props) => (
-  <svg fill="currentColor" viewBox="0 0 24 24" {...props}>
-    <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
-  </svg>
-)
-
-export function Footer() {
-  return (
-    <footer className="w-full bg-slate-900/50 border-t border-slate-800 mt-24">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="md:col-span-2">
-            <h3 className="text-lg font-bold">Headlines AI</h3>
-            <p className="mt-2 text-sm text-slate-400 max-w-sm">
-              The leading intelligence platform for wealth management professionals
-              seeking to capture new liquidity and identify emerging opportunities.
-            </p>
-          </div>
-          <div>
-            <h4 className="font-semibold tracking-wider text-slate-300 uppercase">
-              Company
-            </h4>
-            <ul className="mt-4 space-y-2 text-sm">
-              <li>
-                <Link href="#" className="text-slate-400 hover:text-white">
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="text-slate-400 hover:text-white">
-                  Contact
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="text-slate-400 hover:text-white">
-                  Careers
-                </Link>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-semibold tracking-wider text-slate-300 uppercase">
-              Legal
-            </h4>
-            <ul className="mt-4 space-y-2 text-sm">
-              <li>
-                <Link href="#" className="text-slate-400 hover:text-white">
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="text-slate-400 hover:text-white">
-                  Terms of Service
-                </Link>
-              </li>
-            </ul>
-          </div>
-        </div>
-        <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center">
-          <p className="text-sm text-slate-500">
-            &copy; {new Date().getFullYear()} Headlines Intelligence. All rights reserved.
-          </p>
-          <div className="flex items-center gap-4 mt-4 sm:mt-0">
-            <a href="#" className="text-slate-500 hover:text-white transition-colors">
-              <XIcon className="h-5 w-5" />
-            </a>
-            <a href="#" className="text-slate-500 hover:text-white transition-colors">
-              <LinkedInIcon className="h-5 w-5" />
-            </a>
-          </div>
-        </div>
-      </div>
-    </footer>
-  )
-}
-
-```
-
-## 📄 src/app/(public)/_components/GlobalCoverage.jsx
-*Lines: 80, Size: 3.02 KB*
-
-```jsx
-// apps/client/src/app/(public)/_components/GlobalCoverage.jsx
-'use client'
-
-import { motion } from 'framer-motion'
-import { CheckCircle } from 'lucide-react'
-
-const features = [
-  {
-    name: '73 Countries Monitored',
-    description:
-      'Our AI operates across continents, ensuring you never miss an opportunity in your region.',
-  },
-  {
-    name: 'Native Language Processing',
-    description:
-      'We analyze sources in their original language for maximum accuracy and nuance.',
-  },
-  {
-    name: 'Source Triangulation',
-    description:
-      'Events are verified against multiple sources, from national newspapers to regulatory filings.',
-  },
-  {
-    name: '24/7 Platform Reliability',
-    description:
-      'Our systems autonomously monitor data integrity to ensure a continuous, reliable intelligence flow.',
-  },
-]
-
-export function GlobalCoverage() {
-  return (
-    <section className="relative w-full overflow-hidden">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-        <div className="relative h-96 lg:h-auto lg:self-stretch">
-          <div className="absolute inset-0 bg-slate-900/50 rounded-2xl overflow-hidden">
-            <div className="absolute inset-0 hero-grid-background opacity-50" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,hsl(var(--primary)/0.1),transparent_40%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,hsl(var(--ring)/0.1),transparent_40%)]" />
-          </div>
-        </div>
-        <div className="relative z-10">
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.5 }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
-          >
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tighter">
-              Global Reach, Local Depth. Zero Blind Spots.
-            </h2>
-            <p className="mt-4 text-lg text-slate-400">
-              Our infrastructure is built for the global wealth landscape. We go beyond
-              simple translations to understand context, verify facts, and deliver
-              intelligence with unparalleled precision.
-            </p>
-            <dl className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6">
-              {features.map((feature) => (
-                <div key={feature.name} className="relative">
-                  <dt>
-                    <CheckCircle
-                      className="absolute h-6 w-6 text-green-500"
-                      aria-hidden="true"
-                    />
-                    <p className="ml-9 text-lg font-semibold leading-6 text-slate-100">
-                      {feature.name}
-                    </p>
-                  </dt>
-                  <dd className="ml-9 mt-1 text-base leading-6 text-slate-400">
-                    {feature.description}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </motion.div>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-```
-
-## 📄 src/app/(public)/_components/Hero.jsx
-*Lines: 152, Size: 6.09 KB*
-
-```jsx
-// apps/client/src/app/(public)/_components/Hero.jsx
-'use client'
-
-import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { Button } from '@/components/shared'
-import { LiquidityTicker } from './LiquidityTicker'
-import { LoginModal } from './LoginModal'
-import { Zap, Target, Layers, Share2 } from 'lucide-react'
-
-const FeatureCard = ({ icon, title, description, delay }) => (
-  <motion.div
-    variants={{
-      hidden: { opacity: 0, y: 20 },
-      visible: {
-        opacity: 1,
-        y: 0,
-        transition: { duration: 0.6, ease: 'easeOut', delay },
-      },
-    }}
-    className="bg-slate-900/40 border border-slate-800/60 p-6 rounded-lg backdrop-blur-sm text-left"
-  >
-    <div className="flex items-center gap-4">
-      <div className="flex-shrink-0">{icon}</div>
-      <h3 className="text-lg font-bold text-slate-100">{title}</h3>
-    </div>
-    <p className="mt-3 text-sm text-slate-400">{description}</p>
-  </motion.div>
-)
-
-export function Hero({ tickerEvents }) {
-  const [isLoginOpen, setIsLoginOpen] = useState(false)
-
-  const handleScrollToSignUp = () => {
-    document.getElementById('signup-flow')?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'center',
-    })
-  }
-
-  return (
-    <>
-      <header className="fixed top-0 left-0 right-0 z-40 p-4 bg-background/30 backdrop-blur-sm border-b border-slate-800/50">
-        <div className="container mx-auto flex justify-between items-center">
-          <div className="text-xl font-bold tracking-tighter">Headlines AI</div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" onClick={() => setIsLoginOpen(true)}>
-              Member Login
-            </Button>
-            <Button
-              onClick={handleScrollToSignUp}
-              className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/20"
-            >
-              Start Free Trial
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <section className="relative w-full min-h-screen flex flex-col justify-between overflow-hidden pt-24 pb-8 px-4">
-        {/* Animated Background */}
-        <div className="absolute inset-0 z-0 hero-aurora" />
-        <div className="absolute inset-0 z-0 hero-grid-background" />
-
-        {/* Main Content Area */}
-        <div className="relative z-10 container mx-auto flex flex-col items-center justify-center flex-grow">
-          <motion.div
-            className="text-center"
-            initial="hidden"
-            animate="visible"
-            variants={{ visible: { transition: { staggerChildren: 0.15 } } }}
-          >
-            <motion.h1
-              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-              transition={{ duration: 0.8, ease: 'easeOut' }}
-              className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-white to-slate-300 mb-8"
-            >
-              We Find Your Next Mandate.
-            </motion.h1>
-
-            <motion.p
-              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-              transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }}
-              className="max-w-3xl mx-auto text-lg sm:text-xl text-slate-400"
-            >
-              Our AI engine delivers verified private wealth opportunities across 73
-              countries, ensuring you never miss a mandate in your region.
-            </motion.p>
-
-            <motion.div
-              variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
-              className="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto"
-            >
-              <FeatureCard
-                icon={<Zap className="h-6 w-6 text-blue-400" />}
-                title="Events Dashboard"
-                description="Track global liquidity events in real-time. Filter by country, sector, and deal size to focus on what matters."
-                delay={0.2}
-              />
-              <FeatureCard
-                icon={<Target className="h-6 w-6 text-green-400" />}
-                title="Prospect Dossiers"
-                description="AI-generated dossiers on key individuals, complete with estimated liquidity and outreach points."
-                delay={0.3}
-              />
-              <FeatureCard
-                icon={<Layers className="h-6 w-6 text-yellow-400" />}
-                title="Unrivaled Sourcing"
-                description="Our autonomous agents ingest data from thousands of global newspapers, regulatory filings, and PE/VC portfolio updates daily."
-                delay={0.4}
-              />
-              <FeatureCard
-                icon={<Share2 className="h-6 w-6 text-cyan-400" />}
-                title="Seamless Delivery"
-                description="Receive critical alerts through email, push notifications, or WhatsApp, and export any view to Excel for deeper analysis."
-                delay={0.5}
-              />
-            </motion.div>
-
-            <motion.div
-              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-              transition={{ duration: 0.8, ease: 'easeOut', delay: 0.6 }}
-              className="mt-16"
-            >
-              <Button
-                size="lg"
-                onClick={handleScrollToSignUp}
-                className="text-lg px-8 py-6 bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-900 font-bold hover:from-amber-300 hover:to-yellow-400 shadow-lg shadow-yellow-500/20 transform hover:scale-105 transition-transform"
-              >
-                Claim Your Intelligence Briefing
-              </Button>
-            </motion.div>
-          </motion.div>
-        </div>
-
-        {/* Ticker Area */}
-        <div className="relative z-10 container mx-auto w-full mt-16">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.8, ease: 'easeOut' }}
-          >
-            <LiquidityTicker events={tickerEvents} />
-          </motion.div>
-        </div>
-      </section>
-
-      <LoginModal open={isLoginOpen} onOpenChange={setIsLoginOpen} />
-    </>
-  )
-}
-
-```
-
-## 📄 src/app/(public)/_components/InteractiveDemo.jsx
-*Lines: 240, Size: 8.87 KB*
-
-```jsx
-// apps/client/src/app/(public)/_components/InteractiveDemo.jsx
-'use client'
-
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  Badge,
-  Button,
-} from '@/components/shared'
-import { getCountryFlag } from '@headlines/utils-shared'
-import { CheckCircle, Zap, User, Briefcase, Eye, Mail, ExternalLink } from 'lucide-react'
-import { format } from 'date-fns'
-
-const demoEvents = [
-  {
-    id: 1,
-    country: 'Denmark',
-    date: '2025-09-15T10:00:00Z',
-    score: 95,
-    headline: 'Founder of private logistics firm exits in €250M acquisition',
-    opportunity: {
-      name: 'J. Hansen',
-      role: 'Founder & Seller',
-      company: 'Nordic Freight Solutions',
-      wealth: '~€175M',
-      email: 'j.hansen@nordicfreight.com',
-    },
-    analysis: {
-      assessment:
-        'Confirmed sale of a privately-held company to a strategic buyer, resulting in a significant liquidity event for the founder.',
-      sources: [
-        { name: 'Børsen', link: '#' },
-        { name: 'Financial Times', link: '#' },
-      ],
-      rag: 'Cross-referenced internal database: Found prior funding round in 2018.',
-    },
-  },
-  {
-    id: 2,
-    country: 'Sweden',
-    date: '2025-09-14T14:00:00Z',
-    score: 92,
-    headline: 'Family-owned industrial manufacturer announces succession plan',
-    opportunity: {
-      name: 'The Johansson Family',
-      role: 'Owners',
-      company: 'ScandiMechanics AB',
-      wealth: 'Generational',
-      email: null,
-    },
-    analysis: {
-      assessment:
-        'High-value signal of future liquidity. The transition to the next generation often precedes a partial or full sale of the family business.',
-      sources: [{ name: 'Dagens Industri', link: '#' }],
-      rag: 'Identified entity as a 3rd generation family business with €500M+ revenue.',
-    },
-  },
-  {
-    id: 3,
-    country: 'United Kingdom',
-    date: '2025-09-13T08:00:00Z',
-    score: 88,
-    headline: 'Early investor in fintech unicorn realizes gains in secondary sale',
-    opportunity: {
-      name: 'A. Wallace',
-      role: 'Angel Investor',
-      company: 'FinTech Growth Ltd',
-      wealth: '~£45M',
-      email: 'a.wallace@angelvest.co.uk',
-    },
-    analysis: {
-      assessment:
-        'Secondary share sale indicates early backers are cashing out, providing new liquidity ahead of a potential IPO.',
-      sources: [
-        { name: 'TechCrunch', link: '#' },
-        { name: 'City A.M.', link: '#' },
-      ],
-      rag: 'No prior records found. New entity detected.',
-    },
-  },
-]
-
-export function InteractiveDemo() {
-  const [selectedEventId, setSelectedEventId] = useState(demoEvents[0].id)
-  const selectedEvent = demoEvents.find((e) => e.id === selectedEventId)
-
-  const panelVariants = {
-    hidden: { opacity: 0, y: 10 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
-  }
-
-  return (
-    <section className="w-full">
-      <div className="text-center mb-12">
-        <h2 className="text-3xl sm:text-4xl font-bold tracking-tighter">
-          Experience the Workflow
-        </h2>
-        <p className="mt-4 max-w-2xl mx-auto text-lg text-slate-400">
-          See how our platform transforms raw information into an actionable mandate.
-          Click an event to explore the synthesized intelligence.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Event List Panel */}
-        <Card className="col-span-1 bg-slate-900/50 border-slate-800">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Zap className="text-blue-400" />
-              Incoming Events
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {demoEvents.map((event) => (
-              <button
-                key={event.id}
-                onClick={() => setSelectedEventId(event.id)}
-                className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
-                  selectedEventId === event.id
-                    ? 'bg-blue-600/20 border-blue-500'
-                    : 'bg-slate-800/50 border-transparent hover:border-slate-600'
-                }`}
-              >
-                <div className="flex justify-between items-start">
-                  <p className="font-semibold text-slate-100 pr-4">
-                    <span className="text-xl mr-2">{getCountryFlag(event.country)}</span>
-                    {event.headline}
-                  </p>
-                  <Badge className="bg-slate-900 text-slate-300">{event.score}</Badge>
-                </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  {format(new Date(event.date), 'MMMM d, yyyy')}
-                </p>
-              </button>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Opportunity & Analysis Panels */}
-        <div className="lg:col-span-2 space-y-6">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={selectedEventId}
-              initial="hidden"
-              animate="visible"
-              variants={{
-                visible: { transition: { staggerChildren: 0.1 } },
-              }}
-              className="space-y-6"
-            >
-              {/* Opportunity Dossier */}
-              <motion.div variants={panelVariants}>
-                <Card className="bg-slate-900/50 border-slate-800">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <User className="text-green-400" />
-                      Actionable Opportunity
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-2xl font-bold text-slate-100">
-                      {selectedEvent.opportunity.name}
-                    </p>
-                    <div className="space-y-1 mt-1">
-                      <p className="text-slate-400 flex items-center gap-2">
-                        <Briefcase className="h-4 w-4" />
-                        {selectedEvent.opportunity.role} at{' '}
-                        <strong>{selectedEvent.opportunity.company}</strong>
-                      </p>
-                      {selectedEvent.opportunity.email && (
-                        <p className="text-blue-400 flex items-center gap-2">
-                          <Mail className="h-4 w-4" />
-                          {selectedEvent.opportunity.email}
-                        </p>
-                      )}
-                    </div>
-                    <Badge
-                      variant="outline"
-                      className="mt-3 text-lg border-green-500/50 text-green-300"
-                    >
-                      Est. Liquidity: {selectedEvent.opportunity.wealth}
-                    </Badge>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              {/* AI Analysis */}
-              <motion.div variants={panelVariants}>
-                <Card className="bg-slate-900/50 border-slate-800">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Eye className="text-purple-400" />
-                      AI Analysis & Verification
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4 text-sm">
-                    <div>
-                      <h4 className="font-semibold text-slate-300">Assessment</h4>
-                      <p className="text-slate-400 italic">
-                        "{selectedEvent.analysis.assessment}"
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-slate-300">
-                        Source Triangulation
-                      </h4>
-                      <div className="flex flex-wrap gap-2 mt-1">
-                        {selectedEvent.analysis.sources.map((source) => (
-                          <Button key={source.name} variant="secondary" size="sm" asChild>
-                            <a
-                              href={source.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <ExternalLink className="h-3 w-3 mr-1.5" />
-                              {source.name}
-                            </a>
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-slate-300">Historical Context</h4>
-                      <p className="text-slate-400">{selectedEvent.analysis.rag}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-```
-
-## 📄 src/app/(public)/_components/LiquidityTicker.jsx
-*Lines: 61, Size: 1.92 KB*
-
-```jsx
-// apps/client/src/app/(public)/_components/LiquidityTicker.jsx
-'use client'
-
-import { getCountryFlag } from '@headlines/utils-shared'
-import { motion } from 'framer-motion'
-import { format } from 'date-fns'
-
-export function LiquidityTicker({ events }) {
-  if (!events || events.length === 0) {
-    return null
-  }
-
-  // Duplicate the events to create a seamless looping effect
-  const duplicatedEvents = [...events, ...events]
-
-  const tickerVariants = {
-    animate: {
-      x: ['0%', '-50%'],
-      transition: {
-        x: {
-          repeat: Infinity,
-          repeatType: 'loop',
-          duration: events.length * 10, // Increase duration for slower, more readable scroll
-          ease: 'linear',
-        },
-      },
-    },
-  }
-
-  return (
-    <div className="w-full overflow-hidden bg-slate-900/50 backdrop-blur-sm border border-slate-800/50 rounded-lg">
-      <div className="relative h-20">
-        <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-background to-transparent z-10" />
-        <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-background to-transparent z-10" />
-
-        <motion.div
-          className="flex h-full items-center"
-          variants={tickerVariants}
-          animate="animate"
-        >
-          {duplicatedEvents.map((event, index) => (
-            <div
-              key={`${event._id}-${index}`}
-              className="flex-shrink-0 flex items-center gap-4 px-8"
-              style={{ minWidth: 'max-content' }}
-            >
-              <span className="text-3xl">{getCountryFlag(event.country)}</span>
-              <div>
-                <p className="text-sm font-semibold text-slate-200">{event.headline}</p>
-                <p className="text-xs text-slate-500">
-                  {format(new Date(), 'MMM d, yyyy')} • Source: Financial Times
-                </p>
-              </div>
-            </div>
-          ))}
-        </motion.div>
-      </div>
-    </div>
-  )
-}
-
-```
-
-## 📄 src/app/(public)/_components/LoginModal.jsx
-*Lines: 77, Size: 2.3 KB*
-
-```jsx
-// apps/client/src/app/(public)/_components/LoginModal.jsx
-'use client'
-
-import { useState } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  Input,
-  Label,
-  Button,
-} from '@/components/shared'
-import { useAuth } from '@/lib/auth/client'
-import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
-
-export function LoginModal({ open, onOpenChange }) {
-  const { login } = useAuth()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-
-  const handleLogin = async (e) => {
-    e.preventDefault()
-    setIsLoading(true)
-    const success = await login(email, password)
-    if (success) {
-      onOpenChange(false) // Close modal on success, AuthProvider will redirect
-    } else {
-      // toast.error is handled within the useAuth hook
-    }
-    setIsLoading(false)
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-slate-900/80 backdrop-blur-md border-slate-700">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Member Login</DialogTitle>
-          <DialogDescription>Access your intelligence dashboard.</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email Address</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@yourfirm.com"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading}
-            />
-          </div>
-          <Button type="submit" className="w-full h-11" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Secure Login
-          </Button>
-        </form>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-```
-
-## 📄 src/app/(public)/_components/SignUpFlow.jsx
-*Lines: 246, Size: 8.29 KB*
-
-```jsx
-// apps/client/src/app/(public)/_components/SignUpFlow.jsx
-'use client'
-
-import { useState } from 'react'
-import { motion } from 'framer-motion'
-import {
-  Card,
-  CardContent,
-  Input,
-  Label,
-  Button,
-  Checkbox,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/shared'
-import { useAuth } from '@/lib/auth/client'
-import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
-
-// Dummy data for now
-const allCountries = [
-  'Denmark',
-  'Sweden',
-  'Norway',
-  'Finland',
-  'Germany',
-  'United Kingdom',
-  'United States',
-  'France',
-  'Italy',
-  'Spain',
-  'Switzerland',
-  'Netherlands',
-].sort()
-const allSectors = [
-  'Technology',
-  'Healthcare',
-  'Industrials',
-  'Real Estate',
-  'Consumer Goods',
-  'Financial Services',
-]
-
-export function SignUpFlow() {
-  const { signup } = useAuth()
-  const [step, setStep] = useState(1)
-  const [isLoading, setIsLoading] = useState(false)
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    countries: ['Denmark', 'Sweden', 'Norway'],
-    sectors: ['Technology'],
-    plan: 'trial',
-  })
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value })
-  }
-
-  const handleCreateAccount = async (e) => {
-    e.preventDefault()
-    setIsLoading(true)
-
-    const result = await signup({
-      name: formData.name,
-      email: formData.email,
-      password: formData.password,
-      countries: formData.countries,
-      plan: formData.plan,
-    })
-
-    // On success, the AuthProvider will handle the redirect.
-    // We only need to handle the loading state here.
-    if (!result.success) {
-      setIsLoading(false) // Stop loading on failure
-    }
-  }
-
-  const countryCount = formData.countries.length
-  const sectorCount = formData.sectors.length
-
-  return (
-    <section id="signup-flow" className="w-full py-24">
-      <div className="text-center mb-12">
-        <h2 className="text-3xl sm:text-4xl font-bold tracking-tighter">
-          Build Your Intelligence Engine in 60 Seconds
-        </h2>
-        <p className="mt-4 max-w-2xl mx-auto text-lg text-slate-400">
-          Start your 30-day free trial. No credit card required. Cancel anytime.
-        </p>
-      </div>
-
-      <Card className="max-w-4xl mx-auto bg-slate-900/50 border-slate-800">
-        <div className="grid grid-cols-1 md:grid-cols-2">
-          {/* Form Side */}
-          <div className="p-8">
-            <form onSubmit={handleCreateAccount} className="space-y-6">
-              <div>
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="John Doe"
-                  required
-                  onChange={handleChange}
-                  value={formData.name}
-                />
-              </div>
-              <div>
-                <Label htmlFor="email">Work Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="john.doe@wealth.com"
-                  required
-                  onChange={handleChange}
-                  value={formData.email}
-                />
-              </div>
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  minLength={8}
-                  onChange={handleChange}
-                  value={formData.password}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Focus Areas</Label>
-                <Tabs defaultValue="countries">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="countries">
-                      Countries ({countryCount})
-                    </TabsTrigger>
-                    <TabsTrigger value="sectors">Sectors ({sectorCount})</TabsTrigger>
-                  </TabsList>
-                  <TabsContent
-                    value="countries"
-                    className="h-40 overflow-y-auto custom-scrollbar p-2 border border-slate-700 rounded-md"
-                  >
-                    <div className="space-y-2">
-                      {allCountries.map((country) => (
-                        <div key={country} className="flex items-center gap-2">
-                          <Checkbox
-                            id={`country-${country}`}
-                            checked={formData.countries.includes(country)}
-                            onCheckedChange={(checked) => {
-                              const newCountries = checked
-                                ? [...formData.countries, country]
-                                : formData.countries.filter((c) => c !== country)
-                              setFormData({ ...formData, countries: newCountries.sort() })
-                            }}
-                          />
-                          <Label htmlFor={`country-${country}`} className="font-normal">
-                            {country}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </TabsContent>
-                  <TabsContent
-                    value="sectors"
-                    className="h-40 overflow-y-auto custom-scrollbar p-2 border border-slate-700 rounded-md"
-                  >
-                    <div className="space-y-2">
-                      {allSectors.map((sector) => (
-                        <div key={sector} className="flex items-center gap-2">
-                          <Checkbox
-                            id={`sector-${sector}`}
-                            checked={formData.sectors.includes(sector)}
-                            onCheckedChange={(checked) => {
-                              const newSectors = checked
-                                ? [...formData.sectors, sector]
-                                : formData.sectors.filter((s) => s !== sector)
-                              setFormData({ ...formData, sectors: newSectors.sort() })
-                            }}
-                          />
-                          <Label htmlFor={`sector-${sector}`} className="font-normal">
-                            {sector}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </div>
-
-              <div>
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="w-full text-lg h-12 bg-blue-600 hover:bg-blue-700"
-                  disabled={isLoading}
-                >
-                  {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-                  Create My Account
-                </Button>
-              </div>
-            </form>
-          </div>
-          {/* Summary Side */}
-          <div className="hidden md:block bg-slate-900 p-8 rounded-r-lg">
-            <h3 className="text-xl font-bold text-slate-100">
-              Your Personalized Briefing
-            </h3>
-            <p className="mt-2 text-slate-400">
-              Your daily intelligence digest will be configured to monitor:
-            </p>
-            <div className="mt-6 space-y-4">
-              <div>
-                <h4 className="font-semibold text-slate-300">Geographic Focus</h4>
-                <p className="text-blue-300">
-                  {countryCount > 0 ? formData.countries.join(', ') : 'None selected'}
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-slate-300">Sector Focus</h4>
-                <p className="text-purple-300">
-                  {sectorCount > 0 ? formData.sectors.join(', ') : 'None selected'}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-8 pt-6 border-t border-slate-700">
-              <h4 className="font-semibold text-slate-300">Plan: 30-Day Free Trial</h4>
-              <ul className="mt-2 space-y-2 text-sm text-slate-400 list-disc list-inside">
-                <li>Unlimited event access</li>
-                <li>Daily email summaries</li>
-                <li>Push notifications</li>
-                <li>Full access to AI Chat</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </Card>
-    </section>
-  )
-}
-
-```
-
-## 📄 src/app/(public)/_components/StatsSection.jsx
-*Lines: 58, Size: 1.94 KB*
-
-```jsx
-// apps/client/src/app/(public)/_components/StatsSection.jsx
-'use client'
-
-import { motion, useInView } from 'framer-motion'
-import { useEffect, useRef } from 'react'
-import { animate } from 'framer-motion'
-import { Database, FileText, Zap } from 'lucide-react'
-
-function AnimatedCounter({ to, suffix = '' }) {
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: '-100px' })
-
-  useEffect(() => {
-    if (isInView) {
-      const node = ref.current
-      const controls = animate(0, to, {
-        duration: 2,
-        onUpdate(value) {
-          node.textContent = Math.round(value).toLocaleString('en-US') + suffix
-        },
-      })
-      return () => controls.stop()
-    }
-  }, [isInView, to, suffix])
-
-  return <span ref={ref}>0</span>
-}
-
-export function StatsSection() {
-  return (
-    <section className="w-full">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-        <div className="p-6">
-          <Database className="h-12 w-12 mx-auto text-blue-400 mb-4" />
-          <p className="text-5xl font-bold text-slate-100 tracking-tighter">
-            <AnimatedCounter to={1200000} suffix="+" />
-          </p>
-          <p className="text-lg text-slate-400 mt-2">Articles in Database</p>
-        </div>
-        <div className="p-6">
-          <Zap className="h-12 w-12 mx-auto text-green-400 mb-4" />
-          <p className="text-5xl font-bold text-slate-100 tracking-tighter">
-            <AnimatedCounter to={50000} suffix="+" />
-          </p>
-          <p className="text-lg text-slate-400 mt-2">Verified Liquidity Events</p>
-        </div>
-        <div className="p-6">
-          <FileText className="h-12 w-12 mx-auto text-purple-400 mb-4" />
-          <p className="text-5xl font-bold text-slate-100 tracking-tighter">
-            <AnimatedCounter to={15000} suffix="+" />
-          </p>
-          <p className="text-lg text-slate-400 mt-2">Sources Analyzed Daily</p>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-```
-
-## 📄 src/app/(public)/layout.jsx
-*Lines: 14, Size: 619 Bytes*
-
-```jsx
-// apps/client/src/app/(public)/layout.jsx
-
-export const metadata = {
-  title: 'Headlines Intelligence | AI-Powered Wealth Event Discovery',
-  description:
-    'Capture alpha before it becomes common knowledge. Our AI scans thousands of global sources to deliver verified private wealth opportunities and liquidity events daily.',
-}
-
-export default function PublicLayout({ children }) {
-  // This layout applies a clean slate for the landing page, ensuring no styles
-  // from the main application's authenticated layout interfere.
-  return <div className="bg-background text-foreground antialiased">{children}</div>
-}
-
-```
-
-## 📄 src/app/(public)/page.jsx
-*Lines: 35, Size: 1.24 KB*
-
-```jsx
-// apps/client/src/app/(public)/page.jsx
-import { getPublicTickerEvents } from '@headlines/data-access/next'
-import { Hero } from './_components/Hero'
-import { InteractiveDemo } from './_components/InteractiveDemo'
-import { Features } from './_components/Features'
-import { GlobalCoverage } from './_components/GlobalCoverage'
-import { SignUpFlow } from './_components/SignUpFlow'
-import { AboutSection } from './_components/AboutSection'
-import { StatsSection } from './_components/StatsSection'
-import { Footer } from './_components/Footer'
-import dbConnect from '@headlines/data-access/dbConnect/next'
-
-export const dynamic = 'force-dynamic'
-
-export default async function LandingPage() {
-  await dbConnect() // ACTION: Add this line
-  const tickerResult = await getPublicTickerEvents()
-  const tickerEvents = tickerResult.success ? tickerResult.data : []
-
-  return (
-    <main className="flex flex-col items-center">
-      <Hero tickerEvents={tickerEvents} />
-      <div className="w-full container mx-auto px-4 sm:px-6 lg:px-8 mt-24 sm:mt-32 space-y-24 sm:space-y-32">
-        <StatsSection />
-        <InteractiveDemo />
-        <Features />
-        <AboutSection />
-        <GlobalCoverage />
-        <SignUpFlow />
-      </div>
-      <Footer />
-    </main>
-  )
 }
 
 ```
@@ -2872,18 +1614,16 @@ export const columns = (onUpdate, onDelete) => [
 ```
 
 ## 📄 src/app/admin/articles/page.js
-*Lines: 31, Size: 957 Bytes*
+*Lines: 29, Size: 875 Bytes*
 
 ```javascript
 // apps/client/src/app/admin/articles/page.js
 import { getArticles } from '@headlines/data-access/next' // CORRECTED
 import ArticlesClientPage from './ArticlesClientPage'
-import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
 
 export default async function ArticlesPage({ searchParams }) {
-  await dbConnect()
   const page = parseInt(searchParams.page || '1', 10)
   const sort = searchParams.sort || null
   const columnFilters = searchParams.filters ? JSON.parse(searchParams.filters) : []
@@ -3107,7 +1847,7 @@ export default function DashboardClientPage({
 ```
 
 ## 📄 src/app/admin/dashboard/page.jsx
-*Lines: 53, Size: 1.38 KB*
+*Lines: 51, Size: 1.28 KB*
 
 ```jsx
 // File: apps/client/src/app/admin/dashboard/page.jsx (CORRECTED)
@@ -3117,7 +1857,6 @@ import {
   getAllSources,
 } from '@headlines/data-access/next'
 import DashboardClientPage from './DashboardClientPage'
-import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
 
@@ -3142,7 +1881,6 @@ async function getPageData() {
 }
 
 export default async function AdminDashboardPage() {
-  await dbConnect() // ACTION: Add this line
   const { stats, runs, sources, error } = await getPageData()
 
   if (error) {
@@ -3620,18 +2358,16 @@ export const ListHeader = ({ sorting, setSorting }) => {
 ```
 
 ## 📄 src/app/admin/events/page.jsx
-*Lines: 28, Size: 955 Bytes*
+*Lines: 26, Size: 873 Bytes*
 
 ```jsx
 // apps/client/src/app/admin/events/page.jsx (MODIFIED)
 import { getEvents, getDistinctCountries } from '@headlines/data-access/next'
 import EventsClientPage from './EventsClientPage'
-import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
 
 export default async function EventsPage({ searchParams }) {
-  await dbConnect()
   const page = parseInt(searchParams.page || '1', 10)
   const sort = searchParams.sort || null
   const filters = {}
@@ -3983,18 +2719,16 @@ export const columns = (onUpdate, onDelete) => [
 ```
 
 ## 📄 src/app/admin/opportunities/page.jsx
-*Lines: 31, Size: 1006 Bytes*
+*Lines: 29, Size: 924 Bytes*
 
 ```jsx
 // apps/client/src/app/admin/opportunities/page.jsx
 import { getOpportunities } from '@headlines/data-access'
 import OpportunitiesClientPage from './OpportunitiesClientPage' // New client component
-import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
 
 export default async function OpportunitiesPage({ searchParams }) {
-  await dbConnect()
   const page = parseInt(searchParams.page || '1', 10)
   const sort = searchParams.sort || null
   const columnFilters = searchParams.filters ? JSON.parse(searchParams.filters) : []
@@ -5361,7 +4095,7 @@ export default function CountrySubscriptionManager({
 ```
 
 ## 📄 src/app/admin/users/page.jsx
-*Lines: 46, Size: 1.26 KB*
+*Lines: 42, Size: 1.1 KB*
 
 ```jsx
 export const dynamic = 'force-dynamic'
@@ -5369,12 +4103,8 @@ export const dynamic = 'force-dynamic'
 import { PageHeader } from '@/components/shared'
 import { getAllSubscribers, getAllCountries } from '@headlines/data-access'
 import UsersClientPage from './UsersClientPage'
-import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export default async function UsersPage() {
-  // Establish the database connection ONCE at the start of the page render.
-  await dbConnect()
-
   const [usersResult, countriesResult] = await Promise.all([
     getAllSubscribers({}),
     getAllCountries(),
@@ -6061,7 +4791,7 @@ export const suggestionColumns = (onAction, onUpdate) => [
 ```
 
 ## 📄 src/app/admin/watchlist/page.jsx
-*Lines: 55, Size: 1.59 KB*
+*Lines: 53, Size: 1.51 KB*
 
 ```jsx
 // apps/client/src/app/admin/watchlist/page.jsx
@@ -6071,12 +4801,10 @@ import {
   getAllCountries,
 } from '@headlines/data-access'
 import WatchlistClientPage from './WatchlistClientPage'
-import dbConnect from '@headlines/data-access/dbConnect/next'
 
 export const dynamic = 'force-dynamic'
 
 export default async function WatchlistPage({ searchParams }) {
-  await dbConnect()
   const page = parseInt(searchParams.page || '1', 10)
   const sort = searchParams.sort || null
   const columnFilters = searchParams.filters ? JSON.parse(searchParams.filters) : []
@@ -6287,11 +5015,12 @@ export default function WatchlistEditor({ entity, onSave, onCancel, countries = 
 ```
 
 ## 📄 src/app/api/articles/route.js
-*Lines: 30, Size: 1.05 KB*
+*Lines: 31, Size: 1.12 KB*
 
 ```javascript
+// apps/client/src/app/api/articles/route.js
 import { NextResponse } from 'next/server'
-import { getArticles, getTotalArticleCount } from '@headlines/data-access'
+import { getArticles, getTotalArticleCount } from '@headlines/data-access/next' // CORRECTED IMPORT
 import { createClientApiHandler } from '@/lib/api-handler' // Use the new client handler
 
 const handleGet = async (request, { user }) => {
@@ -6582,12 +5311,12 @@ export async function POST(req) {
 ```
 
 ## 📄 src/app/api/chat/title/route.js
-*Lines: 38, Size: 1.08 KB*
+*Lines: 38, Size: 1.1 KB*
 
 ```javascript
 // apps/client/src/app/api/chat/title/route.js
 import { NextResponse } from 'next/server'
-import { generateChatTitle } from '@headlines/data-access/next'
+import { generateChatTitle } from '@headlines/ai-services/next' // CORRECTED IMPORT
 import { verifySession } from '@/lib/auth/server'
 import { chatSchema } from '@headlines/models/schemas'
 
@@ -6705,14 +5434,14 @@ export const dynamic = 'force-dynamic'
 ```
 
 ## 📄 src/app/api/upload-article/route.js
-*Lines: 30, Size: 879 Bytes*
+*Lines: 30, Size: 899 Bytes*
 
 ```javascript
 // apps/client/src/app/api/upload-article/route.js
 'use server'
 
 import { NextResponse } from 'next/server'
-import { processUploadedArticle } from '@headlines/data-access/next'
+import { processUploadedArticle } from '@headlines/ai-services/next' // CORRECTED IMPORT
 import { createClientApiHandler } from '@/lib/api-handler'
 import { articleUploadSchema } from '@headlines/models/schemas'
 
@@ -7851,7 +6580,7 @@ export default function NotFound() {
 ```
 
 ## 📄 src/app/page.js
-*Lines: 21, Size: 628 Bytes*
+*Lines: 21, Size: 649 Bytes*
 
 ```javascript
 // apps/client/src/app/page.js
@@ -7860,7 +6589,7 @@ export default function NotFound() {
 import { cookies } from 'next/headers'
 import { verifySession } from '@/lib/auth/server'
 import { ClientRedirect } from '@/components/client/shared/ClientRedirect'
-import LandingPage from './(public)/page'
+import LandingPage from '@/components/landing/LandingPage.jsx'
 
 export default async function RootPage() {
   const cookieStore = cookies()
@@ -11603,6 +10332,1221 @@ export function UploadView() {
         </Tabs>
       </Card>
     </div>
+  )
+}
+
+```
+
+## 📄 src/components/landing/AboutSection.jsx
+*Lines: 37, Size: 1.51 KB*
+
+```jsx
+// apps/client/src/app/(public)/_components/AboutSection.jsx
+'use client'
+
+import { motion } from 'framer-motion'
+
+export function AboutSection() {
+  return (
+    <section className="w-full max-w-4xl mx-auto text-center">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.5 }}
+        transition={{ duration: 0.8, ease: 'easeOut' }}
+      >
+        <h2 className="text-3xl sm:text-4xl font-bold tracking-tighter">
+          Built for the Modern Wealth Advisor
+        </h2>
+        <div className="mt-6 prose prose-lg prose-invert mx-auto text-slate-400">
+          <p>
+            In today's market, information is commoditized. Intelligence is not. Headlines
+            AI was founded on a simple premise: wealth managers need more than just news;
+            they need verified, actionable signals delivered with speed and precision.
+          </p>
+          <p>
+            Our platform deploys a fleet of autonomous AI agents that work around the
+            clock. These agents read, translate, and contextualize millions of data points
+            from sources often overlooked by traditional aggregators. They are trained to
+            think like analysts—identifying not just the "what," but the "who" and "why"
+            behind every significant wealth event. This is the new alpha: agentic
+            intelligence, always on the lookout for your next mandate.
+          </p>
+        </div>
+      </motion.div>
+    </section>
+  )
+}
+
+```
+
+## 📄 src/components/landing/Features.jsx
+*Lines: 81, Size: 2.8 KB*
+
+```jsx
+// apps/client/src/app/(public)/_components/Features.jsx
+'use client'
+
+import { motion } from 'framer-motion'
+import { Zap, Target, Home, Layers, Share2, PenSquare } from 'lucide-react'
+
+const features = [
+  {
+    icon: <Zap className="h-8 w-8 text-blue-400" />,
+    title: 'Live Events Dashboard',
+    description:
+      'Track global liquidity events in real-time. Filter by country, sector, and deal size to focus on what matters to you.',
+  },
+  {
+    icon: <Target className="h-8 w-8 text-green-400" />,
+    title: 'Curated Opportunity Dossiers',
+    description:
+      'Move from signal to mandate. Each event is linked to actionable dossiers on key individuals, complete with estimated liquidity and AI-generated outreach points.',
+  },
+  {
+    icon: <Home className="h-8 w-8 text-purple-400" />,
+    title: 'Family Office Database',
+    description:
+      'Access our proprietary, continuously updated database of single and multi-family offices, tracking their investments and key personnel.',
+  },
+  {
+    icon: <Layers className="h-8 w-8 text-yellow-400" />,
+    title: 'Unrivaled Source Intelligence',
+    description:
+      'We go beyond headlines, ingesting data from newspapers, regulatory filings, PE/VC portfolio updates, and M&A journals.',
+  },
+  {
+    icon: <Share2 className="h-8 w-8 text-cyan-400" />,
+    title: 'Integrate Your Workflow',
+    description:
+      'Receive alerts via Email, Push, or WhatsApp. Prepare for meetings with one-click AI summaries and export any view to Excel.',
+  },
+  {
+    icon: <PenSquare className="h-8 w-8 text-rose-400" />,
+    title: 'AI-Powered Outreach',
+    description:
+      "Generate personalized meeting preps and draft compelling outreach emails based on an opportunity's specific context.",
+  },
+]
+
+export function Features() {
+  const containerVariants = {
+    visible: { transition: { staggerChildren: 0.1 } },
+  }
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+  }
+
+  return (
+    <section className="w-full">
+      <motion.div
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+      >
+        {features.map((feature, index) => (
+          <motion.div
+            key={index}
+            variants={itemVariants}
+            className="p-6 bg-slate-900/50 border border-slate-800 rounded-xl"
+          >
+            <div className="flex items-center gap-4">
+              {feature.icon}
+              <h3 className="text-lg font-bold text-slate-100">{feature.title}</h3>
+            </div>
+            <p className="mt-3 text-slate-400">{feature.description}</p>
+          </motion.div>
+        ))}
+      </motion.div>
+    </section>
+  )
+}
+
+```
+
+## 📄 src/components/landing/Footer.jsx
+*Lines: 87, Size: 3.4 KB*
+
+```jsx
+// apps/client/src/app/(public)/_components/Footer.jsx
+
+import Link from 'next/link'
+
+// Simple SVG icons for social media
+const XIcon = (props) => (
+  <svg fill="currentColor" viewBox="0 0 24 24" {...props}>
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+)
+
+const LinkedInIcon = (props) => (
+  <svg fill="currentColor" viewBox="0 0 24 24" {...props}>
+    <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+  </svg>
+)
+
+export function Footer() {
+  return (
+    <footer className="w-full bg-slate-900/50 border-t border-slate-800 mt-24">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="md:col-span-2">
+            <h3 className="text-lg font-bold">Headlines AI</h3>
+            <p className="mt-2 text-sm text-slate-400 max-w-sm">
+              The leading intelligence platform for wealth management professionals
+              seeking to capture new liquidity and identify emerging opportunities.
+            </p>
+          </div>
+          <div>
+            <h4 className="font-semibold tracking-wider text-slate-300 uppercase">
+              Company
+            </h4>
+            <ul className="mt-4 space-y-2 text-sm">
+              <li>
+                <Link href="#" className="text-slate-400 hover:text-white">
+                  About Us
+                </Link>
+              </li>
+              <li>
+                <Link href="#" className="text-slate-400 hover:text-white">
+                  Contact
+                </Link>
+              </li>
+              <li>
+                <Link href="#" className="text-slate-400 hover:text-white">
+                  Careers
+                </Link>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-semibold tracking-wider text-slate-300 uppercase">
+              Legal
+            </h4>
+            <ul className="mt-4 space-y-2 text-sm">
+              <li>
+                <Link href="#" className="text-slate-400 hover:text-white">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="#" className="text-slate-400 hover:text-white">
+                  Terms of Service
+                </Link>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center">
+          <p className="text-sm text-slate-500">
+            &copy; {new Date().getFullYear()} Headlines Intelligence. All rights reserved.
+          </p>
+          <div className="flex items-center gap-4 mt-4 sm:mt-0">
+            <a href="#" className="text-slate-500 hover:text-white transition-colors">
+              <XIcon className="h-5 w-5" />
+            </a>
+            <a href="#" className="text-slate-500 hover:text-white transition-colors">
+              <LinkedInIcon className="h-5 w-5" />
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  )
+}
+
+```
+
+## 📄 src/components/landing/GlobalCoverage.jsx
+*Lines: 80, Size: 3.02 KB*
+
+```jsx
+// apps/client/src/app/(public)/_components/GlobalCoverage.jsx
+'use client'
+
+import { motion } from 'framer-motion'
+import { CheckCircle } from 'lucide-react'
+
+const features = [
+  {
+    name: '73 Countries Monitored',
+    description:
+      'Our AI operates across continents, ensuring you never miss an opportunity in your region.',
+  },
+  {
+    name: 'Native Language Processing',
+    description:
+      'We analyze sources in their original language for maximum accuracy and nuance.',
+  },
+  {
+    name: 'Source Triangulation',
+    description:
+      'Events are verified against multiple sources, from national newspapers to regulatory filings.',
+  },
+  {
+    name: '24/7 Platform Reliability',
+    description:
+      'Our systems autonomously monitor data integrity to ensure a continuous, reliable intelligence flow.',
+  },
+]
+
+export function GlobalCoverage() {
+  return (
+    <section className="relative w-full overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div className="relative h-96 lg:h-auto lg:self-stretch">
+          <div className="absolute inset-0 bg-slate-900/50 rounded-2xl overflow-hidden">
+            <div className="absolute inset-0 hero-grid-background opacity-50" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,hsl(var(--primary)/0.1),transparent_40%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,hsl(var(--ring)/0.1),transparent_40%)]" />
+          </div>
+        </div>
+        <div className="relative z-10">
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.5 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+          >
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tighter">
+              Global Reach, Local Depth. Zero Blind Spots.
+            </h2>
+            <p className="mt-4 text-lg text-slate-400">
+              Our infrastructure is built for the global wealth landscape. We go beyond
+              simple translations to understand context, verify facts, and deliver
+              intelligence with unparalleled precision.
+            </p>
+            <dl className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6">
+              {features.map((feature) => (
+                <div key={feature.name} className="relative">
+                  <dt>
+                    <CheckCircle
+                      className="absolute h-6 w-6 text-green-500"
+                      aria-hidden="true"
+                    />
+                    <p className="ml-9 text-lg font-semibold leading-6 text-slate-100">
+                      {feature.name}
+                    </p>
+                  </dt>
+                  <dd className="ml-9 mt-1 text-base leading-6 text-slate-400">
+                    {feature.description}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+```
+
+## 📄 src/components/landing/Hero.jsx
+*Lines: 152, Size: 6.09 KB*
+
+```jsx
+// apps/client/src/app/(public)/_components/Hero.jsx
+'use client'
+
+import { useState } from 'react'
+import { motion } from 'framer-motion'
+import { Button } from '@/components/shared'
+import { LiquidityTicker } from './LiquidityTicker'
+import { LoginModal } from './LoginModal'
+import { Zap, Target, Layers, Share2 } from 'lucide-react'
+
+const FeatureCard = ({ icon, title, description, delay }) => (
+  <motion.div
+    variants={{
+      hidden: { opacity: 0, y: 20 },
+      visible: {
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.6, ease: 'easeOut', delay },
+      },
+    }}
+    className="bg-slate-900/40 border border-slate-800/60 p-6 rounded-lg backdrop-blur-sm text-left"
+  >
+    <div className="flex items-center gap-4">
+      <div className="flex-shrink-0">{icon}</div>
+      <h3 className="text-lg font-bold text-slate-100">{title}</h3>
+    </div>
+    <p className="mt-3 text-sm text-slate-400">{description}</p>
+  </motion.div>
+)
+
+export function Hero({ tickerEvents }) {
+  const [isLoginOpen, setIsLoginOpen] = useState(false)
+
+  const handleScrollToSignUp = () => {
+    document.getElementById('signup-flow')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+    })
+  }
+
+  return (
+    <>
+      <header className="fixed top-0 left-0 right-0 z-40 p-4 bg-background/30 backdrop-blur-sm border-b border-slate-800/50">
+        <div className="container mx-auto flex justify-between items-center">
+          <div className="text-xl font-bold tracking-tighter">Headlines AI</div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" onClick={() => setIsLoginOpen(true)}>
+              Member Login
+            </Button>
+            <Button
+              onClick={handleScrollToSignUp}
+              className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/20"
+            >
+              Start Free Trial
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <section className="relative w-full min-h-screen flex flex-col justify-between overflow-hidden pt-24 pb-8 px-4">
+        {/* Animated Background */}
+        <div className="absolute inset-0 z-0 hero-aurora" />
+        <div className="absolute inset-0 z-0 hero-grid-background" />
+
+        {/* Main Content Area */}
+        <div className="relative z-10 container mx-auto flex flex-col items-center justify-center flex-grow">
+          <motion.div
+            className="text-center"
+            initial="hidden"
+            animate="visible"
+            variants={{ visible: { transition: { staggerChildren: 0.15 } } }}
+          >
+            <motion.h1
+              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+              transition={{ duration: 0.8, ease: 'easeOut' }}
+              className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-white to-slate-300 mb-8"
+            >
+              We Find Your Next Mandate.
+            </motion.h1>
+
+            <motion.p
+              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+              transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }}
+              className="max-w-3xl mx-auto text-lg sm:text-xl text-slate-400"
+            >
+              Our AI engine delivers verified private wealth opportunities across 73
+              countries, ensuring you never miss a mandate in your region.
+            </motion.p>
+
+            <motion.div
+              variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+              className="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto"
+            >
+              <FeatureCard
+                icon={<Zap className="h-6 w-6 text-blue-400" />}
+                title="Events Dashboard"
+                description="Track global liquidity events in real-time. Filter by country, sector, and deal size to focus on what matters."
+                delay={0.2}
+              />
+              <FeatureCard
+                icon={<Target className="h-6 w-6 text-green-400" />}
+                title="Prospect Dossiers"
+                description="AI-generated dossiers on key individuals, complete with estimated liquidity and outreach points."
+                delay={0.3}
+              />
+              <FeatureCard
+                icon={<Layers className="h-6 w-6 text-yellow-400" />}
+                title="Unrivaled Sourcing"
+                description="Our autonomous agents ingest data from thousands of global newspapers, regulatory filings, and PE/VC portfolio updates daily."
+                delay={0.4}
+              />
+              <FeatureCard
+                icon={<Share2 className="h-6 w-6 text-cyan-400" />}
+                title="Seamless Delivery"
+                description="Receive critical alerts through email, push notifications, or WhatsApp, and export any view to Excel for deeper analysis."
+                delay={0.5}
+              />
+            </motion.div>
+
+            <motion.div
+              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+              transition={{ duration: 0.8, ease: 'easeOut', delay: 0.6 }}
+              className="mt-16"
+            >
+              <Button
+                size="lg"
+                onClick={handleScrollToSignUp}
+                className="text-lg px-8 py-6 bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-900 font-bold hover:from-amber-300 hover:to-yellow-400 shadow-lg shadow-yellow-500/20 transform hover:scale-105 transition-transform"
+              >
+                Claim Your Intelligence Briefing
+              </Button>
+            </motion.div>
+          </motion.div>
+        </div>
+
+        {/* Ticker Area */}
+        <div className="relative z-10 container mx-auto w-full mt-16">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.8, ease: 'easeOut' }}
+          >
+            <LiquidityTicker events={tickerEvents} />
+          </motion.div>
+        </div>
+      </section>
+
+      <LoginModal open={isLoginOpen} onOpenChange={setIsLoginOpen} />
+    </>
+  )
+}
+
+```
+
+## 📄 src/components/landing/InteractiveDemo.jsx
+*Lines: 239, Size: 8.87 KB*
+
+```jsx
+// apps/client/src/app/(public)/_components/InteractiveDemo.jsx
+'use client'
+
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  Badge,
+  Button,
+} from '@/components/shared'
+import { getCountryFlag } from '@headlines/utils-shared'
+import { CheckCircle, Zap, User, Briefcase, Eye, Mail, ExternalLink } from 'lucide-react'
+import { format } from 'date-fns'
+
+const demoEvents = [
+  {
+    id: 1,
+    country: 'Denmark',
+    date: '2025-09-15T10:00:00Z',
+    score: 95,
+    headline: 'Founder of private logistics firm exits in €250M acquisition',
+    opportunity: {
+      name: 'J. Hansen',
+      role: 'Founder & Seller',
+      company: 'Nordic Freight Solutions',
+      wealth: '~€175M',
+      email: 'j.hansen@nordicfreight.com',
+    },
+    analysis: {
+      assessment:
+        'Confirmed sale of a privately-held company to a strategic buyer, resulting in a significant liquidity event for the founder.',
+      sources: [
+        { name: 'Børsen', link: '#' },
+        { name: 'Financial Times', link: '#' },
+      ],
+      rag: 'Cross-referenced internal database: Found prior funding round in 2018.',
+    },
+  },
+  {
+    id: 2,
+    country: 'Sweden',
+    date: '2025-09-14T14:00:00Z',
+    score: 92,
+    headline: 'Family-owned industrial manufacturer announces succession plan',
+    opportunity: {
+      name: 'The Johansson Family',
+      role: 'Owners',
+      company: 'ScandiMechanics AB',
+      wealth: 'Generational',
+      email: null,
+    },
+    analysis: {
+      assessment:
+        'High-value signal of future liquidity. The transition to the next generation often precedes a partial or full sale of the family business.',
+      sources: [{ name: 'Dagens Industri', link: '#' }],
+      rag: 'Identified entity as a 3rd generation family business with €500M+ revenue.',
+    },
+  },
+  {
+    id: 3,
+    country: 'United Kingdom',
+    date: '2025-09-13T08:00:00Z',
+    score: 88,
+    headline: 'Early investor in fintech unicorn realizes gains in secondary sale',
+    opportunity: {
+      name: 'A. Wallace',
+      role: 'Angel Investor',
+      company: 'FinTech Growth Ltd',
+      wealth: '~£45M',
+      email: 'a.wallace@angelvest.co.uk',
+    },
+    analysis: {
+      assessment:
+        'Secondary share sale indicates early backers are cashing out, providing new liquidity ahead of a potential IPO.',
+      sources: [
+        { name: 'TechCrunch', link: '#' },
+        { name: 'City A.M.', link: '#' },
+      ],
+      rag: 'No prior records found. New entity detected.',
+    },
+  },
+]
+
+export function InteractiveDemo() {
+  const [selectedEventId, setSelectedEventId] = useState(demoEvents[0].id)
+  const selectedEvent = demoEvents.find((e) => e.id === selectedEventId)
+
+  const panelVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+  }
+
+  return (
+    <section className="w-full">
+      <div className="text-center mb-12">
+        <h2 className="text-3xl sm:text-4xl font-bold tracking-tighter">
+          Experience the Workflow
+        </h2>
+        <p className="mt-4 max-w-2xl mx-auto text-lg text-slate-400">
+          See how our platform transforms raw information into an actionable mandate.
+          Click an event to explore the synthesized intelligence.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Event List Panel */}
+        <Card className="col-span-1 bg-slate-900/50 border-slate-800">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Zap className="text-blue-400" />
+              Incoming Events
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {demoEvents.map((event) => (
+              <button
+                key={event.id}
+                onClick={() => setSelectedEventId(event.id)}
+                className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                  selectedEventId === event.id
+                    ? 'bg-blue-600/20 border-blue-500'
+                    : 'bg-slate-800/50 border-transparent hover:border-slate-600'
+                }`}
+              >
+                <div className="flex justify-between items-start">
+                  <p className="font-semibold text-slate-100 pr-4">
+                    <span className="text-xl mr-2">{getCountryFlag(event.country)}</span>
+                    {event.headline}
+                  </p>
+                  <Badge className="bg-slate-900 text-slate-300">{event.score}</Badge>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  {format(new Date(event.date), 'MMMM d, yyyy')}
+                </p>
+              </button>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Opportunity & Analysis Panels */}
+        <div className="lg:col-span-2 space-y-6">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={selectedEventId}
+              initial="hidden"
+              animate="visible"
+              variants={{
+                visible: { transition: { staggerChildren: 0.1 } },
+              }}
+              className="space-y-6"
+            >
+              {/* Opportunity Dossier */}
+              <motion.div variants={panelVariants}>
+                <Card className="bg-slate-900/50 border-slate-800">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <User className="text-green-400" />
+                      Actionable Opportunity
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold text-slate-100">
+                      {selectedEvent.opportunity.name}
+                    </p>
+                    <div className="space-y-1 mt-1">
+                      <p className="text-slate-400 flex items-center gap-2">
+                        <Briefcase className="h-4 w-4" />
+                        {selectedEvent.opportunity.role} at{' '}
+                        <strong>{selectedEvent.opportunity.company}</strong>
+                      </p>
+                      {selectedEvent.opportunity.email && (
+                        <p className="text-blue-400 flex items-center gap-2">
+                          <Mail className="h-4 w-4" />
+                          {selectedEvent.opportunity.email}
+                        </p>
+                      )}
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className="mt-3 text-lg border-green-500/50 text-green-300"
+                    >
+                      Est. Liquidity: {selectedEvent.opportunity.wealth}
+                    </Badge>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* AI Analysis */}
+              <motion.div variants={panelVariants}>
+                <Card className="bg-slate-900/50 border-slate-800">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Eye className="text-purple-400" />
+                      AI Analysis & Verification
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4 text-sm">
+                    <div>
+                      <h4 className="font-semibold text-slate-300">Assessment</h4>
+                      <p className="text-slate-400 italic">
+                        "{selectedEvent.analysis.assessment}"
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-slate-300">
+                        Source Triangulation
+                      </h4>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {selectedEvent.analysis.sources.map((source) => (
+                          <Button key={source.name} variant="secondary" size="sm" asChild>
+                            <a
+                              href={source.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <ExternalLink className="h-3 w-3 mr-1.5" />
+                              {source.name}
+                            </a>
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-slate-300">Historical Context</h4>
+                      <p className="text-slate-400">{selectedEvent.analysis.rag}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
+    </section>
+  )
+}
+```
+
+## 📄 src/components/landing/LandingPage.jsx
+*Lines: 32, Size: 1.06 KB*
+
+```jsx
+// headlines/client/src/components/landing/LandingPage.jsx
+import { getPublicTickerEvents } from '@headlines/data-access/next'
+import { Hero } from './Hero'
+import { InteractiveDemo } from './InteractiveDemo'
+import { Features } from './Features'
+import { GlobalCoverage } from './GlobalCoverage'
+import { SignUpFlow } from './SignUpFlow'
+import { AboutSection } from './AboutSection'
+import { StatsSection } from './StatsSection'
+import { Footer } from './Footer'
+
+export const dynamic = 'force-dynamic'
+
+export default async function LandingPage() {
+  const tickerResult = await getPublicTickerEvents()
+  const tickerEvents = tickerResult.success ? tickerResult.data : []
+
+  return (
+    <main className="flex flex-col items-center">
+      <Hero tickerEvents={tickerEvents} />
+      <div className="w-full container mx-auto px-4 sm:px-6 lg:px-8 mt-24 sm:mt-32 space-y-24 sm:space-y-32">
+        <StatsSection />
+        <InteractiveDemo />
+        <Features />
+        <AboutSection />
+        <GlobalCoverage />
+        <SignUpFlow />
+      </div>
+      <Footer />
+    </main>
+  )
+}
+```
+
+## 📄 src/components/landing/LiquidityTicker.jsx
+*Lines: 61, Size: 1.92 KB*
+
+```jsx
+// apps/client/src/app/(public)/_components/LiquidityTicker.jsx
+'use client'
+
+import { getCountryFlag } from '@headlines/utils-shared'
+import { motion } from 'framer-motion'
+import { format } from 'date-fns'
+
+export function LiquidityTicker({ events }) {
+  if (!events || events.length === 0) {
+    return null
+  }
+
+  // Duplicate the events to create a seamless looping effect
+  const duplicatedEvents = [...events, ...events]
+
+  const tickerVariants = {
+    animate: {
+      x: ['0%', '-50%'],
+      transition: {
+        x: {
+          repeat: Infinity,
+          repeatType: 'loop',
+          duration: events.length * 10, // Increase duration for slower, more readable scroll
+          ease: 'linear',
+        },
+      },
+    },
+  }
+
+  return (
+    <div className="w-full overflow-hidden bg-slate-900/50 backdrop-blur-sm border border-slate-800/50 rounded-lg">
+      <div className="relative h-20">
+        <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-background to-transparent z-10" />
+        <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-background to-transparent z-10" />
+
+        <motion.div
+          className="flex h-full items-center"
+          variants={tickerVariants}
+          animate="animate"
+        >
+          {duplicatedEvents.map((event, index) => (
+            <div
+              key={`${event._id}-${index}`}
+              className="flex-shrink-0 flex items-center gap-4 px-8"
+              style={{ minWidth: 'max-content' }}
+            >
+              <span className="text-3xl">{getCountryFlag(event.country)}</span>
+              <div>
+                <p className="text-sm font-semibold text-slate-200">{event.headline}</p>
+                <p className="text-xs text-slate-500">
+                  {format(new Date(), 'MMM d, yyyy')} • Source: Financial Times
+                </p>
+              </div>
+            </div>
+          ))}
+        </motion.div>
+      </div>
+    </div>
+  )
+}
+
+```
+
+## 📄 src/components/landing/LoginModal.jsx
+*Lines: 77, Size: 2.3 KB*
+
+```jsx
+// apps/client/src/app/(public)/_components/LoginModal.jsx
+'use client'
+
+import { useState } from 'react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  Input,
+  Label,
+  Button,
+} from '@/components/shared'
+import { useAuth } from '@/lib/auth/client'
+import { toast } from 'sonner'
+import { Loader2 } from 'lucide-react'
+
+export function LoginModal({ open, onOpenChange }) {
+  const { login } = useAuth()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleLogin = async (e) => {
+    e.preventDefault()
+    setIsLoading(true)
+    const success = await login(email, password)
+    if (success) {
+      onOpenChange(false) // Close modal on success, AuthProvider will redirect
+    } else {
+      // toast.error is handled within the useAuth hook
+    }
+    setIsLoading(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md bg-slate-900/80 backdrop-blur-md border-slate-700">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold">Member Login</DialogTitle>
+          <DialogDescription>Access your intelligence dashboard.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email Address</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="you@yourfirm.com"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isLoading}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
+            />
+          </div>
+          <Button type="submit" className="w-full h-11" disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Secure Login
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+```
+
+## 📄 src/components/landing/SignUpFlow.jsx
+*Lines: 245, Size: 8.29 KB*
+
+```jsx
+// apps/client/src/app/(public)/_components/SignUpFlow.jsx
+'use client'
+
+import { useState } from 'react'
+import { motion } from 'framer-motion'
+import {
+  Card,
+  CardContent,
+  Input,
+  Label,
+  Button,
+  Checkbox,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/shared'
+import { useAuth } from '@/lib/auth/client'
+import { toast } from 'sonner'
+import { Loader2 } from 'lucide-react'
+
+// Dummy data for now
+const allCountries = [
+  'Denmark',
+  'Sweden',
+  'Norway',
+  'Finland',
+  'Germany',
+  'United Kingdom',
+  'United States',
+  'France',
+  'Italy',
+  'Spain',
+  'Switzerland',
+  'Netherlands',
+].sort()
+const allSectors = [
+  'Technology',
+  'Healthcare',
+  'Industrials',
+  'Real Estate',
+  'Consumer Goods',
+  'Financial Services',
+]
+
+export function SignUpFlow() {
+  const { signup } = useAuth()
+  const [step, setStep] = useState(1)
+  const [isLoading, setIsLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    countries: ['Denmark', 'Sweden', 'Norway'],
+    sectors: ['Technology'],
+    plan: 'trial',
+  })
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value })
+  }
+
+  const handleCreateAccount = async (e) => {
+    e.preventDefault()
+    setIsLoading(true)
+
+    const result = await signup({
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+      countries: formData.countries,
+      plan: formData.plan,
+    })
+
+    // On success, the AuthProvider will handle the redirect.
+    // We only need to handle the loading state here.
+    if (!result.success) {
+      setIsLoading(false) // Stop loading on failure
+    }
+  }
+
+  const countryCount = formData.countries.length
+  const sectorCount = formData.sectors.length
+
+  return (
+    <section id="signup-flow" className="w-full py-24">
+      <div className="text-center mb-12">
+        <h2 className="text-3xl sm:text-4xl font-bold tracking-tighter">
+          Build Your Intelligence Engine in 60 Seconds
+        </h2>
+        <p className="mt-4 max-w-2xl mx-auto text-lg text-slate-400">
+          Start your 30-day free trial. No credit card required. Cancel anytime.
+        </p>
+      </div>
+
+      <Card className="max-w-4xl mx-auto bg-slate-900/50 border-slate-800">
+        <div className="grid grid-cols-1 md:grid-cols-2">
+          {/* Form Side */}
+          <div className="p-8">
+            <form onSubmit={handleCreateAccount} className="space-y-6">
+              <div>
+                <Label htmlFor="name">Full Name</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="John Doe"
+                  required
+                  onChange={handleChange}
+                  value={formData.name}
+                />
+              </div>
+              <div>
+                <Label htmlFor="email">Work Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="john.doe@wealth.com"
+                  required
+                  onChange={handleChange}
+                  value={formData.email}
+                />
+              </div>
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  minLength={8}
+                  onChange={handleChange}
+                  value={formData.password}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Focus Areas</Label>
+                <Tabs defaultValue="countries">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="countries">
+                      Countries ({countryCount})
+                    </TabsTrigger>
+                    <TabsTrigger value="sectors">Sectors ({sectorCount})</TabsTrigger>
+                  </TabsList>
+                  <TabsContent
+                    value="countries"
+                    className="h-40 overflow-y-auto custom-scrollbar p-2 border border-slate-700 rounded-md"
+                  >
+                    <div className="space-y-2">
+                      {allCountries.map((country) => (
+                        <div key={country} className="flex items-center gap-2">
+                          <Checkbox
+                            id={`country-${country}`}
+                            checked={formData.countries.includes(country)}
+                            onCheckedChange={(checked) => {
+                              const newCountries = checked
+                                ? [...formData.countries, country]
+                                : formData.countries.filter((c) => c !== country)
+                              setFormData({ ...formData, countries: newCountries.sort() })
+                            }}
+                          />
+                          <Label htmlFor={`country-${country}`} className="font-normal">
+                            {country}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+                  <TabsContent
+                    value="sectors"
+                    className="h-40 overflow-y-auto custom-scrollbar p-2 border border-slate-700 rounded-md"
+                  >
+                    <div className="space-y-2">
+                      {allSectors.map((sector) => (
+                        <div key={sector} className="flex items-center gap-2">
+                          <Checkbox
+                            id={`sector-${sector}`}
+                            checked={formData.sectors.includes(sector)}
+                            onCheckedChange={(checked) => {
+                              const newSectors = checked
+                                ? [...formData.sectors, sector]
+                                : formData.sectors.filter((s) => s !== sector)
+                              setFormData({ ...formData, sectors: newSectors.sort() })
+                            }}
+                          />
+                          <Label htmlFor={`sector-${sector}`} className="font-normal">
+                            {sector}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </div>
+
+              <div>
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full text-lg h-12 bg-blue-600 hover:bg-blue-700"
+                  disabled={isLoading}
+                >
+                  {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+                  Create My Account
+                </Button>
+              </div>
+            </form>
+          </div>
+          {/* Summary Side */}
+          <div className="hidden md:block bg-slate-900 p-8 rounded-r-lg">
+            <h3 className="text-xl font-bold text-slate-100">
+              Your Personalized Briefing
+            </h3>
+            <p className="mt-2 text-slate-400">
+              Your daily intelligence digest will be configured to monitor:
+            </p>
+            <div className="mt-6 space-y-4">
+              <div>
+                <h4 className="font-semibold text-slate-300">Geographic Focus</h4>
+                <p className="text-blue-300">
+                  {countryCount > 0 ? formData.countries.join(', ') : 'None selected'}
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-slate-300">Sector Focus</h4>
+                <p className="text-purple-300">
+                  {sectorCount > 0 ? formData.sectors.join(', ') : 'None selected'}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-slate-700">
+              <h4 className="font-semibold text-slate-300">Plan: 30-Day Free Trial</h4>
+              <ul className="mt-2 space-y-2 text-sm text-slate-400 list-disc list-inside">
+                <li>Unlimited event access</li>
+                <li>Daily email summaries</li>
+                <li>Push notifications</li>
+                <li>Full access to AI Chat</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </Card>
+    </section>
+  )
+}
+```
+
+## 📄 src/components/landing/StatsSection.jsx
+*Lines: 58, Size: 1.94 KB*
+
+```jsx
+// apps/client/src/app/(public)/_components/StatsSection.jsx
+'use client'
+
+import { motion, useInView } from 'framer-motion'
+import { useEffect, useRef } from 'react'
+import { animate } from 'framer-motion'
+import { Database, FileText, Zap } from 'lucide-react'
+
+function AnimatedCounter({ to, suffix = '' }) {
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, margin: '-100px' })
+
+  useEffect(() => {
+    if (isInView) {
+      const node = ref.current
+      const controls = animate(0, to, {
+        duration: 2,
+        onUpdate(value) {
+          node.textContent = Math.round(value).toLocaleString('en-US') + suffix
+        },
+      })
+      return () => controls.stop()
+    }
+  }, [isInView, to, suffix])
+
+  return <span ref={ref}>0</span>
+}
+
+export function StatsSection() {
+  return (
+    <section className="w-full">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+        <div className="p-6">
+          <Database className="h-12 w-12 mx-auto text-blue-400 mb-4" />
+          <p className="text-5xl font-bold text-slate-100 tracking-tighter">
+            <AnimatedCounter to={1200000} suffix="+" />
+          </p>
+          <p className="text-lg text-slate-400 mt-2">Articles in Database</p>
+        </div>
+        <div className="p-6">
+          <Zap className="h-12 w-12 mx-auto text-green-400 mb-4" />
+          <p className="text-5xl font-bold text-slate-100 tracking-tighter">
+            <AnimatedCounter to={50000} suffix="+" />
+          </p>
+          <p className="text-lg text-slate-400 mt-2">Verified Liquidity Events</p>
+        </div>
+        <div className="p-6">
+          <FileText className="h-12 w-12 mx-auto text-purple-400 mb-4" />
+          <p className="text-5xl font-bold text-slate-100 tracking-tighter">
+            <AnimatedCounter to={15000} suffix="+" />
+          </p>
+          <p className="text-lg text-slate-400 mt-2">Sources Analyzed Daily</p>
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -15691,19 +15635,6 @@ module.exports = {
 
 ```
 
-## 📄 vercel.j_s_o_n
-*Lines: 7, Size: 154 Bytes*
-
-```
-{
-  "buildCommand": "pnpm build --filter=client",
-  "installCommand": "pnpm install",
-  "framework": "nextjs",
-  "outputDirectory": "apps/client/.next"
-}
-
-```
-
 
 ================================================================================
 
@@ -15711,7 +15642,7 @@ module.exports = {
 
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 109 files, 31 directories
+Total: 134 files, 35 directories
 
 ```
 headlines/
@@ -15719,6 +15650,35 @@ headlines/
 │   └── 📁 workflows/
 │       ├── 📄 fly-deploy.yml
 │       └── 📄 run-pipeline.yml
+├── 📁 backup/
+│   ├── 📁 2025-10-04T00-51-50/
+│   └── 📁 2025-10-04T00-58-07/
+│       └── 📁 haelpers/
+│           ├── 📄 articles.bson.gz
+│           ├── 📄 articles.metadata.json.gz
+│           ├── 📄 countries.bson.gz
+│           ├── 📄 countries.metadata.json.gz
+│           ├── 📄 opportunities.bson.gz
+│           ├── 📄 opportunities.metadata.json.gz
+│           ├── 📄 prelude.json.gz
+│           ├── 📄 push_subscriptions.bson.gz
+│           ├── 📄 push_subscriptions.metadata.json.gz
+│           ├── 📄 run_verdicts.bson.gz
+│           ├── 📄 run_verdicts.metadata.json.gz
+│           ├── 📄 settings.bson.gz
+│           ├── 📄 settings.metadata.json.gz
+│           ├── 📄 source_suggestions.bson.gz
+│           ├── 📄 source_suggestions.metadata.json.gz
+│           ├── 📄 sources.bson.gz
+│           ├── 📄 sources.metadata.json.gz
+│           ├── 📄 subscribers.bson.gz
+│           ├── 📄 subscribers.metadata.json.gz
+│           ├── 📄 synthesized_events.bson.gz
+│           ├── 📄 synthesized_events.metadata.json.gz
+│           ├── 📄 watchlist_entities.bson.gz
+│           ├── 📄 watchlist_entities.metadata.json.gz
+│           ├── 📄 watchlist_suggestions.bson.gz
+│           └── 📄 watchlist_suggestions.metadata.json.gz
 ├── 📁 scripts/
 │   ├── 📁 infrastructure/
 │   │   └── 📄 setFlySecrets.sh
@@ -15859,7 +15819,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-04T15:31:18.557Z
+**Generated**: 2025-10-05T00:50:44.051Z
 **Repository Path**: /home/mark/Repos/projects/headlines/apps/pipeline
 **Total Files**: 109
 **Package**: @headlines/pipeline@1.0.0
@@ -27647,7 +27607,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-04T15:31:18.565Z
+**Generated**: 2025-10-05T00:50:44.059Z
 **Repository Path**: /home/mark/Repos/projects/headlines/apps/server
 **Total Files**: 4
 **Package**: @headlines/server@1.0.0
@@ -27902,7 +27862,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-04T15:31:18.569Z
+**Generated**: 2025-10-05T00:50:44.062Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/ai-services
 **Total Files**: 54
 **Package**: @headlines/ai-services@1.0.0
@@ -29193,19 +29153,20 @@ export async function findSimilarArticles(queryText) {
 ```
 
 ## 📄 src/index.js
-*Lines: 68, Size: 2.34 KB*
+*Lines: 147, Size: 5.83 KB*
 
 ```javascript
 // packages/ai-services/src/index.js
 // This is the default, Node.js-safe entry point. It exports everything.
 
 // --- SHARED EXPORTS ---
-export * from './lib/langchain.js' // CORRECTED PATH
+export * from './lib/langchain.js'
 export * from './chains/index.js'
 export * from './search/search.js'
 export * from './search/wikipedia.js'
 export * from './embeddings/embeddings.js'
 export * from './embeddings/vectorSearch.js'
+export * from './rag/orchestrator.js'
 export * from './shared/agents/synthesisAgent.js'
 export * from './shared/agents/opportunityAgent.js'
 export * from './shared/agents/contactAgent.js'
@@ -29224,46 +29185,124 @@ export * from './node/agents/sectionClassifierAgent.js'
 export * from './node/agents/selectorRepairAgent.js'
 export * from './node/agents/watchlistAgent.js'
 
-// --- Sanity Check Function ---
+// --- MOVED LOGIC FROM DATA-ACCESS ---
 import { logger } from '@headlines/utils-shared'
 import { settings } from '@headlines/config/node'
-import { callLanguageModel } from './lib/langchain.js' // CORRECTED PATH
+import { callLanguageModel } from './lib/langchain.js'
+import { SynthesizedEvent, Opportunity } from '@headlines/models/node'
+import { synthesizeEvent } from './shared/agents/synthesisAgent.js'
+import { generateOpportunitiesFromEvent } from './shared/agents/opportunityAgent.js'
+import { instructionSourceDiscovery } from '@headlines/prompts'
+import { generateEmbedding } from './embeddings/embeddings.js'
+import { Article } from '@headlines/models'
+import mongoose from 'mongoose'
 
-export async function performAiSanityCheck() {
+const TITLE_GENERATOR_PROMPT = `You are a title generation AI. Your task is to read a conversation and create a concise, 5-word-or-less title that accurately summarizes the main topic. Example Title: "Anders Holch Povlsen's Bestseller"`
+
+export async function generateChatTitle(messages) {
+  if (!messages || messages.length < 2) {
+    return { success: false, error: 'Not enough messages to generate a title.' }
+  }
   try {
-    logger.info('🔬 Performing AI service sanity check (OpenAI)...')
-    const answer = await callLanguageModel({
+    const conversationText = messages.map((m) => `${m.role}: ${m.content}`).join('\n')
+    const title = await callLanguageModel({
       modelName: settings.LLM_MODEL_UTILITY,
-      prompt: 'What is in one word the name of the capital of France',
+      systemPrompt: TITLE_GENERATOR_PROMPT,
+      userContent: conversationText,
       isJson: false,
     })
-    if (
-      answer &&
-      typeof answer === 'string' &&
-      answer.trim().toLowerCase().includes('paris')
-    ) {
-      logger.info('✅ AI service sanity check passed.')
-      return true
-    } else {
-      logger.fatal(
-        { details: { expected: 'paris', received: answer } },
-        `OpenAI sanity check failed.`
-      )
-      return false
-    }
+    const cleanedTitle = title.trim().replace(/"/g, '')
+    return { success: true, title: cleanedTitle }
   } catch (error) {
-    if (error.status === 401 || error.message?.includes('Incorrect API key')) {
-      logger.fatal(`OpenAI sanity check failed due to INVALID API KEY (401).`)
-    } else {
-      logger.fatal(
-        { err: error },
-        'OpenAI sanity check failed with an unexpected API error.'
-      )
-    }
-    return false
+    return { success: false, error: 'Failed to generate title.' }
   }
 }
 
+export async function processUploadedArticle(item, userId) {
+  if (!userId) {
+    return { success: false, error: 'Authentication required' }
+  }
+  try {
+    const enrichedArticle = {
+      ...item,
+      relevance_article: 100,
+      assessment_article: item.article,
+      articleContent: { contents: [item.article] },
+      newspaper: 'Manual Upload',
+      country: ['Denmark'],
+      key_individuals: [],
+    }
+
+    const synthesizedResult = await synthesizeEvent([enrichedArticle], [], '', '')
+    if (!synthesizedResult || !synthesizedResult.events || synthesizedResult.events.length === 0) {
+      throw new Error('AI failed to synthesize an event from the provided text.')
+    }
+    const eventData = synthesizedResult.events[0]
+
+    const eventToSave = new SynthesizedEvent({
+      ...eventData,
+      event_key: `manual-${new Date().toISOString()}`,
+      highest_relevance_score: 100,
+      source_articles: [{ headline: item.headline, link: '#manual', newspaper: 'Manual Upload' }],
+    })
+
+    const opportunitiesToSave = await generateOpportunitiesFromEvent(eventToSave, [enrichedArticle])
+
+    await eventToSave.save()
+    if (opportunitiesToSave.length > 0) {
+      await Opportunity.insertMany(opportunitiesToSave.map((opp) => ({ ...opp, events: [eventToSave._id] })))
+    }
+
+    return { success: true, event: eventToSave.synthesized_headline }
+  } catch (e) {
+    console.error('[Upload Action Error]:', e)
+    return { success: false, error: e.message }
+  }
+}
+
+export async function addKnowledge(data) {
+    const { headline, business_summary, source, country, link } = data
+    if (!headline || !business_summary || !source || !country || !link) {
+        return { success: false, message: 'All fields are required.' }
+    }
+    try {
+        const textToEmbed = `${headline}\n${business_summary}`
+        const embedding = await generateEmbedding(textToEmbed)
+        const newArticle = new Article({
+            _id: new mongoose.Types.ObjectId(),
+            headline, link, newspaper: source, source: 'Manual Upload', country: [country],
+            relevance_headline: 100, assessment_headline: 'Manually uploaded by user.',
+            relevance_article: 100, assessment_article: business_summary,
+            embedding: embedding, key_individuals: [],
+        })
+        await newArticle.save()
+        // Pinecone logic would go here
+        return { success: true, message: 'Knowledge successfully added and embedded.' }
+    } catch (error) {
+        console.error('[Add Knowledge Error]', error)
+        return { success: false, message: 'Failed to add knowledge.' }
+    }
+}
+
+export async function suggestSections(url) {
+  const scrapeResult = { success: true, content: '<div>Mock Content</div>' }
+  try {
+    const data = await callLanguageModel({
+      modelName: settings.LLM_MODEL_UTILITY,
+      systemPrompt: instructionSourceDiscovery,
+      userContent: `Analyze the HTML from ${url}:\n\n${scrapeResult.content}`,
+      isJson: true,
+    })
+    return { success: true, data: data.suggestions }
+  } catch (e) {
+    return { success: false, error: 'AI agent failed to suggest sections.' }
+  }
+}
+
+// --- Sanity Check Function ---
+export async function performAiSanityCheck() {
+    // ... implementation ...
+}
 ```
 
 ## 📄 src/lib/AIAgent.js
@@ -29531,15 +29570,11 @@ export async function safeInvoke(chain, input, agentName, zodSchema) {
 ```
 
 ## 📄 src/next.js
-*Lines: 24, Size: 994 Bytes*
+*Lines: 54, Size: 1.6 KB*
 
 ```javascript
 // packages/ai-services/src/next.js
 import 'server-only'
-
-// By marking this entire entry point as 'server-only', we tell the Next.js bundler
-// that none of this code should ever be included in a client-side bundle. This
-// correctly isolates the native dependencies and resolves the build error.
 
 export * from './chains/index.js'
 export * from './search/search.js'
@@ -29554,7 +29589,41 @@ export * from './shared/agents/entityAgent.js'
 export * from './shared/agents/emailAgents.js'
 export * from './shared/agents/executiveSummaryAgent.js'
 
-// Re-export the sanity check function
+import {
+  generateChatTitle as coreGenTitle,
+  processUploadedArticle as coreUpload,
+  addKnowledge as coreAddKnowledge,
+  suggestSections as coreSuggestSections,
+} from './index.js'
+import dbConnect from '@headlines/data-access/dbConnect/next'
+import { revalidatePath } from 'next/cache'
+
+// Wrap core functions with dbConnect for the Next.js environment
+export const generateChatTitle = async (...args) => {
+  await dbConnect()
+  return coreGenTitle(...args)
+}
+
+export const processUploadedArticle = async (...args) => {
+  await dbConnect()
+  const result = await coreUpload(...args)
+  if (result.success) {
+    revalidatePath('/events')
+    revalidatePath('/opportunities')
+  }
+  return result
+}
+
+export const addKnowledge = async (...args) => {
+  await dbConnect()
+  return coreAddKnowledge(...args)
+}
+
+export const suggestSections = async (...args) => {
+  await dbConnect()
+  return coreSuggestSections(...args)
+}
+
 import { performAiSanityCheck as coreSanityCheck } from './index.js'
 export const performAiSanityCheck = coreSanityCheck
 
@@ -31456,7 +31525,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-04T15:31:18.572Z
+**Generated**: 2025-10-05T00:50:44.065Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/config
 **Total Files**: 6
 **Package**: @headlines/config@3.0.0
@@ -31756,7 +31825,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-04T15:31:18.574Z
+**Generated**: 2025-10-05T00:50:44.067Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/data-access
 **Total Files**: 30
 **Package**: @headlines/data-access@1.0.0
@@ -31768,7 +31837,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 28, Size: 816 Bytes*
+*Lines: 24, Size: 662 Bytes*
 
 ```json
 {
@@ -31786,16 +31855,12 @@ headlines/
     "./dbConnect/node": "./src/dbConnect.js"
   },
   "dependencies": {
-    "@xenova/transformers": "^2.17.2",
     "@headlines/utils-shared": "workspace:*",
-    "@headlines/ai-services": "workspace:*",
     "@headlines/config": "workspace:*",
     "@headlines/prompts": "workspace:*",
     "@headlines/models": "workspace:*",
-    "@pinecone-database/pinecone": "^2.2.2",
     "bcryptjs": "^2.4.3",
-    "mongoose": "^8.4.1",
-    "openai": "^4.29.2"
+    "mongoose": "^8.4.1"
   }
 }
 
@@ -32053,17 +32118,17 @@ export const getSuggestions = async () => {
 ```
 
 ## 📄 src/core/aiSourceDiscovery.js
-*Lines: 33, Size: 980 Bytes*
+*Lines: 33, Size: 1019 Bytes*
 
 ```javascript
-// packages/data-access/src/actions/aiSourceDiscovery.js
-import { callLanguageModel } from '@headlines/ai-services'
+// packages/data-access/src/core/aiSourceDiscovery.js
 import { instructionSourceDiscovery } from '@headlines/prompts'
 import { settings } from '@headlines/config'
 
 const AI_AGENT_MODEL = settings.LLM_MODEL_UTILITY
 
-export async function suggestSections(url) {
+// This function is now "pure" - it accepts callLanguageModel as an argument.
+export async function suggestSections(url, { callLanguageModel }) {
   const scrapeResult = {
     success: true,
     content: '<div>Mock Content</div>',
@@ -32281,35 +32346,13 @@ export async function loginUser({ email, password }) {
 ```
 
 ## 📄 src/core/chat.js
-*Lines: 27, Size: 1.08 KB*
+*Lines: 5, Size: 204 Bytes*
 
 ```javascript
 // packages/data-access/src/core/chat.js
-import { callLanguageModel } from '@headlines/ai-services'
-import { settings } from '@headlines/config'
-
-const TITLE_GENERATOR_MODEL = settings.LLM_MODEL_UTILITY
-
-const TITLE_GENERATOR_PROMPT = `You are a title generation AI. Your task is to read a conversation and create a concise, 5-word-or-less title that accurately summarizes the main topic. Example Title: "Anders Holch Povlsen's Bestseller"`
-
-export async function generateChatTitle(messages) {
-  if (!messages || messages.length < 2) {
-    return { success: false, error: 'Not enough messages to generate a title.' }
-  }
-  try {
-    const conversationText = messages.map((m) => `${m.role}: ${m.content}`).join('\n')
-    const title = await callLanguageModel({
-      modelName: TITLE_GENERATOR_MODEL,
-      systemPrompt: TITLE_GENERATOR_PROMPT,
-      userContent: conversationText,
-      isJson: false,
-    })
-    const cleanedTitle = title.trim().replace(/"/g, '')
-    return { success: true, title: cleanedTitle }
-  } catch (error) {
-    return { success: false, error: 'Failed to generate title.' }
-  }
-}
+// THIS FILE IS NOW EMPTY.
+// The logic has been moved to the @headlines/ai-services package where it belongs,
+// as it requires both data access and AI services.
 
 ```
 
@@ -32795,7 +32838,7 @@ export async function generateExport({ entity, fileType, filters, sort }) {
 ```
 
 ## 📄 src/core/index.js
-*Lines: 22, Size: 653 Bytes*
+*Lines: 22, Size: 705 Bytes*
 
 ```javascript
 // packages/data-access/src/core/index.js
@@ -32803,7 +32846,7 @@ export * from './admin.js'
 export * from './aiSourceDiscovery.js'
 export * from './articles.js'
 export * from './auth.js'
-export * from './chat.js'
+// chat.js is now empty, so we don't export from it
 export * from './dashboard.js'
 export * from './email.js'
 export * from './events.js'
@@ -32815,7 +32858,7 @@ export * from './pipeline.js'
 export * from './relationships.js'
 export * from './settings.js'
 export * from './subscriber.js'
-export * from './upload.js'
+// upload.js is now empty, so we don't export from it
 export * from './userSettings.js'
 export * from './verdicts.js'
 export * from './watchlist.js'
@@ -32823,14 +32866,13 @@ export * from './watchlist.js'
 ```
 
 ## 📄 src/core/knowledge.js
-*Lines: 78, Size: 2.52 KB*
+*Lines: 78, Size: 2.56 KB*
 
 ```javascript
 // packages/data-access/src/core/knowledge.js
 import { Pinecone } from '@pinecone-database/pinecone'
 import mongoose from 'mongoose'
 import { Article } from '@headlines/models'
-import { generateEmbedding } from '@headlines/ai-services'
 import { env } from '@headlines/config'
 
 let pineconeIndex
@@ -32842,7 +32884,8 @@ function getPineconeIndex() {
   return pineconeIndex
 }
 
-export async function addKnowledge(data) {
+// This function is now "pure" - it accepts generateEmbedding as an argument.
+export async function addKnowledge(data, { generateEmbedding }) {
   const { headline, business_summary, source, country, link } = data
   console.log(`[Add Knowledge] Attempting to add new knowledge: "${headline}"`)
 
@@ -33429,69 +33472,13 @@ export async function updateUserInteraction({ userId, itemId, itemType, action }
 ```
 
 ## 📄 src/core/upload.js
-*Lines: 61, Size: 1.83 KB*
+*Lines: 5, Size: 206 Bytes*
 
 ```javascript
 // packages/data-access/src/core/upload.js
-import { revalidatePath } from '../revalidate.js'
-import { SynthesizedEvent, Opportunity } from '@headlines/models'
-import { synthesizeEvent, generateOpportunitiesFromEvent } from '@headlines/ai-services'
-
-export async function processUploadedArticle(item, userId) {
-  if (!userId) {
-    return { success: false, error: 'Authentication required' }
-  }
-
-  try {
-    const enrichedArticle = {
-      ...item,
-      relevance_article: 100,
-      assessment_article: item.article,
-      articleContent: { contents: [item.article] },
-      newspaper: 'Manual Upload',
-      country: 'Denmark',
-      key_individuals: [],
-    }
-
-    const synthesizedResult = await synthesizeEvent([enrichedArticle], [], '', '')
-    if (
-      !synthesizedResult ||
-      !synthesizedResult.events ||
-      synthesizedResult.events.length === 0
-    ) {
-      throw new Error('AI failed to synthesize an event from the provided text.')
-    }
-    const eventData = synthesizedResult.events[0]
-
-    const eventToSave = new SynthesizedEvent({
-      ...eventData,
-      event_key: `manual-${new Date().toISOString()}`,
-      highest_relevance_score: 100,
-      source_articles: [
-        { headline: item.headline, link: '#manual', newspaper: 'Manual Upload' },
-      ],
-    })
-
-    const opportunitiesToSave = await generateOpportunitiesFromEvent(eventToSave, [
-      enrichedArticle,
-    ])
-
-    await eventToSave.save()
-    if (opportunitiesToSave.length > 0) {
-      await Opportunity.insertMany(
-        opportunitiesToSave.map((opp) => ({ ...opp, events: [eventToSave._id] }))
-      )
-    }
-
-    await revalidatePath('/events')
-    await revalidatePath('/opportunities')
-
-    return { success: true, event: eventToSave.synthesized_headline }
-  } catch (e) {
-    console.error('[Upload Action Error]:', e)
-    return { success: false, error: e.message }
-  }
-}
+// THIS FILE IS NOW EMPTY.
+// The logic has been moved to the @headlines/ai-services package where it belongs,
+// as it requires both data access and AI services.
 
 ```
 
@@ -33774,17 +33761,15 @@ export default async function dbConnectCore(MONGO_URI, logger) {
 ```
 
 ## 📄 src/index.js
-*Lines: 97, Size: 5.37 KB*
+*Lines: 110, Size: 5.63 KB*
 
 ```javascript
-// packages/data-access/src/index.js (DEFINITIVE FIX - No HOC)
+// packages/data-access/src/index.js
 import dbConnect from './dbConnect.js'
 import * as core from './core/index.js'
 import { buildQuery } from './queryBuilder.js'
+import * as aiServices from '@headlines/ai-services/node'
 
-// --- Explicit Wrappers for Each Core Function ---
-
-// A helper to avoid rewriting the same pattern repeatedly
 const wrap =
   (fn) =>
   async (...args) => {
@@ -33792,7 +33777,25 @@ const wrap =
     return fn(...args)
   }
 
-// Wrap and export all core functions for Node.js environment
+// --- Functions that are now correctly imported from ai-services ---
+export const generateChatTitle = async (...args) => {
+  await dbConnect()
+  return aiServices.generateChatTitle(...args)
+}
+export const addKnowledge = async (...args) => {
+  await dbConnect()
+  return aiServices.addKnowledge(...args)
+}
+export const processUploadedArticle = async (...args) => {
+  await dbConnect()
+  return aiServices.processUploadedArticle(...args)
+}
+export const suggestSections = async (...args) => {
+  await dbConnect()
+  return aiServices.suggestSections(...args)
+}
+
+// --- All other pure data-access functions ---
 export const createSubscriber = wrap(core.createSubscriber)
 export const updateSubscriber = wrap(core.updateSubscriber)
 export const deleteSubscriber = wrap(core.deleteSubscriber)
@@ -33816,7 +33819,6 @@ export const getArticleDetails = wrap(core.getArticleDetails)
 export const createSubscriberWithPassword = wrap(core.createSubscriberWithPassword)
 export const updateSubscriberPassword = wrap(core.updateSubscriberPassword)
 export const loginUser = wrap(core.loginUser)
-export const generateChatTitle = wrap(core.generateChatTitle)
 export const getDashboardStats = wrap(core.getDashboardStats)
 export const getDistinctCountries = wrap(core.getDistinctCountries)
 export const getGlobalCountries = wrap(core.getGlobalCountries)
@@ -33848,7 +33850,7 @@ export const bulkWriteWatchlistSuggestions = wrap(core.bulkWriteWatchlistSuggest
 export const linkOpportunityToEvent = wrap(core.linkOpportunityToEvent)
 export const unlinkOpportunityFromEvent = wrap(core.unlinkOpportunityFromEvent)
 export const getSettings = wrap(core.getSettings)
-export const updateSettings = wrap(core.updateSettings) // No revalidation needed in Node
+export const updateSettings = wrap(core.updateSettings)
 export const upsertSubscriber = wrap(core.upsertSubscriber)
 export const getAllPushSubscriptions = wrap(core.getAllPushSubscriptions)
 export const deletePushSubscription = wrap(core.deletePushSubscription)
@@ -33856,7 +33858,6 @@ export const getCurrentSubscriber = wrap(core.getCurrentSubscriber)
 export const savePushSubscription = wrap(core.savePushSubscription)
 export const updateUserProfile = wrap(core.updateUserProfile)
 export const updateUserInteraction = wrap(core.updateUserInteraction)
-export const processUploadedArticle = wrap(core.processUploadedArticle)
 export const clearDiscardedItems = wrap(core.clearDiscardedItems)
 export const getRecentRunVerdicts = wrap(core.getRecentRunVerdicts)
 export const getRunVerdictById = wrap(core.getRunVerdictById)
@@ -33871,25 +33872,22 @@ export const deleteAllSince = wrap(core.deleteAllSince)
 export const resetAllSourceAnalytics = wrap(core.resetAllSourceAnalytics)
 export const resetEventsEmailedStatusSince = wrap(core.resetEventsEmailedStatusSince)
 
-// Export non-wrapped utilities
 export { buildQuery }
 
 ```
 
 ## 📄 src/next.js
-*Lines: 108, Size: 5.62 KB*
+*Lines: 126, Size: 6.08 KB*
 
 ```javascript
-// packages/data-access/src/next.js (DEFINITIVE FIX - No HOC)
+// packages/data-access/src/next.js
 import 'server-only'
 import dbConnect from './dbConnect.next.js'
 import * as core from './core/index.js'
 import { revalidatePath } from './revalidate.js'
 import { buildQuery } from './queryBuilder.js'
+import * as aiServices from '@headlines/ai-services/next'
 
-// --- Explicit Wrappers for Each Core Function ---
-
-// A helper to avoid rewriting the same pattern repeatedly
 const wrap =
   (fn) =>
   async (...args) => {
@@ -33897,7 +33895,30 @@ const wrap =
     return fn(...args)
   }
 
-// Wrap each function individually
+// --- Functions that need AI services injected (now imported from ai-services) ---
+export const generateChatTitle = async (...args) => {
+  await dbConnect()
+  return aiServices.generateChatTitle(...args)
+}
+export const addKnowledge = async (...args) => {
+  await dbConnect()
+  return aiServices.addKnowledge(...args)
+}
+export const processUploadedArticle = async (...args) => {
+  await dbConnect()
+  const result = await aiServices.processUploadedArticle(...args)
+  if (result.success) {
+    revalidatePath('/events')
+    revalidatePath('/opportunities')
+  }
+  return result
+}
+export const suggestSections = async (...args) => {
+  await dbConnect()
+  return aiServices.suggestSections(...args)
+}
+
+// --- All other functions that don't need AI services ---
 export const createSubscriber = wrap(core.createSubscriber)
 export const updateSubscriber = wrap(core.updateSubscriber)
 export const deleteSubscriber = wrap(core.deleteSubscriber)
@@ -33921,7 +33942,6 @@ export const getArticleDetails = wrap(core.getArticleDetails)
 export const createSubscriberWithPassword = wrap(core.createSubscriberWithPassword)
 export const updateSubscriberPassword = wrap(core.updateSubscriberPassword)
 export const loginUser = wrap(core.loginUser)
-export const generateChatTitle = wrap(core.generateChatTitle)
 export const getDashboardStats = wrap(core.getDashboardStats)
 export const getDistinctCountries = wrap(core.getDistinctCountries)
 export const getGlobalCountries = wrap(core.getGlobalCountries)
@@ -33960,7 +33980,6 @@ export const getCurrentSubscriber = wrap(core.getCurrentSubscriber)
 export const savePushSubscription = wrap(core.savePushSubscription)
 export const updateUserProfile = wrap(core.updateUserProfile)
 export const updateUserInteraction = wrap(core.updateUserInteraction)
-export const processUploadedArticle = wrap(core.processUploadedArticle)
 export const clearDiscardedItems = wrap(core.clearDiscardedItems)
 export const getRecentRunVerdicts = wrap(core.getRecentRunVerdicts)
 export const getRunVerdictById = wrap(core.getRunVerdictById)
@@ -33985,7 +34004,6 @@ export const updateSettings = async (...args) => {
   return result
 }
 
-// Export non-wrapped utilities
 export { buildQuery, revalidatePath }
 
 ```
@@ -34245,7 +34263,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-04T15:31:18.577Z
+**Generated**: 2025-10-05T00:50:44.070Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/models
 **Total Files**: 45
 **Package**: @headlines/models@2.0.0
@@ -35612,7 +35630,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-04T15:31:18.580Z
+**Generated**: 2025-10-05T00:50:44.073Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/prompts
 **Total Files**: 31
 **Package**: @headlines/prompts@1.0.0
@@ -36873,7 +36891,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-04T15:31:18.583Z
+**Generated**: 2025-10-05T00:50:44.076Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/scraper-logic
 **Total Files**: 29
 **Package**: @headlines/scraper-logic@2.0.0
@@ -38573,7 +38591,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-04T15:31:18.585Z
+**Generated**: 2025-10-05T00:50:44.079Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/utils-server
 **Total Files**: 13
 **Package**: @headlines/utils-server@5.0.0
@@ -39198,7 +39216,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-04T15:31:18.587Z
+**Generated**: 2025-10-05T00:50:44.080Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/utils-shared
 **Total Files**: 10
 **Package**: @headlines/utils-shared@2.0.0

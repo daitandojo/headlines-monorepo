@@ -41,7 +41,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-04T15:31:18.574Z
+**Generated**: 2025-10-05T00:50:44.067Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/data-access
 **Total Files**: 30
 **Package**: @headlines/data-access@1.0.0
@@ -53,7 +53,7 @@ headlines/
 
 
 ## 📄 package.json
-*Lines: 28, Size: 816 Bytes*
+*Lines: 24, Size: 662 Bytes*
 
 ```json
 {
@@ -71,16 +71,12 @@ headlines/
     "./dbConnect/node": "./src/dbConnect.js"
   },
   "dependencies": {
-    "@xenova/transformers": "^2.17.2",
     "@headlines/utils-shared": "workspace:*",
-    "@headlines/ai-services": "workspace:*",
     "@headlines/config": "workspace:*",
     "@headlines/prompts": "workspace:*",
     "@headlines/models": "workspace:*",
-    "@pinecone-database/pinecone": "^2.2.2",
     "bcryptjs": "^2.4.3",
-    "mongoose": "^8.4.1",
-    "openai": "^4.29.2"
+    "mongoose": "^8.4.1"
   }
 }
 
@@ -338,17 +334,17 @@ export const getSuggestions = async () => {
 ```
 
 ## 📄 src/core/aiSourceDiscovery.js
-*Lines: 33, Size: 980 Bytes*
+*Lines: 33, Size: 1019 Bytes*
 
 ```javascript
-// packages/data-access/src/actions/aiSourceDiscovery.js
-import { callLanguageModel } from '@headlines/ai-services'
+// packages/data-access/src/core/aiSourceDiscovery.js
 import { instructionSourceDiscovery } from '@headlines/prompts'
 import { settings } from '@headlines/config'
 
 const AI_AGENT_MODEL = settings.LLM_MODEL_UTILITY
 
-export async function suggestSections(url) {
+// This function is now "pure" - it accepts callLanguageModel as an argument.
+export async function suggestSections(url, { callLanguageModel }) {
   const scrapeResult = {
     success: true,
     content: '<div>Mock Content</div>',
@@ -566,35 +562,13 @@ export async function loginUser({ email, password }) {
 ```
 
 ## 📄 src/core/chat.js
-*Lines: 27, Size: 1.08 KB*
+*Lines: 5, Size: 204 Bytes*
 
 ```javascript
 // packages/data-access/src/core/chat.js
-import { callLanguageModel } from '@headlines/ai-services'
-import { settings } from '@headlines/config'
-
-const TITLE_GENERATOR_MODEL = settings.LLM_MODEL_UTILITY
-
-const TITLE_GENERATOR_PROMPT = `You are a title generation AI. Your task is to read a conversation and create a concise, 5-word-or-less title that accurately summarizes the main topic. Example Title: "Anders Holch Povlsen's Bestseller"`
-
-export async function generateChatTitle(messages) {
-  if (!messages || messages.length < 2) {
-    return { success: false, error: 'Not enough messages to generate a title.' }
-  }
-  try {
-    const conversationText = messages.map((m) => `${m.role}: ${m.content}`).join('\n')
-    const title = await callLanguageModel({
-      modelName: TITLE_GENERATOR_MODEL,
-      systemPrompt: TITLE_GENERATOR_PROMPT,
-      userContent: conversationText,
-      isJson: false,
-    })
-    const cleanedTitle = title.trim().replace(/"/g, '')
-    return { success: true, title: cleanedTitle }
-  } catch (error) {
-    return { success: false, error: 'Failed to generate title.' }
-  }
-}
+// THIS FILE IS NOW EMPTY.
+// The logic has been moved to the @headlines/ai-services package where it belongs,
+// as it requires both data access and AI services.
 
 ```
 
@@ -1080,7 +1054,7 @@ export async function generateExport({ entity, fileType, filters, sort }) {
 ```
 
 ## 📄 src/core/index.js
-*Lines: 22, Size: 653 Bytes*
+*Lines: 22, Size: 705 Bytes*
 
 ```javascript
 // packages/data-access/src/core/index.js
@@ -1088,7 +1062,7 @@ export * from './admin.js'
 export * from './aiSourceDiscovery.js'
 export * from './articles.js'
 export * from './auth.js'
-export * from './chat.js'
+// chat.js is now empty, so we don't export from it
 export * from './dashboard.js'
 export * from './email.js'
 export * from './events.js'
@@ -1100,7 +1074,7 @@ export * from './pipeline.js'
 export * from './relationships.js'
 export * from './settings.js'
 export * from './subscriber.js'
-export * from './upload.js'
+// upload.js is now empty, so we don't export from it
 export * from './userSettings.js'
 export * from './verdicts.js'
 export * from './watchlist.js'
@@ -1108,14 +1082,13 @@ export * from './watchlist.js'
 ```
 
 ## 📄 src/core/knowledge.js
-*Lines: 78, Size: 2.52 KB*
+*Lines: 78, Size: 2.56 KB*
 
 ```javascript
 // packages/data-access/src/core/knowledge.js
 import { Pinecone } from '@pinecone-database/pinecone'
 import mongoose from 'mongoose'
 import { Article } from '@headlines/models'
-import { generateEmbedding } from '@headlines/ai-services'
 import { env } from '@headlines/config'
 
 let pineconeIndex
@@ -1127,7 +1100,8 @@ function getPineconeIndex() {
   return pineconeIndex
 }
 
-export async function addKnowledge(data) {
+// This function is now "pure" - it accepts generateEmbedding as an argument.
+export async function addKnowledge(data, { generateEmbedding }) {
   const { headline, business_summary, source, country, link } = data
   console.log(`[Add Knowledge] Attempting to add new knowledge: "${headline}"`)
 
@@ -1714,69 +1688,13 @@ export async function updateUserInteraction({ userId, itemId, itemType, action }
 ```
 
 ## 📄 src/core/upload.js
-*Lines: 61, Size: 1.83 KB*
+*Lines: 5, Size: 206 Bytes*
 
 ```javascript
 // packages/data-access/src/core/upload.js
-import { revalidatePath } from '../revalidate.js'
-import { SynthesizedEvent, Opportunity } from '@headlines/models'
-import { synthesizeEvent, generateOpportunitiesFromEvent } from '@headlines/ai-services'
-
-export async function processUploadedArticle(item, userId) {
-  if (!userId) {
-    return { success: false, error: 'Authentication required' }
-  }
-
-  try {
-    const enrichedArticle = {
-      ...item,
-      relevance_article: 100,
-      assessment_article: item.article,
-      articleContent: { contents: [item.article] },
-      newspaper: 'Manual Upload',
-      country: 'Denmark',
-      key_individuals: [],
-    }
-
-    const synthesizedResult = await synthesizeEvent([enrichedArticle], [], '', '')
-    if (
-      !synthesizedResult ||
-      !synthesizedResult.events ||
-      synthesizedResult.events.length === 0
-    ) {
-      throw new Error('AI failed to synthesize an event from the provided text.')
-    }
-    const eventData = synthesizedResult.events[0]
-
-    const eventToSave = new SynthesizedEvent({
-      ...eventData,
-      event_key: `manual-${new Date().toISOString()}`,
-      highest_relevance_score: 100,
-      source_articles: [
-        { headline: item.headline, link: '#manual', newspaper: 'Manual Upload' },
-      ],
-    })
-
-    const opportunitiesToSave = await generateOpportunitiesFromEvent(eventToSave, [
-      enrichedArticle,
-    ])
-
-    await eventToSave.save()
-    if (opportunitiesToSave.length > 0) {
-      await Opportunity.insertMany(
-        opportunitiesToSave.map((opp) => ({ ...opp, events: [eventToSave._id] }))
-      )
-    }
-
-    await revalidatePath('/events')
-    await revalidatePath('/opportunities')
-
-    return { success: true, event: eventToSave.synthesized_headline }
-  } catch (e) {
-    console.error('[Upload Action Error]:', e)
-    return { success: false, error: e.message }
-  }
-}
+// THIS FILE IS NOW EMPTY.
+// The logic has been moved to the @headlines/ai-services package where it belongs,
+// as it requires both data access and AI services.
 
 ```
 
@@ -2059,17 +1977,15 @@ export default async function dbConnectCore(MONGO_URI, logger) {
 ```
 
 ## 📄 src/index.js
-*Lines: 97, Size: 5.37 KB*
+*Lines: 110, Size: 5.63 KB*
 
 ```javascript
-// packages/data-access/src/index.js (DEFINITIVE FIX - No HOC)
+// packages/data-access/src/index.js
 import dbConnect from './dbConnect.js'
 import * as core from './core/index.js'
 import { buildQuery } from './queryBuilder.js'
+import * as aiServices from '@headlines/ai-services/node'
 
-// --- Explicit Wrappers for Each Core Function ---
-
-// A helper to avoid rewriting the same pattern repeatedly
 const wrap =
   (fn) =>
   async (...args) => {
@@ -2077,7 +1993,25 @@ const wrap =
     return fn(...args)
   }
 
-// Wrap and export all core functions for Node.js environment
+// --- Functions that are now correctly imported from ai-services ---
+export const generateChatTitle = async (...args) => {
+  await dbConnect()
+  return aiServices.generateChatTitle(...args)
+}
+export const addKnowledge = async (...args) => {
+  await dbConnect()
+  return aiServices.addKnowledge(...args)
+}
+export const processUploadedArticle = async (...args) => {
+  await dbConnect()
+  return aiServices.processUploadedArticle(...args)
+}
+export const suggestSections = async (...args) => {
+  await dbConnect()
+  return aiServices.suggestSections(...args)
+}
+
+// --- All other pure data-access functions ---
 export const createSubscriber = wrap(core.createSubscriber)
 export const updateSubscriber = wrap(core.updateSubscriber)
 export const deleteSubscriber = wrap(core.deleteSubscriber)
@@ -2101,7 +2035,6 @@ export const getArticleDetails = wrap(core.getArticleDetails)
 export const createSubscriberWithPassword = wrap(core.createSubscriberWithPassword)
 export const updateSubscriberPassword = wrap(core.updateSubscriberPassword)
 export const loginUser = wrap(core.loginUser)
-export const generateChatTitle = wrap(core.generateChatTitle)
 export const getDashboardStats = wrap(core.getDashboardStats)
 export const getDistinctCountries = wrap(core.getDistinctCountries)
 export const getGlobalCountries = wrap(core.getGlobalCountries)
@@ -2133,7 +2066,7 @@ export const bulkWriteWatchlistSuggestions = wrap(core.bulkWriteWatchlistSuggest
 export const linkOpportunityToEvent = wrap(core.linkOpportunityToEvent)
 export const unlinkOpportunityFromEvent = wrap(core.unlinkOpportunityFromEvent)
 export const getSettings = wrap(core.getSettings)
-export const updateSettings = wrap(core.updateSettings) // No revalidation needed in Node
+export const updateSettings = wrap(core.updateSettings)
 export const upsertSubscriber = wrap(core.upsertSubscriber)
 export const getAllPushSubscriptions = wrap(core.getAllPushSubscriptions)
 export const deletePushSubscription = wrap(core.deletePushSubscription)
@@ -2141,7 +2074,6 @@ export const getCurrentSubscriber = wrap(core.getCurrentSubscriber)
 export const savePushSubscription = wrap(core.savePushSubscription)
 export const updateUserProfile = wrap(core.updateUserProfile)
 export const updateUserInteraction = wrap(core.updateUserInteraction)
-export const processUploadedArticle = wrap(core.processUploadedArticle)
 export const clearDiscardedItems = wrap(core.clearDiscardedItems)
 export const getRecentRunVerdicts = wrap(core.getRecentRunVerdicts)
 export const getRunVerdictById = wrap(core.getRunVerdictById)
@@ -2156,25 +2088,22 @@ export const deleteAllSince = wrap(core.deleteAllSince)
 export const resetAllSourceAnalytics = wrap(core.resetAllSourceAnalytics)
 export const resetEventsEmailedStatusSince = wrap(core.resetEventsEmailedStatusSince)
 
-// Export non-wrapped utilities
 export { buildQuery }
 
 ```
 
 ## 📄 src/next.js
-*Lines: 108, Size: 5.62 KB*
+*Lines: 126, Size: 6.08 KB*
 
 ```javascript
-// packages/data-access/src/next.js (DEFINITIVE FIX - No HOC)
+// packages/data-access/src/next.js
 import 'server-only'
 import dbConnect from './dbConnect.next.js'
 import * as core from './core/index.js'
 import { revalidatePath } from './revalidate.js'
 import { buildQuery } from './queryBuilder.js'
+import * as aiServices from '@headlines/ai-services/next'
 
-// --- Explicit Wrappers for Each Core Function ---
-
-// A helper to avoid rewriting the same pattern repeatedly
 const wrap =
   (fn) =>
   async (...args) => {
@@ -2182,7 +2111,30 @@ const wrap =
     return fn(...args)
   }
 
-// Wrap each function individually
+// --- Functions that need AI services injected (now imported from ai-services) ---
+export const generateChatTitle = async (...args) => {
+  await dbConnect()
+  return aiServices.generateChatTitle(...args)
+}
+export const addKnowledge = async (...args) => {
+  await dbConnect()
+  return aiServices.addKnowledge(...args)
+}
+export const processUploadedArticle = async (...args) => {
+  await dbConnect()
+  const result = await aiServices.processUploadedArticle(...args)
+  if (result.success) {
+    revalidatePath('/events')
+    revalidatePath('/opportunities')
+  }
+  return result
+}
+export const suggestSections = async (...args) => {
+  await dbConnect()
+  return aiServices.suggestSections(...args)
+}
+
+// --- All other functions that don't need AI services ---
 export const createSubscriber = wrap(core.createSubscriber)
 export const updateSubscriber = wrap(core.updateSubscriber)
 export const deleteSubscriber = wrap(core.deleteSubscriber)
@@ -2206,7 +2158,6 @@ export const getArticleDetails = wrap(core.getArticleDetails)
 export const createSubscriberWithPassword = wrap(core.createSubscriberWithPassword)
 export const updateSubscriberPassword = wrap(core.updateSubscriberPassword)
 export const loginUser = wrap(core.loginUser)
-export const generateChatTitle = wrap(core.generateChatTitle)
 export const getDashboardStats = wrap(core.getDashboardStats)
 export const getDistinctCountries = wrap(core.getDistinctCountries)
 export const getGlobalCountries = wrap(core.getGlobalCountries)
@@ -2245,7 +2196,6 @@ export const getCurrentSubscriber = wrap(core.getCurrentSubscriber)
 export const savePushSubscription = wrap(core.savePushSubscription)
 export const updateUserProfile = wrap(core.updateUserProfile)
 export const updateUserInteraction = wrap(core.updateUserInteraction)
-export const processUploadedArticle = wrap(core.processUploadedArticle)
 export const clearDiscardedItems = wrap(core.clearDiscardedItems)
 export const getRecentRunVerdicts = wrap(core.getRecentRunVerdicts)
 export const getRunVerdictById = wrap(core.getRunVerdictById)
@@ -2270,7 +2220,6 @@ export const updateSettings = async (...args) => {
   return result
 }
 
-// Export non-wrapped utilities
 export { buildQuery, revalidatePath }
 
 ```

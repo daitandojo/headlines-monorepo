@@ -22,7 +22,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-04T15:31:18.585Z
+**Generated**: 2025-10-05T00:50:44.079Z
 **Repository Path**: /home/mark/Repos/projects/headlines/packages/utils-server
 **Total Files**: 13
 **Package**: @headlines/utils-server@5.0.0

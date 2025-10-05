@@ -1,6 +1,6 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 109 files, 31 directories
+Total: 134 files, 35 directories
 
 ```
 headlines/
@@ -8,6 +8,35 @@ headlines/
 │   └── 📁 workflows/
 │       ├── 📄 fly-deploy.yml
 │       └── 📄 run-pipeline.yml
+├── 📁 backup/
+│   ├── 📁 2025-10-04T00-51-50/
+│   └── 📁 2025-10-04T00-58-07/
+│       └── 📁 haelpers/
+│           ├── 📄 articles.bson.gz
+│           ├── 📄 articles.metadata.json.gz
+│           ├── 📄 countries.bson.gz
+│           ├── 📄 countries.metadata.json.gz
+│           ├── 📄 opportunities.bson.gz
+│           ├── 📄 opportunities.metadata.json.gz
+│           ├── 📄 prelude.json.gz
+│           ├── 📄 push_subscriptions.bson.gz
+│           ├── 📄 push_subscriptions.metadata.json.gz
+│           ├── 📄 run_verdicts.bson.gz
+│           ├── 📄 run_verdicts.metadata.json.gz
+│           ├── 📄 settings.bson.gz
+│           ├── 📄 settings.metadata.json.gz
+│           ├── 📄 source_suggestions.bson.gz
+│           ├── 📄 source_suggestions.metadata.json.gz
+│           ├── 📄 sources.bson.gz
+│           ├── 📄 sources.metadata.json.gz
+│           ├── 📄 subscribers.bson.gz
+│           ├── 📄 subscribers.metadata.json.gz
+│           ├── 📄 synthesized_events.bson.gz
+│           ├── 📄 synthesized_events.metadata.json.gz
+│           ├── 📄 watchlist_entities.bson.gz
+│           ├── 📄 watchlist_entities.metadata.json.gz
+│           ├── 📄 watchlist_suggestions.bson.gz
+│           └── 📄 watchlist_suggestions.metadata.json.gz
 ├── 📁 scripts/
 │   ├── 📁 infrastructure/
 │   │   └── 📄 setFlySecrets.sh
@@ -148,7 +177,7 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-04T15:31:18.557Z
+**Generated**: 2025-10-05T00:50:44.051Z
 **Repository Path**: /home/mark/Repos/projects/headlines/apps/pipeline
 **Total Files**: 109
 **Package**: @headlines/pipeline@1.0.0
