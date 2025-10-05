@@ -1,11 +1,9 @@
-// File: apps/client/postcss.config.js (DEFINITIVE FIX)
+// File: apps/client/postcss.config.js (FINAL FIX)
 module.exports = {
   plugins: {
-    tailwindcss: {
-      // This line explicitly tells PostCSS where to find your Tailwind config.
-      // The path is relative to this file, which makes it work everywhere.
-      config: './tailwind.config.js',
-    },
+    // This tells PostCSS to use the Tailwind CSS plugin and provides the
+    // explicit path to its config file. This resolves all ambiguity.
+    tailwindcss: require('tailwindcss')('./tailwind.config.js'),
     autoprefixer: {},
   },
 }
