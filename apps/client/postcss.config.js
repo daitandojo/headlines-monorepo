@@ -1,15 +1,11 @@
-// File: apps/client/postcss.config.js (FINAL, ABSOLUTE PATH FIX)
-
-// Use Node's built-in `path` module to construct absolute paths
-const path = require('path')
-
+// File: apps/client/postcss.config.js (THE FINAL VERSION)
 module.exports = {
   plugins: {
-    // Explicitly resolve the path to the tailwindcss module from the monorepo root
-    // and then provide the path to this package's tailwind.config.js
-    tailwindcss: {
-      config: path.resolve(__dirname, 'tailwind.config.js'),
-    },
+    // This tells PostCSS to look for a tailwind.config.js file
+    // and process the CSS with it. It should find the one
+    // in the same directory.
+    'tailwindcss/nesting': {},
+    tailwindcss: {},
     autoprefixer: {},
   },
 }
