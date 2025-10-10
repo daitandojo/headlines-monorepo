@@ -1,4 +1,4 @@
-// apps/pipeline/src/utils/reportSections.js (Corrected)
+// apps/pipeline/src/utils/reportSections.js
 import { truncateString, logger } from '@headlines/utils-shared'
 import moment from 'moment'
 import 'moment-duration-format'
@@ -166,7 +166,7 @@ export function formatContentScrapingFailures(runStats) {
     (outcome) =>
       outcome.outcome === 'High-Signal Failure' ||
       (outcome.outcome === 'Dropped' &&
-        (outcome.assessment_article || '').includes('Enrichment Failed'))
+        (outcome.reason || '').includes('Content scrape failed'))
   )
 
   if (contentFailures.length === 0) {
@@ -177,10 +177,17 @@ export function formatContentScrapingFailures(runStats) {
 
   let section = `  ${colors.red}--- ACTION REQUIRED: Content Scraping Failures ---${colors.reset}\n`
   section += `  The following sources successfully scraped headlines but failed to extract article content for high-relevance items.\n`
-  section += `  Their 'articleSelector' likely needs to be updated:\n`
-  sources.forEach((sourceName) => {
-    section += `  - ${sourceName}\n`
+  section += `  Their 'articleSelector' likely needs to be updated. Check the article trace logs for full HTML.\n`
+
+  contentFailures.forEach((item) => {
+    section += `  - ${colors.yellow}${item.newspaper}:${colors.reset} "${truncateString(item.headline, 50)}..."\n`
+    section += `    ${colors.grey}Reason: ${item.reason}${colors.reset}\n`
+    // ✅ ADDITION: Display the selectors that were used during the failed attempt.
+    if (item.extractionSelectors && item.extractionSelectors.length > 0) {
+      section += `    ${colors.grey}Selectors Used (${item.extractionMethod}): [${item.extractionSelectors.join(', ')}]${colors.reset}\n`
+    }
   })
+
   return section + '\n'
 }
 
@@ -206,8 +213,4 @@ export async function formatStrugglingSources(runStats, dbStats) {
     section += `  ${colors.green}  All sources are performing within expected parameters.${colors.reset}\n`
   }
   return section + '\n'
-}
-
-export function formatTopSources(dbStats) {
-  return ''
 }

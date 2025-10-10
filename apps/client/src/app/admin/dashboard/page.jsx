@@ -1,4 +1,5 @@
 // File: apps/client/src/app/admin/dashboard/page.jsx (CORRECTED)
+import dbConnect from '@headlines/data-access/dbConnect/next'
 import {
   getDashboardStats,
   getRecentRunVerdicts,
@@ -9,6 +10,9 @@ import DashboardClientPage from './DashboardClientPage'
 export const dynamic = 'force-dynamic'
 
 async function getPageData() {
+  // ✅ ESTABLISH CONNECTION: dbConnect() is now called at the beginning of data fetching.
+  await dbConnect()
+
   try {
     const [statsResult, verdictsResult, sourcesResult] = await Promise.all([
       getDashboardStats(),

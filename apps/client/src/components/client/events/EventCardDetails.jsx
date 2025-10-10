@@ -1,9 +1,10 @@
 // src/components/events/EventCardDetails.jsx (version 1.0)
 'use client'
 
-import { Users, Mail, Building, Briefcase } from 'lucide-react'
+import { Users, Mail, Building, Briefcase, ExternalLink } from 'lucide-react'
+import { Button } from '@/components/shared'
 
-export function EventCardDetails({ event }) {
+export function EventCardDetails({ event, onShowArticles }) {
   if (!event) return null
 
   return (
@@ -45,9 +46,16 @@ export function EventCardDetails({ event }) {
       )}
       {/* Source Articles Column */}
       <div className="space-y-2">
-        <h4 className="font-semibold text-sm text-slate-300 mb-2 border-b border-slate-700 pb-1">
-          Source Articles ({event.source_articles.length})
-        </h4>
+        <Button
+          variant="ghost"
+          onClick={onShowArticles}
+          className="w-full justify-start p-0 h-auto hover:bg-transparent"
+        >
+          <h4 className="font-semibold text-sm text-slate-300 mb-2 border-b border-slate-700 pb-1 hover:text-white w-full text-left">
+            Source Articles ({event.source_articles.length})
+          </h4>
+        </Button>
+
         {event.source_articles.map((article) => (
           <a
             key={article.link}

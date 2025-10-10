@@ -1,4 +1,9 @@
 // apps/pipeline/scripts/results/send-last-events.js
+/**
+ * @command results:send-last-events
+ * @group Results
+ * @description Manually trigger the notification dispatch for the most recent unsent events. Flags: --limit <number>
+ */
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import { initializeScriptEnv } from '../seed/lib/script-init.js'

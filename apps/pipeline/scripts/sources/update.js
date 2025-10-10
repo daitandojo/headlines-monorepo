@@ -1,4 +1,9 @@
 // apps/pipeline/scripts/sources/update.js
+/**
+ * @command sources:update
+ * @group Sources
+ * @description Update a field on a source document. Usage: --source <Name> --key <Field> --value <JSONValue>
+ */
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import { initializeScriptEnv } from '../seed/lib/script-init.js'

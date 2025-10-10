@@ -3,7 +3,7 @@
 Total: 13 files, 1 directories
 
 ```
-headlines/
+headlines-monorepo/
 ├── 📁 src/
 │   ├── 📄 alerting.js
 │   ├── 📄 apiCallTracker.js
@@ -22,8 +22,8 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-05T19:41:33.290Z
-**Repository Path**: /home/mark/Repos/projects/headlines/packages/utils-server
+**Generated**: 2025-10-10T00:11:02.008Z
+**Repository Path**: /home/mark/Repos/projects/headlines-monorepo/packages/utils-server
 **Total Files**: 13
 **Package**: @headlines/utils-server@5.0.0
 **Description**: Server-only utilities for the Headlines monorepo.
@@ -225,16 +225,12 @@ export const auditLogger = new Proxy({}, {
 ```
 
 ## 📄 src/helpers-next.js
-*Lines: 41, Size: 1.39 KB*
+*Lines: 38, Size: 1.23 KB*
 
 ```javascript
-// packages/utils-server/src/helpers-next.js (version 1.0.0)
-// ARCHITECTURAL REFACTORING: This new file is a Next.js-safe "shim".
-// It explicitly re-exports only the functions from the core `helpers.js`
-// that are needed and guaranteed to be safe for the Next.js/Vercel environment.
-// It is guarded by the 'server-only' directive to prevent client-side bundling.
-
+// packages/utils-server/src/helpers-next.js
 import 'server-only'
+import { logger } from '@headlines/utils-shared'
 
 /**
  * Creates a promise that rejects after a specified timeout.
@@ -264,7 +260,8 @@ export async function safeExecute(asyncFn, { errorHandler, timeout = 90000 } = {
     if (errorHandler) {
       return errorHandler(error)
     }
-    console.error('An unexpected error occurred in a safeExecute block:', error)
+    // DEFINITIVE FIX: Use the shared logger for consistent error handling in Next.js server environments.
+    logger.error({ err: error }, 'An unexpected error occurred in a safeExecute block:')
     return null
   }
 }
@@ -272,13 +269,11 @@ export async function safeExecute(asyncFn, { errorHandler, timeout = 90000 } = {
 ```
 
 ## 📄 src/helpers.js
-*Lines: 45, Size: 1.83 KB*
+*Lines: 44, Size: 1.73 KB*
 
 ```javascript
-// packages/utils-server/src/helpers.js (version 2.0.0)
-// ARCHITECTURAL REFACTORING: This file now serves as the 'core' module for helpers.
-// It contains only truly isomorphic functions that are safe to run in any JavaScript environment.
-// Node.js-specific helpers have been removed.
+// packages/utils-server/src/helpers.js
+import { logger } from '@headlines/utils-shared'
 
 /**
  * Creates a promise that rejects after a specified timeout.
@@ -314,8 +309,9 @@ export async function safeExecute(asyncFn, { errorHandler, timeout = 90000 } = {
     if (errorHandler) {
       return errorHandler(error)
     }
-    // Log the error centrally, so individual call sites don't have to.
-    console.error('An unexpected error occurred in a safeExecute block:', error)
+    // DEFINITIVE FIX: Use the injected Pino logger instead of console.error
+    // to ensure errors are captured and formatted correctly in the main log stream.
+    logger.error({ err: error }, 'An unexpected error occurred in a safeExecute block.')
     return null // Return null on failure
   }
 }

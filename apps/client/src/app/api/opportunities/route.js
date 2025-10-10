@@ -1,6 +1,7 @@
+// apps/client/src/app/api/opportunities/route.js
 import { NextResponse } from 'next/server'
-import { getOpportunities, getTotalOpportunitiesCount } from '@headlines/data-access'
-import { createClientApiHandler } from '@/lib/api-handler' // Use the new client handler
+import { getOpportunities, getTotalOpportunitiesCount } from '@headlines/data-access/next'
+import { createApiHandler } from '@/lib/api-handler' // Use the new single handler
 
 const handleGet = async (request, { user }) => {
   const { searchParams } = new URL(request.url)
@@ -27,5 +28,5 @@ const handleGet = async (request, { user }) => {
   return NextResponse.json({ data: oppsResult.data, total: totalResult.total })
 }
 
-export const GET = createClientApiHandler(handleGet)
+export const GET = createApiHandler(handleGet)
 export const dynamic = 'force-dynamic'

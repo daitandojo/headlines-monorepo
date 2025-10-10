@@ -15,6 +15,7 @@
   "dependencies": {
     "@headlines/ai-services": "workspace:*",
     "@headlines/utils-shared": "workspace:*",
+    "@headlines/utils-server": "workspace:*",
     "@headlines/config": "workspace:*",
     "@headlines/prompts": "workspace:*",
     "@headlines/models": "workspace:*",

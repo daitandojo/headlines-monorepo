@@ -29,14 +29,13 @@ export function ViewHeader({
   sortOptions,
   allCountries = [],
   globalCountryFilter = [],
-  viewCountry,
-  onViewCountryChange,
 }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
   const currentSort = searchParams.get('sort') || 'date_desc'
+  const currentCountry = searchParams.get('country') || 'all'
   const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '')
   const debouncedSearchTerm = useDebounce(searchTerm, 500)
 
@@ -75,7 +74,10 @@ export function ViewHeader({
       </div>
       <div className="w-full flex flex-col sm:flex-row items-center gap-4">
         <div className="flex w-full sm:w-auto items-center gap-2">
-          <Select value={viewCountry} onValueChange={onViewCountryChange}>
+          <Select
+            value={currentCountry}
+            onValueChange={(value) => handleUrlParamChange('country', value)}
+          >
             <SelectTrigger className="w-full sm:w-[200px] h-12 bg-slate-900/80 border-slate-700">
               <SelectValue placeholder="View Country..." />
             </SelectTrigger>

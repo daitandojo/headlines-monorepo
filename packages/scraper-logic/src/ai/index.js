@@ -46,7 +46,7 @@ export async function performAiSanityCheck() {
   try {
     getConfig().logger.info('🔬 Performing AI service sanity check (OpenAI)...')
     const answer = await callLanguageModel({
-      modelName: 'gpt-3.5-turbo', // Use a standard, widely available model for the check
+      modelName: 'gpt-5-nano', // Use a standard, widely available model for the check
       prompt: 'What is in one word the name of the capital of France',
       isJson: false,
     })

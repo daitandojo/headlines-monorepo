@@ -1,7 +1,6 @@
 // apps/client/src/app/(client)/opportunities/page.js
 import { DataView } from '@/components/client/shared/DataView'
-import { getOpportunities } from '@headlines/data-access/next'
-import { getUserIdFromSession } from '@/lib/auth/server'
+import { fetchServerSideData } from '@/lib/data/fetchServerSideData' // Import the new helper
 
 const sortOptions = [
   { value: 'date_desc', icon: 'clock', tooltip: 'Sort by Date (Newest First)' },
@@ -9,25 +8,14 @@ const sortOptions = [
 ]
 
 export default async function OpportunitiesPage({ searchParams }) {
-  const userId = await getUserIdFromSession()
-  let initialOpportunities = []
+  const { q, sort = 'date_desc', withEmail } = searchParams
 
-  if (userId) {
-    try {
-      const filters = {
-        q: searchParams.q || '',
-        withEmail: searchParams.withEmail === 'true',
-      }
-      const sort = searchParams.sort || 'date_desc'
-
-      const result = await getOpportunities({ page: 1, filters, sort, userId })
-      if (result.success) {
-        initialOpportunities = result.data
-      }
-    } catch (err) {
-      console.error('[OpportunitiesPage] Failed to fetch initial data:', err.message)
-    }
-  }
+  const { data: initialOpportunities } = await fetchServerSideData('/api/opportunities', {
+    page: '1',
+    sort,
+    q,
+    withEmail,
+  })
 
   return (
     <DataView

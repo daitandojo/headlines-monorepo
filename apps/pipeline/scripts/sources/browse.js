@@ -1,4 +1,9 @@
 // apps/pipeline/scripts/sources/browse.js (version 1.0)
+/**
+ * @command sources:browse
+ * @group Sources
+ * @description Interactively browse a website to find sections and selectors. Usage: --url <URL>
+ */
 import readline from 'readline'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'

@@ -2,8 +2,8 @@
 'use server'
 
 import { NextResponse } from 'next/server'
-import { processUploadedArticle } from '@headlines/ai-services/next' // CORRECTED IMPORT
-import { createClientApiHandler } from '@/lib/api-handler'
+import { processUploadedArticle } from '@headlines/ai-services/next'
+import { createApiHandler } from '@/lib/api-handler' // Use the new single handler
 import { articleUploadSchema } from '@headlines/models/schemas'
 
 const handlePost = async (request, { user }) => {
@@ -26,4 +26,4 @@ const handlePost = async (request, { user }) => {
   return NextResponse.json(result)
 }
 
-export const POST = createClientApiHandler(handlePost)
+export const POST = createApiHandler(handlePost)

@@ -1,8 +1,12 @@
 // packages/data-access/src/index.js
+// Node.js version - ALL functions are wrapped because Node.js apps
+// don't have Next.js API handler middleware that calls dbConnect()
 import dbConnect from './dbConnect.js'
 import * as core from './core/index.js'
 import { buildQuery } from './queryBuilder.js'
 import * as aiServices from '@headlines/ai-services/node'
+
+console.log('🟢 LOADING: data-access/index.js')
 
 const wrap =
   (fn) =>
@@ -11,25 +15,13 @@ const wrap =
     return fn(...args)
   }
 
-// --- Functions that are now correctly imported from ai-services ---
-export const generateChatTitle = async (...args) => {
-  await dbConnect()
-  return aiServices.generateChatTitle(...args)
-}
-export const addKnowledge = async (...args) => {
-  await dbConnect()
-  return aiServices.addKnowledge(...args)
-}
-export const processUploadedArticle = async (...args) => {
-  await dbConnect()
-  return aiServices.processUploadedArticle(...args)
-}
-export const suggestSections = async (...args) => {
-  await dbConnect()
-  return aiServices.suggestSections(...args)
-}
+// --- AI Services ---
+export const generateChatTitle = wrap(aiServices.generateChatTitle)
+export const addKnowledge = wrap(aiServices.addKnowledge)
+export const processUploadedArticle = wrap(aiServices.processUploadedArticle)
+export const suggestSections = wrap(aiServices.suggestSections)
 
-// --- All other pure data-access functions ---
+// --- All Data Access Functions (all wrapped for Node.js) ---
 export const createSubscriber = wrap(core.createSubscriber)
 export const updateSubscriber = wrap(core.updateSubscriber)
 export const deleteSubscriber = wrap(core.deleteSubscriber)

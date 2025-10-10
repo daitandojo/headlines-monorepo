@@ -3,7 +3,7 @@ import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionSynthesize } from '@headlines/prompts'
-import { getHighPowerModel } from '../lib/langchain.js'
+import { getProModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { synthesisSchema } from '@headlines/models/schemas'
 
@@ -21,7 +21,7 @@ const prompt = ChatPromptTemplate.fromMessages([
 
 // --- DEFINITIVE FIX ---
 // The chain now ends with the model. The JsonOutputParser is removed.
-const chain = RunnableSequence.from([prompt, getHighPowerModel()])
+const chain = RunnableSequence.from([prompt, getProModel()])
 
 export const synthesisChain = {
   invoke: (input) => safeInvoke(chain, input, 'synthesisChain', synthesisSchema),

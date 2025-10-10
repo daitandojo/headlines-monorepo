@@ -1,8 +1,6 @@
-// apps/client/src/app/(public)/_components/Footer.jsx
-
+// apps/client/src/components/landing/Footer.jsx
 import Link from 'next/link'
 
-// Simple SVG icons for social media
 const XIcon = (props) => (
   <svg fill="currentColor" viewBox="0 0 24 24" {...props}>
     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
@@ -33,17 +31,17 @@ export function Footer() {
             </h4>
             <ul className="mt-4 space-y-2 text-sm">
               <li>
-                <Link href="#" className="text-slate-400 hover:text-white">
+                <Link href="/about" className="text-slate-400 hover:text-white">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-slate-400 hover:text-white">
+                <Link href="/contact" className="text-slate-400 hover:text-white">
                   Contact
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-slate-400 hover:text-white">
+                <Link href="/careers" className="text-slate-400 hover:text-white">
                   Careers
                 </Link>
               </li>
@@ -55,12 +53,12 @@ export function Footer() {
             </h4>
             <ul className="mt-4 space-y-2 text-sm">
               <li>
-                <Link href="#" className="text-slate-400 hover:text-white">
+                <Link href="/privacy" className="text-slate-400 hover:text-white">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-slate-400 hover:text-white">
+                <Link href="/terms" className="text-slate-400 hover:text-white">
                   Terms of Service
                 </Link>
               </li>
@@ -72,10 +70,20 @@ export function Footer() {
             &copy; {new Date().getFullYear()} Headlines Intelligence. All rights reserved.
           </p>
           <div className="flex items-center gap-4 mt-4 sm:mt-0">
-            <a href="#" className="text-slate-500 hover:text-white transition-colors">
+            <a
+              href="https://x.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-slate-500 hover:text-white transition-colors"
+            >
               <XIcon className="h-5 w-5" />
             </a>
-            <a href="#" className="text-slate-500 hover:text-white transition-colors">
+            <a
+              href="https://linkedin.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-slate-500 hover:text-white transition-colors"
+            >
               <LinkedInIcon className="h-5 w-5" />
             </a>
           </div>

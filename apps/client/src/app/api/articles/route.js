@@ -1,7 +1,7 @@
 // apps/client/src/app/api/articles/route.js
 import { NextResponse } from 'next/server'
-import { getArticles, getTotalArticleCount } from '@headlines/data-access/next' // CORRECTED IMPORT
-import { createClientApiHandler } from '@/lib/api-handler' // Use the new client handler
+import { getArticles, getTotalArticleCount } from '@headlines/data-access/next'
+import { createApiHandler } from '@/lib/api-handler' // Use the new single handler
 
 const handleGet = async (request, { user }) => {
   const { searchParams } = new URL(request.url)
@@ -26,5 +26,6 @@ const handleGet = async (request, { user }) => {
   return NextResponse.json({ data: articlesResult.data, total: totalResult.total })
 }
 
-export const GET = createClientApiHandler(handleGet)
+// Default export uses requireAdmin: false
+export const GET = createApiHandler(handleGet)
 export const dynamic = 'force-dynamic'

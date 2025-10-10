@@ -14,6 +14,8 @@ export const getHighPowerModel = () =>
   new ChatOpenAI({ modelName: settings.LLM_MODEL_SYNTHESIS }).bind(modelConfig)
 export const getUtilityModel = () =>
   new ChatOpenAI({ modelName: settings.LLM_MODEL_UTILITY }).bind(modelConfig)
+export const getProModel = () =>
+  new ChatOpenAI({ modelName: settings.LLM_MODEL_PRO }).bind(modelConfig)
 
 const baseClient = new OpenAI({
   apiKey: env.OPENAI_API_KEY,

@@ -3,7 +3,7 @@
 Total: 29 files, 7 directories
 
 ```
-headlines/
+headlines-monorepo/
 ├── 📁 src/
 │   ├── 📁 ai/
 │   │   └── 📄 index.js
@@ -44,8 +44,8 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-05T19:41:33.288Z
-**Repository Path**: /home/mark/Repos/projects/headlines/packages/scraper-logic
+**Generated**: 2025-10-10T00:11:02.006Z
+**Repository Path**: /home/mark/Repos/projects/headlines-monorepo/packages/scraper-logic
 **Total Files**: 29
 **Package**: @headlines/scraper-logic@2.0.0
 
@@ -620,10 +620,10 @@ export const BROWSER_HEADERS = {
 ```
 
 ## 📄 src/scraper/contentScraper.js
-*Lines: 123, Size: 4.1 KB*
+*Lines: 397, Size: 11.94 KB*
 
 ```javascript
-// packages/scraper-logic/src/scraper/contentScraper.js (version 5.0.0 - Unified Selector Strategy)
+// packages/scraper-logic/src/scraper/contentScraper.js
 import * as cheerio from 'cheerio'
 import fs from 'fs/promises'
 import path from 'path'
@@ -635,114 +635,388 @@ import { fetchPageWithPlaywright } from '../browser.js'
 import { contentExtractorRegistry } from './extractors/index.js'
 import { settings } from '@headlines/config/node'
 
+/**
+ * Content quality metrics for scoring extracted content
+ * These weights can be tuned per-source or globally based on performance
+ */
+const QUALITY_WEIGHTS = {
+  length: 0.3,
+  paragraphs: 0.2,
+  linkDensity: 0.15,
+  punctuation: 0.15,
+  wordVariety: 0.2,
+}
+
+/**
+ * Get quality weights for a specific source (allows per-source tuning)
+ * @param {Object} source - Source configuration
+ * @returns {Object} Quality weights
+ */
+function getQualityWeights(source) {
+  return source.qualityWeights || QUALITY_WEIGHTS
+}
+
+/**
+ * Saves HTML to debug directory for troubleshooting
+ * @param {string} filename - Name of the file to save
+ * @param {string} html - HTML content to save
+ * @returns {Promise<string|null>} Path to saved file or null
+ */
 async function saveDebugHtml(filename, html) {
   const config = getConfig()
   const debugDir = config.paths?.debugHtmlDir
   if (!debugDir) return null
+
   try {
     await fs.mkdir(debugDir, { recursive: true })
     const filePath = path.join(debugDir, filename)
     await fs.writeFile(filePath, html)
     return filePath
   } catch (error) {
-    getConfig().logger.error({ err: error, file: filename }, 'Failed to save debug HTML.')
+    config.logger.error({ err: error, file: filename }, 'Failed to save debug HTML.')
     return null
   }
 }
 
+/**
+ * Cleans extracted text by normalizing whitespace and removing artifacts
+ * @param {string} text - Raw extracted text
+ * @returns {string} Cleaned text
+ */
+function cleanText(text) {
+  if (!text) return ''
+
+  return text
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .replace(/\n{3,}/g, '\n\n') // Limit consecutive newlines
+    .replace(/[^\S\n]+/g, ' ') // Remove non-newline whitespace duplicates
+    .trim()
+}
+
+/**
+ * Calculates quality score for extracted content
+ * @param {string} content - Extracted content
+ * @param {cheerio.CheerioAPI} $ - Cheerio instance (for link density calculation)
+ * @param {Object} weights - Quality weight configuration
+ * @returns {number} Quality score between 0 and 1
+ */
+function calculateContentQuality(content, $, weights = QUALITY_WEIGHTS) {
+  if (!content) return 0
+
+  const words = content.split(/\s+/)
+  const wordCount = words.length
+
+  // Length score (optimal range: 500-5000 words)
+  const lengthScore = Math.min(wordCount / 500, 5000 / Math.max(wordCount, 1)) / 5
+
+  // Paragraph structure (looking for proper formatting)
+  const paragraphs = content.split(/\n\n+/).filter((p) => p.trim().length > 50)
+  const paragraphScore = Math.min(paragraphs.length / 10, 1)
+
+  // Link density (lower is better for article content)
+  // Reuse existing Cheerio instance to avoid re-parsing
+  const linkTextLength = $('a').text().length
+  const totalTextLength = $.text().length
+  const linkDensity = totalTextLength > 0 ? linkTextLength / totalTextLength : 0
+  const linkScore = Math.max(0, 1 - linkDensity * 2)
+
+  // Punctuation (indicates proper sentences)
+  const punctuationCount = (content.match(/[.!?]/g) || []).length
+  const punctuationScore = Math.min(punctuationCount / (wordCount / 20), 1)
+
+  // Word variety (unique words / total words)
+  const uniqueWords = new Set(words.map((w) => w.toLowerCase()))
+  const varietyScore = wordCount > 0 ? uniqueWords.size / wordCount : 0
+
+  const totalScore =
+    lengthScore * weights.length +
+    paragraphScore * weights.paragraphs +
+    linkScore * weights.linkDensity +
+    punctuationScore * weights.punctuation +
+    varietyScore * weights.wordVariety
+
+  return totalScore
+}
+
+/**
+ * Extracts content using Mozilla Readability.js
+ * @param {string} url - Article URL
+ * @param {string} html - Page HTML
+ * @returns {Object|null} Extracted content with metadata
+ */
 function extractWithReadability(url, html) {
   try {
     const virtualConsole = new VirtualConsole()
-    virtualConsole.on('cssParseError', () => {})
+    virtualConsole.on('cssParseError', () => {}) // Suppress CSS errors
+    virtualConsole.on('jsdomError', () => {}) // Suppress JSDOM errors
+
     const doc = new JSDOM(html, {
       url,
       virtualConsole,
       resources: 'usable',
     })
-    const reader = new Readability(doc.window.document)
+
+    const reader = new Readability(doc.window.document, {
+      charThreshold: settings.MIN_ARTICLE_CHARS || 500,
+      classesToPreserve: ['caption', 'credit'],
+    })
+
     const article = reader.parse()
-    return article?.textContent || null
-  } catch (e) {
-    getConfig().logger.warn({ err: e, url }, 'Readability.js failed to parse article.')
+
+    if (!article?.textContent) return null
+
+    return {
+      content: cleanText(article.textContent),
+      title: article.title,
+      excerpt: article.excerpt,
+      byline: article.byline,
+      length: article.length,
+    }
+  } catch (error) {
+    getConfig().logger.warn(
+      { err: error, url },
+      'Readability.js failed to parse article.'
+    )
     return null
   }
 }
 
+/**
+ * Extracts content using CSS selectors with element deduplication
+ * @param {cheerio.CheerioAPI} $ - Cheerio instance
+ * @param {string|string[]} selectors - CSS selector(s)
+ * @returns {Object} Extracted content with metadata
+ */
+function extractWithSelectors($, selectors) {
+  const selectorArray = Array.isArray(selectors) ? selectors : [selectors].filter(Boolean)
+
+  if (selectorArray.length === 0) {
+    return { content: '', selectors: [] }
+  }
+
+  const usedSelectors = []
+  const processedElements = new Set()
+  const contentParts = []
+
+  for (const selector of selectorArray) {
+    try {
+      const elements = $(selector)
+
+      if (elements.length > 0) {
+        usedSelectors.push(selector)
+
+        elements.each((_, el) => {
+          // Skip if we've already processed this element
+          // This prevents duplicate content when selectors overlap
+          if (processedElements.has(el)) {
+            return
+          }
+          processedElements.add(el)
+
+          // Clone the element to avoid modifying the original DOM
+          const $el = $(el).clone()
+
+          // Remove script, style, and navigation elements
+          $el.find('script, style, nav, aside, footer, header').remove()
+
+          const text = $el.text().replace(/\s+/g, ' ').trim()
+
+          if (text && text.length > 50) {
+            contentParts.push(text)
+          }
+        })
+      }
+    } catch (error) {
+      getConfig().logger.warn({ selector, err: error }, 'Selector extraction failed')
+    }
+  }
+
+  // Content parts are already deduplicated via element tracking
+  const finalContent = contentParts.join('\n\n')
+
+  return {
+    content: cleanText(finalContent),
+    selectors: usedSelectors,
+  }
+}
+
+/**
+ * Detects common content blockers (paywalls, cookie notices, etc.)
+ * @param {cheerio.CheerioAPI} $ - Cheerio instance
+ * @returns {Object} Blocker detection results
+ */
+function detectContentBlockers($) {
+  const blockers = {
+    paywall: false,
+    subscription: false,
+    cookieNotice: false,
+    loginRequired: false,
+  }
+
+  const paywallIndicators = [
+    '[class*="paywall"]',
+    '[id*="paywall"]',
+    '[class*="subscription"]',
+    '[class*="premium"]',
+    '[class*="subscriber"]',
+    'meta[name="article:paywall"]',
+  ]
+
+  const loginIndicators = [
+    '[class*="login-required"]',
+    '[class*="sign-in"]',
+    '*:contains("sign in to continue")',
+  ]
+
+  blockers.paywall = paywallIndicators.some((selector) => $(selector).length > 0)
+  blockers.loginRequired = loginIndicators.some((selector) => $(selector).length > 0)
+  blockers.cookieNotice = $('[class*="cookie"], [id*="cookie"]').length > 0
+
+  return blockers
+}
+
+/**
+ * Main content scraping function with intelligent extraction
+ * @param {Object} article - Article metadata
+ * @param {Object} source - Source configuration
+ * @returns {Promise<Object>} Enriched article object
+ */
 export async function scrapeArticleContent(article, source) {
+  const logger = getConfig().logger
+  const startTime = Date.now()
+
+  // 1. Try custom extractor first (highest priority)
   if (
     source.extractionMethod === 'custom' &&
     contentExtractorRegistry[source.extractorKey]
   ) {
-    return await contentExtractorRegistry[source.extractorKey](article, source)
+    try {
+      logger.trace({ extractorKey: source.extractorKey }, 'Using custom extractor')
+      return await contentExtractorRegistry[source.extractorKey](article, source)
+    } catch (error) {
+      logger.error(
+        { err: error, extractorKey: source.extractorKey },
+        'Custom extractor failed'
+      )
+      // Continue to fallback methods
+    }
   }
 
+  // 2. Check RSS content (if sufficient quality)
   if (article.rssContent && article.rssContent.length >= settings.MIN_ARTICLE_CHARS) {
-    article.articleContent = { contents: [article.rssContent] }
-    return article
+    const cleanedRss = cleanText(article.rssContent)
+    if (cleanedRss.length >= settings.MIN_ARTICLE_CHARS) {
+      article.articleContent = {
+        contents: [cleanedRss],
+        method: 'RSS Feed',
+        quality: 'medium',
+      }
+      logger.trace({ headline: article.headline }, 'Using RSS content')
+      return article
+    }
   }
 
+  // 3. Fetch full page HTML
   const html = await fetchPageWithPlaywright(article.link, 'ContentScraper')
   if (!html) {
-    return { ...article, enrichment_error: 'Playwright failed to fetch page HTML' }
+    return {
+      ...article,
+      enrichment_error: 'Playwright failed to fetch page HTML',
+      contentPreview: '',
+    }
   }
 
   const $ = cheerio.load(html)
-  let contentParts = []
-  let extractionMethod = 'None'
-  let contentText = ''
 
-  // DEFINITIVE FIX: Unified Selector Strategy
-  // If articleSelector is defined, use it as the primary, authoritative method.
-  const selectors = Array.isArray(source.articleSelector)
-    ? source.articleSelector
-    : [source.articleSelector].filter(Boolean)
+  // 4. Detect content blockers
+  const blockers = detectContentBlockers($)
 
-  if (selectors.length > 0) {
-    extractionMethod = 'Cheerio Multi-Selector'
-    for (const selector of selectors) {
-      // Grab text from each matching element and push to the array
-      $(selector).each((_, el) => {
-        const text = $(el).text().replace(/\s+/g, ' ').trim()
-        if (text) {
-          contentParts.push(text)
-        }
-      })
+  // 5. Extract using multiple methods
+  const selectorResult = extractWithSelectors($, source.articleSelector)
+  const readabilityResult = extractWithReadability(article.link, html)
+
+  // 6. Get quality weights (allows per-source tuning)
+  const weights = getQualityWeights(source)
+
+  // 7. Calculate quality scores (reuse $ instance for efficiency)
+  const candidates = [
+    {
+      content: selectorResult.content,
+      method: 'CSS Selectors',
+      quality: calculateContentQuality(selectorResult.content, $, weights),
+      metadata: { selectors: selectorResult.selectors },
+    },
+    {
+      content: readabilityResult?.content || '',
+      method: 'Readability.js',
+      quality: calculateContentQuality(readabilityResult?.content || '', $, weights),
+      metadata: {
+        title: readabilityResult?.title,
+        byline: readabilityResult?.byline,
+      },
+    },
+  ].filter((c) => c.content.length >= settings.MIN_ARTICLE_CHARS)
+
+  // 8. Select best extraction result
+  candidates.sort((a, b) => b.quality - a.quality)
+  const bestResult = candidates[0]
+
+  // 9. Process results
+  if (bestResult) {
+    article.articleContent = {
+      contents: [bestResult.content],
+      method: bestResult.method,
+      quality:
+        bestResult.quality > 0.7 ? 'high' : bestResult.quality > 0.4 ? 'medium' : 'low',
+      metadata: bestResult.metadata,
     }
-    // Join the unique parts together. Using a Set handles cases where selectors might overlap.
-    contentText = [...new Set(contentParts)].join('\n\n')
-  }
 
-  // Fallback to Readability.js ONLY if the selector-based method fails or is not configured.
-  if (!contentText || contentText.length < settings.MIN_ARTICLE_CHARS) {
-    const readabilityText = extractWithReadability(article.link, html)
-    if (readabilityText && readabilityText.length > contentText.length) {
-      contentText = readabilityText
-      extractionMethod = 'Readability.js Fallback'
-    }
-  }
-
-  if (contentText && contentText.length >= settings.MIN_ARTICLE_CHARS) {
-    article.articleContent = { contents: [contentText] }
-    getConfig().logger.trace(
+    const duration = Date.now() - startTime
+    logger.trace(
       {
         article: {
           headline: article.headline,
-          chars: contentText.length,
-          method: extractionMethod,
+          chars: bestResult.content.length,
+          method: bestResult.method,
+          quality: bestResult.quality.toFixed(2),
+          duration: `${duration}ms`,
         },
       },
-      `✅ Content enrichment successful.`
+      '✅ Content enrichment successful'
     )
   } else {
-    const reason = !contentText
-      ? `All extraction methods failed.`
-      : `Content too short (` + (contentText ? contentText.length : 0) + ` chars).`
-    article.enrichment_error = reason
-    article.contentPreview = contentText ? contentText.substring(0, 100) : ''
-    const filename =
-      source.name.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '_content_fail.html'
+    // 10. Handle extraction failure
+    let errorReason = 'All extraction methods failed'
+    const previewContent = selectorResult.content || readabilityResult?.content || ''
+
+    if (blockers.paywall) {
+      errorReason = `Paywall detected. Extracted only ${previewContent.length} chars.`
+    } else if (blockers.loginRequired) {
+      errorReason = `Login required. Content inaccessible.`
+    } else if (
+      previewContent.length > 0 &&
+      previewContent.length < settings.MIN_ARTICLE_CHARS
+    ) {
+      errorReason = `Content too short (${previewContent.length} chars, minimum ${settings.MIN_ARTICLE_CHARS}).`
+    }
+
+    article.enrichment_error = errorReason
+    article.contentPreview = previewContent ? previewContent.substring(0, 200) : ''
+
+    // Save debug HTML for troubleshooting
+    const filename = `${source.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}_fail.html`
     await saveDebugHtml(filename, html)
+
+    logger.warn(
+      {
+        article: { headline: article.headline, link: article.link },
+        reason: errorReason,
+        blockers,
+      },
+      '❌ Content enrichment failed'
+    )
   }
+
   return article
 }
 
@@ -1023,10 +1297,10 @@ export const verdaneExtractor = ($, el, site) => {
 ```
 
 ## 📄 src/scraper/headlineScraper.js
-*Lines: 158, Size: 6.15 KB*
+*Lines: 608, Size: 15.59 KB*
 
 ```javascript
-// packages/scraper-logic/src/scraper/headlineScraper.js (version 5.2.0)
+// packages/scraper-logic/src/scraper/headlineScraper.js (version 6.0.0)
 import * as cheerio from 'cheerio'
 import axios from 'axios'
 import fs from 'fs/promises'
@@ -1039,149 +1313,599 @@ import { getConfig } from '../config.js'
 import { extractorRegistry } from './extractors/index.js'
 import { dynamicExtractor } from './dynamicExtractor.js'
 
+/**
+ * RSS parser with custom field mappings for content extraction
+ */
 const rssParser = new Parser({
   customFields: {
-    item: [['content:encoded', 'contentEncoded']],
+    item: [
+      ['content:encoded', 'contentEncoded'],
+      ['media:content', 'mediaContent'],
+      ['description', 'description'],
+    ],
   },
+  timeout: 15000,
+  maxRedirects: 3,
 })
 
-async function saveDebugHtml(filename, html) {
-  const config = getConfig();
-  const DEBUG_HTML_DIR = config.paths?.debugHtmlDir;
-  if (!DEBUG_HTML_DIR) return;
+/**
+ * Saves HTML to debug directory with timestamp for troubleshooting
+ * @param {string} filename - Base filename
+ * @param {string} html - HTML content
+ * @param {Object} metadata - Additional context to save
+ * @returns {Promise<string|null>} Path to saved file
+ */
+async function saveDebugHtml(filename, html, metadata = {}) {
+  const config = getConfig()
+  const debugDir = config.paths?.debugHtmlDir
+  if (!debugDir) return null
+
   try {
-    await fs.mkdir(DEBUG_HTML_DIR, { recursive: true })
-    const filePath = path.join(DEBUG_HTML_DIR, filename)
-    await fs.writeFile(filePath, html)
+    await fs.mkdir(debugDir, { recursive: true })
+
+    // Add timestamp to prevent overwriting
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+    const baseFilename = filename.replace(/[^a-z0-9]/gi, '_').toLowerCase()
+    const htmlPath = path.join(debugDir, `${baseFilename}_${timestamp}.html`)
+    const metaPath = path.join(debugDir, `${baseFilename}_${timestamp}.json`)
+
+    await fs.writeFile(htmlPath, html)
+
+    // Save metadata for context
+    if (Object.keys(metadata).length > 0) {
+      await fs.writeFile(metaPath, JSON.stringify(metadata, null, 2))
+    }
+
+    return htmlPath
   } catch (error) {
-    getConfig().logger.error({ err: error, file: filename }, 'Failed to save debug HTML.')
+    config.logger.error({ err: error, file: filename }, 'Failed to save debug HTML.')
+    return null
   }
 }
 
-async function fetchHeadlinesViaRss(source) {
+/**
+ * Cleans and normalizes RSS content text
+ * @param {string} htmlContent - Raw HTML content from RSS
+ * @returns {string} Cleaned text content
+ */
+function cleanRssContent(htmlContent) {
+  if (!htmlContent) return ''
+
+  const $ = cheerio.load(htmlContent)
+
+  // Remove common unwanted elements
+  $('script, style, iframe, img').remove()
+
+  return $.text()
+    .replace(/\s+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+/**
+ * Validates and normalizes article URLs
+ * @param {string} url - Raw URL from feed or extraction
+ * @param {string} baseUrl - Base URL for relative links
+ * @returns {string|null} Normalized URL or null if invalid
+ */
+function normalizeUrl(url, baseUrl) {
+  if (!url) return null
+
   try {
-    const feed = await rssParser.parseURL(source.rssUrl);
-    if (!feed.items || feed.items.length === 0) {
-      throw new Error('RSS feed was empty or invalid.');
+    // Handle relative URLs
+    const normalized = new URL(url, baseUrl).href
+
+    // Basic validation - must be http(s)
+    if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
+      return null
     }
+
+    return normalized
+  } catch (error) {
+    getConfig().logger.debug(
+      { url, baseUrl, err: error.message },
+      'URL normalization failed'
+    )
+    return null
+  }
+}
+
+/**
+ * Fetches and parses RSS feed with enhanced error handling
+ * @param {Object} source - Source configuration
+ * @returns {Promise<Object>} Articles array and error status
+ */
+async function fetchHeadlinesViaRss(source) {
+  const logger = getConfig().logger
+  const startTime = Date.now()
+
+  try {
+    logger.debug({ url: source.rssUrl }, 'Fetching RSS feed')
+
+    const feed = await rssParser.parseURL(source.rssUrl)
+
+    if (!feed.items || feed.items.length === 0) {
+      throw new Error('RSS feed was empty or invalid.')
+    }
+
     const articles = feed.items
       .map((item) => {
-        const rssContentHtml = item.contentEncoded || item.contentSnippet || item.content || '';
-        const rssContent = cheerio.load(rssContentHtml).text().replace(/\s+/g, ' ').trim();
-        return { headline: item.title?.trim(), link: item.link, rssContent: rssContent || null };
+        // Try multiple content fields in order of preference
+        const rssContentHtml =
+          item.contentEncoded ||
+          item.content ||
+          item.description ||
+          item.contentSnippet ||
+          ''
+
+        const rssContent = cleanRssContent(rssContentHtml)
+        const link = normalizeUrl(item.link || item.guid, source.baseUrl)
+
+        // Validate required fields
+        if (!item.title?.trim() || !link) {
+          return null
+        }
+
+        return {
+          headline: item.title.trim(),
+          link,
+          rssContent: rssContent || null,
+          pubDate: item.pubDate || item.isoDate || null,
+        }
       })
-      .filter((item) => item.headline && item.link);
-    return { articles, error: null };
+      .filter(Boolean) // Remove null entries
+
+    const duration = Date.now() - startTime
+
+    logger.info(
+      {
+        source: source.name,
+        count: articles.length,
+        duration: `${duration}ms`,
+      },
+      'RSS feed parsed successfully'
+    )
+
+    return { articles, error: null }
   } catch (error) {
-    const failureReason = error.message || 'Unknown RSS error.';
-    getConfig().logger.warn({ url: source.rssUrl, reason: failureReason }, `[RSS] Feed parsing failed for "${source.name}". Auto-disabling.`);
-    
+    const duration = Date.now() - startTime
+    const failureReason = error.message || 'Unknown RSS error.'
+
+    logger.warn(
+      {
+        url: source.rssUrl,
+        reason: failureReason,
+        duration: `${duration}ms`,
+      },
+      `RSS feed parsing failed for "${source.name}". Auto-disabling.`
+    )
+
+    // Auto-disable failing RSS feeds
     try {
       await Source.updateOne(
         { _id: source._id },
-        { 
-          $set: { 
+        {
+          $set: {
             rssUrl: null,
-            notes: `${source.notes || ''}\n[${new Date().toISOString()}] RSS URL disabled due to error: ${failureReason}`.trim(),
-          } 
+            notes:
+              `${source.notes || ''}\n[${new Date().toISOString()}] RSS URL auto-disabled: ${failureReason}`.trim(),
+            lastRssError: {
+              message: failureReason,
+              timestamp: new Date(),
+              attempts: (source.lastRssError?.attempts || 0) + 1,
+            },
+          },
         }
-      );
+      )
+      logger.info({ source: source.name }, 'RSS URL disabled in database')
     } catch (dbError) {
-      getConfig().logger.error({ err: dbError }, 'Failed to auto-disable RSS URL in database.');
+      logger.error(
+        { err: dbError, source: source.name },
+        'Failed to auto-disable RSS URL in database'
+      )
     }
-    return { articles: [], error: failureReason };
+
+    return { articles: [], error: failureReason }
   }
 }
 
-async function fetchPageStatic(url) {
+/**
+ * Fetches page using fast static method (axios)
+ * @param {string} url - URL to fetch
+ * @param {number} timeout - Request timeout in ms
+ * @returns {Promise<Object>} HTML content and error status
+ */
+async function fetchPageStatic(url, timeout = 25000) {
+  const logger = getConfig().logger
+  const startTime = Date.now()
+
   try {
-    const { data } = await axios.get(url, { headers: BROWSER_HEADERS, timeout: 25000 })
+    const { data, status, headers } = await axios.get(url, {
+      headers: BROWSER_HEADERS,
+      timeout,
+      maxRedirects: 5,
+      validateStatus: (status) => status < 400, // Accept redirects but not errors
+    })
+
+    const duration = Date.now() - startTime
+
+    logger.debug(
+      {
+        url,
+        status,
+        contentType: headers['content-type'],
+        size: data.length,
+        duration: `${duration}ms`,
+      },
+      'Static fetch successful'
+    )
+
     return { html: data, error: null }
   } catch (error) {
-    getConfig().logger.warn({ url, err: { message: error.message } }, `[Axios] Static fetch failed`)
-    return { html: null, error: error.message }
-  }
-}
-
-async function fetchWithPlaywrightWrapped(source) {
-  const html = await fetchPageWithPlaywright(source.sectionUrl, 'HeadlineScraper', {
-    timeout: source.playwrightTimeoutMs,
-    waitForSelector: source.waitForSelector,
-  })
-  if (html) {
-    return { html, error: null }
-  }
-  return {
-    html: null,
-    error: `Playwright failed to fetch content from ${source.sectionUrl}`,
-  }
-}
-
-export async function scrapeSiteForHeadlines(source) {
-  if (source.rssUrl) {
-    getConfig().logger.info(`[Scraping] Attempting RSS scrape for "${source.name}"...`);
-    const rssResult = await fetchHeadlinesViaRss(source);
-    if (rssResult.articles.length > 0) {
-      return { articles: rssResult.articles, success: true, resultCount: rssResult.articles.length, error: null };
+    const duration = Date.now() - startTime
+    const errorDetails = {
+      message: error.message,
+      code: error.code,
+      status: error.response?.status,
+      duration: `${duration}ms`,
     }
-    getConfig().logger.warn(`RSS scrape failed for "${source.name}". Falling back to HTML scraping.`);
+
+    logger.warn({ url, err: errorDetails }, 'Static fetch failed')
+
+    return {
+      html: null,
+      error: `Static fetch failed: ${error.message}`,
+    }
   }
+}
 
-  const fetcher = source.isStatic ? () => fetchPageStatic(source.sectionUrl) : () => fetchWithPlaywrightWrapped(source);
-  const fetcherName = source.isStatic ? 'STATIC (fast)' : 'PLAYWRIGHT (full-browser)';
-  getConfig().logger.info(`[Scraping] Initiating HTML scrape for "${source.name}" using ${fetcherName}...`);
+/**
+ * Fetches page using Playwright browser automation
+ * @param {Object} source - Source configuration
+ * @returns {Promise<Object>} HTML content and error status
+ */
+async function fetchWithPlaywrightWrapped(source) {
+  const logger = getConfig().logger
+  const startTime = Date.now()
 
-  const { html, error } = await fetcher();
-  if (!html) return { articles: [], success: false, error, debugHtml: null };
+  try {
+    const html = await fetchPageWithPlaywright(source.sectionUrl, 'HeadlineScraper', {
+      timeout: source.playwrightTimeoutMs,
+      waitForSelector: source.waitForSelector,
+    })
 
-  const $ = cheerio.load(html);
-  const articles = [];
-  
-  if (source.extractionMethod === 'json-ld') {
-      $('script[type="application/ld+json"]').each((_, el) => {
-        try {
-          const jsonData = JSON.parse($(el).html())
-          const potentialLists = [jsonData, ...(jsonData['@graph'] || [])]
-          potentialLists.forEach((list) => {
-            const items = list?.itemListElement
-            if (items && Array.isArray(items)) {
-              items.forEach((item) => {
-                const headline = item.name || item.item?.name
-                const url = item.url || item.item?.url
-                if (headline && url) {
-                  articles.push({ headline: headline.trim(), link: new URL(url, source.baseUrl).href });
-                }
+    if (!html) {
+      throw new Error('Playwright returned empty content')
+    }
+
+    const duration = Date.now() - startTime
+
+    logger.debug(
+      {
+        url: source.sectionUrl,
+        size: html.length,
+        duration: `${duration}ms`,
+      },
+      'Playwright fetch successful'
+    )
+
+    return { html, error: null }
+  } catch (error) {
+    const duration = Date.now() - startTime
+
+    logger.warn(
+      {
+        url: source.sectionUrl,
+        err: error.message,
+        duration: `${duration}ms`,
+      },
+      'Playwright fetch failed'
+    )
+
+    return {
+      html: null,
+      error: `Playwright failed: ${error.message}`,
+    }
+  }
+}
+
+/**
+ * Extracts articles using JSON-LD structured data
+ * @param {CheerioAPI} $ - Cheerio instance
+ * @param {Object} source - Source configuration
+ * @returns {Array} Extracted articles
+ */
+function extractFromJsonLd($, source) {
+  const articles = []
+  const processedUrls = new Set()
+
+  $('script[type="application/ld+json"]').each((_, el) => {
+    try {
+      const jsonData = JSON.parse($(el).html())
+
+      // Handle both direct objects and @graph arrays
+      const potentialLists = [jsonData, ...(jsonData['@graph'] || [])]
+
+      potentialLists.forEach((item) => {
+        // Handle ItemList structures
+        const items = item?.itemListElement || (Array.isArray(item) ? item : [item])
+        const itemArray = Array.isArray(items) ? items : [items]
+
+        itemArray.forEach((element) => {
+          // Support multiple JSON-LD structures
+          const headline =
+            element.name ||
+            element.headline ||
+            element.item?.name ||
+            element.item?.headline
+
+          const url = element.url || element.item?.url || element['@id']
+
+          if (headline && url) {
+            const normalizedUrl = normalizeUrl(url, source.baseUrl)
+
+            // Deduplicate by URL
+            if (normalizedUrl && !processedUrls.has(normalizedUrl)) {
+              processedUrls.add(normalizedUrl)
+              articles.push({
+                headline: headline.trim(),
+                link: normalizedUrl,
+                description: element.description || element.item?.description || null,
               })
             }
-          })
-        } catch (e) { /* Ignore parsing errors */ }
+          }
+        })
       })
-  } else { // 'declarative' or 'custom'
-      const selectors = Array.isArray(source.headlineSelector) ? source.headlineSelector : [source.headlineSelector].filter(Boolean);
-      const extractorFn = source.extractionMethod === 'custom' ? extractorRegistry[source.extractorKey] : dynamicExtractor;
-      if (!extractorFn) {
-          return { articles: [], success: false, error: `No valid extractor for method: ${source.extractionMethod}` };
-      }
-      for (const selector of selectors) {
-        $(selector).each((_, el) => {
-            const articleData = extractorFn($, el, source);
-            if (articleData?.headline && articleData?.link) {
-                articleData.link = new URL(articleData.link, source.baseUrl).href;
-                articles.push(articleData);
-            }
-        });
-      }
+    } catch (error) {
+      getConfig().logger.debug(
+        { err: error.message },
+        'JSON-LD parsing error (non-critical)'
+      )
+    }
+  })
+
+  return articles
+}
+
+/**
+ * Extracts articles using CSS selectors (declarative or custom extractors)
+ * @param {CheerioAPI} $ - Cheerio instance
+ * @param {Object} source - Source configuration
+ * @returns {Array} Extracted articles
+ */
+function extractFromSelectors($, source) {
+  const articles = []
+  const processedUrls = new Set()
+
+  // Normalize selectors to array
+  const selectors = Array.isArray(source.headlineSelector)
+    ? source.headlineSelector
+    : [source.headlineSelector].filter(Boolean)
+
+  if (selectors.length === 0) {
+    getConfig().logger.warn({ source: source.name }, 'No headline selectors defined')
+    return articles
   }
 
-  const uniqueArticles = Array.from(new Map(articles.map((a) => [a.link, a])).values());
+  // Get appropriate extractor function
+  const extractorFn =
+    source.extractionMethod === 'custom'
+      ? extractorRegistry[source.extractorKey]
+      : dynamicExtractor
 
+  if (!extractorFn) {
+    getConfig().logger.error(
+      {
+        source: source.name,
+        method: source.extractionMethod,
+        key: source.extractorKey,
+      },
+      'No valid extractor function found'
+    )
+    return articles
+  }
+
+  // Process each selector
+  for (const selector of selectors) {
+    try {
+      const elements = $(selector)
+
+      if (elements.length === 0) {
+        getConfig().logger.debug(
+          { selector, source: source.name },
+          'Selector matched 0 elements'
+        )
+        continue
+      }
+
+      elements.each((_, el) => {
+        try {
+          const articleData = extractorFn($, el, source)
+
+          if (!articleData?.headline || !articleData?.link) {
+            return // Skip invalid extractions
+          }
+
+          const normalizedUrl = normalizeUrl(articleData.link, source.baseUrl)
+
+          // Deduplicate and validate
+          if (normalizedUrl && !processedUrls.has(normalizedUrl)) {
+            processedUrls.add(normalizedUrl)
+            articles.push({
+              ...articleData,
+              link: normalizedUrl,
+            })
+          }
+        } catch (error) {
+          getConfig().logger.debug(
+            { err: error.message, selector },
+            'Element extraction failed'
+          )
+        }
+      })
+    } catch (error) {
+      getConfig().logger.warn(
+        { err: error.message, selector },
+        'Selector processing failed'
+      )
+    }
+  }
+
+  return articles
+}
+
+/**
+ * Main function to scrape headlines from a source
+ * @param {Object} source - Source configuration object
+ * @returns {Promise<Object>} Scraping results with articles and metadata
+ */
+export async function scrapeSiteForHeadlines(source) {
+  const logger = getConfig().logger
+  const startTime = Date.now()
+
+  // 1. Try RSS first if available
+  if (source.rssUrl) {
+    logger.info({ source: source.name }, 'Attempting RSS scrape')
+
+    const rssResult = await fetchHeadlinesViaRss(source)
+
+    if (rssResult.articles.length > 0) {
+      const duration = Date.now() - startTime
+
+      logger.info(
+        {
+          source: source.name,
+          count: rssResult.articles.length,
+          duration: `${duration}ms`,
+        },
+        '✅ RSS scrape successful'
+      )
+
+      return {
+        articles: rssResult.articles,
+        success: true,
+        resultCount: rssResult.articles.length,
+        error: null,
+        method: 'RSS',
+        duration,
+      }
+    }
+
+    logger.warn(
+      { source: source.name },
+      'RSS scrape failed. Falling back to HTML scraping.'
+    )
+  }
+
+  // 2. Fall back to HTML scraping
+  const fetcher = source.isStatic
+    ? () => fetchPageStatic(source.sectionUrl, source.staticTimeoutMs)
+    : () => fetchWithPlaywrightWrapped(source)
+
+  const fetcherName = source.isStatic ? 'STATIC (axios)' : 'PLAYWRIGHT (browser)'
+
+  logger.info({ source: source.name, method: fetcherName }, 'Initiating HTML scrape')
+
+  const { html, error: fetchError } = await fetcher()
+
+  if (!html) {
+    const duration = Date.now() - startTime
+
+    logger.error(
+      {
+        source: source.name,
+        error: fetchError,
+        duration: `${duration}ms`,
+      },
+      '❌ Page fetch failed'
+    )
+
+    return {
+      articles: [],
+      success: false,
+      error: fetchError,
+      debugHtml: null,
+      method: fetcherName,
+      duration,
+    }
+  }
+
+  // 3. Parse HTML and extract articles
+  const $ = cheerio.load(html)
+  let articles = []
+
+  try {
+    if (source.extractionMethod === 'json-ld') {
+      articles = extractFromJsonLd($, source)
+    } else {
+      // 'declarative' or 'custom'
+      articles = extractFromSelectors($, source)
+    }
+  } catch (error) {
+    logger.error(
+      {
+        source: source.name,
+        method: source.extractionMethod,
+        err: error.message,
+      },
+      'Article extraction failed'
+    )
+  }
+
+  // 4. Deduplicate articles by URL (final safety check)
+  const uniqueArticles = Array.from(new Map(articles.map((a) => [a.link, a])).values())
+
+  const duration = Date.now() - startTime
+
+  // 5. Handle extraction failure
   if (uniqueArticles.length === 0) {
-    const filename = `${source.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_headline_fail.html`;
-    await saveDebugHtml(filename, html);
-    return { articles: [], success: false, error: 'Extracted 0 headlines.', debugHtml: html };
+    const debugPath = await saveDebugHtml(`${source.name}_headline_fail`, html, {
+      source: source.name,
+      url: source.sectionUrl,
+      method: source.extractionMethod,
+      selectors: source.headlineSelector,
+      timestamp: new Date().toISOString(),
+      error: 'Extracted 0 headlines',
+    })
+
+    logger.error(
+      {
+        source: source.name,
+        debugPath,
+        duration: `${duration}ms`,
+      },
+      '❌ Extracted 0 headlines'
+    )
+
+    return {
+      articles: [],
+      success: false,
+      error: 'Extracted 0 headlines.',
+      debugHtml: html,
+      method: fetcherName,
+      duration,
+    }
   }
 
-  return { articles: uniqueArticles, success: true, resultCount: uniqueArticles.length, error: null };
+  // 6. Success!
+  logger.info(
+    {
+      source: source.name,
+      count: uniqueArticles.length,
+      method: source.extractionMethod,
+      duration: `${duration}ms`,
+    },
+    '✅ HTML scrape successful'
+  )
+
+  return {
+    articles: uniqueArticles,
+    success: true,
+    resultCount: uniqueArticles.length,
+    error: null,
+    method: fetcherName,
+    duration,
+  }
 }
 
 ```
@@ -1205,138 +1929,429 @@ export {
 ```
 
 ## 📄 src/scraper/newsApiScraper.js
-*Lines: 133, Size: 4.06 KB*
+*Lines: 424, Size: 11.87 KB*
 
 ```javascript
-// packages/scraper-logic/src/scraper/newsApiScraper.js (version 2.3.0)
+// packages/scraper-logic/src/scraper/newsApiScraper.js (version 3.0.0)
 import NewsAPI from 'newsapi'
-import { getConfig } from '../config.js';
+import { getConfig } from '../config.js'
 import { Source, WatchlistEntity } from '../../../models/src/index.js'
 import { env } from '../../../config/src/index.js'
-import colors from 'ansi-colors';
+import colors from 'ansi-colors'
 
-async function getWatchlist() {
-  const [sources, richListTargets] = await Promise.all([
-    Source.find({
-      status: 'active',
-      country: { $in: ['Denmark', 'Global PE', 'M&A Aggregators'] },
-    })
-      .select('name')
-      .lean(),
-    WatchlistEntity.find({ status: 'active' }).select('name').lean(),
-  ])
-
-  const sourceNames = sources.map((s) => s.name.split('(')[0].trim())
-  const richListNames = richListTargets.map((t) => t.name.split('(')[0].trim())
-  const watchlist = [...new Set([...sourceNames, ...richListNames])]
-  getConfig().logger.trace({ details: watchlist }, 'Full NewsAPI watchlist keywords.')
-  return watchlist
+/**
+ * Configuration constants for NewsAPI
+ */
+const NEWSAPI_CONFIG = {
+  MAX_QUERY_LENGTH: 490, // NewsAPI query length limit
+  MAX_QUERIES_PER_REQUEST: 4, // Rate limit protection
+  DEFAULT_LANGUAGES: 'en,da,sv,no',
+  DEFAULT_PAGE_SIZE: 100,
+  DEFAULT_TIME_WINDOW_HOURS: 24,
+  REQUEST_TIMEOUT: 30000, // 30 seconds
+  MAX_RETRIES: 2,
 }
 
-function buildQueryBatches(watchlist) {
-  const MAX_QUERY_LENGTH = 490
+/**
+ * Fetches and combines watchlist from active sources and entities
+ * @returns {Promise<string[]>} Array of unique watchlist keywords
+ */
+async function getWatchlist() {
+  const logger = getConfig().logger
+  const startTime = Date.now()
+
+  try {
+    const [sources, richListTargets] = await Promise.all([
+      Source.find({
+        status: 'active',
+        country: { $in: ['Denmark', 'Global PE', 'M&A Aggregators'] },
+      })
+        .select('name')
+        .lean()
+        .maxTimeMS(10000), // 10 second timeout
+
+      WatchlistEntity.find({ status: 'active' }).select('name').lean().maxTimeMS(10000),
+    ])
+
+    // Extract and clean names
+    const sourceNames = sources.map((s) => s.name.split('(')[0].trim()).filter(Boolean)
+
+    const richListNames = richListTargets
+      .map((t) => t.name.split('(')[0].trim())
+      .filter(Boolean)
+
+    // Combine and deduplicate
+    const watchlist = [...new Set([...sourceNames, ...richListNames])].sort() // Alphabetical sort for consistent query generation
+
+    const duration = Date.now() - startTime
+
+    logger.info(
+      {
+        sources: sourceNames.length,
+        entities: richListNames.length,
+        total: watchlist.length,
+        duration: `${duration}ms`,
+      },
+      'Watchlist compiled successfully'
+    )
+
+    logger.trace({ keywords: watchlist }, 'Full NewsAPI watchlist keywords')
+
+    return watchlist
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to fetch watchlist from database')
+    throw error
+  }
+}
+
+/**
+ * Sanitizes a keyword for use in NewsAPI queries
+ * @param {string} keyword - Raw keyword
+ * @returns {string} Sanitized and quoted keyword
+ */
+function sanitizeKeyword(keyword) {
+  if (!keyword || typeof keyword !== 'string') return null
+
+  return keyword
+    .replace(/&/g, ' ') // Replace ampersands
+    .replace(/[()]/g, '') // Remove parentheses
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .trim()
+}
+
+/**
+ * Builds optimized query batches from watchlist keywords
+ * Respects NewsAPI query length limits and rate limiting
+ * @param {string[]} watchlist - Array of keywords
+ * @param {number} maxQueryLength - Maximum query length
+ * @param {number} maxQueries - Maximum number of queries to return
+ * @returns {string[]} Array of query strings
+ */
+function buildQueryBatches(
+  watchlist,
+  maxQueryLength = NEWSAPI_CONFIG.MAX_QUERY_LENGTH,
+  maxQueries = NEWSAPI_CONFIG.MAX_QUERIES_PER_REQUEST
+) {
+  const logger = getConfig().logger
   const queries = []
   let currentBatch = []
+  let skippedKeywords = []
 
   for (const keyword of watchlist) {
-    const sanitizedKeyword = keyword.replace(/&/g, ' ').replace(/[()]/g, '').trim()
-    if (!sanitizedKeyword) continue
+    const sanitizedKeyword = sanitizeKeyword(keyword)
+
+    if (!sanitizedKeyword) {
+      skippedKeywords.push(keyword)
+      continue
+    }
+
     const quotedKeyword = `"${sanitizedKeyword}"`
+
+    // Check if adding this keyword would exceed the limit
     const potentialQuery = [...currentBatch, quotedKeyword].join(' OR ')
-    if (potentialQuery.length > MAX_QUERY_LENGTH) {
+
+    if (potentialQuery.length > maxQueryLength) {
+      // Save current batch if it has content
       if (currentBatch.length > 0) {
         queries.push(currentBatch.join(' OR '))
       }
-      currentBatch = [quotedKeyword]
+
+      // Start new batch with current keyword
+      // If single keyword is too long, truncate it
+      if (quotedKeyword.length > maxQueryLength) {
+        const truncated = `"${sanitizedKeyword.substring(0, maxQueryLength - 3)}"`
+        logger.warn({ original: keyword, truncated }, 'Keyword too long, truncated')
+        currentBatch = [truncated]
+      } else {
+        currentBatch = [quotedKeyword]
+      }
     } else {
       currentBatch.push(quotedKeyword)
     }
   }
 
+  // Add final batch
   if (currentBatch.length > 0) {
     queries.push(currentBatch.join(' OR '))
   }
 
-  const queriesToUse = queries.slice(0, 4);
-
-  if (queries.length > 4) {
-    getConfig().logger.warn(
-      `[NewsAPI] Watchlist generated ${queries.length} queries, but will only use the first 4 to avoid rate limits.`
-    );
-    let logMessage = '[NewsAPI] Generated Queries:\n';
-    queries.forEach((q, i) => {
-        const inUse = i < 4;
-        logMessage += inUse ? colors.green(`  [IN USE] Query ${i+1}: ${q}\n`) : colors.gray(`  [SKIPPED] Query ${i+1}: ${q}\n`);
-    });
-    getConfig().logger.info(logMessage);
+  // Log skipped keywords
+  if (skippedKeywords.length > 0) {
+    logger.debug(
+      { count: skippedKeywords.length, keywords: skippedKeywords },
+      'Skipped invalid keywords'
+    )
   }
 
-  return queriesToUse;
+  // Handle query limit
+  const queriesToUse = queries.slice(0, maxQueries)
+  const skippedQueries = queries.slice(maxQueries)
+
+  if (skippedQueries.length > 0) {
+    logger.warn(
+      {
+        total: queries.length,
+        used: queriesToUse.length,
+        skipped: skippedQueries.length,
+      },
+      `Watchlist generated ${queries.length} queries, using first ${maxQueries} to avoid rate limits`
+    )
+
+    // Visual breakdown of queries
+    let logMessage = '[NewsAPI] Query Breakdown:\n'
+    queries.forEach((q, i) => {
+      const inUse = i < maxQueries
+      const status = inUse ? colors.green('✓ IN USE') : colors.gray('✗ SKIPPED')
+      const preview = q.length > 100 ? q.substring(0, 97) + '...' : q
+      logMessage += `  ${status} Query ${i + 1} (${q.length} chars): ${preview}\n`
+    })
+    logger.info(logMessage)
+  } else {
+    logger.info(
+      { count: queriesToUse.length },
+      `Built ${queriesToUse.length} optimized queries`
+    )
+  }
+
+  return queriesToUse
 }
 
-export async function scrapeNewsAPI() {
-  const newsapi = new NewsAPI(env.NEWSAPI_API_KEY)
+/**
+ * Executes a single NewsAPI query with retry logic
+ * @param {NewsAPI} newsapi - NewsAPI client instance
+ * @param {Object} params - Query parameters
+ * @param {number} retryCount - Current retry attempt
+ * @returns {Promise<Object>} API response
+ */
+async function executeQuery(newsapi, params, retryCount = 0) {
+  const logger = getConfig().logger
+
   try {
-    const watchlist = await getWatchlist()
-    const queryBatches = buildQueryBatches(watchlist)
-
-    getConfig().logger.info(
-      `📰 [NewsAPI] Dispatching ${queryBatches.length} batched queries to cover the watchlist.`
-    )
-
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-
-    const allPromises = queryBatches.map((query) =>
-      newsapi.v2.everything({
-        q: query,
-        language: 'en,da,sv,no',
-        sortBy: 'publishedAt',
-        from: twentyFourHoursAgo,
-        pageSize: 100,
-      })
-    )
-
-    const allResponses = await Promise.all(allPromises)
-    let allArticles = []
-
-    for (const response of allResponses) {
-      if (response.status !== 'ok') {
-        getConfig().logger.error(
-          `[NewsAPI] Error in a batch query: ${response.code} - ${response.message}`
+    const response = await Promise.race([
+      newsapi.v2.everything(params),
+      new Promise((_, reject) =>
+        setTimeout(
+          () => reject(new Error('Request timeout')),
+          NEWSAPI_CONFIG.REQUEST_TIMEOUT
         )
-        continue
-      }
-      allArticles.push(...response.articles)
+      ),
+    ])
+
+    return response
+  } catch (error) {
+    if (retryCount < NEWSAPI_CONFIG.MAX_RETRIES) {
+      const delay = Math.pow(2, retryCount) * 1000 // Exponential backoff
+
+      logger.warn(
+        {
+          attempt: retryCount + 1,
+          maxRetries: NEWSAPI_CONFIG.MAX_RETRIES,
+          delay: `${delay}ms`,
+          err: error.message,
+        },
+        'Query failed, retrying...'
+      )
+
+      await new Promise((resolve) => setTimeout(resolve, delay))
+      return executeQuery(newsapi, params, retryCount + 1)
     }
 
-    if (allArticles.length === 0) {
-      getConfig().logger.info('[NewsAPI] Found no new articles matching the watchlist.')
+    throw error
+  }
+}
+
+/**
+ * Normalizes and validates article data from NewsAPI response
+ * @param {Object} rawArticle - Raw article from NewsAPI
+ * @returns {Object|null} Normalized article or null if invalid
+ */
+function normalizeArticle(rawArticle) {
+  if (!rawArticle?.title || !rawArticle?.url) {
+    return null
+  }
+
+  // Filter out removed/deleted articles
+  if (rawArticle.title === '[Removed]' || rawArticle.url.includes('removed')) {
+    return null
+  }
+
+  return {
+    headline: rawArticle.title.trim(),
+    link: rawArticle.url,
+    source: rawArticle.source?.name || 'Unknown',
+    newspaper: rawArticle.source?.name || 'Unknown',
+    description: rawArticle.description || null,
+    publishedAt: rawArticle.publishedAt || null,
+    author: rawArticle.author || null,
+    imageUrl: rawArticle.urlToImage || null,
+  }
+}
+
+/**
+ * Main function to scrape articles from NewsAPI
+ * @param {Object} options - Configuration options
+ * @returns {Promise<Array>} Array of unique articles
+ */
+export async function scrapeNewsAPI(options = {}) {
+  const logger = getConfig().logger
+  const startTime = Date.now()
+
+  // Validate API key
+  if (!env.NEWSAPI_API_KEY) {
+    logger.error('NEWSAPI_API_KEY is not configured')
+    return []
+  }
+
+  const newsapi = new NewsAPI(env.NEWSAPI_API_KEY)
+
+  // Merge options with defaults
+  const config = {
+    languages: options.languages || NEWSAPI_CONFIG.DEFAULT_LANGUAGES,
+    pageSize: options.pageSize || NEWSAPI_CONFIG.DEFAULT_PAGE_SIZE,
+    timeWindowHours: options.timeWindowHours || NEWSAPI_CONFIG.DEFAULT_TIME_WINDOW_HOURS,
+    maxQueries: options.maxQueries || NEWSAPI_CONFIG.MAX_QUERIES_PER_REQUEST,
+  }
+
+  try {
+    // 1. Build watchlist and queries
+    logger.info('📰 Starting NewsAPI scrape')
+
+    const watchlist = await getWatchlist()
+
+    if (watchlist.length === 0) {
+      logger.warn('Watchlist is empty, skipping NewsAPI scrape')
       return []
     }
 
-    getConfig().logger.info(
-      `[NewsAPI] Found a total of ${allArticles.length} potential articles across all batches.`
+    const queryBatches = buildQueryBatches(
+      watchlist,
+      NEWSAPI_CONFIG.MAX_QUERY_LENGTH,
+      config.maxQueries
     )
 
-    const articles = allArticles.map((a) => ({
-      headline: a.title,
-      link: a.url,
-      source: a.source.name,
-      newspaper: a.source.name,
-    }))
+    if (queryBatches.length === 0) {
+      logger.warn('No valid queries generated from watchlist')
+      return []
+    }
 
-    return Array.from(new Map(articles.map((a) => [a.link, a])).values())
-  } catch (error) {
-    if (error.name?.includes('rateLimited')) {
-      getConfig().logger.warn(
-        '[NewsAPI] Rate limit hit, as expected on developer plan. Some watchlist items may have been missed.'
+    logger.info(
+      { queries: queryBatches.length },
+      `Dispatching ${queryBatches.length} batched queries`
+    )
+
+    // 2. Calculate time window
+    const fromDate = new Date(
+      Date.now() - config.timeWindowHours * 60 * 60 * 1000
+    ).toISOString()
+
+    // 3. Execute all queries with retry logic
+    const queryPromises = queryBatches.map((query, index) =>
+      executeQuery(newsapi, {
+        q: query,
+        language: config.languages,
+        sortBy: 'publishedAt',
+        from: fromDate,
+        pageSize: config.pageSize,
+      }).catch((error) => {
+        logger.error(
+          {
+            queryIndex: index + 1,
+            err: error.message,
+          },
+          'Query execution failed'
+        )
+        return { status: 'error', articles: [], error }
+      })
+    )
+
+    const allResponses = await Promise.all(queryPromises)
+
+    // 4. Process responses
+    let allArticles = []
+    let successfulQueries = 0
+    let failedQueries = 0
+
+    for (const [index, response] of allResponses.entries()) {
+      if (response.status === 'ok') {
+        successfulQueries++
+        allArticles.push(...response.articles)
+
+        logger.debug(
+          {
+            query: index + 1,
+            articles: response.articles.length,
+            totalResults: response.totalResults,
+          },
+          'Query successful'
+        )
+      } else {
+        failedQueries++
+        logger.error(
+          {
+            query: index + 1,
+            code: response.code,
+            message: response.message,
+          },
+          'Query returned error status'
+        )
+      }
+    }
+
+    // 5. Normalize and deduplicate articles
+    const normalizedArticles = allArticles.map(normalizeArticle).filter(Boolean)
+
+    const uniqueArticles = Array.from(
+      new Map(normalizedArticles.map((a) => [a.link, a])).values()
+    )
+
+    const duration = Date.now() - startTime
+
+    // 6. Log results
+    if (uniqueArticles.length === 0) {
+      logger.info(
+        {
+          duration: `${duration}ms`,
+          queries: { successful: successfulQueries, failed: failedQueries },
+        },
+        'No new articles found matching watchlist'
       )
+      return []
+    }
+
+    logger.info(
+      {
+        articles: {
+          raw: allArticles.length,
+          normalized: normalizedArticles.length,
+          unique: uniqueArticles.length,
+        },
+        queries: { successful: successfulQueries, failed: failedQueries },
+        duration: `${duration}ms`,
+      },
+      `✅ NewsAPI scrape completed: ${uniqueArticles.length} unique articles`
+    )
+
+    return uniqueArticles
+  } catch (error) {
+    const duration = Date.now() - startTime
+
+    // Handle specific error types
+    if (error.name?.includes('rateLimited') || error.code === 'rateLimited') {
+      logger.warn(
+        { duration: `${duration}ms` },
+        'NewsAPI rate limit reached (expected on free tier). Some watchlist items may have been missed.'
+      )
+    } else if (error.code === 'apiKeyInvalid') {
+      logger.error('NewsAPI key is invalid or expired')
+    } else if (error.code === 'parametersMissing') {
+      logger.error({ err: error }, 'Invalid query parameters')
     } else {
-      getConfig().logger.error(
-        { err: error },
-        '[NewsAPI] A critical error occurred during batched scraping.'
+      logger.error(
+        { err: error, duration: `${duration}ms` },
+        'Critical error during NewsAPI scraping'
       )
     }
+
     return []
   }
 }

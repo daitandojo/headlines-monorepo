@@ -1,4 +1,4 @@
-// apps/pipeline/src/pipeline/3_assessAndEnrich.js (with Enhanced Audit Logging)
+// apps/pipeline/src/pipeline/3_assessAndEnrich.js
 import { truncateString, sleep } from '@headlines/utils-shared'
 import { logger } from '@headlines/utils-shared'
 import { auditLogger } from '@headlines/utils-server'
@@ -32,10 +32,8 @@ async function withRetry(fn, retries = MAX_RETRIES) {
 function findWatchlistHits(text, country, watchlistEntities) {
   const hits = new Map()
   const lowerText = text.toLowerCase()
-
   const createSearchRegex = (term) =>
     new RegExp(`\\b${term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`, 'i')
-
   const relevantEntities = watchlistEntities.filter(
     (entity) =>
       !entity.country ||
@@ -43,7 +41,6 @@ function findWatchlistHits(text, country, watchlistEntities) {
       entity.country === 'Global PE' ||
       entity.country === 'M&A Aggregators'
   )
-
   for (const entity of relevantEntities) {
     const terms = [entity.name.toLowerCase(), ...(entity.searchTerms || [])]
       .map((t) => t.trim())
@@ -60,23 +57,18 @@ function findWatchlistHits(text, country, watchlistEntities) {
 export async function runAssessAndEnrich(pipelinePayload) {
   logger.info('--- STAGE 3: ASSESS & ENRICH ---')
   const { runStatsManager, articlesForPipeline, articleTraceLogger } = pipelinePayload
-
   if (!articlesForPipeline || articlesForPipeline.length === 0) {
     pipelinePayload.enrichedArticles = []
     return { success: true, payload: pipelinePayload }
   }
-
   const watchlistEntities = await WatchlistEntity.find({ status: 'active' }).lean()
-
   const syntheticArticles = articlesForPipeline.filter(
     (a) => a.source === 'Richlist Ingestion'
   )
   const realArticles = articlesForPipeline.filter(
     (a) => a.source !== 'Richlist Ingestion'
   )
-
   let assessedCandidates = []
-
   if (realArticles.length > 0) {
     logger.info(
       `Assessing ${realArticles.length} real headlines in batches of ${BATCH_SIZE}...`
@@ -85,7 +77,6 @@ export async function runAssessAndEnrich(pipelinePayload) {
     for (let i = 0; i < realArticles.length; i += BATCH_SIZE) {
       batches.push(realArticles.slice(i, i + BATCH_SIZE))
     }
-
     for (const [index, batch] of batches.entries()) {
       logger.info(`Assessing batch ${index + 1} of ${batches.length}...`)
       try {
@@ -108,13 +99,11 @@ export async function runAssessAndEnrich(pipelinePayload) {
             }
             return { ...article, headlineWithContext, hits }
           })
-
           const response = await batchHeadlineChain({
             headlines_json_string: JSON.stringify(
               batchWithContext.map((a) => a.headlineWithContext)
             ),
           })
-
           if (
             response.error ||
             !response.assessments ||
@@ -122,7 +111,6 @@ export async function runAssessAndEnrich(pipelinePayload) {
           ) {
             throw new Error('Batch assessment failed or returned mismatched count.')
           }
-
           const batchResults = batchWithContext.map((originalArticle, i) => {
             const assessment = response.assessments[i]
             if (originalArticle.hits.length > 0) {
@@ -135,10 +123,8 @@ export async function runAssessAndEnrich(pipelinePayload) {
           })
           return batchResults
         }
-
         const results = await withRetry(batchProcessor)
         assessedCandidates.push(...results)
-
         auditLogger.info(
           {
             context: {
@@ -167,7 +153,6 @@ export async function runAssessAndEnrich(pipelinePayload) {
           return processSingleArticle(article, hits)
         })
         const fallbackResults = await Promise.all(fallbackPromises)
-
         fallbackResults.forEach((result, i) => {
           const originalArticle = batch[i]
           if (result.article) {
@@ -183,9 +168,7 @@ export async function runAssessAndEnrich(pipelinePayload) {
       }
     }
   }
-
   runStatsManager.set('headlinesAssessed', assessedCandidates.length)
-
   logger.info('--- Headline Assessment Complete ---')
   assessedCandidates.forEach((article) => {
     if (article.relevance_headline >= settings.HEADLINES_RELEVANCE_THRESHOLD) {
@@ -205,14 +188,11 @@ export async function runAssessAndEnrich(pipelinePayload) {
       `${color}[${status.padEnd(7)}] [Score: ${String(article.relevance_headline).padStart(3)}] "${truncateString(article.headline, 60)}" (${article.assessment_headline})\x1b[0m`
     )
   })
-
   const relevantCandidates = assessedCandidates.filter(
     (a) => a.relevance_headline >= settings.HEADLINES_RELEVANCE_THRESHOLD
   )
   runStatsManager.set('relevantHeadlines', relevantCandidates.length)
-
   const enrichmentQueue = [...relevantCandidates, ...syntheticArticles]
-
   logger.info(
     `Found ${relevantCandidates.length} relevant headlines. Total for full enrichment (including synthetic): ${enrichmentQueue.length}.`
   )
@@ -236,7 +216,6 @@ export async function runAssessAndEnrich(pipelinePayload) {
     }
     return { success: true, payload: pipelinePayload }
   }
-
   const limit = pLimit(env.CONCURRENCY_LIMIT)
   const processingPromises = enrichmentQueue.map((article) =>
     limit(() => {
@@ -247,11 +226,9 @@ export async function runAssessAndEnrich(pipelinePayload) {
     })
   )
   const results = await Promise.all(processingPromises)
-
   const enrichedArticles = []
   const allProcessedArticles = []
-  let enrichmentOutcomes = []
-
+  const enrichmentOutcomes = []
   logger.info('--- Full Article Enrichment Results ---')
   results.forEach((result, index) => {
     const originalArticle = enrichmentQueue[index]
@@ -265,16 +242,14 @@ export async function runAssessAndEnrich(pipelinePayload) {
     }
     delete finalArticleState.articleContent
     allProcessedArticles.push(finalArticleState)
-
     articleTraceLogger.addStage(originalArticle._id, 'Content Enrichment', {
       outcome: result.lifecycleEvent.status,
       reason: result.lifecycleEvent.reason,
-      content_snippet: result.contentPreview,
+      raw_html_snippet: truncateString(result.rawHtml, 500),
+      extracted_content: result.contentPreview,
       llm_assessment: result.article,
     })
-
     const outcome = result.lifecycleEvent.status
-
     enrichmentOutcomes.push({
       link: finalArticleState.link,
       headline: finalArticleState.headline,
@@ -283,11 +258,13 @@ export async function runAssessAndEnrich(pipelinePayload) {
       assessment_headline: finalArticleState.assessment_headline,
       finalScore: finalArticleState.relevance_article,
       assessment_article: finalArticleState.assessment_article,
-      content_snippet: truncateString(result.contentPreview, 200),
+      content_snippet: result.contentPreview,
       outcome: outcome,
       reason: result.lifecycleEvent.reason,
+      // ✅ ADDITION: Pass selector info to the final report.
+      extractionMethod: result.extractionMethod,
+      extractionSelectors: result.extractionSelectors,
     })
-
     if (outcome === 'success') {
       enrichedArticles.push(finalArticleState)
       logger.info(
@@ -299,7 +276,6 @@ export async function runAssessAndEnrich(pipelinePayload) {
       )
     }
   })
-
   if (allProcessedArticles.length > 0) {
     const bulkOps = allProcessedArticles.map((article) => ({
       updateOne: {
@@ -313,16 +289,13 @@ export async function runAssessAndEnrich(pipelinePayload) {
       `Persisted ${allProcessedArticles.length} processed articles to prevent re-scraping.`
     )
   }
-
   runStatsManager.set('enrichmentOutcomes', enrichmentOutcomes)
   runStatsManager.set('articlesEnriched', enrichedArticles.length)
   runStatsManager.set('relevantArticles', enrichedArticles.length)
-
   logger.info(
     `Enrichment complete. Successfully enriched ${enrichedArticles.length} of ${enrichmentQueue.length} candidates.`
   )
   pipelinePayload.enrichedArticles = enrichedArticles
   pipelinePayload.assessedCandidates = assessedCandidates
-
   return { success: true, payload: pipelinePayload }
 }

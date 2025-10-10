@@ -1,4 +1,9 @@
 // File: apps/pipeline/scripts/maintenance/resend-todays-events.js
+/**
+ * @command results:resend-today
+ * @group Results
+ * @description Resets the 'emailed' status for today's events, making them eligible for dispatch again.
+ */
 import { initializeScriptEnv } from '../seed/lib/script-init.js'
 import { logger } from '@headlines/utils-shared'
 import { resetEventsEmailedStatusSince } from '@headlines/data-access'

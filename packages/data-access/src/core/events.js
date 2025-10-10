@@ -20,7 +20,6 @@ export async function getEvents({
 
   const [events, total] = await Promise.all([
     SynthesizedEvent.find(queryFilter)
-      .select('-synthesized_summary')
       .sort(sortOptions)
       .skip(skipAmount)
       .limit(EVENTS_PER_PAGE)

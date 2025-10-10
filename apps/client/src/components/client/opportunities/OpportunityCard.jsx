@@ -1,4 +1,4 @@
-// File: apps/client/src/components/client/opportunities/OpportunityCard.jsx (Multi-country support)
+// File: apps/client/src/components/client/opportunities/OpportunityCard.jsx
 'use client'
 
 import { useState, useTransition } from 'react'
@@ -15,12 +15,12 @@ import {
 } from 'lucide-react'
 import { SwipeToDelete } from '../shared/SwipeToDelete'
 import { cn, getCountryFlag } from '@headlines/utils-shared'
-import { EventContextDialog } from '../events/EventContextDialog'
+import { EventModal } from '../events/EventModal' // MODIFIED: Import EventModal
 import Link from 'next/link'
 import useAppStore from '@/lib/store/use-app-store'
 
 export function OpportunityCard({ opportunity, onDelete }) {
-  const [isEventDialogOpen, setIsEventDialogOpen] = useState(false)
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false) // MODIFIED: State for new modal
   const [isPending, startTransition] = useTransition()
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const skipConfirmation = useAppStore(
@@ -41,14 +41,13 @@ export function OpportunityCard({ opportunity, onDelete }) {
     }
   }
 
-  const sourceEvent =
-    opportunity.events && opportunity.events.length > 0 ? opportunity.events[0] : null
+  const hasEvents = opportunity.events && opportunity.events.length > 0
   const { contactDetails } = opportunity
   const isPremiumOpportunity = opportunity.likelyMMDollarWealth > 49
   const reasonsToContact = Array.isArray(opportunity.whyContact)
     ? opportunity.whyContact
     : [opportunity.whyContact]
-  const flags = (opportunity.basedIn || []).map((c) => getCountryFlag(c)).join(' ') // MODIFIED
+  const flags = (opportunity.basedIn || []).map((c) => getCountryFlag(c)).join(' ')
 
   return (
     <>
@@ -75,10 +74,10 @@ export function OpportunityCard({ opportunity, onDelete }) {
                     {(opportunity.city || opportunity.basedIn) && (
                       <p className="text-xs text-slate-400 flex items-center gap-2 pl-6">
                         <MapPin className="h-3 w-3" />
-                        <span className="text-base mr-1">{flags}</span> {/* MODIFIED */}
+                        <span className="text-base mr-1">{flags}</span>
                         {opportunity.city}
                         {opportunity.city && opportunity.basedIn ? ', ' : ''}
-                        {(opportunity.basedIn || []).join(', ')} {/* MODIFIED */}
+                        {(opportunity.basedIn || []).join(', ')}
                       </p>
                     )}
                   </div>
@@ -141,7 +140,7 @@ export function OpportunityCard({ opportunity, onDelete }) {
                 ))}
               </div>
             </div>
-            {sourceEvent && (
+            {hasEvents && (
               <div className="pt-3 mt-3 border-t border-slate-700/50">
                 <Button
                   variant="ghost"
@@ -149,14 +148,17 @@ export function OpportunityCard({ opportunity, onDelete }) {
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
-                    setIsEventDialogOpen(true)
+                    setIsEventModalOpen(true)
                   }}
                 >
                   <Zap className="h-4 w-4 mr-3 text-blue-400 flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-xs text-slate-400">View Parent Event:</p>
+                    <p className="text-xs text-slate-400">
+                      View {opportunity.events.length} Related Event
+                      {opportunity.events.length > 1 ? 's' : ''}:
+                    </p>
                     <p className="text-sm font-semibold text-slate-200 truncate">
-                      {sourceEvent.synthesized_headline}
+                      {opportunity.events[0].synthesized_headline}
                     </p>
                   </div>
                 </Button>
@@ -165,11 +167,11 @@ export function OpportunityCard({ opportunity, onDelete }) {
           </div>
         </SwipeToDelete>
       </Card>
-      {sourceEvent && (
-        <EventContextDialog
-          event={sourceEvent}
-          open={isEventDialogOpen}
-          onOpenChange={setIsEventDialogOpen}
+      {hasEvents && (
+        <EventModal
+          events={opportunity.events}
+          open={isEventModalOpen}
+          onOpenChange={setIsEventModalOpen}
         />
       )}
       <ConfirmationDialog

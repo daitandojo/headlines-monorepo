@@ -1,4 +1,4 @@
-// packages/ai-services/src/node/agents/articleAgent.js (version 1.0.0)
+// packages/ai-services/src/node/agents/articleAgent.js
 import { truncateString } from '@headlines/utils-shared'
 import { logger } from '@headlines/utils-shared'
 import { AIAgent } from '../../lib/AIAgent.js'
@@ -19,9 +19,12 @@ const getAgent = () =>
     zodSchema: articleAssessmentSchema,
   })
 
-// The agent now accepts `hits` as a parameter, breaking the circular dependency.
-// It is no longer responsible for fetching data.
-export async function assessArticleContent(article, hits = [], isSalvaged = false) {
+export async function assessArticleContent(
+  article,
+  hits = [],
+  isSalvaged = false,
+  externalContext = ''
+) {
   const articleAssessmentAgent = getAgent()
   const fullContent = (article.articleContent?.contents || []).join('\n')
   const truncatedContent = truncateString(fullContent, settings.LLM_CONTEXT_MAX_CHARS)
@@ -37,7 +40,9 @@ export async function assessArticleContent(article, hits = [], isSalvaged = fals
     )
   }
 
-  let articleText = `HEADLINE: ${article.headline}\n\nBODY:\n${truncatedContent}`
+  // CRITICAL FIX: Always include the headline as part of the body to ensure it's analyzed.
+  // This is crucial for cases where only the headline and a short snippet are available.
+  let articleText = `HEADLINE: ${article.headline}\n\nBODY:\n${article.headline}\n\n${truncatedContent}`
 
   if (hits.length > 0) {
     const hitStrings = hits.map(
@@ -50,6 +55,10 @@ export async function assessArticleContent(article, hits = [], isSalvaged = fals
 
   if (isSalvaged) {
     articleText = `[SALVAGE CONTEXT: The original source for this headline failed to scrape. This content is from an alternative source. Please assess based on this new context.]\n\n${articleText}`
+  }
+
+  if (externalContext) {
+    articleText = `[EXTERNAL CONTEXT FROM WEB SEARCH]:\n${externalContext}\n\n[ORIGINAL ARTICLE DATA]:\n${articleText}`
   }
 
   const response = await articleAssessmentAgent.execute(articleText)

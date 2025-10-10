@@ -1,67 +1,60 @@
 // apps/client/src/app/admin/users/actions.js
 'use server'
 
-import { revalidatePath } from 'next/cache'
-import dbConnect from '@headlines/data-access/dbConnect/next'
 import {
   updateSubscriber,
   deleteSubscriber,
-  createSubscriber,
+  createSubscriberWithPassword,
   updateSubscriberPassword,
-} from '@headlines/data-access'
-import {
-  userCreateSchema,
-  userUpdateSchema,
-} from '@headlines/models/schemas' // Import Zod schemas
+} from '@headlines/data-access/next'
+import { createAdminAction } from '@/lib/actions/createAdminAction'
+import { userCreateSchema, userUpdateSchema } from '@headlines/models/schemas'
+import dbConnect from '@headlines/data-access/dbConnect/next'
 
-export async function updateUserAction(userId, updateData) {
+// This action is more complex due to password handling, so it uses the factory pattern slightly differently.
+export const updateUserAction = async (userId, updateData) => {
+  // 1. Validate the full payload first.
   const validation = userUpdateSchema.safeParse(updateData)
   if (!validation.success) {
     return { success: false, error: 'Invalid data.', details: validation.error.flatten() }
   }
   const validatedData = validation.data
 
-  await dbConnect()
-
-  if (validatedData.password) {
-    const passwordResult = await updateSubscriberPassword(userId, validatedData.password)
-    if (!passwordResult.success) {
-      return passwordResult
+  // 2. Create the core logic function to be wrapped by the action factory.
+  const coreLogic = async () => {
+    // Handle password update separately as it requires special handling (hashing).
+    if (validatedData.password) {
+      const passwordResult = await updateSubscriberPassword(
+        userId,
+        validatedData.password
+      )
+      if (!passwordResult.success) {
+        return passwordResult // Propagate error from password update
+      }
+      // Remove password from the main update payload
+      delete validatedData.password
     }
-    delete validatedData.password
+
+    // Update the rest of the user data if any fields remain.
+    if (Object.keys(validatedData).length > 0) {
+      return updateSubscriber(userId, validatedData)
+    }
+
+    // If only the password was updated, return success.
+    return { success: true }
   }
 
-  if (Object.keys(validatedData).length > 0) {
-    const result = await updateSubscriber(userId, validatedData)
-    if (result.success) {
-      revalidatePath('/admin/users')
-    }
-    return result
-  }
-
-  revalidatePath('/admin/users')
-  return { success: true }
+  // 3. Execute the logic within the action factory for connection and revalidation.
+  return createAdminAction(coreLogic, '/admin/users')()
 }
 
-export async function deleteUserAction(userId) {
-  await dbConnect()
-  const result = await deleteSubscriber(userId)
-  if (result.success) {
-    revalidatePath('/admin/users')
-  }
-  return result
-}
+export const deleteUserAction = createAdminAction(deleteSubscriber, '/admin/users')
 
-export async function createUserAction(userData) {
+export const createUserAction = createAdminAction(async (userData) => {
   const validation = userCreateSchema.safeParse(userData)
   if (!validation.success) {
     return { success: false, error: 'Invalid data.', details: validation.error.flatten() }
   }
-
-  await dbConnect()
-  const result = await createSubscriber(validation.data)
-  if (result.success) {
-    revalidatePath('/admin/users')
-  }
-  return result
-}
+  // createSubscriberWithPassword already handles hashing, so we can call it directly.
+  return createSubscriberWithPassword(validation.data)
+}, '/admin/users')

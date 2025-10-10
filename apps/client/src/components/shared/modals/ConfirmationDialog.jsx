@@ -1,4 +1,4 @@
-// packages/ui/src/ConfirmationDialog.jsx (version 1.0.0)
+// apps/client/src/components/shared/modals/ConfirmationDialog.jsx
 'use client'
 
 import React from 'react'
@@ -11,6 +11,8 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
   Button,
+  Checkbox,
+  Label,
 } from '../elements'
 import { AlertTriangle, Loader2 } from 'lucide-react'
 
@@ -22,6 +24,9 @@ export function ConfirmationDialog({
   title = 'Are you absolutely sure?',
   description,
   confirmText = 'Continue',
+  showSkipOption = false,
+  isSkipChecked = false,
+  onSkipChange,
 }) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -35,12 +40,33 @@ export function ConfirmationDialog({
             {description}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="sm:justify-center">
-          <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
-          <Button variant="destructive" onClick={onConfirm} disabled={isPending}>
-            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {confirmText}
-          </Button>
+        <AlertDialogFooter className="flex-col sm:flex-col sm:items-center gap-4">
+          {showSkipOption && (
+            <div className="flex items-center space-x-2 justify-center">
+              <Checkbox
+                id="skip-confirmation"
+                checked={isSkipChecked}
+                onCheckedChange={onSkipChange}
+              />
+              <Label htmlFor="skip-confirmation" className="text-sm font-normal">
+                Don't ask me again for this item type.
+              </Label>
+            </div>
+          )}
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-center sm:space-x-2 w-full">
+            <AlertDialogCancel disabled={isPending} className="w-full sm:w-auto">
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              variant="destructive"
+              onClick={onConfirm}
+              disabled={isPending}
+              className="w-full sm:w-auto"
+            >
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {confirmText}
+            </Button>
+          </div>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

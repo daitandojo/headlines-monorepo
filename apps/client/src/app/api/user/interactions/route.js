@@ -1,7 +1,7 @@
 // apps/client/src/app/api/user/interactions/route.js
 import { NextResponse } from 'next/server'
 import { updateUserInteraction } from '@headlines/data-access/next'
-import { createClientApiHandler } from '@/lib/api-handler'
+import { createApiHandler } from '@/lib/api-handler' // Use the new single handler
 import { interactionSchema } from '@headlines/models/schemas'
 
 const handlePost = async (request, { user }) => {
@@ -27,5 +27,6 @@ const handlePost = async (request, { user }) => {
   return NextResponse.json({ success: true })
 }
 
-export const POST = createClientApiHandler(handlePost)
+// Use the new, unified handler. The default behavior is correct for client routes.
+export const POST = createApiHandler(handlePost)
 export const dynamic = 'force-dynamic'

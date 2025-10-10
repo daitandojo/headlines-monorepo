@@ -163,12 +163,11 @@ export async function performAiSanityCheck() {
   try {
     logger.info('🔬 Performing AI service sanity check (OpenAI)...')
     const answer = await callLanguageModel({
-      modelName: 'gpt-3.5-turbo', // Use a standard, widely available model for the check
+      modelName: 'gpt-5-nano',
       prompt: 'In one word, what is the capital of France?',
       isJson: false,
     })
 
-    // Handle API call failure from safeExecute
     if (answer && answer.error) {
       logger.fatal(
         { details: answer.error },
@@ -177,7 +176,6 @@ export async function performAiSanityCheck() {
       return false
     }
 
-    // Handle unexpected response format
     if (
       !answer ||
       typeof answer !== 'string' ||
@@ -193,7 +191,6 @@ export async function performAiSanityCheck() {
     logger.info('✅ AI service sanity check passed.')
     return true
   } catch (error) {
-    // This will catch any unexpected synchronous errors in the function itself.
     logger.fatal(
       { err: error },
       'OpenAI sanity check failed with an unexpected exception.'

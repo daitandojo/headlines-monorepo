@@ -1,9 +1,9 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 209 files, 89 directories
+Total: 213 files, 88 directories
 
 ```
-headlines/
+headlines-monorepo/
 ├── 📁 public/
 │   ├── 📁 icons/
 │   │   ├── 📄 apple-touch-icon.png
@@ -105,6 +105,8 @@ headlines/
 │   │   │   │   │   └── 📄 route.js
 │   │   │   │   └── 📄 route.js
 │   │   │   ├── 📁 events/
+│   │   │   │   ├── 📁 [eventId]/
+│   │   │   │   │   └── 📄 route.js
 │   │   │   │   └── 📄 route.js
 │   │   │   ├── 📁 opportunities/
 │   │   │   │   └── 📄 route.js
@@ -132,8 +134,6 @@ headlines/
 │   │   │   │       └── 📄 route.js
 │   │   │   ├── 📁 export/
 │   │   │   │   └── 📄 route.js
-│   │   │   ├── 📁 opportunities/
-│   │   │   │   └── 📁 [opportunityId]/
 │   │   │   ├── 📁 relationships/
 │   │   │   │   ├── 📁 link/
 │   │   │   │   │   └── 📄 route.js
@@ -176,7 +176,8 @@ headlines/
 │   │   ├── 📁 client/
 │   │   │   ├── 📁 articles/
 │   │   │   │   ├── 📄 ArticleCard.jsx
-│   │   │   │   └── 📄 ArticleListWrapper.jsx
+│   │   │   │   ├── 📄 ArticleListWrapper.jsx
+│   │   │   │   └── 📄 ArticleModal.jsx
 │   │   │   ├── 📁 chat/
 │   │   │   │   ├── 📄 ChatInput.jsx
 │   │   │   │   ├── 📄 ChatLoadingIndicator.jsx
@@ -195,11 +196,13 @@ headlines/
 │   │   │   │   ├── 📄 EventContextDialog.jsx
 │   │   │   │   ├── 📄 EventList.jsx
 │   │   │   │   ├── 📄 EventListWrapper.jsx
+│   │   │   │   ├── 📄 EventModal.jsx
 │   │   │   │   ├── 📄 KeyIndividualsDialog.jsx
 │   │   │   │   └── 📄 SynthesizedEventCard.jsx
 │   │   │   ├── 📁 opportunities/
 │   │   │   │   ├── 📄 OpportunityCard.jsx
-│   │   │   │   └── 📄 OpportunityListWrapper.jsx
+│   │   │   │   ├── 📄 OpportunityListWrapper.jsx
+│   │   │   │   └── 📄 OpportunityModal.jsx
 │   │   │   ├── 📁 settings/
 │   │   │   │   └── 📄 SettingsForm.jsx
 │   │   │   ├── 📁 shared/
@@ -306,9 +309,9 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-05T19:41:33.237Z
-**Repository Path**: /home/mark/Repos/projects/headlines/apps/client
-**Total Files**: 197
+**Generated**: 2025-10-10T00:11:01.958Z
+**Repository Path**: /home/mark/Repos/projects/headlines-monorepo/apps/client
+**Total Files**: 201
 **Package**: @headlines/client@1.0.0
 
 
@@ -440,20 +443,15 @@ export default eslintConfig;
 ```
 
 ## 📄 next.config.mjs
-*Lines: 54, Size: 1.28 KB*
+*Lines: 49, Size: 1.27 KB*
 
 ```
-// File: apps/client/next.config.mjs (FINAL ATTEMPT)
+// File: apps/client/next.config.mjs
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Add this postcss section
-  postcss: {
-    plugins: {
-      tailwindcss: {},
-      autoprefixer: {},
-    },
-  },
+  // The invalid 'postcss' key has been removed from this configuration.
+  // Next.js will automatically use postcss.config.js.
   transpilePackages: [
     '@headlines/config',
     '@headlines/models',
@@ -500,7 +498,7 @@ export default nextConfig
 ```
 
 ## 📄 package.json
-*Lines: 64, Size: 1.99 KB*
+*Lines: 63, Size: 1.99 KB*
 
 ```json
 {
@@ -566,17 +564,17 @@ export default nextConfig
     "tailwindcss-animate": "^1.0.7"
   }
 }
-
 ```
 
 ## 📄 postcss.config.js
-*Lines: 6, Size: 206 Bytes*
+*Lines: 7, Size: 82 Bytes*
 
 ```javascript
-// This configuration uses a function-based array for plugins,
-// which is more explicit and robust for module resolution.
 module.exports = {
-  plugins: [require('tailwindcss'), require('autoprefixer')],
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
 }
 
 ```
@@ -712,13 +710,13 @@ self.addEventListener('notificationclick', (event) => {
 ```
 
 ## 📄 src/app/(client)/articles/page.js
-*Lines: 41, Size: 1.16 KB*
+*Lines: 56, Size: 1.56 KB*
 
 ```javascript
 // apps/client/src/app/(client)/articles/page.js
 import { DataView } from '@/components/client/shared/DataView'
-import { getArticles } from '@headlines/data-access/next'
 import { getUserIdFromSession } from '@/lib/auth/server'
+import { cookies } from 'next/headers'
 
 export const dynamic = 'force-dynamic'
 
@@ -736,8 +734,23 @@ export default async function ArticlesPage({ searchParams }) {
       const filters = { q: searchParams.q || '' }
       const sort = searchParams.sort || 'date_desc'
 
-      const result = await getArticles({ page: 1, filters, sort, userId })
-      if (result.success) {
+      // ✅ Fetch through API route
+      const url = new URL(
+        '/api/articles',
+        process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+      )
+      url.searchParams.set('page', '1')
+      url.searchParams.set('sort', sort)
+      if (filters.q) url.searchParams.set('q', filters.q)
+
+      const response = await fetch(url.toString(), {
+        headers: {
+          cookie: cookies().toString(), // Forward cookies for auth
+        },
+      })
+
+      if (response.ok) {
+        const result = await response.json()
         initialArticles = result.data
       }
     } catch (err) {
@@ -774,7 +787,7 @@ export default function ChatPage() {
 ```
 
 ## 📄 src/app/(client)/events/page.js
-*Lines: 41, Size: 1.17 KB*
+*Lines: 56, Size: 1.61 KB*
 
 ```javascript
 // apps/client/src/app/(client)/events/page.js (CORRECTED)
@@ -798,8 +811,23 @@ export default async function EventsPage({ searchParams }) {
       const filters = { q: searchParams.q || '' }
       const sort = searchParams.sort || sortOptions[0].value
 
-      const result = await getEvents({ page: 1, userId, filters, sort })
-      if (result.success) {
+      // ✅ Fetch through API route instead of direct call
+      const url = new URL(
+        '/api/events',
+        process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+      )
+      url.searchParams.set('page', '1')
+      url.searchParams.set('sort', sort)
+      if (filters.q) url.searchParams.set('q', filters.q)
+
+      const response = await fetch(url.toString(), {
+        headers: {
+          cookie: cookies().toString(), // Forward cookies for auth
+        },
+      })
+
+      if (response.ok) {
+        const result = await response.json()
         initialEvents = result.data
       }
     } catch (err) {
@@ -845,14 +873,14 @@ export default function ClientLayout({ children }) {
 ```
 
 ## 📄 src/app/(client)/opportunities/[opportunityId]/page.js
-*Lines: 142, Size: 4.99 KB*
+*Lines: 167, Size: 5.45 KB*
 
 ```javascript
-// apps/client/src/app/(client)/opportunities/[opportunityId]/page.js (CORRECTED)
+// apps/client/src/app/(client)/opportunities/[opportunityId]/page.js
 export const dynamic = 'force-dynamic'
 
-import { getOpportunityDetails } from '@headlines/data-access/next'
 import { notFound } from 'next/navigation'
+import { cookies } from 'next/headers'
 import Link from 'next/link'
 import {
   Card,
@@ -884,7 +912,7 @@ function TimelineItem({ event, isLast }) {
         <p className="text-sm text-slate-400 mt-1">{event.synthesized_summary}</p>
         <div className="mt-2 flex flex-wrap gap-2">
           {event.source_articles.map((article) => (
-            <a
+            
               href={article.link}
               target="_blank"
               rel="noopener noreferrer"
@@ -904,14 +932,40 @@ function TimelineItem({ event, isLast }) {
 
 export default async function OpportunityDossierPage({ params }) {
   const { opportunityId } = params
-  const { success, data: opportunity } = await getOpportunityDetails(opportunityId)
-
-  if (!success || !opportunity) {
+  
+  let opportunity = null
+  
+  try {
+    // ✅ Fetch through API route
+    const url = new URL(
+      `/api/opportunities/${opportunityId}`,
+      process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    )
+    
+    const response = await fetch(url.toString(), {
+      headers: {
+        cookie: cookies().toString(),
+      },
+    })
+    
+    if (!response.ok) {
+      notFound()
+    }
+    
+    const result = await response.json()
+    
+    if (!result.success || !result.data) {
+      notFound()
+    }
+    
+    opportunity = result.data
+  } catch (err) {
+    console.error('[OpportunityDossierPage] Failed to fetch opportunity:', err.message)
     notFound()
   }
 
   const { contactDetails } = opportunity
-  const flags = (opportunity.basedIn || []).map((c) => getCountryFlag(c)).join(' ') // Use flags for array
+  const flags = (opportunity.basedIn || []).map((c) => getCountryFlag(c)).join(' ')
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -958,7 +1012,7 @@ export default async function OpportunityDossierPage({ params }) {
               </span>
             )}
             {contactDetails?.email && (
-              <a
+              
                 href={`mailto:${contactDetails.email}`}
                 className="flex items-center gap-2 text-blue-400 hover:underline"
               >
@@ -989,17 +1043,16 @@ export default async function OpportunityDossierPage({ params }) {
     </div>
   )
 }
-
 ```
 
 ## 📄 src/app/(client)/opportunities/page.js
-*Lines: 42, Size: 1.24 KB*
+*Lines: 58, Size: 1.71 KB*
 
 ```javascript
 // apps/client/src/app/(client)/opportunities/page.js
 import { DataView } from '@/components/client/shared/DataView'
-import { getOpportunities } from '@headlines/data-access/next'
 import { getUserIdFromSession } from '@/lib/auth/server'
+import { cookies } from 'next/headers'
 
 const sortOptions = [
   { value: 'date_desc', icon: 'clock', tooltip: 'Sort by Date (Newest First)' },
@@ -1018,8 +1071,24 @@ export default async function OpportunitiesPage({ searchParams }) {
       }
       const sort = searchParams.sort || 'date_desc'
 
-      const result = await getOpportunities({ page: 1, filters, sort, userId })
-      if (result.success) {
+      // ✅ Fetch through API route
+      const url = new URL(
+        '/api/opportunities',
+        process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+      )
+      url.searchParams.set('page', '1')
+      url.searchParams.set('sort', sort)
+      if (filters.q) url.searchParams.set('q', filters.q)
+      if (filters.withEmail) url.searchParams.set('withEmail', 'true')
+
+      const response = await fetch(url.toString(), {
+        headers: {
+          cookie: cookies().toString(), // Forward cookies for auth
+        },
+      })
+
+      if (response.ok) {
+        const result = await response.json()
         initialOpportunities = result.data
       }
     } catch (err) {
@@ -1398,24 +1467,45 @@ export default function ArticleEditor({ initialArticle }) {
 ```
 
 ## 📄 src/app/admin/articles/[articleId]/page.jsx
-*Lines: 17, Size: 500 Bytes*
+*Lines: 38, Size: 928 Bytes*
 
 ```jsx
 'use server'
-
-import { getArticleDetails } from '@headlines/data-access/next' // CORRECTED
+import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
-import ArticleEditor from './ArticleEditor' // We will create this next
+import ArticleEditor from './ArticleEditor'
 
 export default async function ArticleDetailPage({ params }) {
   const { articleId } = params
-  const result = await getArticleDetails(articleId)
 
-  if (!result.success || !result.data) {
+  try {
+    // ✅ Fetch through API route
+    const url = new URL(
+      `/api/admin/articles/${articleId}`,
+      process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    )
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        cookie: cookies().toString(), // Forward cookies for auth
+      },
+    })
+
+    if (!response.ok) {
+      notFound()
+    }
+
+    const result = await response.json()
+
+    if (!result.success || !result.data) {
+      notFound()
+    }
+
+    return <ArticleEditor initialArticle={JSON.parse(JSON.stringify(result.data))} />
+  } catch (err) {
+    console.error('[ArticleDetailPage] Failed to fetch article:', err.message)
     notFound()
   }
-
-  return <ArticleEditor initialArticle={JSON.parse(JSON.stringify(result.data))} />
 }
 
 ```
@@ -1602,12 +1692,12 @@ export const columns = (onUpdate, onDelete) => [
 ```
 
 ## 📄 src/app/admin/articles/page.js
-*Lines: 29, Size: 875 Bytes*
+*Lines: 52, Size: 1.5 KB*
 
 ```javascript
 // apps/client/src/app/admin/articles/page.js
-import { getArticles } from '@headlines/data-access/next' // CORRECTED
 import ArticlesClientPage from './ArticlesClientPage'
+import { cookies } from 'next/headers'
 
 export const dynamic = 'force-dynamic'
 
@@ -1624,14 +1714,37 @@ export default async function ArticlesPage({ searchParams }) {
     return acc
   }, {})
 
-  const result = await getArticles({ page, filters, sort })
+  let initialArticles = []
+  let total = 0
 
-  return (
-    <ArticlesClientPage
-      initialArticles={result.success ? result.data : []}
-      total={result.success ? result.total : 0}
-    />
-  )
+  try {
+    // ✅ Fetch through API route
+    const url = new URL(
+      '/api/admin/articles',
+      process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    )
+    url.searchParams.set('page', page.toString())
+    if (sort) url.searchParams.set('sort', sort)
+    if (Object.keys(filters).length > 0) {
+      url.searchParams.set('filters', JSON.stringify(filters))
+    }
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        cookie: cookies().toString(), // Forward cookies for auth
+      },
+    })
+
+    if (response.ok) {
+      const result = await response.json()
+      initialArticles = result.data || []
+      total = result.total || 0
+    }
+  } catch (err) {
+    console.error('[AdminArticlesPage] Failed to fetch articles:', err.message)
+  }
+
+  return <ArticlesClientPage initialArticles={initialArticles} total={total} />
 }
 
 ```
@@ -5342,6 +5455,37 @@ export async function POST(request) {
 
 ```
 
+## 📄 src/app/api/events/[eventId]/route.js
+*Lines: 25, Size: 759 Bytes*
+
+```javascript
+// apps/client/src/app/api/events/[eventId]/route.js
+import { NextResponse } from 'next/server'
+import { getEventDetails } from '@headlines/data-access/next'
+import { createClientApiHandler } from '@/lib/api-handler'
+import mongoose from 'mongoose'
+
+const handleGet = async (request, { params }) => {
+  const { eventId } = params
+
+  if (!mongoose.Types.ObjectId.isValid(eventId)) {
+    return NextResponse.json({ error: 'Invalid Event ID' }, { status: 400 })
+  }
+
+  const result = await getEventDetails(eventId)
+
+  if (!result.success) {
+    return NextResponse.json({ error: result.error }, { status: 404 })
+  }
+
+  return NextResponse.json({ data: result.data })
+}
+
+export const GET = createClientApiHandler(handleGet)
+export const dynamic = 'force-dynamic'
+
+```
+
 ## 📄 src/app/api/events/route.js
 *Lines: 35, Size: 1.3 KB*
 
@@ -7354,10 +7498,10 @@ export function ThemeToggle() {
 ```
 
 ## 📄 src/components/client/articles/ArticleCard.jsx
-*Lines: 203, Size: 7.91 KB*
+*Lines: 260, Size: 9.7 KB*
 
 ```jsx
-// File: apps/client/src/components/client/articles/ArticleCard.jsx (Multi-country support)
+// File: apps/client/src/components/client/articles/ArticleCard.jsx
 'use client'
 
 import { useState, useTransition } from 'react'
@@ -7373,11 +7517,22 @@ import {
   TooltipTrigger,
   ConfirmationDialog,
 } from '@/components/shared'
-import { Trash2, ExternalLink, Users, Mail, Building, Briefcase } from 'lucide-react'
+import {
+  Trash2,
+  ExternalLink,
+  Users,
+  Mail,
+  Building,
+  Briefcase,
+  Zap,
+  Loader2,
+} from 'lucide-react'
 import { getCountryFlag } from '@headlines/utils-shared'
 import { SwipeToDelete } from '../shared/SwipeToDelete'
 import useAppStore from '@/lib/store/use-app-store'
 import { cn } from '@headlines/utils-shared'
+import { EventModal } from '../events/EventModal'
+import { toast } from 'sonner'
 
 const getRelevanceBadgeClass = (score) => {
   if (score >= 90)
@@ -7394,6 +7549,10 @@ export const ArticleCard = ({ article, onDelete }) => {
     (state) => state.deletePreferences.skipArticleConfirmation
   )
 
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false)
+  const [eventForModal, setEventForModal] = useState(null)
+  const [isEventLoading, setIsEventLoading] = useState(false)
+
   const handleDelete = () => {
     startTransition(() => {
       onDelete()
@@ -7409,94 +7568,128 @@ export const ArticleCard = ({ article, onDelete }) => {
     }
   }
 
-  const flags = (article.country || []).map((c) => getCountryFlag(c)).join(' ') // MODIFIED
+  const handleShowEvent = async (e) => {
+    e.stopPropagation()
+    if (!article.synthesizedEventId) return
+    setIsEventLoading(true)
+    try {
+      const res = await fetch(`/api/events/${article.synthesizedEventId}`)
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Failed to fetch event details')
+      }
+      const result = await res.json()
+      setEventForModal(result.data)
+      setIsEventModalOpen(true)
+    } catch (error) {
+      toast.error('Could not load event', { description: error.message })
+    } finally {
+      setIsEventLoading(false)
+    }
+  }
+
+  const flags = (article.country || []).map((c) => getCountryFlag(c)).join(' ')
   const relevanceScore = article.relevance_article || article.relevance_headline
 
   return (
-    <div className="relative w-full">
+    <>
       <AccordionItem
         value={article._id}
         className="border-none overflow-hidden rounded-xl"
       >
-        <SwipeToDelete onDelete={handleDelete}>
-          <div
-            className={cn(
-              'p-4 relative z-10 bg-cover bg-center',
-              article.imageUrl && 'min-h-[150px] flex flex-col justify-end'
-            )}
-            style={
-              article.imageUrl ? { backgroundImage: `url(${article.imageUrl})` } : {}
-            }
-          >
-            {article.imageUrl && (
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent z-0" />
-            )}
-            <div className="relative z-10">
-              <TooltipProvider delayDuration={100}>
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Badge
-                      className={`text-sm font-bold px-2.5 py-1 ${getRelevanceBadgeClass(
-                        relevanceScore
-                      )}`}
-                    >
-                      {relevanceScore}
-                    </Badge>
-                    <span className="text-lg hidden sm:inline">{flags}</span>{' '}
-                    {/* MODIFIED */}
-                    <p className="text-xs sm:text-sm text-slate-300 truncate shadow-black drop-shadow-lg">
-                      {article.newspaper}
-                    </p>
+        <div className="relative">
+          <SwipeToDelete onDelete={handleDelete}>
+            <div
+              className={cn(
+                'p-4 relative z-10 bg-cover bg-center',
+                article.imageUrl && 'min-h-[150px] flex flex-col justify-end'
+              )}
+              style={
+                article.imageUrl ? { backgroundImage: `url(${article.imageUrl})` } : {}
+              }
+            >
+              {article.imageUrl && (
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent z-0" />
+              )}
+              <div className="relative z-10">
+                <TooltipProvider delayDuration={100}>
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Badge
+                        className={`text-sm font-bold px-2.5 py-1 ${getRelevanceBadgeClass(
+                          relevanceScore
+                        )}`}
+                      >
+                        {relevanceScore}
+                      </Badge>
+                      <span className="text-lg hidden sm:inline">{flags}</span>{' '}
+                      <p className="text-xs sm:text-sm text-slate-300 truncate shadow-black drop-shadow-lg">
+                        {article.newspaper}
+                      </p>
+                    </div>
+                    <div className="flex items-center flex-shrink-0">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              window.open(article.link, '_blank')
+                            }}
+                            className="text-slate-300 hover:text-blue-400 bg-black/20 hover:bg-blue-500/20 h-8 w-8"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Open in new tab</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={isPending}
+                            onClick={handleDeleteClick}
+                            className="text-slate-300 hover:text-red-400 bg-black/20 hover:bg-red-500/20 h-8 w-8"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Delete article</TooltipContent>
+                      </Tooltip>
+                    </div>
                   </div>
-                  <div className="flex items-center flex-shrink-0">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            window.open(article.link, '_blank')
-                          }}
-                          className="text-slate-300 hover:text-blue-400 bg-black/20 hover:bg-blue-500/20 h-8 w-8"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Open in new tab</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          disabled={isPending}
-                          onClick={handleDeleteClick}
-                          className="text-slate-300 hover:text-red-400 bg-black/20 hover:bg-red-500/20 h-8 w-8"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Delete article</TooltipContent>
-                    </Tooltip>
-                  </div>
-                </div>
 
-                <AccordionTrigger className="p-0 hover:no-underline text-left">
-                  <div className="flex-grow min-w-0">
+                  <div className="flex-grow min-w-0 pr-12">
                     <p className="font-serif font-bold text-base sm:text-lg text-white line-clamp-3 shadow-black drop-shadow-lg">
                       <span className="text-lg sm:hidden mr-2">{flags}</span>{' '}
-                      {/* MODIFIED */}
                       {article.headline_en || `(en N/S): ${article.headline}`}
                     </p>
                   </div>
-                </AccordionTrigger>
-              </TooltipProvider>
+                </TooltipProvider>
+              </div>
             </div>
-          </div>
-        </SwipeToDelete>
+          </SwipeToDelete>
+          <AccordionTrigger className="absolute top-1/2 -translate-y-1/2 right-2 z-20 h-9 w-9 p-0 flex-none justify-center rounded-full bg-slate-800/60 hover:bg-slate-700/80 data-[state=open]:bg-slate-700 text-slate-400 hover:text-white" />
+        </div>
         <AccordionContent className="p-4 pt-0">
           <div className="border-t border-slate-700/50 pt-4 mt-2 space-y-4">
+            {article.synthesizedEventId && (
+              <Button
+                variant="outline"
+                className="w-full justify-start text-left"
+                onClick={handleShowEvent}
+                disabled={isEventLoading}
+              >
+                {isEventLoading ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Zap className="h-4 w-4 mr-2 text-blue-400" />
+                )}
+                View Synthesized Event
+              </Button>
+            )}
             {article.assessment_article && (
               <div>
                 <h4 className="font-semibold text-sm text-slate-300 mb-1">
@@ -7547,6 +7740,14 @@ export const ArticleCard = ({ article, onDelete }) => {
         </AccordionContent>
       </AccordionItem>
 
+      {eventForModal && (
+        <EventModal
+          events={[eventForModal]}
+          open={isEventModalOpen}
+          onOpenChange={setIsEventModalOpen}
+        />
+      )}
+
       <ConfirmationDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
@@ -7556,7 +7757,7 @@ export const ArticleCard = ({ article, onDelete }) => {
         itemDescription={article.headline_en || article.headline}
         preferenceKey="skipArticleConfirmation"
       />
-    </div>
+    </>
   )
 }
 
@@ -7605,6 +7806,150 @@ export function ArticleListWrapper({ items, onDelete }) {
         </AnimatePresence>
       </AnimatedList>
     </Accordion>
+  )
+}
+
+```
+
+## 📄 src/components/client/articles/ArticleModal.jsx
+*Lines: 138, Size: 5.04 KB*
+
+```jsx
+// File: apps/client/src/components/client/articles/ArticleModal.jsx
+
+'use client'
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  ScrollArea,
+  Badge,
+} from '@/components/shared'
+import { FileText, Users, Mail, Briefcase, Building, ExternalLink } from 'lucide-react'
+import { getCountryFlag } from '@headlines/utils-shared'
+
+function ArticleDetail({ article }) {
+  if (!article) return null
+
+  const flags = (article.country || []).map((c) => getCountryFlag(c)).join(' ')
+  const score = article.relevance_article || article.relevance_headline || 0
+
+  const getRelevanceBadgeClass = (score) => {
+    if (score >= 90) return 'bg-red-500/20 text-red-300 border border-red-500/30'
+    if (score >= 75) return 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+    return 'bg-slate-500/20 text-slate-300 border border-slate-500/30'
+  }
+
+  return (
+    <div className="p-4 border-b border-slate-700 last:border-b-0 space-y-4">
+      {/* Header */}
+      <div className="flex justify-between items-start gap-3">
+        <div className="flex-1 space-y-2">
+          <h3 className="font-serif font-bold text-lg text-slate-100 leading-tight">
+            {flags && <span className="text-xl mr-2 align-middle">{flags}</span>}
+            {article.headline_en || article.headline}
+          </h3>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">{article.newspaper}</Badge>
+            <a
+              href={article.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-blue-400 hover:underline flex items-center gap-1"
+            >
+              View Original <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
+        </div>
+        <Badge
+          className={`text-base font-bold px-3 py-1 ${getRelevanceBadgeClass(score)}`}
+        >
+          {score}
+        </Badge>
+      </div>
+
+      {/* AI Assessment */}
+      {article.assessment_article && (
+        <div className="p-3 bg-slate-800/30 rounded-md">
+          <h4 className="font-semibold text-sm text-slate-400 mb-1">
+            Intelligence Analysis
+          </h4>
+          <p className="text-sm text-slate-300 italic">"{article.assessment_article}"</p>
+        </div>
+      )}
+
+      {/* Key Individuals */}
+      {article.key_individuals && article.key_individuals.length > 0 && (
+        <div className="space-y-2">
+          <h4 className="font-semibold text-sm text-slate-400">Key Individuals</h4>
+          {article.key_individuals.map((person, index) => (
+            <div key={index} className="p-2 rounded-md bg-slate-800/50 text-sm">
+              <p className="font-semibold text-slate-200 flex items-center gap-2">
+                <Users className="h-4 w-4 text-slate-500" /> {person.name}
+              </p>
+              <div className="pl-6 space-y-1 mt-1 text-slate-400">
+                {person.role_in_event && (
+                  <p className="flex items-center gap-2 text-xs">
+                    <Briefcase className="h-3 w-3" /> {person.role_in_event}
+                  </p>
+                )}
+                {person.company && (
+                  <p className="flex items-center gap-2 text-xs">
+                    <Building className="h-3 w-3" /> {person.company}
+                  </p>
+                )}
+                {person.email_suggestion && (
+                  <a
+                    href={`mailto:${person.email_suggestion}`}
+                    className="flex items-center gap-2 text-xs text-blue-400 hover:underline"
+                  >
+                    <Mail className="h-3 w-3" /> {person.email_suggestion}
+                  </a>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function ArticleModal({ articles = [], open, onOpenChange }) {
+  const articleCount = articles.length
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-3xl w-[95vw] h-[80vh] flex flex-col bg-slate-900 border-slate-700">
+        <DialogHeader className="p-6 border-b border-slate-700">
+          <DialogTitle className="text-2xl text-slate-100 flex items-center gap-2">
+            <FileText className="h-6 w-6 text-slate-400" />
+            Raw Articles
+          </DialogTitle>
+          <DialogDescription className="text-slate-400">
+            {articleCount > 0
+              ? `Displaying ${articleCount} article${articleCount > 1 ? 's' : ''} matching the criteria.`
+              : 'No articles found.'}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex-grow min-h-0">
+          <ScrollArea className="h-full">
+            {articleCount > 0 ? (
+              articles.map((article) => (
+                <ArticleDetail key={article._id} article={article} />
+              ))
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-500">
+                <p>No articles to display.</p>
+              </div>
+            )}
+          </ScrollArea>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -8363,10 +8708,10 @@ export function GlobalCountrySelector({ allCountries }) {
 ```
 
 ## 📄 src/components/client/events/EventCardDesktop.jsx
-*Lines: 123, Size: 4.49 KB*
+*Lines: 264, Size: 9.54 KB*
 
 ```jsx
-// File: apps/client/src/components/client/events/EventCardDesktop.jsx (Handler Corrected)
+// apps/client/src/components/client/events/EventCardDesktop.jsx
 'use client'
 
 import {
@@ -8377,16 +8722,29 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/shared'
-import { Trash2, MessageSquarePlus, Users } from 'lucide-react'
+import { Trash2, MessageSquarePlus, Users, AlertCircle, Loader2 } from 'lucide-react'
 import { getCountryFlag } from '@headlines/utils-shared'
+import { formatDistanceToNow } from 'date-fns'
 import Image from 'next/image'
+import { useState, useMemo } from 'react'
 
 const getRelevanceBadgeClass = (score) => {
-  if (score >= 90)
-    return 'bg-red-500/20 text-red-300 border border-red-500/30 shadow-lg shadow-red-500/10'
-  if (score >= 75)
-    return 'bg-blue-500/20 text-blue-300 border border-blue-500/30 shadow-lg shadow-blue-500/10'
-  return 'bg-slate-500/20 text-slate-300 border border-slate-500/30'
+  const numScore = Number(score)
+  if (isNaN(numScore)) return 'bg-slate-600 text-white'
+
+  if (numScore >= 90)
+    return 'bg-gradient-to-br from-red-600 to-red-700 text-white shadow-lg shadow-red-500/30'
+  if (numScore >= 75)
+    return 'bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/30'
+  return 'bg-gradient-to-br from-slate-600 to-slate-700 text-white shadow-md'
+}
+
+const getRelevanceLabel = (score) => {
+  const numScore = Number(score)
+  if (isNaN(numScore)) return 'Unknown'
+  if (numScore >= 90) return 'Critical'
+  if (numScore >= 75) return 'High Priority'
+  return 'Standard'
 }
 
 export function EventCardDesktop({
@@ -8394,95 +8752,223 @@ export function EventCardDesktop({
   onChat,
   onDelete,
   onShowIndividuals,
-  isPending,
+  onShowOpportunities,
+  isOpportunitiesLoading,
+  isPending = false,
 }) {
-  if (!event) return null
-  const flags = (event.country || []).map((c) => getCountryFlag(c)).join(' ')
-  const primaryImageUrl = event.source_articles?.find((a) => a.imageUrl)?.imageUrl
+  const [imageError, setImageError] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const computedData = useMemo(() => {
+    if (!event) return null
+
+    const flags = Array.isArray(event.country)
+      ? event.country.map((c) => getCountryFlag(c)).join(' ')
+      : ''
+
+    const primaryImageUrl = Array.isArray(event.source_articles)
+      ? event.source_articles.find((a) => a?.imageUrl)?.imageUrl
+      : null
+
+    const updatedAt = event.updatedAt
+      ? formatDistanceToNow(new Date(event.updatedAt), { addSuffix: true })
+      : 'Recently'
+
+    const relevanceScore = event.highest_relevance_score ?? 0
+    const individualCount = Array.isArray(event.key_individuals)
+      ? event.key_individuals.length
+      : 0
+
+    const opportunityCount = event.relatedOpportunities?.length || 0
+
+    return {
+      flags,
+      primaryImageUrl,
+      updatedAt,
+      relevanceScore,
+      individualCount,
+      opportunityCount,
+    }
+  }, [event])
+
+  if (!event) {
+    return (
+      <div className="hidden sm:flex items-center gap-3 p-4 rounded-lg bg-slate-800/30">
+        <AlertCircle className="h-5 w-5 text-slate-500" />
+        <span className="text-sm text-slate-400">Event data unavailable</span>
+      </div>
+    )
+  }
+
+  const handleDelete = async (e) => {
+    e.stopPropagation()
+    if (!onDelete || isDeleting) return
+    setIsDeleting(true)
+    try {
+      await onDelete()
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleChat = (e) => {
+    e.stopPropagation()
+    if (onChat && !isPending && !isDeleting) {
+      onChat(e)
+    }
+  }
+
+  const handleShowContent = (e) => {
+    e.stopPropagation()
+    if (isPending || isDeleting || isOpportunitiesLoading) return
+
+    if (computedData.opportunityCount > 0 && onShowOpportunities) {
+      onShowOpportunities(e)
+    } else if (onShowIndividuals) {
+      onShowIndividuals(e)
+    }
+  }
+
+  const {
+    flags,
+    primaryImageUrl,
+    updatedAt,
+    relevanceScore,
+    individualCount,
+    opportunityCount,
+  } = computedData
 
   return (
-    <div className="hidden sm:block">
+    <div className="hidden sm:block group">
       <TooltipProvider delayDuration={100}>
-        <div className="flex items-start gap-6">
-          <div className="flex flex-col items-center shrink-0">
-            <Badge
-              className={`text-xl font-bold px-4 py-2 ${getRelevanceBadgeClass(
-                event.highest_relevance_score
-              )}`}
-            >
-              {event.highest_relevance_score}
-            </Badge>
-            <span className="text-xs text-slate-500 mt-1">Score</span>
-          </div>
-          <div className="flex-grow min-w-0 pr-20">
-            <h3 className="font-serif font-bold text-xl text-slate-100 mb-2">
-              <span className="text-2xl mr-3 align-middle">{flags}</span>
-              {event.synthesized_headline}
-            </h3>
-            <p className="text-slate-300 leading-relaxed">{event.synthesized_summary}</p>
-          </div>
-          {primaryImageUrl && (
-            <div className="relative h-24 w-24 rounded-lg overflow-hidden flex-shrink-0">
-              <Image
-                src={primaryImageUrl}
-                alt={event.synthesized_headline}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              />
+        <div className="relative p-4 rounded-lg bg-slate-800/40 transition-all duration-300 hover:bg-slate-800/60 hover:shadow-xl hover:shadow-slate-900/30">
+          <div className="flex items-start gap-4">
+            <div className="flex flex-col items-center shrink-0 min-w-[70px]">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge
+                    className={`text-xl font-bold px-3 py-1.5 transition-all duration-200 ${getRelevanceBadgeClass(
+                      relevanceScore
+                    )}`}
+                  >
+                    {relevanceScore}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <div className="text-center">
+                    <p className="font-semibold">{getRelevanceLabel(relevanceScore)}</p>
+                    <p className="text-xs text-slate-400">Relevance Score</p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+              <span className="text-xs text-slate-500 mt-1.5 font-medium">
+                {updatedAt}
+              </span>
             </div>
-          )}
-          <div className="absolute top-4 right-4 z-10 flex gap-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onChat}
-                  className="text-slate-400 hover:text-blue-400 bg-black/20 hover:bg-blue-500/20 h-8 w-8"
-                >
-                  <MessageSquarePlus className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Ask AI about this event</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  disabled={isPending}
-                  onClick={onDelete}
-                  className="text-slate-400 hover:text-red-400 bg-black/20 hover:bg-red-500/20 h-8 w-8"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Delete Event</TooltipContent>
-            </Tooltip>
+
+            <div className="flex-grow min-w-0 pr-4">
+              <h3 className="font-serif font-bold text-xl text-slate-100 mb-2 leading-tight transition-colors duration-200 group-hover:text-white">
+                {flags && <span className="text-2xl mr-3 align-middle">{flags}</span>}
+                {event.synthesized_headline || 'Untitled Event'}
+              </h3>
+              <p className="text-slate-300 leading-relaxed text-[15px] line-clamp-3">
+                {event.synthesized_summary || 'No summary available.'}
+              </p>
+            </div>
+
+            {primaryImageUrl && !imageError && (
+              <div className="relative h-24 w-24 rounded-lg overflow-hidden flex-shrink-0 transition-all duration-300 group-hover:shadow-lg">
+                <Image
+                  src={primaryImageUrl}
+                  alt={event.synthesized_headline || 'Event image'}
+                  fill
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  sizes="96px"
+                  onError={() => setImageError(true)}
+                  loading="lazy"
+                />
+              </div>
+            )}
+
+            <div className="absolute top-3 right-3 z-10 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleChat}
+                    disabled={isPending || isDeleting}
+                    className="text-slate-400 hover:text-blue-400 bg-slate-900/80 hover:bg-blue-500/20 h-8 w-8 backdrop-blur-sm transition-all duration-200 disabled:opacity-50"
+                    aria-label="Ask AI about this event"
+                  >
+                    <MessageSquarePlus className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p className="font-medium">Ask AI about this event</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled={isPending || isDeleting}
+                    onClick={handleDelete}
+                    className="text-slate-400 hover:text-red-400 bg-slate-900/80 hover:bg-red-500/20 h-8 w-8 backdrop-blur-sm transition-all duration-200 disabled:opacity-50"
+                    aria-label="Delete event"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p className="font-medium">Delete Event</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
           </div>
-        </div>
-        <div className="mt-4 pt-4 border-t border-slate-800/50 flex flex-col sm:flex-row justify-between items-start gap-4">
-          {event.key_individuals && event.key_individuals.length > 0 && (
-            // DEFINITIVE FIX: Ensure the onClick handler is correctly passed to the Button.
-            <Button
-              variant="ghost"
-              className="p-0 h-auto text-left text-slate-400 hover:text-slate-200"
-              onClick={onShowIndividuals}
-            >
-              <div className="flex items-start gap-3">
-                <Users className="h-5 w-5 mt-0.5 shrink-0 text-slate-500" />
-                <p className="text-sm font-medium text-slate-300">
-                  {event.key_individuals.length} Key Individual(s) Identified
+
+          <div className="mt-3 pt-3 border-t border-slate-700/50 flex flex-col sm:flex-row justify-between items-start gap-3">
+            {(individualCount > 0 || opportunityCount > 0) && (
+              <Button
+                variant="ghost"
+                className="p-0 h-auto text-left hover:bg-transparent transition-colors duration-200"
+                onClick={handleShowContent}
+                disabled={isPending || isDeleting || isOpportunitiesLoading}
+                aria-label={`View related individuals and opportunities`}
+              >
+                <div className="flex items-center gap-2.5 group/btn">
+                  <div className="p-1.5 rounded bg-slate-800/50 group-hover/btn:bg-slate-700/50 transition-all duration-200">
+                    {isOpportunitiesLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Users className="h-4 w-4 text-slate-400 group-hover/btn:text-slate-300" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-300 group-hover/btn:text-slate-200 transition-colors duration-200">
+                      {opportunityCount > 0
+                        ? `${opportunityCount} Actionable Opportunit${opportunityCount > 1 ? 'ies' : 'y'} Identified`
+                        : `${individualCount} Key Individual${individualCount !== 1 ? 's' : ''} Identified`}
+                    </p>
+                    <p className="text-xs text-slate-500">Click to view details</p>
+                  </div>
+                </div>
+              </Button>
+            )}
+
+            {event.ai_assessment_reason && (
+              <div className="flex items-start gap-2 sm:text-right flex-grow">
+                <div className="p-1 rounded bg-slate-800/30 shrink-0 sm:order-2">
+                  <AlertCircle className="h-3.5 w-3.5 text-slate-500" />
+                </div>
+                <p className="text-xs text-slate-500 italic leading-relaxed sm:order-1">
+                  {event.ai_assessment_reason}
                 </p>
               </div>
-            </Button>
-          )}
-          {event.ai_assessment_reason && (
-            <p className="text-xs text-slate-500 italic sm:text-right flex-grow">
-              {event.ai_assessment_reason}
-            </p>
-          )}
+            )}
+          </div>
         </div>
       </TooltipProvider>
     </div>
@@ -8492,15 +8978,16 @@ export function EventCardDesktop({
 ```
 
 ## 📄 src/components/client/events/EventCardDetails.jsx
-*Lines: 69, Size: 2.55 KB*
+*Lines: 77, Size: 2.84 KB*
 
 ```jsx
 // src/components/events/EventCardDetails.jsx (version 1.0)
 'use client'
 
-import { Users, Mail, Building, Briefcase } from 'lucide-react'
+import { Users, Mail, Building, Briefcase, ExternalLink } from 'lucide-react'
+import { Button } from '@/components/shared'
 
-export function EventCardDetails({ event }) {
+export function EventCardDetails({ event, onShowArticles }) {
   if (!event) return null
 
   return (
@@ -8542,9 +9029,16 @@ export function EventCardDetails({ event }) {
       )}
       {/* Source Articles Column */}
       <div className="space-y-2">
-        <h4 className="font-semibold text-sm text-slate-300 mb-2 border-b border-slate-700 pb-1">
-          Source Articles ({event.source_articles.length})
-        </h4>
+        <Button
+          variant="ghost"
+          onClick={onShowArticles}
+          className="w-full justify-start p-0 h-auto hover:bg-transparent"
+        >
+          <h4 className="font-semibold text-sm text-slate-300 mb-2 border-b border-slate-700 pb-1 hover:text-white w-full text-left">
+            Source Articles ({event.source_articles.length})
+          </h4>
+        </Button>
+
         {event.source_articles.map((article) => (
           <a
             key={article.link}
@@ -8567,14 +9061,15 @@ export function EventCardDetails({ event }) {
 ```
 
 ## 📄 src/components/client/events/EventCardMobile.jsx
-*Lines: 117, Size: 4.16 KB*
+*Lines: 159, Size: 5.37 KB*
 
 ```jsx
-// File: apps/client/src/components/client/events/EventCardMobile.jsx (Handler Corrected)
+// File: apps/client/src/components/client/events/EventCardMobile.jsx
 'use client'
 
 import { Badge, Button } from '@/components/shared'
-import { Trash2, MessageSquarePlus, Users } from 'lucide-react'
+import { formatDistanceToNow } from 'date-fns'
+import { Trash2, MessageSquarePlus, Users, Loader2 } from 'lucide-react'
 import { getCountryFlag } from '@headlines/utils-shared'
 import { cn } from '@headlines/utils-shared'
 
@@ -8589,11 +9084,37 @@ export function EventCardMobile({
   onChat,
   onDelete,
   onShowIndividuals,
+  onShowOpportunities,
+  isOpportunitiesLoading,
   isPending,
 }) {
   if (!event) return null
   const flags = (event.country || []).map((c) => getCountryFlag(c)).join(' ')
   const primaryImageUrl = event.source_articles?.find((a) => a.imageUrl)?.imageUrl
+  const updatedAt = formatDistanceToNow(new Date(event.updatedAt), { addSuffix: true })
+  const opportunityCount = event.relatedOpportunities?.length || 0
+  const individualCount = event.key_individuals?.length || 0
+
+  const handleShowContent = (e) => {
+    e.stopPropagation()
+    if (isPending || isOpportunitiesLoading) return
+
+    if (opportunityCount > 0 && onShowOpportunities) {
+      onShowOpportunities()
+    } else if (onShowIndividuals) {
+      onShowIndividuals()
+    }
+  }
+
+  const handleChatClick = (e) => {
+    e.stopPropagation()
+    onChat()
+  }
+
+  const handleDeleteClick = (e) => {
+    e.stopPropagation()
+    onDelete()
+  }
 
   return (
     <div className="sm:hidden">
@@ -8618,12 +9139,20 @@ export function EventCardMobile({
               >
                 {event.highest_relevance_score}
               </Badge>
+              <p
+                className={cn(
+                  'text-xs text-slate-400',
+                  primaryImageUrl && 'drop-shadow-lg'
+                )}
+              >
+                {updatedAt}
+              </p>
             </div>
             <div className="flex flex-col items-center gap-1">
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={onChat}
+                onClick={handleChatClick}
                 className="text-slate-300 hover:text-blue-400 bg-black/20 hover:bg-blue-500/20 h-8 w-8"
               >
                 <MessageSquarePlus className="h-4 w-4" />
@@ -8632,7 +9161,7 @@ export function EventCardMobile({
                 variant="ghost"
                 size="icon"
                 disabled={isPending}
-                onClick={onDelete}
+                onClick={handleDeleteClick}
                 className="text-slate-300 hover:text-red-400 bg-black/20 hover:bg-red-500/20 h-8 w-8"
               >
                 <Trash2 className="h-4 w-4" />
@@ -8661,17 +9190,24 @@ export function EventCardMobile({
           {event.synthesized_summary}
         </p>
         <div className="mt-4 pt-4 border-t border-slate-800/50 flex flex-col justify-between items-start gap-4">
-          {event.key_individuals && event.key_individuals.length > 0 && (
-            // DEFINITIVE FIX: Ensure the onClick handler is correctly passed to the Button.
+          {(individualCount > 0 || opportunityCount > 0) && (
             <Button
               variant="ghost"
               className="p-0 h-auto text-left text-slate-400 hover:text-slate-200"
-              onClick={onShowIndividuals}
+              onClick={handleShowContent}
+              disabled={isPending || isOpportunitiesLoading}
             >
               <div className="flex items-start gap-3">
-                <Users className="h-5 w-5 mt-0.5 shrink-0 text-slate-500" />
+                {isOpportunitiesLoading ? (
+                  <Loader2 className="h-5 w-5 mt-0.5 shrink-0 animate-spin" />
+                ) : (
+                  <Users className="h-5 w-5 mt-0.5 shrink-0 text-slate-500" />
+                )}
                 <p className="text-sm font-medium text-slate-300">
-                  {event.key_individuals.length} Key Individual(s) Identified
+                  {opportunityCount > 0
+                    ? `${opportunityCount} Opportunit${opportunityCount > 1 ? 'ies' : 'y'}`
+                    : `${individualCount} Key Individual(s)`}{' '}
+                  Identified
                 </p>
               </div>
             </Button>
@@ -8859,11 +9395,183 @@ export function EventListWrapper({
 
 ```
 
-## 📄 src/components/client/events/KeyIndividualsDialog.jsx
-*Lines: 67, Size: 2.33 KB*
+## 📄 src/components/client/events/EventModal.jsx
+*Lines: 166, Size: 5.62 KB*
 
 ```jsx
-// apps/client/src/components/client/events/KeyIndividualsDialog.jsx (NEW FILE)
+// File: apps/client/src/components/client/events/EventModal.jsx
+
+'use client'
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  ScrollArea,
+  Badge,
+} from '@/components/shared'
+import {
+  Zap,
+  Users,
+  Mail,
+  Briefcase,
+  Building,
+  ExternalLink,
+  AlertCircle,
+} from 'lucide-react'
+import { getCountryFlag } from '@headlines/utils-shared'
+
+function EventDetail({ event }) {
+  if (!event) return null
+
+  const flags = (event.country || []).map((c) => getCountryFlag(c)).join(' ')
+  const score = event.highest_relevance_score || 0
+
+  const getRelevanceBadgeClass = (score) => {
+    if (score >= 90) return 'bg-red-500/20 text-red-300 border border-red-500/30'
+    if (score >= 75) return 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+    return 'bg-slate-500/20 text-slate-300 border border-slate-500/30'
+  }
+
+  return (
+    <div className="p-4 border-b border-slate-700 last:border-b-0 space-y-4">
+      {/* Header */}
+      <div className="flex justify-between items-start gap-3">
+        <div className="flex-1 space-y-2">
+          <h3 className="font-serif font-bold text-lg text-slate-100 leading-tight">
+            {flags && <span className="text-xl mr-2 align-middle">{flags}</span>}
+            {event.synthesized_headline}
+          </h3>
+          {event.eventClassification && (
+            <Badge
+              variant="outline"
+              className="border-yellow-500/30 text-yellow-300 bg-yellow-500/10"
+            >
+              {event.eventClassification}
+            </Badge>
+          )}
+        </div>
+        <Badge
+          className={`text-base font-bold px-3 py-1 ${getRelevanceBadgeClass(score)}`}
+        >
+          {score}
+        </Badge>
+      </div>
+
+      {/* Summary */}
+      <p className="text-sm text-slate-300 leading-relaxed">
+        {event.synthesized_summary || 'No summary available.'}
+      </p>
+
+      {/* AI Assessment */}
+      {event.ai_assessment_reason && (
+        <div className="flex items-start gap-2 text-xs text-slate-500 italic p-2 bg-slate-800/30 rounded-md">
+          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+          <p>{event.ai_assessment_reason}</p>
+        </div>
+      )}
+
+      {/* Key Individuals */}
+      {event.key_individuals && event.key_individuals.length > 0 && (
+        <div className="space-y-2">
+          <h4 className="font-semibold text-sm text-slate-400">Key Individuals</h4>
+          {event.key_individuals.map((person, index) => (
+            <div key={index} className="p-2 rounded-md bg-slate-800/50 text-sm">
+              <p className="font-semibold text-slate-200 flex items-center gap-2">
+                <Users className="h-4 w-4 text-slate-500" /> {person.name}
+              </p>
+              <div className="pl-6 space-y-1 mt-1 text-slate-400">
+                {person.role_in_event && (
+                  <p className="flex items-center gap-2 text-xs">
+                    <Briefcase className="h-3 w-3" /> {person.role_in_event}
+                  </p>
+                )}
+                {person.company && (
+                  <p className="flex items-center gap-2 text-xs">
+                    <Building className="h-3 w-3" /> {person.company}
+                  </p>
+                )}
+                {person.email_suggestion && (
+                  <a
+                    href={`mailto:${person.email_suggestion}`}
+                    className="flex items-center gap-2 text-xs text-blue-400 hover:underline"
+                  >
+                    <Mail className="h-3 w-3" /> {person.email_suggestion}
+                  </a>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Source Articles */}
+      {event.source_articles && event.source_articles.length > 0 && (
+        <div>
+          <h4 className="font-semibold text-sm text-slate-400 mb-2">Source Articles</h4>
+          <div className="flex flex-wrap gap-2">
+            {event.source_articles.map((article) => (
+              <a
+                href={article.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                key={article.link}
+              >
+                <Badge variant="secondary" className="hover:bg-slate-700">
+                  {article.newspaper}
+                  <ExternalLink className="h-3 w-3 ml-1.5" />
+                </Badge>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function EventModal({ events = [], open, onOpenChange }) {
+  const eventCount = events.length
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-3xl w-[95vw] h-[80vh] flex flex-col bg-slate-900 border-slate-700">
+        <DialogHeader className="p-6 border-b border-slate-700">
+          <DialogTitle className="text-2xl text-slate-100 flex items-center gap-2">
+            <Zap className="h-6 w-6 text-blue-400" />
+            Synthesized Events
+          </DialogTitle>
+          <DialogDescription className="text-slate-400">
+            {eventCount > 0
+              ? `Displaying ${eventCount} event${eventCount > 1 ? 's' : ''} matching the criteria.`
+              : 'No events found.'}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex-grow min-h-0">
+          <ScrollArea className="h-full">
+            {eventCount > 0 ? (
+              events.map((event) => <EventDetail key={event._id} event={event} />)
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-500">
+                <p>No events to display.</p>
+              </div>
+            )}
+          </ScrollArea>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+```
+
+## 📄 src/components/client/events/KeyIndividualsDialog.jsx
+*Lines: 67, Size: 2.32 KB*
+
+```jsx
+// apps/client/src/components/client/events/KeyIndividualsDialog.jsx
 'use client'
 
 import {
@@ -8933,21 +9641,27 @@ export function KeyIndividualsDialog({ individuals, open, onOpenChange }) {
 ```
 
 ## 📄 src/components/client/events/SynthesizedEventCard.jsx
-*Lines: 117, Size: 3.98 KB*
+*Lines: 160, Size: 5.49 KB*
 
 ```jsx
-// File: apps/client/src/components/client/events/SynthesizedEventCard.jsx (CORRECTED)
+// apps/client/src/components/client/events/SynthesizedEventCard.jsx
 'use client'
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { AccordionContent, AccordionItem, ConfirmationDialog } from '@/components/shared'
+import {
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+  ConfirmationDialog,
+} from '@/components/shared'
 import useAppStore from '@/lib/store/use-app-store'
 import { SwipeToDelete } from '../shared/SwipeToDelete'
 import { EventCardDesktop } from './EventCardDesktop'
 import { EventCardMobile } from './EventCardMobile'
 import { EventCardDetails } from './EventCardDetails'
-import { KeyIndividualsDialog } from './KeyIndividualsDialog'
+import { OpportunityModal } from '../opportunities/OpportunityModal'
+import { ArticleModal } from '../articles/ArticleModal'
 import { useAuth } from '@/lib/auth/client'
 import { toast } from 'sonner'
 
@@ -8959,7 +9673,11 @@ export const SynthesizedEventCard = ({
 }) => {
   const [isPending, startTransition] = useTransition()
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false)
-  const [isIndividualsDialogOpen, setIsIndividualsDialogOpen] = useState(false) // State is here
+  const [isArticlesModalOpen, setIsArticlesModalOpen] = useState(false)
+  const [isOpportunitiesModalOpen, setIsOpportunitiesModalOpen] = useState(false)
+  const [opportunitiesForModal, setOpportunitiesForModal] = useState([])
+  const [isOpportunitiesLoading, setIsLoadingOpportunities] = useState(false)
+
   const setChatContextPrompt = useAppStore((state) => state.setChatContextPrompt)
   const router = useRouter()
   const { user } = useAuth()
@@ -8990,19 +9708,43 @@ export const SynthesizedEventCard = ({
     onFavoriteToggle(event._id, !isFavorited)
   }
 
-  // DEFINITIVE FIX: This handler now correctly opens the dialog.
-  const handleShowIndividuals = (e) => {
-    e.stopPropagation() // Prevent the main accordion from toggling
-    setIsIndividualsDialogOpen(true)
+  const handleShowArticles = (e) => {
+    e.stopPropagation()
+    setIsArticlesModalOpen(true)
+  }
+
+  const handleShowOpportunities = async (e) => {
+    if (e) e.stopPropagation()
+    setIsLoadingOpportunities(true)
+    try {
+      const res = await fetch(`/api/events/${event._id}`)
+      if (!res.ok) throw new Error('Failed to fetch event details')
+      const result = await res.json()
+      setOpportunitiesForModal(result.data.relatedOpportunities || [])
+      setIsOpportunitiesModalOpen(true)
+    } catch (error) {
+      toast.error('Could not load opportunities', { description: error.message })
+    } finally {
+      setIsLoadingOpportunities(false)
+    }
+  }
+
+  // This handler is now for the dedicated opportunities/individuals button.
+  const handleShowContent = (e) => {
+    e.stopPropagation()
+    if (isPending || isOpportunitiesLoading) return
+    if ((event.relatedOpportunities?.length || 0) > 0 && onShowOpportunities) {
+      handleShowOpportunities(e)
+    }
   }
 
   return (
     <>
-      <div className="relative w-full">
-        <AccordionItem
-          value={event.event_key}
-          className={`relative border-none rounded-xl overflow-hidden transition-all duration-300 ${isPending ? 'opacity-50' : ''}`}
-        >
+      <AccordionItem
+        value={event.event_key}
+        className={`relative border-none rounded-xl overflow-hidden transition-all duration-300 ${isPending ? 'opacity-50' : ''}`}
+      >
+        <div className="relative">
           <SwipeToDelete onDelete={performDelete} onSwipeRight={handleSwipeRight}>
             <div className="relative p-4">
               <EventCardMobile
@@ -9010,7 +9752,8 @@ export const SynthesizedEventCard = ({
                 onChat={handleChatAboutEvent}
                 onDelete={performDelete}
                 onFavorite={handleFavorite}
-                onShowIndividuals={handleShowIndividuals} // Pass the handler
+                onShowOpportunities={handleShowContent}
+                isOpportunitiesLoading={isOpportunitiesLoading}
                 isFavorited={isFavorited}
                 isPending={isPending}
               />
@@ -9019,23 +9762,31 @@ export const SynthesizedEventCard = ({
                 onChat={handleChatAboutEvent}
                 onDelete={performDelete}
                 onFavorite={handleFavorite}
-                onShowIndividuals={handleShowIndividuals} // Pass the handler
+                onShowOpportunities={handleShowContent}
+                isOpportunitiesLoading={isOpportunitiesLoading}
                 isFavorited={isFavorited}
                 isPending={isPending}
               />
             </div>
           </SwipeToDelete>
-          <AccordionContent className="p-4 pt-0 bg-slate-900/50">
-            <EventCardDetails event={event} />
-          </AccordionContent>
-        </AccordionItem>
-      </div>
+          {/* This trigger is now separate and positioned over the card */}
+          <AccordionTrigger className="absolute top-1/2 -translate-y-1/2 right-2 z-20 h-9 w-9 p-0 flex-none justify-center rounded-full bg-slate-800/60 hover:bg-slate-700/80 data-[state=open]:bg-slate-700 text-slate-400 hover:text-white" />
+        </div>
+        <AccordionContent className="p-4 pt-0 bg-slate-900/50">
+          <EventCardDetails event={event} onShowArticles={handleShowArticles} />
+        </AccordionContent>
+      </AccordionItem>
 
-      {/* DEFINITIVE FIX: Render the dialog and control it with state */}
-      <KeyIndividualsDialog
-        individuals={event.key_individuals}
-        open={isIndividualsDialogOpen}
-        onOpenChange={setIsIndividualsDialogOpen}
+      <ArticleModal
+        articles={event.source_articles}
+        open={isArticlesModalOpen}
+        onOpenChange={setIsArticlesModalOpen}
+      />
+
+      <OpportunityModal
+        opportunities={opportunitiesForModal}
+        open={isOpportunitiesModalOpen}
+        onOpenChange={setIsOpportunitiesModalOpen}
       />
 
       <ConfirmationDialog
@@ -9056,10 +9807,10 @@ export const SynthesizedEventCard = ({
 ```
 
 ## 📄 src/components/client/opportunities/OpportunityCard.jsx
-*Lines: 187, Size: 7.16 KB*
+*Lines: 189, Size: 7.24 KB*
 
 ```jsx
-// File: apps/client/src/components/client/opportunities/OpportunityCard.jsx (Multi-country support)
+// File: apps/client/src/components/client/opportunities/OpportunityCard.jsx
 'use client'
 
 import { useState, useTransition } from 'react'
@@ -9076,12 +9827,12 @@ import {
 } from 'lucide-react'
 import { SwipeToDelete } from '../shared/SwipeToDelete'
 import { cn, getCountryFlag } from '@headlines/utils-shared'
-import { EventContextDialog } from '../events/EventContextDialog'
+import { EventModal } from '../events/EventModal' // MODIFIED: Import EventModal
 import Link from 'next/link'
 import useAppStore from '@/lib/store/use-app-store'
 
 export function OpportunityCard({ opportunity, onDelete }) {
-  const [isEventDialogOpen, setIsEventDialogOpen] = useState(false)
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false) // MODIFIED: State for new modal
   const [isPending, startTransition] = useTransition()
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const skipConfirmation = useAppStore(
@@ -9102,14 +9853,13 @@ export function OpportunityCard({ opportunity, onDelete }) {
     }
   }
 
-  const sourceEvent =
-    opportunity.events && opportunity.events.length > 0 ? opportunity.events[0] : null
+  const hasEvents = opportunity.events && opportunity.events.length > 0
   const { contactDetails } = opportunity
   const isPremiumOpportunity = opportunity.likelyMMDollarWealth > 49
   const reasonsToContact = Array.isArray(opportunity.whyContact)
     ? opportunity.whyContact
     : [opportunity.whyContact]
-  const flags = (opportunity.basedIn || []).map((c) => getCountryFlag(c)).join(' ') // MODIFIED
+  const flags = (opportunity.basedIn || []).map((c) => getCountryFlag(c)).join(' ')
 
   return (
     <>
@@ -9136,10 +9886,10 @@ export function OpportunityCard({ opportunity, onDelete }) {
                     {(opportunity.city || opportunity.basedIn) && (
                       <p className="text-xs text-slate-400 flex items-center gap-2 pl-6">
                         <MapPin className="h-3 w-3" />
-                        <span className="text-base mr-1">{flags}</span> {/* MODIFIED */}
+                        <span className="text-base mr-1">{flags}</span>
                         {opportunity.city}
                         {opportunity.city && opportunity.basedIn ? ', ' : ''}
-                        {(opportunity.basedIn || []).join(', ')} {/* MODIFIED */}
+                        {(opportunity.basedIn || []).join(', ')}
                       </p>
                     )}
                   </div>
@@ -9202,7 +9952,7 @@ export function OpportunityCard({ opportunity, onDelete }) {
                 ))}
               </div>
             </div>
-            {sourceEvent && (
+            {hasEvents && (
               <div className="pt-3 mt-3 border-t border-slate-700/50">
                 <Button
                   variant="ghost"
@@ -9210,14 +9960,17 @@ export function OpportunityCard({ opportunity, onDelete }) {
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
-                    setIsEventDialogOpen(true)
+                    setIsEventModalOpen(true)
                   }}
                 >
                   <Zap className="h-4 w-4 mr-3 text-blue-400 flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-xs text-slate-400">View Parent Event:</p>
+                    <p className="text-xs text-slate-400">
+                      View {opportunity.events.length} Related Event
+                      {opportunity.events.length > 1 ? 's' : ''}:
+                    </p>
                     <p className="text-sm font-semibold text-slate-200 truncate">
-                      {sourceEvent.synthesized_headline}
+                      {opportunity.events[0].synthesized_headline}
                     </p>
                   </div>
                 </Button>
@@ -9226,11 +9979,11 @@ export function OpportunityCard({ opportunity, onDelete }) {
           </div>
         </SwipeToDelete>
       </Card>
-      {sourceEvent && (
-        <EventContextDialog
-          event={sourceEvent}
-          open={isEventDialogOpen}
-          onOpenChange={setIsEventDialogOpen}
+      {hasEvents && (
+        <EventModal
+          events={opportunity.events}
+          open={isEventModalOpen}
+          onOpenChange={setIsEventModalOpen}
         />
       )}
       <ConfirmationDialog
@@ -9281,6 +10034,170 @@ export function OpportunityListWrapper({ items, onDelete }) {
         ))}
       </AnimatePresence>
     </AnimatedList>
+  )
+}
+
+```
+
+## 📄 src/components/client/opportunities/OpportunityModal.jsx
+*Lines: 158, Size: 5.36 KB*
+
+```jsx
+// File: apps/client/src/components/client/opportunities/OpportunityModal.jsx
+
+'use client'
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  ScrollArea,
+  Badge,
+} from '@/components/shared'
+import {
+  User,
+  Briefcase,
+  MapPin,
+  Mail,
+  Zap,
+  MessageSquare,
+  ExternalLink,
+} from 'lucide-react'
+import { getCountryFlag } from '@headlines/utils-shared'
+import Link from 'next/link'
+
+function OpportunityDetail({ opportunity }) {
+  if (!opportunity) return null
+
+  const flags = (opportunity.basedIn || []).map((c) => getCountryFlag(c)).join(' ')
+  const reasonsToContact = Array.isArray(opportunity.whyContact)
+    ? opportunity.whyContact
+    : [opportunity.whyContact]
+
+  return (
+    <div className="p-4 border-b border-slate-700 last:border-b-0">
+      {/* Header */}
+      <div className="flex justify-between items-start gap-3 mb-3">
+        <div className="flex-1 space-y-1">
+          <p className="font-bold text-lg text-slate-100 flex items-center gap-2">
+            <User className="h-5 w-5 text-slate-400" />
+            {opportunity.reachOutTo}
+          </p>
+          <div className="pl-7 space-y-1 text-sm text-slate-400">
+            {opportunity.contactDetails?.role && opportunity.contactDetails?.company && (
+              <p className="flex items-center gap-2">
+                <Briefcase className="h-4 w-4 text-slate-500" />
+                <span>
+                  {opportunity.contactDetails.role} at{' '}
+                  <strong>{opportunity.contactDetails.company}</strong>
+                </span>
+              </p>
+            )}
+            {(opportunity.city || opportunity.basedIn?.length > 0) && (
+              <p className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-slate-500" />
+                <span className="text-base mr-1">{flags}</span>
+                {opportunity.city}
+                {opportunity.city && opportunity.basedIn?.length > 0 ? ', ' : ''}
+                {(opportunity.basedIn || []).join(', ')}
+              </p>
+            )}
+            {opportunity.contactDetails?.email && (
+              <a
+                href={`mailto:${opportunity.contactDetails.email}`}
+                className="flex items-center gap-2 text-blue-400 hover:underline"
+              >
+                <Mail className="h-4 w-4 text-slate-500" />
+                {opportunity.contactDetails.email}
+              </a>
+            )}
+          </div>
+        </div>
+        {opportunity.likelyMMDollarWealth > 0 && (
+          <Badge
+            variant="outline"
+            className="text-base border-green-500/50 text-green-300"
+          >
+            ${opportunity.likelyMMDollarWealth}M
+          </Badge>
+        )}
+      </div>
+
+      {/* Why Contact */}
+      <div className="space-y-2 mb-3">
+        {reasonsToContact.map((reason, index) => (
+          <div
+            key={index}
+            className="flex items-start gap-2 text-sm text-slate-300 italic"
+          >
+            <MessageSquare className="h-4 w-4 mt-0.5 text-slate-500 flex-shrink-0" />
+            <p>“{reason}”</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Related Events */}
+      {opportunity.events && opportunity.events.length > 0 && (
+        <div className="space-y-2">
+          <h4 className="font-semibold text-sm text-slate-400 flex items-center gap-2">
+            <Zap className="h-4 w-4" />
+            Related Events
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            {opportunity.events.map((event) => (
+              <Link href={`/events#${event._id}`} key={event._id} legacyBehavior>
+                <a className="block">
+                  <Badge
+                    variant="secondary"
+                    className="hover:bg-slate-700 cursor-pointer"
+                  >
+                    {event.synthesized_headline}
+                    <ExternalLink className="h-3 w-3 ml-1.5" />
+                  </Badge>
+                </a>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function OpportunityModal({ opportunities = [], open, onOpenChange }) {
+  const opportunityCount = opportunities.length
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-2xl w-[95vw] h-[80vh] flex flex-col bg-slate-900 border-slate-700">
+        <DialogHeader className="p-6 border-b border-slate-700">
+          <DialogTitle className="text-2xl text-slate-100 flex items-center gap-2">
+            <Briefcase className="h-6 w-6 text-green-400" />
+            Actionable Opportunities
+          </DialogTitle>
+          <DialogDescription className="text-slate-400">
+            {opportunityCount > 0
+              ? `Found ${opportunityCount} opportunity${opportunityCount > 1 ? 's' : ''} matching the criteria.`
+              : 'No opportunities found.'}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex-grow min-h-0">
+          <ScrollArea className="h-full">
+            {opportunityCount > 0 ? (
+              opportunities.map((opp) => (
+                <OpportunityDetail key={opp._id} opportunity={opp} />
+              ))
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-500">
+                <p>No opportunities to display.</p>
+              </div>
+            )}
+          </ScrollArea>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -9621,10 +10538,10 @@ export function ClientRedirect({ destination }) {
 ```
 
 ## 📄 src/components/client/shared/DataView.jsx
-*Lines: 184, Size: 6.3 KB*
+*Lines: 186, Size: 6.47 KB*
 
 ```jsx
-// File: client/src/components/client/shared/DataView.jsx
+// apps/client/src/components/client/shared/DataView.jsx
 'use client'
 
 import { useMemo, Suspense, useEffect } from 'react'
@@ -9648,6 +10565,7 @@ async function fetchData({ queryKey, pageParam = 1 }) {
   if (params.sort) urlParams.set('sort', params.sort)
   if (params.q) urlParams.set('q', params.q)
   if (params.withEmail) urlParams.set('withEmail', 'true')
+  if (params.country) urlParams.set('country', params.country) // ADDED
 
   const res = await fetch(`/api/${queryKeyPrefix}?${urlParams.toString()}`)
   if (!res.ok) throw new Error('Network response was not ok')
@@ -9698,10 +10616,11 @@ export function DataView({
   const q = searchParams.get('q') || ''
   const sort = searchParams.get('sort') || sortOptions[0].value
   const withEmail = searchParams.get('withEmail') === 'true'
+  const country = searchParams.get('country') || '' // ADDED
 
   const memoizedSearchParams = useMemo(
-    () => ({ q, sort, withEmail }),
-    [q, sort, withEmail]
+    () => ({ q, sort, withEmail, country }), // MODIFIED
+    [q, sort, withEmail, country] // MODIFIED
   )
   const listQueryKey = useMemo(
     () => [queryKeyPrefix, memoizedSearchParams],
@@ -14073,7 +14992,7 @@ export function SplashScreen() {
 ```
 
 ## 📄 src/components/shared/screen/ViewHeader.jsx
-*Lines: 149, Size: 5.2 KB*
+*Lines: 151, Size: 5.29 KB*
 
 ```jsx
 // packages/ui/src/ViewHeader.jsx
@@ -14107,14 +15026,13 @@ export function ViewHeader({
   sortOptions,
   allCountries = [],
   globalCountryFilter = [],
-  viewCountry,
-  onViewCountryChange,
 }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
   const currentSort = searchParams.get('sort') || 'date_desc'
+  const currentCountry = searchParams.get('country') || 'all'
   const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '')
   const debouncedSearchTerm = useDebounce(searchTerm, 500)
 
@@ -14153,7 +15071,10 @@ export function ViewHeader({
       </div>
       <div className="w-full flex flex-col sm:flex-row items-center gap-4">
         <div className="flex w-full sm:w-auto items-center gap-2">
-          <Select value={viewCountry} onValueChange={onViewCountryChange}>
+          <Select
+            value={currentCountry}
+            onValueChange={(value) => handleUrlParamChange('country', value)}
+          >
             <SelectTrigger className="w-full sm:w-[200px] h-12 bg-slate-900/80 border-slate-700">
               <SelectValue placeholder="View Country..." />
             </SelectTrigger>
@@ -14956,7 +15877,7 @@ export async function handleExport(entity, fileType, filters, sort) {
 ```
 
 ## 📄 src/lib/api-handler.js
-*Lines: 72, Size: 2.02 KB*
+*Lines: 76, Size: 2.27 KB*
 
 ```javascript
 // apps/client/src/lib/api-handler.js
@@ -14996,9 +15917,13 @@ export function createApiHandler(handler) {
 
 export function createClientApiHandler(handler) {
   return async (request, context) => {
+    console.log('🔷 [createClientApiHandler] Starting request:', request.nextUrl.pathname)
     let userPayload = null
     try {
+      console.log('🔷 [createClientApiHandler] About to call dbConnect()...')
       await dbConnect()
+      console.log('🔷 [createClientApiHandler] dbConnect() completed successfully')
+
       const { user, error: authError } = await verifySession()
       if (!user) {
         return NextResponse.json(

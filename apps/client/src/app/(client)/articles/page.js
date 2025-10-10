@@ -1,7 +1,6 @@
 // apps/client/src/app/(client)/articles/page.js
 import { DataView } from '@/components/client/shared/DataView'
-import { getArticles } from '@headlines/data-access/next'
-import { getUserIdFromSession } from '@/lib/auth/server'
+import { fetchServerSideData } from '@/lib/data/fetchServerSideData' // Import the new helper
 
 export const dynamic = 'force-dynamic'
 
@@ -11,22 +10,14 @@ const sortOptions = [
 ]
 
 export default async function ArticlesPage({ searchParams }) {
-  const userId = await getUserIdFromSession()
-  let initialArticles = []
+  const { q, sort = 'date_desc' } = searchParams
 
-  if (userId) {
-    try {
-      const filters = { q: searchParams.q || '' }
-      const sort = searchParams.sort || 'date_desc'
-
-      const result = await getArticles({ page: 1, filters, sort, userId })
-      if (result.success) {
-        initialArticles = result.data
-      }
-    } catch (err) {
-      console.error('[ArticlesPage] Failed to fetch initial data:', err.message)
-    }
-  }
+  // Use the helper to fetch data, encapsulating the try/catch and fetch logic.
+  const { data: initialArticles } = await fetchServerSideData('/api/articles', {
+    page: '1',
+    sort,
+    q,
+  })
 
   return (
     <DataView

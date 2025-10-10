@@ -1,4 +1,4 @@
-// apps/client/src/components/client/events/KeyIndividualsDialog.jsx (NEW FILE)
+// apps/client/src/components/client/events/KeyIndividualsDialog.jsx
 'use client'
 
 import {

@@ -1,68 +1,43 @@
 // apps/client/src/app/admin/watchlist/actions.js
 'use server'
 
-import { revalidatePath } from 'next/cache'
-import dbConnect from '@headlines/data-access/dbConnect/next'
+import { createAdminAction } from '@/lib/actions/createAdminAction'
 import {
   createWatchlistEntity,
   updateWatchlistEntity,
   deleteWatchlistEntity,
   processWatchlistSuggestion,
   updateWatchlistSuggestion,
-} from '@headlines/data-access'
+} from '@headlines/data-access/next'
 import { watchlistEntitySchema } from '@headlines/models/schemas'
 
-export async function createEntityAction(entityData) {
+export const createEntityAction = createAdminAction(async (entityData) => {
   const validation = watchlistEntitySchema.safeParse(entityData)
   if (!validation.success) {
     return { success: false, error: 'Invalid data.', details: validation.error.flatten() }
   }
+  return createWatchlistEntity(validation.data)
+}, '/admin/watchlist')
 
-  await dbConnect()
-  const result = await createWatchlistEntity(validation.data)
-  if (result.success) {
-    revalidatePath('/admin/watchlist')
-  }
-  return result
-}
-
-export async function updateEntityAction(entityId, updateData) {
+export const updateEntityAction = createAdminAction(async (entityId, updateData) => {
   const validation = watchlistEntitySchema.partial().safeParse(updateData)
   if (!validation.success) {
     return { success: false, error: 'Invalid data.', details: validation.error.flatten() }
   }
+  return updateWatchlistEntity(entityId, validation.data)
+}, '/admin/watchlist')
 
-  await dbConnect()
-  const result = await updateWatchlistEntity(entityId, validation.data)
-  if (result.success) {
-    revalidatePath('/admin/watchlist')
-  }
-  return result
-}
+export const deleteEntityAction = createAdminAction(
+  deleteWatchlistEntity,
+  '/admin/watchlist'
+)
 
-export async function deleteEntityAction(entityId) {
-  await dbConnect()
-  const result = await deleteWatchlistEntity(entityId)
-  if (result.success) {
-    revalidatePath('/admin/watchlist')
-  }
-  return result
-}
+export const processSuggestionAction = createAdminAction(
+  processWatchlistSuggestion,
+  '/admin/watchlist'
+)
 
-export async function processSuggestionAction(suggestionId, action) {
-  await dbConnect()
-  const result = await processWatchlistSuggestion({ suggestionId, action })
-  if (result.success) {
-    revalidatePath('/admin/watchlist')
-  }
-  return result
-}
-
-export async function updateSuggestionAction(suggestionId, updateData) {
-  await dbConnect()
-  const result = await updateWatchlistSuggestion(suggestionId, updateData)
-  if (result.success) {
-    revalidatePath('/admin/watchlist')
-  }
-  return result
-}
+export const updateSuggestionAction = createAdminAction(
+  updateWatchlistSuggestion,
+  '/admin/watchlist'
+)

@@ -1,4 +1,9 @@
 // apps/pipeline/scripts/watchlist/list.js
+/**
+ * @command watchlist:list
+ * @group Watchlist
+ * @description List watchlist entities. Flags: --q <SearchQuery>
+ */
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import { initializeScriptEnv } from '../seed/lib/script-init.js'

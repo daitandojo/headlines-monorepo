@@ -21,6 +21,7 @@ const DEFAULTS = {
   LLM_MODEL_ARTICLE_ASSESSMENT: 'gpt-5-mini',
   LLM_MODEL_SYNTHESIS: 'gpt-5-mini',
   LLM_MODEL_UTILITY: 'gpt-5-nano',
+  LLM_MODEL_PRO: 'gpt-5'
 }
 
 export const settings = { ...DEFAULTS }

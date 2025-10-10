@@ -1,42 +1,13 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 134 files, 35 directories
+Total: 110 files, 30 directories
 
 ```
-headlines/
+headlines-monorepo/
 ├── 📁 .github/
 │   └── 📁 workflows/
 │       ├── 📄 fly-deploy.yml
 │       └── 📄 run-pipeline.yml
-├── 📁 backup/
-│   ├── 📁 2025-10-04T00-51-50/
-│   └── 📁 2025-10-04T00-58-07/
-│       └── 📁 haelpers/
-│           ├── 📄 articles.bson.gz
-│           ├── 📄 articles.metadata.json.gz
-│           ├── 📄 countries.bson.gz
-│           ├── 📄 countries.metadata.json.gz
-│           ├── 📄 opportunities.bson.gz
-│           ├── 📄 opportunities.metadata.json.gz
-│           ├── 📄 prelude.json.gz
-│           ├── 📄 push_subscriptions.bson.gz
-│           ├── 📄 push_subscriptions.metadata.json.gz
-│           ├── 📄 run_verdicts.bson.gz
-│           ├── 📄 run_verdicts.metadata.json.gz
-│           ├── 📄 settings.bson.gz
-│           ├── 📄 settings.metadata.json.gz
-│           ├── 📄 source_suggestions.bson.gz
-│           ├── 📄 source_suggestions.metadata.json.gz
-│           ├── 📄 sources.bson.gz
-│           ├── 📄 sources.metadata.json.gz
-│           ├── 📄 subscribers.bson.gz
-│           ├── 📄 subscribers.metadata.json.gz
-│           ├── 📄 synthesized_events.bson.gz
-│           ├── 📄 synthesized_events.metadata.json.gz
-│           ├── 📄 watchlist_entities.bson.gz
-│           ├── 📄 watchlist_entities.metadata.json.gz
-│           ├── 📄 watchlist_suggestions.bson.gz
-│           └── 📄 watchlist_suggestions.metadata.json.gz
 ├── 📁 scripts/
 │   ├── 📁 infrastructure/
 │   │   └── 📄 setFlySecrets.sh
@@ -103,7 +74,8 @@ headlines/
 │   ├── 📁 tools/
 │   │   ├── 📄 calculate-watchlist-hits.js
 │   │   ├── 📄 diagnose-stuck-articles.js
-│   │   └── 📄 get-db-stats.js
+│   │   ├── 📄 get-db-stats.js
+│   │   └── 📄 purge-external-collections.sh
 │   ├── 📁 watchlist/
 │   │   └── 📄 list.js
 │   ├── 📄 mongo-backup.sh
@@ -135,11 +107,10 @@ headlines/
 │   │   │   ├── 📄 constants.js
 │   │   │   ├── 📄 emailDispatcher.js
 │   │   │   └── 📄 index.js
-│   │   ├── 📁 notifications/
-│   │   │   ├── 📄 emailDispatcher.js
-│   │   │   ├── 📄 index.js
-│   │   │   └── 📄 pushService.js
-│   │   └── 📁 statistics/
+│   │   └── 📁 notifications/
+│   │       ├── 📄 emailDispatcher.js
+│   │       ├── 📄 index.js
+│   │       └── 📄 pushService.js
 │   ├── 📁 pipeline/
 │   │   ├── 📁 submodules/
 │   │   │   ├── 📁 commit/
@@ -177,9 +148,9 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-05T19:41:33.260Z
-**Repository Path**: /home/mark/Repos/projects/headlines/apps/pipeline
-**Total Files**: 109
+**Generated**: 2025-10-10T00:11:01.980Z
+**Repository Path**: /home/mark/Repos/projects/headlines-monorepo/apps/pipeline
+**Total Files**: 110
 **Package**: @headlines/pipeline@1.0.0
 
 
@@ -329,7 +300,7 @@ export default config;
 ```
 
 ## 📄 package.json
-*Lines: 58, Size: 2.62 KB*
+*Lines: 59, Size: 2.69 KB*
 
 ```json
 {
@@ -345,6 +316,7 @@ export default config;
     "db:seed:settings": "./run.sh scripts/seed/seed-settings.js",
     "db:seed:countries": "./run.sh scripts/seed/seed-countries.js",
     "db:seed:admin": "./run.sh scripts/seed/seed-admin-user.js",
+    "db:purge-external": "bash ./scripts/tools/purge-external-collections.sh",
     "maintenance:delete-today": "./run.sh scripts/maintenance/delete-today.js --",
     "maintenance:reprocess": "./run.sh scripts/maintenance/reprocess-lost-articles.js",
     "maintenance:fix-countries": "./run.sh scripts/maintenance/fix-event-countries.js",
@@ -1716,27 +1688,52 @@ runMigration()
 ```
 
 ## 📄 scripts/mongo-backup.sh
-*Lines: 59, Size: 1.54 KB*
+*Lines: 86, Size: 2.61 KB*
 
 ```bash
 #!/bin/bash
-# mongo-backup.sh (version 1.1 - Robust .env parsing)
-# This script dumps all relevant collections to a timestamped directory.
+# mongo-backup.sh (version 6.0 - Dynamic Collection Discovery)
+# This script discovers and dumps ALL collections from the database to a timestamped directory.
 
-# --- Configuration ---
-BACKUP_DIR="apps/pipeline/backup"
-TIMESTAMP=$(date +"%Y-%m-%dT%H-%M-%S")
-TARGET_DIR="$BACKUP_DIR/$TIMESTAMP"
-ENV_FILE="./.env"
+# --- Find the monorepo root in a completely robust way ---
+# Start from the script's own directory
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-# --- Pre-flight Checks & Robust .env Loading ---
-if [ ! -f "$ENV_FILE" ]; then
-    echo "❌ Error: .env file not found in the monorepo root."
+# Traverse up the directory tree until we find the 'pnpm-workspace.yaml' file
+while [[ "$DIR" != "/" ]]; do
+    if [ -f "$DIR/pnpm-workspace.yaml" ]; then
+        MONOREPO_ROOT="$DIR"
+        break
+    fi
+    DIR=$(dirname "$DIR")
+done
+
+if [ -z "$MONOREPO_ROOT" ]; then
+    echo "❌ Critical Error: Could not find the monorepo root by searching for 'pnpm-workspace.yaml'."
     exit 1
 fi
 
-# CORRECTED: Robustly export variables line-by-line, skipping comments and empty lines.
-set -a # Automatically export all variables
+# --- Configuration using absolute paths ---
+BACKUP_DIR="$MONOREPO_ROOT/apps/pipeline/backup"
+TIMESTAMP=$(date +"%Y-%m-%dT%H-%M-%S")
+TARGET_DIR="$BACKUP_DIR/$TIMESTAMP"
+ENV_FILE="$MONOREPO_ROOT/.env"
+
+# --- Pre-flight Checks ---
+if ! command -v mongosh &> /dev/null; then
+    echo "❌ Error: 'mongosh' command-line tool not found. Please install MongoDB Shell."
+    exit 1
+fi
+
+if [ ! -f "$ENV_FILE" ]; then
+    echo "❌ Error: .env file not found in the monorepo root."
+    echo "   - Script's calculated root path: $MONOREPO_ROOT"
+    echo "   - Script was expecting .env at: $ENV_FILE"
+    exit 1
+fi
+
+# Robustly export variables from the .env file
+set -a 
 source <(grep -v '^#' "$ENV_FILE" | sed -e '/^$/d' -e 's/\r$//')
 set +a
 
@@ -1751,23 +1748,25 @@ echo "Target directory: $TARGET_DIR"
 
 mkdir -p "$TARGET_DIR"
 
-# List of collections to back up
-COLLECTIONS=(
-    "articles"
-    "countries"
-    "opportunities"
-    "push_subscriptions"
-    "run_verdicts"
-    "settings"
-    "sources"
-    "source_suggestions"
-    "subscribers"
-    "synthesized_events"
-    "watchlist_entities"
-    "watchlist_suggestions"
-)
+# --- Dynamically discover all collections ---
+echo "Discovering all collections in the database..."
+# Use mongosh to execute a command that returns a space-separated list of collection names.
+COLLECTIONS=$(mongosh "$MONGO_URI" --quiet --eval "db.getCollectionNames().join(' ')")
 
-for collection in "${COLLECTIONS[@]}"; do
+if [ $? -ne 0 ] || [ -z "$COLLECTIONS" ]; then
+    echo "❌ Error: Failed to fetch collection names from the database."
+    exit 1
+fi
+
+echo "Found collections: $COLLECTIONS"
+echo ""
+
+for collection in $COLLECTIONS; do
+    # Ignore the system collection
+    if [ "$collection" == "system.views" ]; then
+        continue
+    fi
+
     echo "  -> Backing up collection: $collection..."
     mongodump --uri="$MONGO_URI" --collection="$collection" --out="$TARGET_DIR" --gzip
     if [ $? -ne 0 ]; then
@@ -1776,7 +1775,7 @@ for collection in "${COLLECTIONS[@]}"; do
     fi
 done
 
-echo "✅ Backup complete. All collections saved to $TARGET_DIR"
+echo "✅ Backup complete. All discovered collections saved to $TARGET_DIR"
 exit 0
 ```
 
@@ -7044,6 +7043,134 @@ async function getStats() {
 
 getStats()
 
+```
+
+## 📄 scripts/tools/purge-external-collections.sh
+*Lines: 122, Size: 3.7 KB*
+
+```bash
+    
+#!/bin/bash
+# purge-external-collections.sh (version 1.0)
+# This script identifies and deletes collections from the database that are NOT part of the monorepo's known schema.
+
+# --- Find the monorepo root in a completely robust way ---
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+while [[ "$DIR" != "/" ]]; do
+    if [ -f "$DIR/pnpm-workspace.yaml" ]; then
+        MONOREPO_ROOT="$DIR"
+        break
+    fi
+    DIR=$(dirname "$DIR")
+done
+
+if [ -z "$MONOREPO_ROOT" ]; then
+    echo "❌ Critical Error: Could not find the monorepo root by searching for 'pnpm-workspace.yaml'."
+    exit 1
+fi
+
+# --- Configuration and Pre-flight Checks ---
+ENV_FILE="$MONOREPO_ROOT/.env"
+
+if ! command -v mongosh &> /dev/null; then
+    echo "❌ Error: 'mongosh' command-line tool not found. Please install MongoDB Shell."
+    exit 1
+fi
+
+if [ ! -f "$ENV_FILE" ]; then
+    echo "❌ Error: .env file not found in the monorepo root."
+    exit 1
+fi
+
+set -a 
+source <(grep -v '^#' "$ENV_FILE" | sed -e '/^$/d' -e 's/\r$//')
+set +a
+
+if [ -z "$MONGO_URI" ]; then
+    echo "❌ Error: MONGO_URI is not set or could not be read from your .env file."
+    exit 1
+fi
+
+# --- Main Logic ---
+
+# 1. Define the list of collections that are known and should NOT be deleted.
+KNOWN_COLLECTIONS=(
+    "articles" "countries" "opportunities" "push_subscriptions" 
+    "run_verdicts" "settings" "sources" "source_suggestions" 
+    "subscribers" "synthesized_events" "watchlist_entities" "watchlist_suggestions"
+)
+
+echo "🔎 Analyzing database for external collections..."
+echo "Known monorepo collections that will be KEPT:"
+printf " - %s\n" "${KNOWN_COLLECTIONS[@]}"
+echo ""
+
+# 2. Get all collections currently in the database.
+ALL_COLLECTIONS=$(mongosh "$MONGO_URI" --quiet --eval "db.getCollectionNames().join(' ')")
+if [ $? -ne 0 ]; then
+    echo "❌ Error: Failed to fetch collection names from the database."
+    exit 1
+fi
+
+# 3. Calculate which collections to delete.
+COLLECTIONS_TO_DELETE=()
+for db_coll in $ALL_COLLECTIONS; do
+    # Ignore internal system collections
+    if [[ "$db_coll" == "system.views" ]]; then
+        continue
+    fi
+    
+    is_known=false
+    for known_coll in "${KNOWN_COLLECTIONS[@]}"; do
+        if [[ "$db_coll" == "$known_coll" ]]; then
+            is_known=true
+            break
+        fi
+    done
+
+    if [ "$is_known" = false ]; then
+        COLLECTIONS_TO_DELETE+=("$db_coll")
+    fi
+done
+
+# 4. Present for Confirmation
+if [ ${#COLLECTIONS_TO_DELETE[@]} -eq 0 ]; then
+    echo "✅ No external collections found. Your database is clean."
+    exit 0
+fi
+
+echo -e "\033[0;31m🚨 WARNING: DESTRUCTIVE ACTION 🚨\033[0m"
+echo "The following ${#COLLECTIONS_TO_DELETE[@]} collection(s) were found in your database but are NOT part of the monorepo:"
+printf " - \033[0;33m%s\033[0m\n" "${COLLECTIONS_TO_DELETE[@]}"
+echo ""
+echo "This action will permanently delete these collections and all their data."
+echo -e "It is highly recommended to run the backup script first: \033[0;36m./apps/pipeline/scripts/mongo-backup.sh\033[0m"
+echo ""
+
+read -p "To confirm, please type 'DELETE' and press [Enter]: " confirmation
+
+# 5. Execute Deletion
+if [ "$confirmation" != "DELETE" ]; then
+    echo "❌ Confirmation failed. Aborting operation."
+    exit 1
+fi
+
+echo ""
+echo "Confirmation received. Proceeding with deletion..."
+for collection_to_delete in "${COLLECTIONS_TO_DELETE[@]}"; do
+    echo "  -> Deleting collection: $collection_to_delete..."
+    mongosh "$MONGO_URI" --quiet --eval "db.getCollection('$collection_to_delete').drop()"
+    if [ $? -eq 0 ]; then
+        echo -e "     \033[0;32m✅ Dropped successfully.\033[0m"
+    else
+        echo -e "     \033[0;31m❌ Failed to drop collection.\033[0m"
+    fi
+done
+
+echo ""
+echo "✅ Purge operation complete."
+
+  
 ```
 
 ## 📄 scripts/watchlist/list.js

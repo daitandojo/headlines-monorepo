@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { SplashScreen } from '@/components/shared/screen/SplashScreen'
 import useAppStore from '../store/use-app-store'
+import { loginUser, signupUser } from '../api-client'
 
 export const AuthContext = createContext(null)
 
@@ -15,23 +16,20 @@ export function AuthProvider({ initialUser, children }) {
   const router = useRouter()
   const pathname = usePathname()
 
-  // This effect simply manages the loading screen visibility
   useEffect(() => {
-    // We can show the app as soon as we know the initial user state.
-    const timer = setTimeout(() => setIsLoading(false), 500) // Brief splash screen
+    const timer = setTimeout(() => setIsLoading(false), 500)
     return () => clearTimeout(timer)
   }, [])
 
-  // Effect for redirection logic
   useEffect(() => {
     if (isLoading) return
 
-    const isPublicPage = pathname === '/'
+    const isPublicPage = pathname === '/' || pathname.startsWith('/login')
     const isAdminPage = pathname.startsWith('/admin')
 
     if (!user && !isPublicPage) {
       router.push('/')
-    } else if (user && isPublicPage) {
+    } else if (user && (pathname === '/' || pathname === '/login')) {
       router.push('/events')
     } else if (user && user.role !== 'admin' && isAdminPage) {
       router.push('/events')
@@ -39,66 +37,51 @@ export function AuthProvider({ initialUser, children }) {
   }, [user, isLoading, pathname, router])
 
   const login = async (email, password) => {
-    // ... login logic ...
-    // On success:
-    // setUser(data.user)
-    // window.location.href = '/events'
-    // return true
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-      const data = await response.json()
-      if (response.ok) {
-        toast.success('Login successful!')
-        setUser(data.user)
-        window.location.href = '/events' // Force a hard reload
-        return true
-      } else {
-        toast.error('Login Failed', { description: data.error })
-        return false
-      }
-    } catch (error) {
-      toast.error('Login Failed', { description: 'Could not connect to the server.' })
-      return false
+    const result = await loginUser(email, password)
+    if (result.success) {
+      // Don't call setUser here, the page will hard reload
+      window.location.href = '/events'
+      return true
     }
+    return false
   }
 
   const signup = async (signupData) => {
-    // ... signup logic ...
-    try {
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(signupData),
-      })
-      const data = await response.json()
-      if (response.ok) {
-        toast.success('Account created successfully!')
-        setUser(data.user)
-        window.location.href = '/events' // Force a hard reload
-        return { success: true }
-      } else {
-        toast.error('Signup Failed', { description: data.error })
-        return { success: false, error: data.error }
-      }
-    } catch (error) {
-      toast.error('Signup Failed', { description: 'Could not connect to the server.' })
-      return { success: false, error: 'Network error' }
+    const result = await signupUser(signupData)
+    if (result.success) {
+      window.location.href = '/events'
+      return { success: true }
     }
+    return { success: false, error: result.error }
   }
 
   const logout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
     toast.info('You have been logged out.')
     setUser(null)
-    window.location.href = '/' // Force a hard reload
+    window.location.href = '/'
   }
 
   const updateUserPreferences = useCallback(async (updateData) => {
-    // ... remains the same
+    setUser((prev) => (prev ? { ...prev, ...updateData } : null)) // Optimistic update
+    try {
+      const response = await fetch('/api/user/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData),
+      })
+      const updatedUser = await response.json()
+      if (!response.ok) {
+        throw new Error(updatedUser.error || 'Failed to update preferences.')
+      }
+      setUser(updatedUser) // Update with confirmed data from server
+      toast.success('Preferences updated successfully.')
+    } catch (error) {
+      toast.error('Update Failed', { description: error.message })
+      // Revert optimistic update by refetching user session
+      const res = await fetch('/api/auth/session')
+      if (res.ok) setUser((await res.json()).user)
+    }
   }, [])
 
   const value = { user, isLoading, login, signup, logout, updateUserPreferences }

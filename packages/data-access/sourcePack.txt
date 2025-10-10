@@ -3,7 +3,7 @@
 Total: 30 files, 3 directories
 
 ```
-headlines/
+headlines-monorepo/
 ├── 📁 src/
 │   ├── 📁 core/
 │   │   ├── 📄 admin.js
@@ -41,8 +41,8 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-05T19:41:33.278Z
-**Repository Path**: /home/mark/Repos/projects/headlines/packages/data-access
+**Generated**: 2025-10-10T00:11:01.996Z
+**Repository Path**: /home/mark/Repos/projects/headlines-monorepo/packages/data-access
 **Total Files**: 30
 **Package**: @headlines/data-access@1.0.0
 **Description**: Shared, server-only data access logic for the Headlines monorepo.
@@ -783,7 +783,7 @@ export { sendItemByEmail }
 ```
 
 ## 📄 src/core/events.js
-*Lines: 106, Size: 3.25 KB*
+*Lines: 105, Size: 3.21 KB*
 
 ```javascript
 // packages/data-access/src/core/events.js
@@ -808,7 +808,6 @@ export async function getEvents({
 
   const [events, total] = await Promise.all([
     SynthesizedEvent.find(queryFilter)
-      .select('-synthesized_summary')
       .sort(sortOptions)
       .skip(skipAmount)
       .limit(EVENTS_PER_PAGE)
@@ -1920,73 +1919,189 @@ export default function dbConnect() {
 ```
 
 ## 📄 src/dbConnect.next.js
-*Lines: 12, Size: 447 Bytes*
+*Lines: 17, Size: 708 Bytes*
 
 ```javascript
-// packages/data-access/src/dbConnect.next.js
 import 'server-only'
 import { env } from '@headlines/config/next'
 import dbConnectCore from './dbConnectCore.js'
 import { logger } from '@headlines/utils-shared'
 
+console.log('📦 [dbConnect.next.js] Module loaded')
+
 // This is the Next.js-specific implementation of dbConnect.
 // It uses the core logic but provides the environment variables from the Next.js context.
 export default function dbConnect() {
-  return dbConnectCore(env.MONGO_URI, logger)
+  console.log('🟦 [dbConnect.next] Called at:', new Date().toISOString())
+  console.log('🟦 [dbConnect.next] About to call dbConnectCore...')
+  const result = dbConnectCore(env.MONGO_URI, logger)
+  console.log('🟦 [dbConnect.next] dbConnectCore returned, awaiting result...')
+  return result
 }
 
 ```
 
 ## 📄 src/dbConnectCore.js
-*Lines: 35, Size: 962 Bytes*
+*Lines: 142, Size: 5.28 KB*
 
 ```javascript
 // packages/data-access/src/dbConnectCore.js
 import mongoose from 'mongoose'
 
-// A weak map to cache the connection promise per URI
-const connectionCache = new WeakMap()
+/**
+ * Caching the mongoose connection on the `globalThis` object.
+ * This is necessary in a development environment with hot-reloading to prevent
+ * new connections from being created on every file change. In production,
+ * this will only run once.
+ */
+let cached = globalThis.mongoose
 
-// This is the core, environment-agnostic connection logic.
+if (!cached) {
+  cached = globalThis.mongoose = { conn: null, promise: null }
+}
+
+/**
+ * Core, environment-agnostic database connection logic.
+ * @param {string} MONGO_URI - MongoDB connection string
+ * @param {object} logger - Logger instance with info, error, and fatal methods
+ * @returns {Promise<typeof mongoose>} Mongoose connection instance
+ */
 export default async function dbConnectCore(MONGO_URI, logger) {
+  console.log('🔍 [dbConnectCore] Called at:', new Date().toISOString())
+  console.log('🔍 [dbConnectCore] Mongoose readyState:', mongoose.connection.readyState)
+  console.log('🔍 [dbConnectCore] Cached conn exists:', !!cached.conn)
+  console.log('🔍 [dbConnectCore] Cached promise exists:', !!cached.promise)
+
   if (!MONGO_URI) {
+    logger.fatal(
+      '[dbConnectCore] FATAL: MONGO_URI is missing. Check your .env file and environment configuration.'
+    )
     throw new Error('MONGO_URI must be provided to dbConnectCore.')
   }
 
-  if (mongoose.connection.readyState >= 1) {
-    return
-  }
-
-  // Use a cache to prevent multiple concurrent connection attempts
-  let connPromise = connectionCache.get(mongoose)
-  if (!connPromise) {
-    connPromise = mongoose.connect(MONGO_URI, { bufferCommands: false })
-    connectionCache.set(mongoose, connPromise)
-  }
-
-  try {
-    await connPromise
-  } catch (e) {
-    if (logger) {
-      logger.error({ err: e }, '[dbConnectCore] MongoDB connection failed.')
+  // If we already have a connection, check if it's still valid
+  if (cached.conn) {
+    const readyState = mongoose.connection.readyState
+    console.log('✅ [dbConnectCore] Using cached connection, readyState:', readyState)
+    // Verify the connection is still alive
+    // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
+    if (readyState === 1) {
+      return cached.conn
     } else {
-      console.error('[dbConnectCore] MongoDB connection failed.', e)
+      // Connection is stale, clear it
+      logger.warn(
+        '[dbConnectCore] Cached connection is stale (readyState: ' +
+          readyState +
+          '), reconnecting...'
+      )
+      cached.conn = null
+      cached.promise = null
     }
-    throw e
   }
+
+  // If a connection promise is not already in flight, create one.
+  if (!cached.promise) {
+    // Log a redacted URI to help debug connection string issues without exposing secrets.
+    const redactedURI = MONGO_URI.replace(/:([^:]+)@/, ':****@')
+    logger.info(`[dbConnectCore] Creating new database connection to: ${redactedURI}`)
+
+    // Increased timeouts significantly to handle slow initial connections in serverless environments.
+    const opts = {
+      serverSelectionTimeoutMS: 30000, // 30 seconds to find a server
+      socketTimeoutMS: 45000, // 45 seconds for a socket to timeout
+      bufferCommands: false, // Disable buffering - fail fast instead of buffering queries
+      maxPoolSize: 10, // Limit connection pool size
+      minPoolSize: 1, // Keep at least one connection alive
+    }
+
+    console.log('🔧 [dbConnectCore] Connection options:', JSON.stringify(opts, null, 2))
+
+    cached.promise = mongoose
+      .connect(MONGO_URI, opts)
+      .then((mongooseInstance) => {
+        console.log('✅ [dbConnectCore] Connection promise resolved!')
+        console.log(
+          '✅ [dbConnectCore] ReadyState after connect:',
+          mongoose.connection.readyState
+        )
+        logger.info('[dbConnectCore] ✅ New database connection established.')
+
+        // Set up connection event listeners for better debugging
+        mongoose.connection.on('disconnected', () => {
+          logger.warn('[dbConnectCore] ⚠️ Database connection lost.')
+          cached.conn = null
+          cached.promise = null
+        })
+
+        mongoose.connection.on('error', (err) => {
+          logger.error({ err }, '[dbConnectCore] Database connection error.')
+        })
+
+        return mongooseInstance
+      })
+      .catch((err) => {
+        console.error('❌ [dbConnectCore] Connection promise rejected:', err.message)
+        // Clear the promise so it can be retried
+        cached.promise = null
+        throw err
+      })
+
+    console.log('⏳ [dbConnectCore] Connection promise created, now awaiting...')
+  } else {
+    console.log(
+      '⏳ [dbConnectCore] Connection promise already exists, awaiting existing promise...'
+    )
+  }
+
+  // Await the connection promise and cache the connection object.
+  try {
+    console.log('⏳ [dbConnectCore] About to await connection promise...')
+    const startTime = Date.now()
+    cached.conn = await cached.promise
+    const elapsed = Date.now() - startTime
+    console.log(
+      `✅ [dbConnectCore] Connection promise awaited successfully in ${elapsed}ms`
+    )
+    console.log('✅ [dbConnectCore] Final readyState:', mongoose.connection.readyState)
+  } catch (e) {
+    console.error('❌ [dbConnectCore] Failed to await connection promise:', e.message)
+    // If the connection fails, clear the promise to allow for a retry on the next call.
+    cached.promise = null
+
+    const errorMessage =
+      'MongoDB connection failed. This is often due to an incorrect MONGO_URI, IP whitelist issues, or a firewall blocking the connection.'
+
+    if (logger) {
+      logger.error({ err: e }, `[dbConnectCore] ${errorMessage}`)
+    } else {
+      console.error(`[dbConnectCore] ${errorMessage}`, e)
+    }
+
+    // Create error with cause property for compatibility across Node.js versions
+    const error = new Error(errorMessage)
+    error.cause = e
+    throw error
+  }
+
+  console.log('🎯 [dbConnectCore] Returning connection')
+  return cached.conn
 }
 
 ```
 
 ## 📄 src/index.js
-*Lines: 110, Size: 5.63 KB*
+*Lines: 102, Size: 5.57 KB*
 
 ```javascript
 // packages/data-access/src/index.js
+// Node.js version - ALL functions are wrapped because Node.js apps
+// don't have Next.js API handler middleware that calls dbConnect()
 import dbConnect from './dbConnect.js'
 import * as core from './core/index.js'
 import { buildQuery } from './queryBuilder.js'
 import * as aiServices from '@headlines/ai-services/node'
+
+console.log('🟢 LOADING: data-access/index.js')
 
 const wrap =
   (fn) =>
@@ -1995,25 +2110,13 @@ const wrap =
     return fn(...args)
   }
 
-// --- Functions that are now correctly imported from ai-services ---
-export const generateChatTitle = async (...args) => {
-  await dbConnect()
-  return aiServices.generateChatTitle(...args)
-}
-export const addKnowledge = async (...args) => {
-  await dbConnect()
-  return aiServices.addKnowledge(...args)
-}
-export const processUploadedArticle = async (...args) => {
-  await dbConnect()
-  return aiServices.processUploadedArticle(...args)
-}
-export const suggestSections = async (...args) => {
-  await dbConnect()
-  return aiServices.suggestSections(...args)
-}
+// --- AI Services ---
+export const generateChatTitle = wrap(aiServices.generateChatTitle)
+export const addKnowledge = wrap(aiServices.addKnowledge)
+export const processUploadedArticle = wrap(aiServices.processUploadedArticle)
+export const suggestSections = wrap(aiServices.suggestSections)
 
-// --- All other pure data-access functions ---
+// --- All Data Access Functions (all wrapped for Node.js) ---
 export const createSubscriber = wrap(core.createSubscriber)
 export const updateSubscriber = wrap(core.updateSubscriber)
 export const deleteSubscriber = wrap(core.deleteSubscriber)
@@ -2095,7 +2198,7 @@ export { buildQuery }
 ```
 
 ## 📄 src/next.js
-*Lines: 126, Size: 6.08 KB*
+*Lines: 141, Size: 6.55 KB*
 
 ```javascript
 // packages/data-access/src/next.js
@@ -2106,6 +2209,18 @@ import { revalidatePath } from './revalidate.js'
 import { buildQuery } from './queryBuilder.js'
 import * as aiServices from '@headlines/ai-services/next'
 
+console.log('🔵 LOADING: data-access/next.js')
+
+/**
+ * IMPORTANT: The wrap() function is ONLY used for Server Actions and
+ * Server Components that call these functions directly.
+ *
+ * API route handlers already call dbConnect() in their middleware,
+ * so functions called from API routes should NOT be wrapped.
+ *
+ * However, Next.js Server Actions and Server Components DO need
+ * the wrapper since they don't go through the API handler middleware.
+ */
 const wrap =
   (fn) =>
   async (...args) => {
@@ -2113,15 +2228,11 @@ const wrap =
     return fn(...args)
   }
 
-// --- Functions that need AI services injected (now imported from ai-services) ---
-export const generateChatTitle = async (...args) => {
-  await dbConnect()
-  return aiServices.generateChatTitle(...args)
-}
-export const addKnowledge = async (...args) => {
-  await dbConnect()
-  return aiServices.addKnowledge(...args)
-}
+// --- AI Services (wrapped for Server Actions/Components) ---
+export const generateChatTitle = wrap(aiServices.generateChatTitle)
+export const addKnowledge = wrap(aiServices.addKnowledge)
+export const suggestSections = wrap(aiServices.suggestSections)
+
 export const processUploadedArticle = async (...args) => {
   await dbConnect()
   const result = await aiServices.processUploadedArticle(...args)
@@ -2131,86 +2242,84 @@ export const processUploadedArticle = async (...args) => {
   }
   return result
 }
-export const suggestSections = async (...args) => {
-  await dbConnect()
-  return aiServices.suggestSections(...args)
-}
 
-// --- All other functions that don't need AI services ---
-export const createSubscriber = wrap(core.createSubscriber)
-export const updateSubscriber = wrap(core.updateSubscriber)
-export const deleteSubscriber = wrap(core.deleteSubscriber)
-export const createCountry = wrap(core.createCountry)
-export const updateCountry = wrap(core.updateCountry)
-export const createSource = wrap(core.createSource)
-export const updateSource = wrap(core.updateSource)
-export const getAllCountries = wrap(core.getAllCountries)
-export const findSubscribers = wrap(core.findSubscribers)
-export const getAllSubscribers = wrap(core.getAllSubscribers)
-export const getAllSources = wrap(core.getAllSources)
-export const getAllWatchlistEntities = wrap(core.getAllWatchlistEntities)
-export const getSuggestions = wrap(core.getSuggestions)
-export const getArticles = wrap(core.getArticles)
-export const findArticles = wrap(core.findArticles)
-export const updateArticles = wrap(core.updateArticles)
-export const getTotalArticleCount = wrap(core.getTotalArticleCount)
-export const updateArticle = wrap(core.updateArticle)
-export const deleteArticle = wrap(core.deleteArticle)
-export const getArticleDetails = wrap(core.getArticleDetails)
-export const createSubscriberWithPassword = wrap(core.createSubscriberWithPassword)
-export const updateSubscriberPassword = wrap(core.updateSubscriberPassword)
-export const loginUser = wrap(core.loginUser)
-export const getDashboardStats = wrap(core.getDashboardStats)
-export const getDistinctCountries = wrap(core.getDistinctCountries)
-export const getGlobalCountries = wrap(core.getGlobalCountries)
-export const getPublicTickerEvents = wrap(core.getPublicTickerEvents)
-export const getEvents = wrap(core.getEvents)
-export const findEvents = wrap(core.findEvents)
-export const updateEvents = wrap(core.updateEvents)
-export const getEventDetails = wrap(core.getEventDetails)
-export const updateEvent = wrap(core.updateEvent)
-export const deleteEvent = wrap(core.deleteEvent)
-export const getTotalEventCount = wrap(core.getTotalEventCount)
-export const generateExport = wrap(core.generateExport)
-export const getDistinctOpportunityFields = wrap(core.getDistinctOpportunityFields)
-export const updateOpportunities = wrap(core.updateOpportunities)
-export const getTotalOpportunitiesCount = wrap(core.getTotalOpportunitiesCount)
-export const getOpportunities = wrap(core.getOpportunities)
-export const getOpportunityDetails = wrap(core.getOpportunityDetails)
-export const updateOpportunity = wrap(core.updateOpportunity)
-export const deleteOpportunity = wrap(core.deleteOpportunity)
-export const updateSourceAnalyticsBatch = wrap(core.updateSourceAnalyticsBatch)
-export const findSourcesForScraping = wrap(core.findSourcesForScraping)
-export const performHousekeeping = wrap(core.performHousekeeping)
-export const bulkWriteEvents = wrap(core.bulkWriteEvents)
-export const bulkWriteArticles = wrap(core.bulkWriteArticles)
-export const findEventsByKeys = wrap(core.findEventsByKeys)
-export const findArticlesByLinks = wrap(core.findArticlesByLinks)
-export const getActiveWatchlistEntityNames = wrap(core.getActiveWatchlistEntityNames)
-export const bulkWriteWatchlistSuggestions = wrap(core.bulkWriteWatchlistSuggestions)
-export const linkOpportunityToEvent = wrap(core.linkOpportunityToEvent)
-export const unlinkOpportunityFromEvent = wrap(core.unlinkOpportunityFromEvent)
-export const getSettings = wrap(core.getSettings)
-export const upsertSubscriber = wrap(core.upsertSubscriber)
-export const getAllPushSubscriptions = wrap(core.getAllPushSubscriptions)
-export const deletePushSubscription = wrap(core.deletePushSubscription)
-export const getCurrentSubscriber = wrap(core.getCurrentSubscriber)
-export const savePushSubscription = wrap(core.savePushSubscription)
-export const updateUserProfile = wrap(core.updateUserProfile)
-export const updateUserInteraction = wrap(core.updateUserInteraction)
-export const clearDiscardedItems = wrap(core.clearDiscardedItems)
-export const getRecentRunVerdicts = wrap(core.getRecentRunVerdicts)
-export const getRunVerdictById = wrap(core.getRunVerdictById)
-export const findWatchlistEntities = wrap(core.findWatchlistEntities)
-export const updateWatchlistEntities = wrap(core.updateWatchlistEntities)
-export const createWatchlistEntity = wrap(core.createWatchlistEntity)
-export const updateWatchlistEntity = wrap(core.updateWatchlistEntity)
-export const deleteWatchlistEntity = wrap(core.deleteWatchlistEntity)
-export const updateWatchlistSuggestion = wrap(core.updateWatchlistSuggestion)
-export const processWatchlistSuggestion = wrap(core.processWatchlistSuggestion)
-export const deleteAllSince = wrap(core.deleteAllSince)
-export const resetAllSourceAnalytics = wrap(core.resetAllSourceAnalytics)
-export const resetEventsEmailedStatusSince = wrap(core.resetEventsEmailedStatusSince)
+// --- Data Access Functions ---
+// These are NOT wrapped because they're called from API handlers that already connect
+// If you call these from Server Actions/Components, use the *Action versions below
+export const createSubscriber = core.createSubscriber
+export const updateSubscriber = core.updateSubscriber
+export const deleteSubscriber = core.deleteSubscriber
+export const createCountry = core.createCountry
+export const updateCountry = core.updateCountry
+export const createSource = core.createSource
+export const updateSource = core.updateSource
+export const getAllCountries = core.getAllCountries
+export const findSubscribers = core.findSubscribers
+export const getAllSubscribers = core.getAllSubscribers
+export const getAllSources = core.getAllSources
+export const getAllWatchlistEntities = core.getAllWatchlistEntities
+export const getSuggestions = core.getSuggestions
+export const getArticles = core.getArticles
+export const findArticles = core.findArticles
+export const updateArticles = core.updateArticles
+export const getTotalArticleCount = core.getTotalArticleCount
+export const updateArticle = core.updateArticle
+export const deleteArticle = core.deleteArticle
+export const getArticleDetails = core.getArticleDetails
+export const createSubscriberWithPassword = core.createSubscriberWithPassword
+export const updateSubscriberPassword = core.updateSubscriberPassword
+export const loginUser = core.loginUser
+export const getDashboardStats = core.getDashboardStats
+export const getDistinctCountries = core.getDistinctCountries
+export const getGlobalCountries = core.getGlobalCountries
+export const getPublicTickerEvents = core.getPublicTickerEvents
+export const getEvents = core.getEvents
+export const findEvents = core.findEvents
+export const updateEvents = core.updateEvents
+export const getEventDetails = core.getEventDetails
+export const updateEvent = core.updateEvent
+export const deleteEvent = core.deleteEvent
+export const getTotalEventCount = core.getTotalEventCount
+export const generateExport = core.generateExport
+export const getDistinctOpportunityFields = core.getDistinctOpportunityFields
+export const updateOpportunities = core.updateOpportunities
+export const getTotalOpportunitiesCount = core.getTotalOpportunitiesCount
+export const getOpportunities = core.getOpportunities
+export const getOpportunityDetails = core.getOpportunityDetails
+export const updateOpportunity = core.updateOpportunity
+export const deleteOpportunity = core.deleteOpportunity
+export const updateSourceAnalyticsBatch = core.updateSourceAnalyticsBatch
+export const findSourcesForScraping = core.findSourcesForScraping
+export const performHousekeeping = core.performHousekeeping
+export const bulkWriteEvents = core.bulkWriteEvents
+export const bulkWriteArticles = core.bulkWriteArticles
+export const findEventsByKeys = core.findEventsByKeys
+export const findArticlesByLinks = core.findArticlesByLinks
+export const getActiveWatchlistEntityNames = core.getActiveWatchlistEntityNames
+export const bulkWriteWatchlistSuggestions = core.bulkWriteWatchlistSuggestions
+export const linkOpportunityToEvent = core.linkOpportunityToEvent
+export const unlinkOpportunityFromEvent = core.unlinkOpportunityFromEvent
+export const getSettings = core.getSettings
+export const upsertSubscriber = core.upsertSubscriber
+export const getAllPushSubscriptions = core.getAllPushSubscriptions
+export const deletePushSubscription = core.deletePushSubscription
+export const getCurrentSubscriber = core.getCurrentSubscriber
+export const savePushSubscription = core.savePushSubscription
+export const updateUserProfile = core.updateUserProfile
+export const updateUserInteraction = core.updateUserInteraction
+export const clearDiscardedItems = core.clearDiscardedItems
+export const getRecentRunVerdicts = core.getRecentRunVerdicts
+export const getRunVerdictById = core.getRunVerdictById
+export const findWatchlistEntities = core.findWatchlistEntities
+export const updateWatchlistEntities = core.updateWatchlistEntities
+export const createWatchlistEntity = core.createWatchlistEntity
+export const updateWatchlistEntity = core.updateWatchlistEntity
+export const deleteWatchlistEntity = core.deleteWatchlistEntity
+export const updateWatchlistSuggestion = core.updateWatchlistSuggestion
+export const processWatchlistSuggestion = core.processWatchlistSuggestion
+export const deleteAllSince = core.deleteAllSince
+export const resetAllSourceAnalytics = core.resetAllSourceAnalytics
+export const resetEventsEmailedStatusSince = core.resetEventsEmailedStatusSince
 
 // Special wrapper for updateSettings to include revalidation
 export const updateSettings = async (...args) => {
@@ -2221,6 +2330,15 @@ export const updateSettings = async (...args) => {
   }
   return result
 }
+
+// --- Wrapped versions for Server Actions/Components ---
+// If you need to call these from Server Actions or Server Components
+// (not through API routes), use these versions instead:
+export const getEventsAction = wrap(core.getEvents)
+export const getArticlesAction = wrap(core.getArticles)
+export const getTotalEventCountAction = wrap(core.getTotalEventCount)
+export const getTotalArticleCountAction = wrap(core.getTotalArticleCount)
+// Add more *Action versions as needed for Server Actions/Components
 
 export { buildQuery, revalidatePath }
 

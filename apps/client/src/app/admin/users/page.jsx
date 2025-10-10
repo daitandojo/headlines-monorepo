@@ -1,10 +1,14 @@
-export const dynamic = 'force-dynamic'
-
+// apps/client/src/app/admin/users/page.jsx
+import dbConnect from '@headlines/data-access/dbConnect/next'
 import { PageHeader } from '@/components/shared'
-import { getAllSubscribers, getAllCountries } from '@headlines/data-access'
+import { getAllSubscribers, getAllCountries } from '@headlines/data-access/next'
 import UsersClientPage from './UsersClientPage'
 
+export const dynamic = 'force-dynamic'
+
 export default async function UsersPage() {
+  await dbConnect()
+
   const [usersResult, countriesResult] = await Promise.all([
     getAllSubscribers({}),
     getAllCountries(),

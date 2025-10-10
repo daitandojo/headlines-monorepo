@@ -3,7 +3,7 @@
 Total: 10 files, 2 directories
 
 ```
-headlines/
+headlines-monorepo/
 ├── 📁 src/
 │   ├── 📁 data/
 │   │   ├── 📄 countries.json
@@ -20,8 +20,8 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-05T19:41:33.293Z
-**Repository Path**: /home/mark/Repos/projects/headlines/packages/utils-shared
+**Generated**: 2025-10-10T00:11:02.010Z
+**Repository Path**: /home/mark/Repos/projects/headlines-monorepo/packages/utils-shared
 **Total Files**: 10
 **Package**: @headlines/utils-shared@2.0.0
 **Description**: Isomorphic (client and server safe) utilities and hooks.

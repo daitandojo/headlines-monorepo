@@ -1,4 +1,9 @@
 // apps/pipeline/scripts/maintenance/reprocess-lost-articles.js
+/**
+ * @command maintenance:reprocess
+ * @group Maintenance
+ * @description Reprocesses articles from the last 24 hours that were scraped but failed to synthesize.
+ */
 import { initializeScriptEnv } from '../seed/lib/script-init.js'
 import { logger } from '@headlines/utils-shared'
 import { findArticles } from '@headlines/data-access'

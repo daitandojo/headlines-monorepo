@@ -3,7 +3,7 @@
 Total: 45 files, 2 directories
 
 ```
-headlines/
+headlines-monorepo/
 ├── 📁 src/
 │   ├── 📁 schemas/
 │   │   ├── 📄 apiSchemas.js
@@ -55,8 +55,8 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-05T19:41:33.281Z
-**Repository Path**: /home/mark/Repos/projects/headlines/packages/models
+**Generated**: 2025-10-10T00:11:01.999Z
+**Repository Path**: /home/mark/Repos/projects/headlines-monorepo/packages/models
 **Total Files**: 45
 **Package**: @headlines/models@2.0.0
 **Description**: Shared Mongoose models and Zod validation schemas for the Headlines monorepo.

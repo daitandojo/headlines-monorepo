@@ -1,8 +1,9 @@
-// File: apps/client/src/components/client/events/EventCardMobile.jsx (Handler Corrected)
+// File: apps/client/src/components/client/events/EventCardMobile.jsx
 'use client'
 
 import { Badge, Button } from '@/components/shared'
-import { Trash2, MessageSquarePlus, Users } from 'lucide-react'
+import { formatDistanceToNow } from 'date-fns'
+import { Trash2, MessageSquarePlus, Users, Loader2 } from 'lucide-react'
 import { getCountryFlag } from '@headlines/utils-shared'
 import { cn } from '@headlines/utils-shared'
 
@@ -17,11 +18,37 @@ export function EventCardMobile({
   onChat,
   onDelete,
   onShowIndividuals,
+  onShowOpportunities,
+  isOpportunitiesLoading,
   isPending,
 }) {
   if (!event) return null
   const flags = (event.country || []).map((c) => getCountryFlag(c)).join(' ')
   const primaryImageUrl = event.source_articles?.find((a) => a.imageUrl)?.imageUrl
+  const updatedAt = formatDistanceToNow(new Date(event.updatedAt), { addSuffix: true })
+  const opportunityCount = event.relatedOpportunities?.length || 0
+  const individualCount = event.key_individuals?.length || 0
+
+  const handleShowContent = (e) => {
+    e.stopPropagation()
+    if (isPending || isOpportunitiesLoading) return
+
+    if (opportunityCount > 0 && onShowOpportunities) {
+      onShowOpportunities()
+    } else if (onShowIndividuals) {
+      onShowIndividuals()
+    }
+  }
+
+  const handleChatClick = (e) => {
+    e.stopPropagation()
+    onChat()
+  }
+
+  const handleDeleteClick = (e) => {
+    e.stopPropagation()
+    onDelete()
+  }
 
   return (
     <div className="sm:hidden">
@@ -46,12 +73,20 @@ export function EventCardMobile({
               >
                 {event.highest_relevance_score}
               </Badge>
+              <p
+                className={cn(
+                  'text-xs text-slate-400',
+                  primaryImageUrl && 'drop-shadow-lg'
+                )}
+              >
+                {updatedAt}
+              </p>
             </div>
             <div className="flex flex-col items-center gap-1">
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={onChat}
+                onClick={handleChatClick}
                 className="text-slate-300 hover:text-blue-400 bg-black/20 hover:bg-blue-500/20 h-8 w-8"
               >
                 <MessageSquarePlus className="h-4 w-4" />
@@ -60,7 +95,7 @@ export function EventCardMobile({
                 variant="ghost"
                 size="icon"
                 disabled={isPending}
-                onClick={onDelete}
+                onClick={handleDeleteClick}
                 className="text-slate-300 hover:text-red-400 bg-black/20 hover:bg-red-500/20 h-8 w-8"
               >
                 <Trash2 className="h-4 w-4" />
@@ -89,17 +124,24 @@ export function EventCardMobile({
           {event.synthesized_summary}
         </p>
         <div className="mt-4 pt-4 border-t border-slate-800/50 flex flex-col justify-between items-start gap-4">
-          {event.key_individuals && event.key_individuals.length > 0 && (
-            // DEFINITIVE FIX: Ensure the onClick handler is correctly passed to the Button.
+          {(individualCount > 0 || opportunityCount > 0) && (
             <Button
               variant="ghost"
               className="p-0 h-auto text-left text-slate-400 hover:text-slate-200"
-              onClick={onShowIndividuals}
+              onClick={handleShowContent}
+              disabled={isPending || isOpportunitiesLoading}
             >
               <div className="flex items-start gap-3">
-                <Users className="h-5 w-5 mt-0.5 shrink-0 text-slate-500" />
+                {isOpportunitiesLoading ? (
+                  <Loader2 className="h-5 w-5 mt-0.5 shrink-0 animate-spin" />
+                ) : (
+                  <Users className="h-5 w-5 mt-0.5 shrink-0 text-slate-500" />
+                )}
                 <p className="text-sm font-medium text-slate-300">
-                  {event.key_individuals.length} Key Individual(s) Identified
+                  {opportunityCount > 0
+                    ? `${opportunityCount} Opportunit${opportunityCount > 1 ? 'ies' : 'y'}`
+                    : `${individualCount} Key Individual(s)`}{' '}
+                  Identified
                 </p>
               </div>
             </Button>

@@ -1,7 +1,6 @@
-// apps/client/src/app/(client)/events/page.js (CORRECTED)
+// apps/client/src/app/(client)/events/page.js
 import { DataView } from '@/components/client/shared/DataView'
-import { getEvents } from '@headlines/data-access/next'
-import { getUserIdFromSession } from '@/lib/auth/server'
+import { fetchServerSideData } from '@/lib/data/fetchServerSideData' // Import the new helper
 
 export const dynamic = 'force-dynamic'
 
@@ -11,22 +10,13 @@ const sortOptions = [
 ]
 
 export default async function EventsPage({ searchParams }) {
-  const userId = await getUserIdFromSession()
-  let initialEvents = []
+  const { q, sort = 'date_desc' } = searchParams
 
-  if (userId) {
-    try {
-      const filters = { q: searchParams.q || '' }
-      const sort = searchParams.sort || sortOptions[0].value
-
-      const result = await getEvents({ page: 1, userId, filters, sort })
-      if (result.success) {
-        initialEvents = result.data
-      }
-    } catch (err) {
-      console.error('[EventsPage] Failed to fetch initial events:', err.message)
-    }
-  }
+  const { data: initialEvents } = await fetchServerSideData('/api/events', {
+    page: '1',
+    sort,
+    q,
+  })
 
   return (
     <DataView

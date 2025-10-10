@@ -1,4 +1,9 @@
 // apps/pipeline/scripts/sources/scrape-many.js
+/**
+ * @command sources:scrape-many
+ * @group Sources
+ * @description Scrape multiple sources, optionally filtered by country. Flags: --country <CountryName>
+ */
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import pLimit from 'p-limit'

@@ -1,25 +1,20 @@
 // apps/client/src/app/admin/watchlist/page.jsx
+import dbConnect from '@headlines/data-access/dbConnect/next'
 import {
   getAllWatchlistEntities,
   getSuggestions,
   getAllCountries,
-} from '@headlines/data-access'
+} from '@headlines/data-access/next'
 import WatchlistClientPage from './WatchlistClientPage'
+import { parseAdminListParams } from '@/lib/utils/parse-admin-list-params' // Import the new helper
 
 export const dynamic = 'force-dynamic'
 
 export default async function WatchlistPage({ searchParams }) {
-  const page = parseInt(searchParams.page || '1', 10)
-  const sort = searchParams.sort || null
-  const columnFilters = searchParams.filters ? JSON.parse(searchParams.filters) : []
+  await dbConnect()
 
-  const filters = columnFilters.reduce((acc, filter) => {
-    if (filter.value) {
-      const key = filter.id === 'name' ? 'q' : filter.id
-      acc[key] = filter.value
-    }
-    return acc
-  }, {})
+  // Use the helper to parse search params, making the component cleaner
+  const { page, sort, filters } = parseAdminListParams(searchParams, 'name')
 
   const [watchlistResult, suggestionsResult, countriesResult] = await Promise.all([
     getAllWatchlistEntities({ page, filters, sort }),
@@ -32,7 +27,7 @@ export default async function WatchlistPage({ searchParams }) {
     !suggestionsResult.success ||
     !countriesResult.success
   ) {
-    return <div>Error loading data.</div> // Simple error handling for brevity
+    return <div>Error loading data.</div>
   }
 
   const allCountries = countriesResult.data
@@ -44,7 +39,9 @@ export default async function WatchlistPage({ searchParams }) {
       <WatchlistClientPage
         initialWatchlist={JSON.parse(JSON.stringify(watchlistResult.data))}
         total={watchlistResult.total}
-        initialSuggestions={JSON.parse(JSON.stringify(suggestionsResult.data.watchlistSuggestions))}
+        initialSuggestions={JSON.parse(
+          JSON.stringify(suggestionsResult.data.watchlistSuggestions)
+        )}
         availableCountries={allCountries}
       />
     </div>

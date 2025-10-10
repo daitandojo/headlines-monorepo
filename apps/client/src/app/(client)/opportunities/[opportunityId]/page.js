@@ -1,8 +1,8 @@
-// apps/client/src/app/(client)/opportunities/[opportunityId]/page.js (CORRECTED)
+// apps/client/src/app/(client)/opportunities/[opportunityId]/page.js
 export const dynamic = 'force-dynamic'
 
-import { getOpportunityDetails } from '@headlines/data-access/next'
 import { notFound } from 'next/navigation'
+import { cookies } from 'next/headers'
 import Link from 'next/link'
 import {
   Card,
@@ -54,14 +54,40 @@ function TimelineItem({ event, isLast }) {
 
 export default async function OpportunityDossierPage({ params }) {
   const { opportunityId } = params
-  const { success, data: opportunity } = await getOpportunityDetails(opportunityId)
 
-  if (!success || !opportunity) {
+  let opportunity = null
+
+  try {
+    // ✅ Fetch through API route
+    const url = new URL(
+      `/api/opportunities/${opportunityId}`,
+      process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    )
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        cookie: cookies().toString(),
+      },
+    })
+
+    if (!response.ok) {
+      notFound()
+    }
+
+    const result = await response.json()
+
+    if (!result.success || !result.data) {
+      notFound()
+    }
+
+    opportunity = result.data
+  } catch (err) {
+    console.error('[OpportunityDossierPage] Failed to fetch opportunity:', err.message)
     notFound()
   }
 
   const { contactDetails } = opportunity
-  const flags = (opportunity.basedIn || []).map((c) => getCountryFlag(c)).join(' ') // Use flags for array
+  const flags = (opportunity.basedIn || []).map((c) => getCountryFlag(c)).join(' ')
 
   return (
     <div className="max-w-4xl mx-auto">

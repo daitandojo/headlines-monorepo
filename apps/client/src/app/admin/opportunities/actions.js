@@ -1,23 +1,15 @@
+// apps/client/src/app/admin/opportunities/actions.js
 'use server'
 
-import { revalidatePath } from 'next/cache'
-import dbConnect from '@headlines/data-access/dbConnect/next'
-import { updateOpportunity, deleteOpportunity } from '@headlines/data-access'
+import { createAdminAction } from '@/lib/actions/createAdminAction'
+import { updateOpportunity, deleteOpportunity } from '@headlines/data-access/next'
 
-export async function updateOpportunityAction(opportunityId, updateData) {
-  await dbConnect()
-  const result = await updateOpportunity(opportunityId, updateData)
-  if (result.success) {
-    revalidatePath('/admin/opportunities')
-  }
-  return result
-}
+export const updateOpportunityAction = createAdminAction(
+  updateOpportunity,
+  '/admin/opportunities'
+)
 
-export async function deleteOpportunityAction(opportunityId) {
-  await dbConnect()
-  const result = await deleteOpportunity(opportunityId)
-  if (result.success) {
-    revalidatePath('/admin/opportunities')
-  }
-  return result
-}
+export const deleteOpportunityAction = createAdminAction(
+  deleteOpportunity,
+  '/admin/opportunities'
+)

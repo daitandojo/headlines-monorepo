@@ -1,4 +1,4 @@
-// File: client/src/components/client/shared/DataView.jsx
+// apps/client/src/components/client/shared/DataView.jsx
 'use client'
 
 import { useMemo, Suspense, useEffect } from 'react'
@@ -22,6 +22,7 @@ async function fetchData({ queryKey, pageParam = 1 }) {
   if (params.sort) urlParams.set('sort', params.sort)
   if (params.q) urlParams.set('q', params.q)
   if (params.withEmail) urlParams.set('withEmail', 'true')
+  if (params.country) urlParams.set('country', params.country) // ADDED
 
   const res = await fetch(`/api/${queryKeyPrefix}?${urlParams.toString()}`)
   if (!res.ok) throw new Error('Network response was not ok')
@@ -72,10 +73,11 @@ export function DataView({
   const q = searchParams.get('q') || ''
   const sort = searchParams.get('sort') || sortOptions[0].value
   const withEmail = searchParams.get('withEmail') === 'true'
+  const country = searchParams.get('country') || '' // ADDED
 
   const memoizedSearchParams = useMemo(
-    () => ({ q, sort, withEmail }),
-    [q, sort, withEmail]
+    () => ({ q, sort, withEmail, country }), // MODIFIED
+    [q, sort, withEmail, country] // MODIFIED
   )
   const listQueryKey = useMemo(
     () => [queryKeyPrefix, memoizedSearchParams],

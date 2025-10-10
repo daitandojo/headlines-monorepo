@@ -1,8 +1,9 @@
+// apps/client/src/app/api/user/settings/clear-discarded/route.js
 'use server'
 
 import { NextResponse } from 'next/server'
-import { clearDiscardedItems } from '@headlines/data-access'
-import { createClientApiHandler } from '@/lib/api-handler' // Use the new client handler
+import { clearDiscardedItems } from '@headlines/data-access/next'
+import { createApiHandler } from '@/lib/api-handler' // Use the new single handler
 
 const handlePost = async (request, { user }) => {
   const result = await clearDiscardedItems(user.userId)
@@ -12,4 +13,4 @@ const handlePost = async (request, { user }) => {
   return NextResponse.json({ success: true, message: result.message })
 }
 
-export const POST = createClientApiHandler(handlePost)
+export const POST = createApiHandler(handlePost)

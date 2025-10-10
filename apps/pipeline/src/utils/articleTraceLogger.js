@@ -1,11 +1,10 @@
-// apps/pipeline/src/utils/articleTraceLogger.js (NEW FILE)
+// apps/pipeline/src/utils/articleTraceLogger.js
 import fs from 'fs/promises'
 import path from 'path'
 import { EOL } from 'os'
 import { format } from 'util'
 import { logger } from '@headlines/utils-shared'
 
-// A simple utility to sanitize filenames
 function sanitizeFilename(name) {
   if (!name || typeof name !== 'string') {
     return `invalid_filename_${Date.now()}`
@@ -63,7 +62,8 @@ export class ArticleTraceLogger {
 
       trace.stages.forEach((stage) => {
         content += `--- STAGE: ${stage.name.toUpperCase()} (${stage.timestamp.toISOString()}) ---${EOL}`
-        content += `${format(stage.data, { depth: null })}${EOL}${EOL}`
+        // Use util.format for deep object inspection
+        content += `${format(stage.data, { depth: null, colors: false })}${EOL}${EOL}`
       })
 
       const filename = sanitizeFilename(`${trace.headline}.log`)

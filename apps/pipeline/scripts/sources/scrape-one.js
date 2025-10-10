@@ -1,4 +1,9 @@
 // apps/pipeline/scripts/sources/scrape-one.js
+/**
+ * @command sources:scrape-one
+ * @group Sources
+ * @description Scrape a single source for debugging headlines and content extraction. Flags: --source <SourceName>
+ */
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import { initializeScriptEnv } from '../seed/lib/script-init.js'

@@ -1,51 +1,100 @@
-// apps/pipeline/scripts/scripts/list.js (version 3.1.0)
-import fs from 'fs';
-import path from 'path';
-import colors from 'ansi-colors';
+// apps/pipeline/scripts/scripts/list.js
+/**
+ * @command cli:help
+ * @group CLI
+ * @description Shows a dynamic list of all available pipeline CLI commands.
+ */
+import fs from 'fs'
+import path from 'path'
+import colors from 'ansi-colors'
 
-const packageJsonPath = path.resolve(process.cwd(), 'apps/pipeline/package.json');
-const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-const scripts = packageJson.scripts;
+const SCRIPTS_ROOT = path.resolve(process.cwd(), 'apps/pipeline/scripts')
+const EXCLUDED_DIRS = ['lib', 'data', 'node_modules']
 
-const scriptDescriptions = {
-    "start": "Run the main pipeline. Flags: --country, --source, --isRefreshMode, --deleteToday, --noCommitMode, --useTestPayload.",
-    "test": "Run the Jest test suite for the pipeline.",
-    "db:seed:all": "Run all seeding scripts (settings, countries, admin user).",
-    "db:seed:settings": "Seed or update the pipeline settings in the database.",
-    "db:seed:countries": "Seed or update the list of countries from the canonical JSON file.",
-    "db:seed:admin": "Seed or update the primary admin user.",
-    "sources:list": "List sources. Flags: --country, --status [failing|healthy], --json.",
-    "sources:scrape-one": "Scrape a single source for debugging. Flags: --source <SourceName>.",
-    "sources:scrape-many": "Scrape multiple sources. Flags: --country <CountryName>.",
-    "sources:discover": "Crawl a domain to find new news sections. Flags: --url <BaseURL>.",
-    "sources:optimize": "Analyze a URL to suggest optimal CSS selectors. Flags: --url <URL>.",
-    "sources:update": "Update a field on a source document. Usage: --source <Name> --key <Field> --value <JSONValue>",
-    "sources:browse": "Interactively browse a website to find sections and selectors. Usage: --url <URL>",
-    "sources:maintain": "Run the autonomous agent to find, fix, and prune sources.",
-    "subscribers:list": "List all subscribers in the database.",
-    "subscribers:update": "Update a field for a subscriber. Usage: --email <Email> --key <Field> --value <JSONValue>",
-    "watchlist:list": "List watchlist entities. Flags: --q <SearchQuery>",
-    "watchlist:add-term": "Add a search term to a watchlist entity. Usage: --name <EntityName> --term <SearchTerm>",
-    "results:list-events": "Show the 10 most recently created synthesized events.",
-    "maintenance:delete-today": "Delete all data created today. Flags: --yes.",
-};
+/**
+ * Recursively walks a directory to find all .js files, excluding specified directories.
+ * @param {string} dir - The directory to walk.
+ * @returns {string[]} An array of full file paths.
+ */
+function walkDir(dir) {
+  let files = []
+  const items = fs.readdirSync(dir, { withFileTypes: true })
 
-console.log(colors.bold.cyan("\n📘 Headlines Pipeline CLI\n"));
-console.log("Usage: npm run <command> -w @headlines/pipeline -- [flags]\n");
-
-const groupedScripts = {};
-Object.keys(scripts).forEach(key => {
-    if (!scriptDescriptions[key] && !key.startsWith('scripts:')) return;
-    const [topic] = key.split(':');
-    if (!groupedScripts[topic]) groupedScripts[topic] = [];
-    groupedScripts[topic].push(key);
-});
-
-for (const topic in groupedScripts) {
-    const capitalizedTopic = topic.charAt(0).toUpperCase() + topic.slice(1);
-    console.log(colors.bold.yellow(`--- ${topic.charAt(0).toUpperCase() + topic.slice(1)} ---`));
-    groupedScripts[topic].sort().forEach(scriptName => {
-        console.log(`  ${colors.green(scriptName.padEnd(25))} ${scriptDescriptions[scriptName] || ''}`);
-    });
-    console.log('');
+  for (const item of items) {
+    if (EXCLUDED_DIRS.includes(item.name)) {
+      continue
+    }
+    const fullPath = path.join(dir, item.name)
+    if (item.isDirectory()) {
+      files = [...files, ...walkDir(fullPath)]
+    } else if (item.isFile() && item.name.endsWith('.js')) {
+      files.push(fullPath)
+    }
+  }
+  return files
 }
+
+/**
+ * Reads the first few lines of a script and parses its metadata block.
+ * @param {string} filePath - The full path to the script file.
+ * @returns {object|null} An object with command, group, and description, or null if no header is found.
+ */
+function parseScriptHeader(filePath) {
+  try {
+    const content = fs.readFileSync(filePath, 'utf-8').substring(0, 1024) // Read first 1KB
+    const match = content.match(/\/\*\*([\s\S]*?)\*\//) // Find the first JSDoc-style block
+    if (!match) return null
+
+    const header = match[1]
+    const commandMatch = header.match(/@command\s+(.*)/)
+    const groupMatch = header.match(/@group\s+(.*)/)
+    const descriptionMatch = header.match(/@description\s+(.*)/)
+
+    if (commandMatch && groupMatch && descriptionMatch) {
+      return {
+        command: commandMatch[1].trim(),
+        group: groupMatch[1].trim(),
+        description: descriptionMatch[1].trim(),
+      }
+    }
+    return null
+  } catch (e) {
+    return null
+  }
+}
+
+function main() {
+  console.log(colors.bold.cyan('\n📘 Headlines Pipeline CLI (Dynamic)\n'))
+  console.log('Usage from monorepo root: pnpm run <command> -- [flags]\n')
+
+  const scriptFiles = walkDir(SCRIPTS_ROOT)
+  const scriptsWithMetadata = scriptFiles.map(parseScriptHeader).filter(Boolean)
+
+  if (scriptsWithMetadata.length === 0) {
+    console.log(colors.red('No runnable scripts with valid metadata headers found.'))
+    return
+  }
+
+  const groupedScripts = scriptsWithMetadata.reduce((acc, script) => {
+    const group = script.group || 'General'
+    if (!acc[group]) acc[group] = []
+    acc[group].push(script)
+    return acc
+  }, {})
+
+  const sortedGroups = Object.keys(groupedScripts).sort()
+
+  for (const groupName of sortedGroups) {
+    console.log(colors.bold.yellow(`--- ${groupName} ---`))
+    const scriptsInGroup = groupedScripts[groupName].sort((a, b) =>
+      a.command.localeCompare(b.command)
+    )
+
+    scriptsInGroup.forEach((script) => {
+      console.log(`  ${colors.green(script.command.padEnd(25))} ${script.description}`)
+    })
+    console.log('')
+  }
+}
+
+main()

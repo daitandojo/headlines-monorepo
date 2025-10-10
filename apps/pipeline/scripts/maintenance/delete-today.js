@@ -1,4 +1,9 @@
 // apps/pipeline/scripts/maintenance/delete-today.js
+/**
+ * @command maintenance:delete-today
+ * @group Maintenance
+ * @description Delete all data created today or within a specified time window. Flags: --yes, --minutes <number>
+ */
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import { logger } from '@headlines/utils-shared'

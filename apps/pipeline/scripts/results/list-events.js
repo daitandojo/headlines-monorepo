@@ -1,4 +1,9 @@
 // apps/pipeline/scripts/results/list-events.js
+/**
+ * @command results:list-events
+ * @group Results
+ * @description Show the 10 most recently created synthesized events.
+ */
 import { initializeScriptEnv } from '../seed/lib/script-init.js'
 import { findEvents } from '@headlines/data-access'
 import { formatDistanceToNow } from 'date-fns'

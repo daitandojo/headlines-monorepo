@@ -3,7 +3,7 @@
 Total: 54 files, 10 directories
 
 ```
-headlines/
+headlines-monorepo/
 ├── 📁 src/
 │   ├── 📁 chains/
 │   │   ├── 📄 articleChain.js
@@ -72,8 +72,8 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-05T19:41:33.273Z
-**Repository Path**: /home/mark/Repos/projects/headlines/packages/ai-services
+**Generated**: 2025-10-10T00:11:01.991Z
+**Repository Path**: /home/mark/Repos/projects/headlines-monorepo/packages/ai-services
 **Total Files**: 54
 **Package**: @headlines/ai-services@1.0.0
 **Description**: Centralized, LangChain-powered AI and external service logic.
@@ -1043,49 +1043,53 @@ export const watchlistSuggestionChain = {
 ```
 
 ## 📄 src/embeddings/embeddings.js
-*Lines: 233, Size: 7.92 KB*
+*Lines: 249, Size: 7.44 KB*
 
 ```javascript
+// packages/ai-services/src/embeddings/embeddings.js
 // src/lib/embeddings.js (Enhanced version with query expansion and caching)
 
 // In-memory cache for embeddings (consider Redis for production)
-const embeddingCache = new Map();
-const MAX_CACHE_SIZE = 1000;
+const embeddingCache = new Map()
+const MAX_CACHE_SIZE = 1000
 
 // Singleton pattern to ensure we only load the model once per server instance
 class EmbeddingPipeline {
-    static task = 'feature-extraction';
-    static model = 'Xenova/all-MiniLM-L6-v2';
-    static instance = null;
-    
-    static async getInstance() {
-        if (this.instance === null) {
-            const { pipeline } = await import('@xenova/transformers');
-            this.instance = await pipeline(this.task, this.model);
-        }
-        return this.instance;
+  static task = 'feature-extraction'
+  static model = 'Xenova/all-MiniLM-L6-v2'
+  static instance = null
+
+  static async getInstance() {
+    if (this.instance === null) {
+      const { pipeline } = await import('@xenova/transformers')
+      this.instance = await pipeline(this.task, this.model)
     }
+    return this.instance
+  }
 }
 
 /**
  * Creates a cache key from text
- * @param {string} text 
+ * @param {string} text
  * @returns {string}
  */
 function createCacheKey(text) {
-    return `embed_${text.toLowerCase().trim().replace(/\s+/g, '_')}`;
+  return `embed_${text.toLowerCase().trim().replace(/\s+/g, '_')}`
 }
 
 /**
  * Manages cache size to prevent memory bloat
  */
 function manageCacheSize() {
-    if (embeddingCache.size >= MAX_CACHE_SIZE) {
-        // Remove oldest 20% of entries (FIFO-ish)
-        const keysToRemove = Array.from(embeddingCache.keys()).slice(0, Math.floor(MAX_CACHE_SIZE * 0.2));
-        keysToRemove.forEach(key => embeddingCache.delete(key));
-        console.log(`[Embedding Cache] Cleaned ${keysToRemove.length} entries`);
-    }
+  if (embeddingCache.size >= MAX_CACHE_SIZE) {
+    // Remove oldest 20% of entries (FIFO-ish)
+    const keysToRemove = Array.from(embeddingCache.keys()).slice(
+      0,
+      Math.floor(MAX_CACHE_SIZE * 0.2)
+    )
+    keysToRemove.forEach((key) => embeddingCache.delete(key))
+    console.log(`[Embedding Cache] Cleaned ${keysToRemove.length} entries`)
+  }
 }
 
 /**
@@ -1094,191 +1098,203 @@ function manageCacheSize() {
  * @returns {Promise<Array<number>>} A promise that resolves to the embedding vector
  */
 export async function generateEmbedding(text) {
-    if (!text || text.trim().length === 0) {
-        throw new Error('Text cannot be empty for embedding generation');
-    }
-    
-    const cleanText = text.trim();
-    const cacheKey = createCacheKey(cleanText);
-    
-    // Check cache first
-    if (embeddingCache.has(cacheKey)) {
-        console.log(`[Embedding Cache] Hit for text: "${cleanText.substring(0, 50)}..."`);
-        return embeddingCache.get(cacheKey);
-    }
-    
-    try {
-        const extractor = await EmbeddingPipeline.getInstance();
-        const output = await extractor(cleanText, { pooling: 'mean', normalize: true });
-        const embedding = Array.from(output.data);
-        
-        // Cache the result
-        manageCacheSize();
-        embeddingCache.set(cacheKey, embedding);
-        
-        console.log(`[Embedding] Generated embedding for text: "${cleanText.substring(0, 50)}..." (${embedding.length} dimensions)`);
-        return embedding;
-        
-    } catch (error) {
-        console.error(`[Embedding Error] Failed to generate embedding: ${error.message}`);
-        throw new Error(`Failed to generate embedding: ${error.message}`);
-    }
+  if (!text || text.trim().length === 0) {
+    throw new Error('Text cannot be empty for embedding generation')
+  }
+
+  const cleanText = text.trim()
+  const cacheKey = createCacheKey(cleanText)
+
+  // Check cache first
+  if (embeddingCache.has(cacheKey)) {
+    console.log(`[Embedding Cache] Hit for text: "${cleanText.substring(0, 50)}..."`)
+    return embeddingCache.get(cacheKey)
+  }
+
+  try {
+    const extractor = await EmbeddingPipeline.getInstance()
+    const output = await extractor(cleanText, { pooling: 'mean', normalize: true })
+    const embedding = Array.from(output.data)
+
+    // Cache the result
+    manageCacheSize()
+    embeddingCache.set(cacheKey, embedding)
+
+    console.log(
+      `[Embedding] Generated embedding for text: "${cleanText.substring(0, 50)}..." (${embedding.length} dimensions)`
+    )
+    return embedding
+  } catch (error) {
+    console.error(`[Embedding Error] Failed to generate embedding: ${error.message}`)
+    throw new Error(`Failed to generate embedding: ${error.message}`)
+  }
 }
 
 /**
  * Generates multiple query variations to improve RAG recall
- * @param {string} originalQuery 
+ * @param {string} originalQuery
  * @returns {Promise<Array<Array<number>>>} Array of embeddings for different query variations
  */
 export async function generateQueryEmbeddings(originalQuery) {
-    const variations = generateQueryVariations(originalQuery);
-    const embeddingPromises = variations.map(query => generateEmbedding(query));
-    
-    try {
-        const embeddings = await Promise.all(embeddingPromises);
-        console.log(`[Query Expansion] Generated ${embeddings.length} query variations for: "${originalQuery}" ->`, variations);
-        return embeddings;
-    } catch (error) {
-        console.error(`[Query Expansion Error] ${error.message}`);
-        // Fallback to original query only
-        return [await generateEmbedding(originalQuery)];
-    }
+  const variations = generateQueryVariations(originalQuery)
+  const embeddingPromises = variations.map((query) => generateEmbedding(query))
+
+  try {
+    const embeddings = await Promise.all(embeddingPromises)
+    console.log(
+      `[Query Expansion] Generated ${embeddings.length} query variations for: "${originalQuery}" ->`,
+      variations
+    )
+    return embeddings
+  } catch (error) {
+    console.error(`[Query Expansion Error] ${error.message}`)
+    // Fallback to original query only
+    return [await generateEmbedding(originalQuery)]
+  }
 }
 
 /**
  * Creates query variations to improve semantic search recall
- * @param {string} query 
+ * @param {string} query
  * @returns {Array<string>}
  */
 function generateQueryVariations(query) {
-    const originalQuery = query.trim();
-    const variations = new Set([originalQuery]);
+  const originalQuery = query.trim()
+  const variations = new Set([originalQuery])
 
-    // CORRECTED: Smartly strip disambiguation tags for broader searches
-    const coreEntity = originalQuery.replace(/\s*\((company|person)\)$/, '').trim();
-    if (coreEntity !== originalQuery) {
-        variations.add(coreEntity);
-    }
+  // CORRECTED: Smartly strip disambiguation tags for broader searches
+  const coreEntity = originalQuery.replace(/\s*\((company|person)\)$/, '').trim()
+  if (coreEntity !== originalQuery) {
+    variations.add(coreEntity)
+  }
 
-    // Pattern for "Who founded X?"
-    const हूंFounderMatch = coreEntity.toLowerCase().match(/^(?:who|what)\s+(?:is|was|founded|created)\s+(.+)/);
-    if ( हूंFounderMatch) {
-        let subject = हूंFounderMatch[1].replace(/\?/g, '').replace(/^(the|a|an)\s/,'').trim();
-        variations.add(subject);
-        variations.add(`${subject} founder`);
-        variations.add(`founder of ${subject}`);
-        variations.add(`${subject} history`);
-    } else {
-        // General question pattern
-        const questionMatch = coreEntity.toLowerCase().match(/^(who|what|when|where|why|how)\s(is|are|was|were|did|does|do)\s(.+)/);
-        if (questionMatch) {
-            let subject = questionMatch[3].replace(/\?/g, '').trim();
-            variations.add(subject);
-            
-            const simplified = subject.replace(/^(the|a|an)\s/,'').split(' of ');
-            if (simplified.length > 1) {
-                variations.add(`${simplified[1].trim()} ${simplified[0].trim()}`);
-            }
-        }
+  // Pattern for "Who founded X?"
+  const हूंFounderMatch = coreEntity
+    .toLowerCase()
+    .match(/^(?:who|what)\s+(?:is|was|founded|created)\s+(.+)/)
+  if (हूंFounderMatch) {
+    let subject = हूंFounderMatch[1]
+      .replace(/\?/g, '')
+      .replace(/^(the|a|an)\s/, '')
+      .trim()
+    variations.add(subject)
+    variations.add(`${subject} founder`)
+    variations.add(`founder of ${subject}`)
+    variations.add(`${subject} history`)
+  } else {
+    // General question pattern
+    const questionMatch = coreEntity
+      .toLowerCase()
+      .match(/^(who|what|when|where|why|how)\s(is|are|was|were|did|does|do)\s(.+)/)
+    if (questionMatch) {
+      let subject = questionMatch[3].replace(/\?/g, '').trim()
+      variations.add(subject)
+
+      const simplified = subject.replace(/^(the|a|an)\s/, '').split(' of ')
+      if (simplified.length > 1) {
+        variations.add(`${simplified[1].trim()} ${simplified[0].trim()}`)
+      }
     }
-    
-    // Add generic variations for the core entity
-    if (hasProperNouns(coreEntity)) {
-        variations.add(`${coreEntity} background details`);
-        variations.add(`Information about ${coreEntity}`);
-    }
-    
-    // Return the top 4 most distinct variations
-    return Array.from(variations).slice(0, 4);
+  }
+
+  // Add generic variations for the core entity
+  if (hasProperNouns(coreEntity)) {
+    variations.add(`${coreEntity} background details`)
+    variations.add(`Information about ${coreEntity}`)
+  }
+
+  // Return the top 4 most distinct variations
+  return Array.from(variations).slice(0, 4)
 }
-
 
 /**
  * Simple check for proper nouns (capitalized words not at the start of a sentence)
- * @param {string} text 
+ * @param {string} text
  * @returns {boolean}
  */
 function hasProperNouns(text) {
-    // Looks for words starting with an uppercase letter
-    return /\b[A-Z][a-z]+/.test(text);
+  // Looks for words starting with an uppercase letter
+  return /\b[A-Z][a-z]+/.test(text)
 }
 
 /**
  * Batch embedding generation for efficiency
- * @param {Array<string>} texts 
+ * @param {Array<string>} texts
  * @returns {Promise<Array<Array<number>>>}
  */
 export async function generateBatchEmbeddings(texts) {
-    if (!texts || texts.length === 0) {
-        return [];
-    }
-    
-    const embeddings = [];
-    const extractor = await EmbeddingPipeline.getInstance();
-    
-    // Process in batches to avoid memory issues
-    const BATCH_SIZE = 10;
-    for (let i = 0; i < texts.length; i += BATCH_SIZE) {
-        const batch = texts.slice(i, i + BATCH_SIZE);
-        const batchPromises = batch.map(text => {
-            const cacheKey = createCacheKey(text);
-            if (embeddingCache.has(cacheKey)) {
-                return Promise.resolve(embeddingCache.get(cacheKey));
-            }
-            return extractor(text, { pooling: 'mean', normalize: true })
-                .then(output => {
-                    const embedding = Array.from(output.data);
-                    embeddingCache.set(cacheKey, embedding);
-                    return embedding;
-                });
-        });
-        
-        const batchEmbeddings = await Promise.all(batchPromises);
-        embeddings.push(...batchEmbeddings);
-        
-        console.log(`[Batch Embedding] Processed batch ${Math.floor(i/BATCH_SIZE) + 1}/${Math.ceil(texts.length/BATCH_SIZE)}`);
-    }
-    
-    return embeddings;
+  if (!texts || texts.length === 0) {
+    return []
+  }
+
+  const embeddings = []
+  const extractor = await EmbeddingPipeline.getInstance()
+
+  // Process in batches to avoid memory issues
+  const BATCH_SIZE = 10
+  for (let i = 0; i < texts.length; i += BATCH_SIZE) {
+    const batch = texts.slice(i, i + BATCH_SIZE)
+    const batchPromises = batch.map((text) => {
+      const cacheKey = createCacheKey(text)
+      if (embeddingCache.has(cacheKey)) {
+        return Promise.resolve(embeddingCache.get(cacheKey))
+      }
+      return extractor(text, { pooling: 'mean', normalize: true }).then((output) => {
+        const embedding = Array.from(output.data)
+        embeddingCache.set(cacheKey, embedding)
+        return embedding
+      })
+    })
+
+    const batchEmbeddings = await Promise.all(batchPromises)
+    embeddings.push(...batchEmbeddings)
+
+    console.log(
+      `[Batch Embedding] Processed batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(texts.length / BATCH_SIZE)}`
+    )
+  }
+
+  return embeddings
 }
 
 /**
  * Calculate cosine similarity between two embeddings
- * @param {Array<number>} embedding1 
- * @param {Array<number>} embedding2 
+ * @param {Array<number>} embedding1
+ * @param {Array<number>} embedding2
  * @returns {Promise<number>} Similarity score between 0 and 1
  */
 export async function calculateSimilarity(embedding1, embedding2) {
-    if (embedding1.length !== embedding2.length) {
-        throw new Error('Embeddings must have the same dimensions');
-    }
-    
-    let dotProduct = 0;
-    let norm1 = 0;
-    let norm2 = 0;
-    
-    for (let i = 0; i < embedding1.length; i++) {
-        dotProduct += embedding1[i] * embedding2[i];
-        norm1 += embedding1[i] * embedding1[i];
-        norm2 += embedding2[i] * embedding2[i];
-    }
-    
-    if (norm1 === 0 || norm2 === 0) return 0;
-    
-    return dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2));
+  if (embedding1.length !== embedding2.length) {
+    throw new Error('Embeddings must have the same dimensions')
+  }
+
+  let dotProduct = 0
+  let norm1 = 0
+  let norm2 = 0
+
+  for (let i = 0; i < embedding1.length; i++) {
+    dotProduct += embedding1[i] * embedding2[i]
+    norm1 += embedding1[i] * embedding1[i]
+    norm2 += embedding2[i] * embedding2[i]
+  }
+
+  if (norm1 === 0 || norm2 === 0) return 0
+
+  return dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2))
 }
 
 /**
  * Get cache statistics for monitoring
  * @returns {Promise<Object>}
  */
-export async function getCacheStats() {
-    return {
-        size: embeddingCache.size,
-        maxSize: MAX_CACHE_SIZE,
-        utilizationPercent: Math.round((embeddingCache.size / MAX_CACHE_SIZE) * 100)
-    };
+export async function getEmbeddingCacheStats() {
+  return {
+    size: embeddingCache.size,
+    maxSize: MAX_CACHE_SIZE,
+    utilizationPercent: Math.round((embeddingCache.size / MAX_CACHE_SIZE) * 100),
+  }
 }
+
 ```
 
 ## 📄 src/embeddings/vectorSearch.js
@@ -1364,7 +1380,7 @@ export async function findSimilarArticles(queryText) {
 ```
 
 ## 📄 src/index.js
-*Lines: 147, Size: 5.83 KB*
+*Lines: 204, Size: 7.09 KB*
 
 ```javascript
 // packages/ai-services/src/index.js
@@ -1445,7 +1461,11 @@ export async function processUploadedArticle(item, userId) {
     }
 
     const synthesizedResult = await synthesizeEvent([enrichedArticle], [], '', '')
-    if (!synthesizedResult || !synthesizedResult.events || synthesizedResult.events.length === 0) {
+    if (
+      !synthesizedResult ||
+      !synthesizedResult.events ||
+      synthesizedResult.events.length === 0
+    ) {
       throw new Error('AI failed to synthesize an event from the provided text.')
     }
     const eventData = synthesizedResult.events[0]
@@ -1454,14 +1474,20 @@ export async function processUploadedArticle(item, userId) {
       ...eventData,
       event_key: `manual-${new Date().toISOString()}`,
       highest_relevance_score: 100,
-      source_articles: [{ headline: item.headline, link: '#manual', newspaper: 'Manual Upload' }],
+      source_articles: [
+        { headline: item.headline, link: '#manual', newspaper: 'Manual Upload' },
+      ],
     })
 
-    const opportunitiesToSave = await generateOpportunitiesFromEvent(eventToSave, [enrichedArticle])
+    const opportunitiesToSave = await generateOpportunitiesFromEvent(eventToSave, [
+      enrichedArticle,
+    ])
 
     await eventToSave.save()
     if (opportunitiesToSave.length > 0) {
-      await Opportunity.insertMany(opportunitiesToSave.map((opp) => ({ ...opp, events: [eventToSave._id] })))
+      await Opportunity.insertMany(
+        opportunitiesToSave.map((opp) => ({ ...opp, events: [eventToSave._id] }))
+      )
     }
 
     return { success: true, event: eventToSave.synthesized_headline }
@@ -1472,27 +1498,34 @@ export async function processUploadedArticle(item, userId) {
 }
 
 export async function addKnowledge(data) {
-    const { headline, business_summary, source, country, link } = data
-    if (!headline || !business_summary || !source || !country || !link) {
-        return { success: false, message: 'All fields are required.' }
-    }
-    try {
-        const textToEmbed = `${headline}\n${business_summary}`
-        const embedding = await generateEmbedding(textToEmbed)
-        const newArticle = new Article({
-            _id: new mongoose.Types.ObjectId(),
-            headline, link, newspaper: source, source: 'Manual Upload', country: [country],
-            relevance_headline: 100, assessment_headline: 'Manually uploaded by user.',
-            relevance_article: 100, assessment_article: business_summary,
-            embedding: embedding, key_individuals: [],
-        })
-        await newArticle.save()
-        // Pinecone logic would go here
-        return { success: true, message: 'Knowledge successfully added and embedded.' }
-    } catch (error) {
-        console.error('[Add Knowledge Error]', error)
-        return { success: false, message: 'Failed to add knowledge.' }
-    }
+  const { headline, business_summary, source, country, link } = data
+  if (!headline || !business_summary || !source || !country || !link) {
+    return { success: false, message: 'All fields are required.' }
+  }
+  try {
+    const textToEmbed = `${headline}\n${business_summary}`
+    const embedding = await generateEmbedding(textToEmbed)
+    const newArticle = new Article({
+      _id: new mongoose.Types.ObjectId(),
+      headline,
+      link,
+      newspaper: source,
+      source: 'Manual Upload',
+      country: [country],
+      relevance_headline: 100,
+      assessment_headline: 'Manually uploaded by user.',
+      relevance_article: 100,
+      assessment_article: business_summary,
+      embedding: embedding,
+      key_individuals: [],
+    })
+    await newArticle.save()
+    // Pinecone logic would go here
+    return { success: true, message: 'Knowledge successfully added and embedded.' }
+  } catch (error) {
+    console.error('[Add Knowledge Error]', error)
+    return { success: false, message: 'Failed to add knowledge.' }
+  }
 }
 
 export async function suggestSections(url) {
@@ -1512,8 +1545,48 @@ export async function suggestSections(url) {
 
 // --- Sanity Check Function ---
 export async function performAiSanityCheck() {
-    // ... implementation ...
+  try {
+    logger.info('🔬 Performing AI service sanity check (OpenAI)...')
+    const answer = await callLanguageModel({
+      modelName: 'gpt-3.5-turbo', // Use a standard, widely available model for the check
+      prompt: 'In one word, what is the capital of France?',
+      isJson: false,
+    })
+
+    // Handle API call failure from safeExecute
+    if (answer && answer.error) {
+      logger.fatal(
+        { details: answer.error },
+        'OpenAI sanity check failed. The API call failed or timed out. This is often due to an incorrect API key, network issues, or service outage.'
+      )
+      return false
+    }
+
+    // Handle unexpected response format
+    if (
+      !answer ||
+      typeof answer !== 'string' ||
+      !answer.trim().toLowerCase().includes('paris')
+    ) {
+      logger.fatal(
+        { details: { expected: 'paris', received: answer } },
+        `OpenAI sanity check failed. The model did not return the expected response.`
+      )
+      return false
+    }
+
+    logger.info('✅ AI service sanity check passed.')
+    return true
+  } catch (error) {
+    // This will catch any unexpected synchronous errors in the function itself.
+    logger.fatal(
+      { err: error },
+      'OpenAI sanity check failed with an unexpected exception.'
+    )
+    return false
+  }
 }
+
 ```
 
 ## 📄 src/lib/AIAgent.js
@@ -2983,295 +3056,1582 @@ export async function checkGroundedness(responseText, contextString) {
 ```
 
 ## 📄 src/search/search.js
-*Lines: 85, Size: 3.09 KB*
+*Lines: 489, Size: 11.94 KB*
 
 ```javascript
+// packages/ai-services/src/search/search.js
 import axios from 'axios'
 import NewsAPI from 'newsapi'
 import { env } from '@headlines/config'
 import { logger, apiCallTracker } from '@headlines/utils-shared'
 
 const { SERPER_API_KEY, NEWSAPI_API_KEY } = env
+
+/**
+ * API configuration constants
+ */
+const API_CONFIG = {
+  SERPER: {
+    BASE_URL: 'https://google.serper.dev',
+    TIMEOUT: 30000,
+    MAX_RETRIES: 2,
+    DEFAULT_RESULTS: 5,
+  },
+  NEWSAPI: {
+    TIMEOUT: 30000,
+    MAX_RETRIES: 2,
+    DEFAULT_PAGE_SIZE: 5,
+    DEFAULT_LANGUAGES: 'en,da,sv,no',
+  },
+}
+
+/**
+ * Initialize Serper API client with proper configuration
+ */
 const serperClient = SERPER_API_KEY
   ? axios.create({
-      baseURL: 'https://google.serper.dev',
-      headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
+      baseURL: API_CONFIG.SERPER.BASE_URL,
+      timeout: API_CONFIG.SERPER.TIMEOUT,
+      headers: {
+        'X-API-KEY': SERPER_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      validateStatus: (status) => status < 500, // Don't throw on 4xx errors
     })
   : null
+
+/**
+ * Initialize NewsAPI client
+ */
 const newsapi = NEWSAPI_API_KEY ? new NewsAPI(NEWSAPI_API_KEY) : null
 
-if (!serperClient)
-  logger.warn(
-    'SERPER_API_KEY not found. Google Search dependent functions will be disabled.'
-  )
-if (!newsapi)
-  logger.warn('NEWSAPI_API_KEY not found. NewsAPI dependent functions will be disabled.')
+// Log API availability on initialization
+if (!serperClient) {
+  logger.warn('SERPER_API_KEY not configured. Google Search features will be disabled.')
+}
 
-async function withRetry(apiCall, serviceName, maxRetries = 2) {
+if (!newsapi) {
+  logger.warn('NEWSAPI_API_KEY not configured. NewsAPI features will be disabled.')
+}
+
+/**
+ * Determines if an error is retryable
+ * @param {Error} error - Error object
+ * @returns {boolean} True if the error should trigger a retry
+ */
+function isRetryableError(error) {
+  // Network errors
+  if (
+    error.code === 'ECONNRESET' ||
+    error.code === 'ETIMEDOUT' ||
+    error.code === 'ENOTFOUND'
+  ) {
+    return true
+  }
+
+  // 5xx server errors
+  if (error.response && error.response.status >= 500) {
+    return true
+  }
+
+  // Rate limiting (429) - worth retrying after backoff
+  if (error.response && error.response.status === 429) {
+    return true
+  }
+
+  return false
+}
+
+/**
+ * Executes an API call with automatic retry logic and exponential backoff
+ * @param {Function} apiCall - Async function that performs the API call
+ * @param {string} serviceName - Name of the service for logging
+ * @param {number} maxRetries - Maximum number of retry attempts
+ * @returns {Promise<Object>} API response or error object
+ */
+async function withRetry(
+  apiCall,
+  serviceName,
+  maxRetries = API_CONFIG.SERPER.MAX_RETRIES
+) {
+  const startTime = Date.now()
+
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      return await apiCall()
-    } catch (error) {
-      const isRetryable = error.response && error.response.status >= 500
-      if (!isRetryable || attempt === maxRetries) {
-        logger.error(
-          { err: error?.response?.data || error },
-          `${serviceName} search failed.`
+      const result = await apiCall()
+
+      if (attempt > 1) {
+        const duration = Date.now() - startTime
+        logger.info(
+          {
+            service: serviceName,
+            attempt,
+            duration: `${duration}ms`,
+          },
+          'API call succeeded after retry'
         )
-        return { success: false, error: error.message, results: [] }
       }
+
+      return result
+    } catch (error) {
+      const isLastAttempt = attempt === maxRetries
+      const shouldRetry = isRetryableError(error)
+
+      // Log the error with context
+      const errorContext = {
+        service: serviceName,
+        attempt,
+        maxRetries,
+        status: error.response?.status,
+        code: error.code,
+        message: error.message,
+      }
+
+      if (!shouldRetry || isLastAttempt) {
+        const duration = Date.now() - startTime
+
+        logger.error(
+          {
+            ...errorContext,
+            duration: `${duration}ms`,
+            err: error.response?.data || error,
+          },
+          `${serviceName} API call failed${isLastAttempt && shouldRetry ? ' after retries' : ''}`
+        )
+
+        return {
+          success: false,
+          error: error.message,
+          errorCode: error.response?.status || error.code,
+          results: [],
+        }
+      }
+
+      // Calculate exponential backoff delay
       const delay = 1000 * Math.pow(2, attempt - 1)
-      logger.warn(`[${serviceName}] Attempt ${attempt} failed. Retrying in ${delay}ms...`)
-      await new Promise((res) => setTimeout(res, delay))
+
+      logger.warn(
+        {
+          ...errorContext,
+          delay: `${delay}ms`,
+        },
+        `${serviceName} attempt ${attempt} failed. Retrying...`
+      )
+
+      await new Promise((resolve) => setTimeout(resolve, delay))
     }
   }
 }
 
-export async function findAlternativeSources(headline) {
-  if (!serperClient) return { success: false, results: [] }
+/**
+ * Validates and sanitizes search query
+ * @param {string} query - Raw search query
+ * @returns {string|null} Sanitized query or null if invalid
+ */
+function sanitizeQuery(query) {
+  if (!query || typeof query !== 'string') {
+    return null
+  }
+
+  return query
+    .trim()
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .substring(0, 500) // Limit length to prevent issues
+}
+
+/**
+ * Finds alternative news sources for a headline using Serper News API
+ * @param {string} headline - Article headline to search for
+ * @param {Object} options - Search options
+ * @returns {Promise<Object>} Search results with success status
+ */
+export async function findAlternativeSources(headline, options = {}) {
+  if (!serperClient) {
+    return {
+      success: false,
+      results: [],
+      error: 'Serper API not configured',
+    }
+  }
+
+  const sanitizedQuery = sanitizeQuery(headline)
+
+  if (!sanitizedQuery) {
+    logger.warn({ headline }, 'Invalid headline provided for Serper News search')
+    return {
+      success: false,
+      results: [],
+      error: 'Invalid search query',
+    }
+  }
+
+  const startTime = Date.now()
+
   return withRetry(async () => {
     apiCallTracker.recordCall('serper_news')
-    const response = await serperClient.post('/news', { q: headline })
-    return { success: true, results: response.data.news || [] }
+
+    const requestParams = {
+      q: sanitizedQuery,
+      num: options.numResults || API_CONFIG.SERPER.DEFAULT_RESULTS,
+      ...options.additionalParams,
+    }
+
+    const response = await serperClient.post('/news', requestParams)
+
+    const duration = Date.now() - startTime
+    const results = response.data.news || []
+
+    logger.debug(
+      {
+        query: sanitizedQuery,
+        results: results.length,
+        duration: `${duration}ms`,
+      },
+      'Serper News search completed'
+    )
+
+    return {
+      success: true,
+      results,
+      metadata: {
+        query: sanitizedQuery,
+        resultCount: results.length,
+        duration,
+      },
+    }
   }, 'Serper News')
 }
-export async function performGoogleSearch(query) {
-  if (!serperClient) return { success: false, snippets: 'SERPER_API_KEY not configured.' }
+
+/**
+ * Performs a Google search using Serper API
+ * @param {string} query - Search query
+ * @param {Object} options - Search options
+ * @returns {Promise<Object>} Search results with snippets
+ */
+export async function performGoogleSearch(query, options = {}) {
+  if (!serperClient) {
+    return {
+      success: false,
+      snippets: 'SERPER_API_KEY not configured.',
+      error: 'API not configured',
+    }
+  }
+
+  const sanitizedQuery = sanitizeQuery(query)
+
+  if (!sanitizedQuery) {
+    logger.warn({ query }, 'Invalid query provided for Google search')
+    return {
+      success: false,
+      snippets: 'Invalid search query.',
+      error: 'Invalid query',
+    }
+  }
+
+  const startTime = Date.now()
+
   return withRetry(async () => {
     apiCallTracker.recordCall('serper_search')
-    const response = await serperClient.post('/search', { q: query })
-    const organicResults = response.data.organic || []
-    if (organicResults.length > 0) {
-      const snippets = organicResults
-        .slice(0, 5)
-        .map((res) => `- ${res.title}: ${res.snippet}`)
-        .join('\n')
-      return { success: true, snippets }
+
+    const requestParams = {
+      q: sanitizedQuery,
+      num: options.numResults || API_CONFIG.SERPER.DEFAULT_RESULTS,
+      ...options.additionalParams,
     }
-    return { success: false, snippets: 'No search results found.' }
+
+    const response = await serperClient.post('/search', requestParams)
+
+    const organicResults = response.data.organic || []
+    const duration = Date.now() - startTime
+
+    if (organicResults.length === 0) {
+      logger.debug(
+        { query: sanitizedQuery, duration: `${duration}ms` },
+        'Google search returned no results'
+      )
+
+      return {
+        success: false,
+        snippets: 'No search results found.',
+        results: [],
+        metadata: {
+          query: sanitizedQuery,
+          resultCount: 0,
+          duration,
+        },
+      }
+    }
+
+    // Format results into snippets
+    const maxResults = options.maxSnippets || API_CONFIG.SERPER.DEFAULT_RESULTS
+    const snippets = organicResults
+      .slice(0, maxResults)
+      .map((res, index) => {
+        const title = res.title || 'Untitled'
+        const snippet = res.snippet || 'No description available'
+        return `${index + 1}. ${title}: ${snippet}`
+      })
+      .join('\n')
+
+    logger.debug(
+      {
+        query: sanitizedQuery,
+        results: organicResults.length,
+        duration: `${duration}ms`,
+      },
+      'Google search completed'
+    )
+
+    return {
+      success: true,
+      snippets,
+      results: organicResults.slice(0, maxResults),
+      metadata: {
+        query: sanitizedQuery,
+        resultCount: organicResults.length,
+        duration,
+      },
+    }
   }, 'Serper Search')
 }
-export async function findNewsApiArticlesForEvent(headline) {
-  if (!newsapi) return { success: false, snippets: 'NewsAPI key not configured.' }
-  return withRetry(async () => {
-    apiCallTracker.recordCall('newsapi_search')
-    const response = await newsapi.v2.everything({
-      q: `"${headline}"`,
-      pageSize: 5,
-      sortBy: 'relevancy',
-      language: 'en,da,sv,no',
-    })
-    if (response.articles && response.articles.length > 0) {
-      const snippets = response.articles
-        .map((a) => `- ${a.title} (${a.source.name}): ${a.description || ''}`)
-        .join('\n')
-      return { success: true, snippets }
+
+/**
+ * Finds related articles for an event using NewsAPI
+ * @param {string} headline - Event headline to search for
+ * @param {Object} options - Search options
+ * @returns {Promise<Object>} Related articles with snippets
+ */
+export async function findNewsApiArticlesForEvent(headline, options = {}) {
+  if (!newsapi) {
+    return {
+      success: false,
+      snippets: 'NewsAPI key not configured.',
+      error: 'API not configured',
     }
-    return { success: false, snippets: 'No related articles found.' }
-  }, 'NewsAPI')
+  }
+
+  const sanitizedQuery = sanitizeQuery(headline)
+
+  if (!sanitizedQuery) {
+    logger.warn({ headline }, 'Invalid headline provided for NewsAPI search')
+    return {
+      success: false,
+      snippets: 'Invalid search query.',
+      error: 'Invalid query',
+    }
+  }
+
+  const startTime = Date.now()
+
+  return withRetry(
+    async () => {
+      apiCallTracker.recordCall('newsapi_search')
+
+      const queryParams = {
+        q: `"${sanitizedQuery}"`,
+        pageSize: options.pageSize || API_CONFIG.NEWSAPI.DEFAULT_PAGE_SIZE,
+        sortBy: options.sortBy || 'relevancy',
+        language: options.languages || API_CONFIG.NEWSAPI.DEFAULT_LANGUAGES,
+        ...options.additionalParams,
+      }
+
+      const response = await Promise.race([
+        newsapi.v2.everything(queryParams),
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error('Request timeout')),
+            API_CONFIG.NEWSAPI.TIMEOUT
+          )
+        ),
+      ])
+
+      const duration = Date.now() - startTime
+      const articles = response.articles || []
+
+      if (articles.length === 0) {
+        logger.debug(
+          { query: sanitizedQuery, duration: `${duration}ms` },
+          'NewsAPI search returned no results'
+        )
+
+        return {
+          success: false,
+          snippets: 'No related articles found.',
+          results: [],
+          metadata: {
+            query: sanitizedQuery,
+            resultCount: 0,
+            duration,
+          },
+        }
+      }
+
+      // Format articles into snippets
+      const snippets = articles
+        .map((article, index) => {
+          const title = article.title || 'Untitled'
+          const source = article.source?.name || 'Unknown'
+          const description = article.description || 'No description'
+          return `${index + 1}. ${title} (${source}): ${description}`
+        })
+        .join('\n')
+
+      logger.debug(
+        {
+          query: sanitizedQuery,
+          results: articles.length,
+          duration: `${duration}ms`,
+        },
+        'NewsAPI search completed'
+      )
+
+      return {
+        success: true,
+        snippets,
+        results: articles,
+        metadata: {
+          query: sanitizedQuery,
+          resultCount: articles.length,
+          duration,
+        },
+      }
+    },
+    'NewsAPI',
+    API_CONFIG.NEWSAPI.MAX_RETRIES
+  )
+}
+
+/**
+ * Health check for configured search APIs
+ * @returns {Promise<Object>} Status of each API
+ */
+export async function checkExternalSearchApiHealth() {
+  const health = {
+    serper: {
+      configured: !!serperClient,
+      operational: false,
+    },
+    newsapi: {
+      configured: !!newsapi,
+      operational: false,
+    },
+  }
+
+  // Test Serper if configured
+  if (serperClient) {
+    try {
+      const result = await performGoogleSearch('test', { numResults: 1 })
+      health.serper.operational = result.success
+    } catch (error) {
+      logger.debug({ err: error }, 'Serper health check failed')
+    }
+  }
+
+  // Test NewsAPI if configured
+  if (newsapi) {
+    try {
+      const result = await findNewsApiArticlesForEvent('test', { pageSize: 1 })
+      health.newsapi.operational = result.success
+    } catch (error) {
+      logger.debug({ err: error }, 'NewsAPI health check failed')
+    }
+  }
+
+  return health
+}
+
+/**
+ * Get API usage statistics
+ * @returns {Object} Usage statistics from apiCallTracker
+ */
+export function getApiUsageStats() {
+  return apiCallTracker.getStats()
 }
 
 ```
 
 ## 📄 src/search/serpapi.js
-*Lines: 61, Size: 1.8 KB*
+*Lines: 432, Size: 9.78 KB*
 
 ```javascript
-// packages/ai-services/src/search/serpapi.js
+// packages/ai-services/src/search/serpapi.js (version 2.0.0)
 import { getJson } from 'serpapi'
 import { env } from '@headlines/config'
 import { logger } from '@headlines/utils-shared'
 
-const searchCache = new Map()
-const CACHE_TTL = 1000 * 60 * 60 // 1 hour
+/**
+ * Configuration for SerpAPI and caching
+ */
+const SERPAPI_CONFIG = {
+  CACHE_TTL: 1000 * 60 * 60, // 1 hour
+  CACHE_MAX_SIZE: 1000, // Maximum cache entries
+  DEFAULT_LOCATION: 'United States',
+  DEFAULT_COUNTRY: 'us',
+  DEFAULT_LANGUAGE: 'en',
+  MAX_RESULTS: 5,
+  REQUEST_TIMEOUT: 30000, // 30 seconds
+  MAX_RETRIES: 2,
+}
 
-export async function getGoogleSearchResults(query) {
-  if (!env.SERPAPI_API_KEY) {
-    logger.warn('[SerpAPI] SERPAPI_API_KEY is not configured. Skipping web search.')
-    return { success: true, results: [] }
+/**
+ * In-memory cache with LRU-style eviction
+ */
+class SearchCache {
+  constructor(maxSize = SERPAPI_CONFIG.CACHE_MAX_SIZE, ttl = SERPAPI_CONFIG.CACHE_TTL) {
+    this.cache = new Map()
+    this.maxSize = maxSize
+    this.ttl = ttl
+    this.hits = 0
+    this.misses = 0
   }
 
-  if (!query) {
-    return { success: false, error: 'Query is required.' }
+  /**
+   * Generates a cache key from query and options
+   */
+  generateKey(query, options = {}) {
+    const normalizedQuery = query.toLowerCase().trim()
+    const optionsKey = JSON.stringify({
+      location: options.location,
+      gl: options.gl,
+      hl: options.hl,
+    })
+    return `serpapi_${normalizedQuery}_${optionsKey}`
   }
 
-  const cacheKey = `serpapi_${query.toLowerCase().trim()}`
-  if (searchCache.has(cacheKey)) {
-    const cached = searchCache.get(cacheKey)
-    if (Date.now() - cached.timestamp < CACHE_TTL) {
-      logger.info(`[SerpAPI Cache] Hit for query: "${query}"`)
-      return cached.data
+  /**
+   * Gets a value from cache if valid
+   */
+  get(key) {
+    if (!this.cache.has(key)) {
+      this.misses++
+      return null
+    }
+
+    const cached = this.cache.get(key)
+
+    // Check if expired
+    if (Date.now() - cached.timestamp > this.ttl) {
+      this.cache.delete(key)
+      this.misses++
+      return null
+    }
+
+    // Move to end (LRU behavior)
+    this.cache.delete(key)
+    this.cache.set(key, cached)
+    this.hits++
+
+    return cached.data
+  }
+
+  /**
+   * Sets a value in cache with LRU eviction
+   */
+  set(key, data) {
+    // If at capacity, remove oldest entry
+    if (this.cache.size >= this.maxSize) {
+      const firstKey = this.cache.keys().next().value
+      this.cache.delete(firstKey)
+
+      logger.debug(
+        { evicted: firstKey, size: this.cache.size },
+        'Cache eviction occurred'
+      )
+    }
+
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now(),
+    })
+  }
+
+  /**
+   * Clears expired entries from cache
+   */
+  prune() {
+    const now = Date.now()
+    let pruned = 0
+
+    for (const [key, value] of this.cache.entries()) {
+      if (now - value.timestamp > this.ttl) {
+        this.cache.delete(key)
+        pruned++
+      }
+    }
+
+    if (pruned > 0) {
+      logger.debug({ pruned, remaining: this.cache.size }, 'Cache pruned expired entries')
+    }
+
+    return pruned
+  }
+
+  /**
+   * Gets cache statistics
+   */
+  getStats() {
+    const total = this.hits + this.misses
+    const hitRate = total > 0 ? ((this.hits / total) * 100).toFixed(2) : 0
+
+    return {
+      size: this.cache.size,
+      maxSize: this.maxSize,
+      hits: this.hits,
+      misses: this.misses,
+      hitRate: `${hitRate}%`,
+      ttl: this.ttl,
     }
   }
 
-  logger.info(`[SerpAPI] Performing live search for: "${query}"`)
+  /**
+   * Clears the entire cache
+   */
+  clear() {
+    const size = this.cache.size
+    this.cache.clear()
+    this.hits = 0
+    this.misses = 0
+
+    logger.info({ cleared: size }, 'Cache cleared')
+  }
+}
+
+// Initialize cache
+const searchCache = new SearchCache()
+
+// Periodic cache pruning (every 15 minutes)
+setInterval(
+  () => {
+    searchCache.prune()
+  },
+  15 * 60 * 1000
+)
+
+/**
+ * Validates and sanitizes search query
+ * @param {string} query - Raw search query
+ * @returns {string|null} Sanitized query or null if invalid
+ */
+function sanitizeQuery(query) {
+  if (!query || typeof query !== 'string') {
+    return null
+  }
+
+  const sanitized = query
+    .trim()
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .substring(0, 500) // Limit length
+
+  return sanitized.length > 0 ? sanitized : null
+}
+
+/**
+ * Normalizes a search result item
+ * @param {Object} item - Raw result item from SerpAPI
+ * @returns {Object|null} Normalized result or null if invalid
+ */
+function normalizeResult(item) {
+  if (!item) return null
+
+  const title = item.title || item.question || 'Untitled'
+  const link = item.link || item.source_link || null
+  const snippet = item.snippet || item.answer || item.result || item.description || null
+
+  // Must have at least a snippet and title
+  if (!snippet || !title) {
+    return null
+  }
+
+  return {
+    title: title.trim(),
+    link,
+    snippet: snippet.trim(),
+    source: 'Google Search',
+    position: item.position || null,
+    date: item.date || null,
+  }
+}
+
+/**
+ * Executes SerpAPI search with timeout and retry logic
+ * @param {Object} params - Search parameters
+ * @param {number} retryCount - Current retry attempt
+ * @returns {Promise<Object>} Search response
+ */
+async function executeSerpApiSearch(params, retryCount = 0) {
+  try {
+    // Wrap in timeout promise
+    const response = await Promise.race([
+      getJson(params),
+      new Promise((_, reject) =>
+        setTimeout(
+          () => reject(new Error('Request timeout')),
+          SERPAPI_CONFIG.REQUEST_TIMEOUT
+        )
+      ),
+    ])
+
+    return response
+  } catch (error) {
+    const isRetryable =
+      error.code === 'ETIMEDOUT' ||
+      error.code === 'ECONNRESET' ||
+      error.message?.includes('timeout') ||
+      error.message?.includes('network')
+
+    if (isRetryable && retryCount < SERPAPI_CONFIG.MAX_RETRIES) {
+      const delay = 1000 * Math.pow(2, retryCount)
+
+      logger.warn(
+        {
+          attempt: retryCount + 1,
+          maxRetries: SERPAPI_CONFIG.MAX_RETRIES,
+          delay: `${delay}ms`,
+          err: error.message,
+        },
+        'SerpAPI request failed, retrying...'
+      )
+
+      await new Promise((resolve) => setTimeout(resolve, delay))
+      return executeSerpApiSearch(params, retryCount + 1)
+    }
+
+    throw error
+  }
+}
+
+/**
+ * Performs a Google search using SerpAPI
+ * @param {string} query - Search query
+ * @param {Object} options - Search options
+ * @returns {Promise<Object>} Search results with success status
+ */
+export async function getGoogleSearchResults(query, options = {}) {
+  const startTime = Date.now()
+
+  // Check API key
+  if (!env.SERPAPI_API_KEY) {
+    logger.warn('SERPAPI_API_KEY is not configured. Skipping web search.')
+    return {
+      success: true,
+      results: [],
+      cached: false,
+      error: 'API key not configured',
+    }
+  }
+
+  // Validate query
+  const sanitizedQuery = sanitizeQuery(query)
+
+  if (!sanitizedQuery) {
+    logger.warn({ query }, 'Invalid query provided for SerpAPI search')
+    return {
+      success: false,
+      error: 'Query is required and must be a non-empty string.',
+      results: [],
+    }
+  }
+
+  // Check cache
+  const cacheKey = searchCache.generateKey(sanitizedQuery, options)
+  const cachedResult = searchCache.get(cacheKey)
+
+  if (cachedResult) {
+    const duration = Date.now() - startTime
+
+    logger.info(
+      {
+        query: sanitizedQuery,
+        duration: `${duration}ms`,
+        stats: searchCache.getStats(),
+      },
+      'SerpAPI cache hit'
+    )
+
+    return {
+      ...cachedResult,
+      cached: true,
+    }
+  }
+
+  // Perform live search
+  logger.info({ query: sanitizedQuery }, 'SerpAPI performing live search')
 
   try {
-    const response = await getJson({
+    const searchParams = {
       api_key: env.SERPAPI_API_KEY,
       engine: 'google',
-      q: query,
-      location: 'United States',
-      gl: 'us',
-      hl: 'en',
-    })
+      q: sanitizedQuery,
+      location: options.location || SERPAPI_CONFIG.DEFAULT_LOCATION,
+      gl: options.country || SERPAPI_CONFIG.DEFAULT_COUNTRY,
+      hl: options.language || SERPAPI_CONFIG.DEFAULT_LANGUAGE,
+      num: options.numResults || SERPAPI_CONFIG.MAX_RESULTS,
+      ...options.additionalParams,
+    }
 
+    const response = await executeSerpApiSearch(searchParams)
+
+    // Extract and normalize results
     const organicResults = response.organic_results || []
     const answerBox = response.answer_box ? [response.answer_box] : []
+    const knowledgeGraph = response.knowledge_graph ? [response.knowledge_graph] : []
 
-    const formattedResults = [...answerBox, ...organicResults]
-      .map((item) => ({
-        title: item.title,
-        link: item.link,
-        snippet: item.snippet || item.answer || item.result,
-        source: 'Google Search',
-      }))
-      .filter((item) => item.snippet)
-      .slice(0, 5)
+    // Combine all result types
+    const allResults = [...answerBox, ...knowledgeGraph, ...organicResults]
 
-    const result = { success: true, results: formattedResults }
-    searchCache.set(cacheKey, { data: result, timestamp: Date.now() })
+    const formattedResults = allResults
+      .map(normalizeResult)
+      .filter(Boolean)
+      .slice(0, options.maxResults || SERPAPI_CONFIG.MAX_RESULTS)
+
+    const duration = Date.now() - startTime
+
+    const result = {
+      success: true,
+      results: formattedResults,
+      cached: false,
+      metadata: {
+        query: sanitizedQuery,
+        resultCount: formattedResults.length,
+        duration,
+        searchInfo: response.search_information || null,
+      },
+    }
+
+    // Cache successful result
+    searchCache.set(cacheKey, result)
+
+    logger.info(
+      {
+        query: sanitizedQuery,
+        results: formattedResults.length,
+        duration: `${duration}ms`,
+      },
+      'SerpAPI search completed successfully'
+    )
+
     return result
   } catch (error) {
-    logger.error({ err: error }, '[SerpAPI Error]')
-    return { success: false, error: `Failed to fetch search results: ${error.message}` }
+    const duration = Date.now() - startTime
+
+    logger.error(
+      {
+        query: sanitizedQuery,
+        err: error.message || error,
+        duration: `${duration}ms`,
+      },
+      'SerpAPI search failed'
+    )
+
+    return {
+      success: false,
+      error: `Failed to fetch search results: ${error.message}`,
+      results: [],
+      cached: false,
+    }
+  }
+}
+
+/**
+ * Gets cache statistics for monitoring
+ * @returns {Object} Cache statistics
+ */
+export function getCacheStats() {
+  return searchCache.getStats()
+}
+
+/**
+ * Clears the search cache
+ * @returns {void}
+ */
+export function clearCache() {
+  searchCache.clear()
+}
+
+/**
+ * Manually prunes expired cache entries
+ * @returns {number} Number of entries pruned
+ */
+export function pruneCache() {
+  return searchCache.prune()
+}
+
+/**
+ * Health check for SerpAPI
+ * @returns {Promise<Object>} API health status
+ */
+export async function checkApiHealth() {
+  if (!env.SERPAPI_API_KEY) {
+    return {
+      configured: false,
+      operational: false,
+      error: 'API key not configured',
+    }
+  }
+
+  try {
+    const result = await getGoogleSearchResults('test', { numResults: 1 })
+
+    return {
+      configured: true,
+      operational: result.success,
+      error: result.error || null,
+    }
+  } catch (error) {
+    return {
+      configured: true,
+      operational: false,
+      error: error.message,
+    }
   }
 }
 
 ```
 
 ## 📄 src/search/wikipedia.js
-*Lines: 131, Size: 4.35 KB*
+*Lines: 643, Size: 15.1 KB*
 
 ```javascript
+// packages/ai-services/src/search/wikipedia.js
 import { logger, apiCallTracker } from '@headlines/utils-shared'
 import { settings } from '@headlines/config'
-// --- START: DEFINITIVE FIX ---
-// Import the centrally defined, corrected chain instead of recreating it locally.
 import { disambiguationChain } from '../chains/index.js'
-// --- END: DEFINITIVE FIX ---
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { disambiguationSchema } from '@headlines/models/schemas'
 
-const WIKI_API_ENDPOINT = 'https://en.wikipedia.org/w/api.php'
-const WIKI_SUMMARY_LENGTH = 750
+/**
+ * Wikipedia API configuration
+ */
+const WIKIPEDIA_CONFIG = {
+  API_ENDPOINT: 'https://en.wikipedia.org/w/api.php',
+  SUMMARY_LENGTH: 750,
+  MAX_SEARCH_RESULTS: 5,
+  REQUEST_TIMEOUT: 30000, // 30 seconds
+  MAX_RETRIES: 2,
+  USER_AGENT: 'HeadlinesBot/1.0 (Educational; https://headlines.app)',
+  MIN_SUMMARY_LENGTH: 100, // Minimum viable summary length
+  CACHE_TTL: 1000 * 60 * 60 * 24, // 24 hours
+  MAX_CACHE_SIZE: 500,
+}
 
-// --- START: DEFINITIVE FIX ---
-// The entire local definition of the chain is now removed.
-// --- END: DEFINITIVE FIX ---
+/**
+ * Simple in-memory cache for Wikipedia results
+ */
+class WikipediaCache {
+  constructor(
+    maxSize = WIKIPEDIA_CONFIG.MAX_CACHE_SIZE,
+    ttl = WIKIPEDIA_CONFIG.CACHE_TTL
+  ) {
+    this.cache = new Map()
+    this.maxSize = maxSize
+    this.ttl = ttl
+  }
 
-async function fetchWithRetry(url, options, maxRetries = 2) {
+  generateKey(query) {
+    return `wiki_${query.toLowerCase().trim()}`
+  }
+
+  get(query) {
+    const key = this.generateKey(query)
+
+    if (!this.cache.has(key)) {
+      return null
+    }
+
+    const cached = this.cache.get(key)
+
+    // Check expiration
+    if (Date.now() - cached.timestamp > this.ttl) {
+      this.cache.delete(key)
+      return null
+    }
+
+    return cached.data
+  }
+
+  set(query, data) {
+    // LRU eviction if at capacity
+    if (this.cache.size >= this.maxSize) {
+      const firstKey = this.cache.keys().next().value
+      this.cache.delete(firstKey)
+    }
+
+    const key = this.generateKey(query)
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now(),
+    })
+  }
+
+  clear() {
+    this.cache.clear()
+  }
+
+  getStats() {
+    return {
+      size: this.cache.size,
+      maxSize: this.maxSize,
+      ttl: this.ttl,
+    }
+  }
+}
+
+const wikipediaCache = new WikipediaCache()
+
+/**
+ * Validates and sanitizes Wikipedia query
+ * @param {string} query - Raw query
+ * @returns {string|null} Sanitized query or null if invalid
+ */
+function sanitizeQuery(query) {
+  if (!query || typeof query !== 'string') {
+    return null
+  }
+
+  const sanitized = query.trim().replace(/\s+/g, ' ').substring(0, 300) // Limit length
+
+  return sanitized.length > 0 ? sanitized : null
+}
+
+/**
+ * Fetches a URL with retry logic and exponential backoff
+ * @param {string} url - URL to fetch
+ * @param {Object} options - Fetch options
+ * @param {number} maxRetries - Maximum retry attempts
+ * @returns {Promise<Response>} Fetch response
+ */
+async function fetchWithRetry(
+  url,
+  options = {},
+  maxRetries = WIKIPEDIA_CONFIG.MAX_RETRIES
+) {
+  const fetchOptions = {
+    ...options,
+    headers: {
+      'User-Agent': WIKIPEDIA_CONFIG.USER_AGENT,
+      ...options.headers,
+    },
+  }
+
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const response = await fetch(url, options)
-      if (!response.ok) throw new Error(`API returned status ${response.status}`)
+      const response = await Promise.race([
+        fetch(url, fetchOptions),
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error('Request timeout')),
+            WIKIPEDIA_CONFIG.REQUEST_TIMEOUT
+          )
+        ),
+      ])
+
+      if (!response.ok) {
+        throw new Error(`Wikipedia API returned status ${response.status}`)
+      }
+
       return response
     } catch (error) {
-      if (attempt === maxRetries) throw error
+      const isLastAttempt = attempt === maxRetries
+      const isRetryable =
+        error.message?.includes('timeout') ||
+        error.message?.includes('network') ||
+        error.code === 'ETIMEDOUT' ||
+        error.code === 'ECONNRESET'
+
+      if (!isRetryable || isLastAttempt) {
+        logger.error(
+          {
+            url,
+            attempt,
+            err: error.message,
+          },
+          'Wikipedia fetch failed'
+        )
+        throw error
+      }
+
       const delay = 1000 * Math.pow(2, attempt - 1)
+
       logger.warn(
-        `[Wikipedia Fetch] Attempt ${attempt} failed for ${url}. Retrying in ${delay}ms...`
+        {
+          url,
+          attempt,
+          maxRetries,
+          delay: `${delay}ms`,
+          err: error.message,
+        },
+        'Wikipedia fetch failed, retrying...'
       )
-      await new Promise((res) => setTimeout(res, delay))
+
+      await new Promise((resolve) => setTimeout(resolve, delay))
     }
   }
 }
 
-export async function fetchWikipediaSummary(query) {
-  if (!query) return { success: false, error: 'Query cannot be empty.' }
+/**
+ * Searches Wikipedia for matching articles
+ * @param {string} query - Search query
+ * @param {number} limit - Maximum results
+ * @returns {Promise<Array>} Search results
+ */
+async function searchWikipedia(query, limit = WIKIPEDIA_CONFIG.MAX_SEARCH_RESULTS) {
+  const searchParams = new URLSearchParams({
+    action: 'query',
+    list: 'search',
+    srsearch: query,
+    srlimit: String(limit),
+    format: 'json',
+    origin: '*',
+  })
+
+  const url = `${WIKIPEDIA_CONFIG.API_ENDPOINT}?${searchParams.toString()}`
+
+  const response = await fetchWithRetry(url)
+  const data = await response.json()
+
+  const results = data.query?.search || []
+
+  if (results.length === 0) {
+    throw new Error(`No Wikipedia search results found for "${query}"`)
+  }
+
+  return results
+}
+
+/**
+ * Fetches article summary from Wikipedia
+ * @param {string} title - Article title
+ * @returns {Promise<Object>} Article summary and metadata
+ */
+async function fetchArticleSummary(title) {
+  const summaryParams = new URLSearchParams({
+    action: 'query',
+    prop: 'extracts|info|pageimages',
+    exintro: 'true',
+    explaintext: 'true',
+    titles: title,
+    format: 'json',
+    redirects: '1',
+    inprop: 'url',
+    piprop: 'thumbnail',
+    pithumbsize: '300',
+    origin: '*',
+  })
+
+  const url = `${WIKIPEDIA_CONFIG.API_ENDPOINT}?${summaryParams.toString()}`
+
+  const response = await fetchWithRetry(url)
+  const data = await response.json()
+
+  const pages = data.query?.pages
+
+  if (!pages) {
+    throw new Error(`No page data returned for "${title}"`)
+  }
+
+  const pageId = Object.keys(pages)[0]
+  const page = pages[pageId]
+
+  // Check for missing page
+  if (pageId === '-1' || page.missing) {
+    throw new Error(`Wikipedia page not found for "${title}"`)
+  }
+
+  const summary = page.extract
+
+  if (!summary) {
+    throw new Error(`Could not extract summary for page "${title}"`)
+  }
+
+  return {
+    title: page.title,
+    summary,
+    url: page.fullurl || `https://en.wikipedia.org/wiki/${encodeURIComponent(title)}`,
+    thumbnail: page.thumbnail?.source || null,
+    pageId: page.pageid,
+  }
+}
+
+/**
+ * Uses AI to disambiguate between multiple Wikipedia search results
+ * @param {string} query - Original query
+ * @param {Array} searchResults - Search results to disambiguate
+ * @returns {Promise<string|null>} Best matching title or null
+ */
+async function disambiguateResults(query, searchResults) {
+  if (searchResults.length === 1) {
+    return searchResults[0].title
+  }
+
+  try {
+    const userContent = `Original Query: "${query}"\n\nSearch Results:\n${JSON.stringify(
+      searchResults.map((r) => ({
+        title: r.title,
+        snippet: r.snippet?.replace(/<[^>]*>/g, '') || '', // Strip HTML tags
+      }))
+    )}`
+
+    logger.debug(
+      {
+        query,
+        candidates: searchResults.length,
+      },
+      'Attempting AI disambiguation'
+    )
+
+    const disambiguationResponse = await disambiguationChain({ inputText: userContent })
+
+    if (
+      disambiguationResponse &&
+      !disambiguationResponse.error &&
+      disambiguationResponse.best_title
+    ) {
+      logger.info(
+        {
+          query,
+          selected: disambiguationResponse.best_title,
+          confidence: disambiguationResponse.confidence || 'unknown',
+        },
+        'AI disambiguation successful'
+      )
+
+      return disambiguationResponse.best_title
+    }
+
+    logger.debug({ query }, 'AI disambiguation returned no result')
+    return null
+  } catch (error) {
+    logger.warn(
+      {
+        err: error.message,
+        query,
+      },
+      'AI disambiguation failed'
+    )
+    return null
+  }
+}
+
+/**
+ * Fetches Wikipedia summary with intelligent disambiguation
+ * @param {string} query - Search query
+ * @param {Object} options - Fetch options
+ * @returns {Promise<Object>} Summary result with metadata
+ */
+export async function fetchWikipediaSummary(query, options = {}) {
+  const startTime = Date.now()
+
+  // Validate query
+  const sanitizedQuery = sanitizeQuery(query)
+
+  if (!sanitizedQuery) {
+    logger.warn({ query }, 'Invalid Wikipedia query provided')
+    return {
+      success: false,
+      error: 'Query cannot be empty or invalid.',
+      query,
+    }
+  }
+
+  // Check cache
+  const cached = wikipediaCache.get(sanitizedQuery)
+
+  if (cached && !options.skipCache) {
+    const duration = Date.now() - startTime
+
+    logger.debug(
+      {
+        query: sanitizedQuery,
+        duration: `${duration}ms`,
+      },
+      'Wikipedia cache hit'
+    )
+
+    return {
+      ...cached,
+      cached: true,
+    }
+  }
+
   try {
     apiCallTracker.recordCall('wikipedia')
-    const searchParams = new URLSearchParams({
-      action: 'query',
-      list: 'search',
-      srsearch: query,
-      srlimit: '5',
-      format: 'json',
-    })
-    const searchResponse = await fetchWithRetry(
-      `${WIKI_API_ENDPOINT}?${searchParams.toString()}`
+
+    // 1. Search for articles
+    const searchResults = await searchWikipedia(
+      sanitizedQuery,
+      options.searchLimit || WIKIPEDIA_CONFIG.MAX_SEARCH_RESULTS
     )
-    const searchData = await searchResponse.json()
-    const searchResults = searchData.query.search
-    if (!searchResults || searchResults.length === 0)
-      throw new Error(`No search results for "${query}".`)
 
-    let best_title = null
-    try {
-      const userContent = `Original Query: "${query}"\n\nSearch Results:\n${JSON.stringify(searchResults.map((r) => ({ title: r.title, snippet: r.snippet })))}`
+    logger.debug(
+      {
+        query: sanitizedQuery,
+        results: searchResults.length,
+      },
+      'Wikipedia search completed'
+    )
 
-      // --- START: DEFINITIVE FIX ---
-      // Call the imported, corrected chain.
-      const disambiguationResponse = await disambiguationChain({ inputText: userContent })
-      // --- END: DEFINITIVE FIX ---
+    // 2. Disambiguate (if needed)
+    let bestTitle = null
 
-      if (
-        disambiguationResponse &&
-        !disambiguationResponse.error &&
-        disambiguationResponse.best_title
-      ) {
-        best_title = disambiguationResponse.best_title
-      }
-    } catch (e) {
-      logger.warn({ err: e }, `Disambiguation chain failed for query "${query}".`)
+    if (options.useDisambiguation !== false) {
+      bestTitle = await disambiguateResults(sanitizedQuery, searchResults)
     }
 
-    if (!best_title) {
-      best_title = searchResults[0].title
+    // 3. Fallback to first result if disambiguation fails
+    if (!bestTitle) {
+      bestTitle = searchResults[0].title
+
       logger.info(
-        `[Wikipedia] AI disambiguation failed or returned null. Falling back to top search result: "${best_title}"`
+        {
+          query: sanitizedQuery,
+          fallback: bestTitle,
+        },
+        'Using top search result (disambiguation unavailable or failed)'
       )
     }
 
-    const summaryParams = new URLSearchParams({
-      action: 'query',
-      prop: 'extracts',
-      exintro: 'true',
-      explaintext: 'true',
-      titles: best_title,
-      format: 'json',
-      redirects: '1',
-    })
-    const summaryResponse = await fetchWithRetry(
-      `${WIKI_API_ENDPOINT}?${summaryParams.toString()}`
-    )
-    const summaryData = await summaryResponse.json()
-    const pages = summaryData.query.pages
-    const pageId = Object.keys(pages)[0]
-    const summary = pages[pageId]?.extract
-    if (!summary) throw new Error(`Could not extract summary for page "${best_title}".`)
+    // 4. Fetch article summary
+    const article = await fetchArticleSummary(bestTitle)
 
+    // 5. Validate content quality
+    const validation = await validateWikipediaContent(article.summary)
+
+    if (!validation.valid) {
+      logger.warn(
+        {
+          query: sanitizedQuery,
+          title: bestTitle,
+          reason: validation.reason,
+        },
+        'Wikipedia content validation failed'
+      )
+
+      // Try second result if available
+      if (searchResults.length > 1) {
+        logger.info('Attempting second search result...')
+        const secondTitle = searchResults[1].title
+        const secondArticle = await fetchArticleSummary(secondTitle)
+        const secondValidation = await validateWikipediaContent(secondArticle.summary)
+
+        if (secondValidation.valid) {
+          Object.assign(article, secondArticle)
+        }
+      }
+    }
+
+    // 6. Truncate summary if needed
+    const summaryLength = options.summaryLength || WIKIPEDIA_CONFIG.SUMMARY_LENGTH
     const conciseSummary =
-      summary.length > WIKI_SUMMARY_LENGTH
-        ? summary.substring(0, WIKI_SUMMARY_LENGTH) + '...'
-        : summary
-    return { success: true, summary: conciseSummary, title: best_title, query }
+      article.summary.length > summaryLength
+        ? article.summary.substring(0, summaryLength) + '...'
+        : article.summary
+
+    const duration = Date.now() - startTime
+
+    const result = {
+      success: true,
+      summary: conciseSummary,
+      fullSummary: article.summary,
+      title: article.title,
+      url: article.url,
+      thumbnail: article.thumbnail,
+      query: sanitizedQuery,
+      quality: validation.quality,
+      cached: false,
+      metadata: {
+        duration,
+        pageId: article.pageId,
+        searchResults: searchResults.length,
+        disambiguated: !!options.useDisambiguation,
+      },
+    }
+
+    // Cache successful result
+    wikipediaCache.set(sanitizedQuery, result)
+
+    logger.info(
+      {
+        query: sanitizedQuery,
+        title: article.title,
+        summaryLength: conciseSummary.length,
+        duration: `${duration}ms`,
+      },
+      'Wikipedia summary fetched successfully'
+    )
+
+    return result
   } catch (error) {
-    logger.warn(`Wikipedia lookup for "${query}" failed: ${error.message}`)
-    return { success: false, error: error.message, query }
+    const duration = Date.now() - startTime
+
+    logger.warn(
+      {
+        query: sanitizedQuery,
+        err: error.message,
+        duration: `${duration}ms`,
+      },
+      'Wikipedia lookup failed'
+    )
+
+    return {
+      success: false,
+      error: error.message,
+      query: sanitizedQuery,
+      cached: false,
+    }
   }
 }
 
-export async function fetchBatchWikipediaSummaries(queries) {
-  const promises = queries.map((q) => fetchWikipediaSummary(q))
-  return Promise.all(promises)
+/**
+ * Fetches Wikipedia summaries for multiple queries in parallel
+ * @param {string[]} queries - Array of search queries
+ * @param {Object} options - Fetch options
+ * @returns {Promise<Array>} Array of summary results
+ */
+export async function fetchBatchWikipediaSummaries(queries, options = {}) {
+  if (!Array.isArray(queries) || queries.length === 0) {
+    logger.warn('Invalid or empty queries array provided for batch fetch')
+    return []
+  }
+
+  const startTime = Date.now()
+
+  logger.info({ count: queries.length }, 'Starting batch Wikipedia fetch')
+
+  const promises = queries.map((query) =>
+    fetchWikipediaSummary(query, options).catch((error) => ({
+      success: false,
+      error: error.message,
+      query,
+    }))
+  )
+
+  const results = await Promise.all(promises)
+
+  const duration = Date.now() - startTime
+  const successful = results.filter((r) => r.success).length
+  const failed = results.length - successful
+
+  logger.info(
+    {
+      total: results.length,
+      successful,
+      failed,
+      duration: `${duration}ms`,
+    },
+    'Batch Wikipedia fetch completed'
+  )
+
+  return results
 }
 
+/**
+ * Validates Wikipedia content quality
+ * @param {string} text - Wikipedia article text
+ * @returns {Promise<Object>} Validation result
+ */
 export async function validateWikipediaContent(text) {
+  if (!text || typeof text !== 'string') {
+    return {
+      valid: false,
+      quality: 'low',
+      reason: 'Content is empty or invalid',
+    }
+  }
+
   const lowerText = text.toLowerCase()
+
+  // Check for disambiguation pages
   const isDisambiguation =
-    lowerText.includes('may refer to:') || lowerText.includes('is a list of')
+    lowerText.includes('may refer to:') ||
+    lowerText.includes('is a list of') ||
+    lowerText.includes('disambiguation)')
+
   if (isDisambiguation) {
     return {
       valid: false,
       quality: 'low',
-      reason: 'Disambiguation page content detected.',
+      reason: 'Disambiguation page content detected',
     }
   }
+
+  // Check for list pages (often low quality for summaries)
+  const isListPage =
+    lowerText.startsWith('this is a list') || lowerText.startsWith('list of')
+
+  if (isListPage) {
+    return {
+      valid: false,
+      quality: 'low',
+      reason: 'List page content detected',
+    }
+  }
+
+  // Check minimum length
+  if (text.length < WIKIPEDIA_CONFIG.MIN_SUMMARY_LENGTH) {
+    return {
+      valid: false,
+      quality: 'low',
+      reason: `Summary too short (${text.length} chars, minimum ${WIKIPEDIA_CONFIG.MIN_SUMMARY_LENGTH})`,
+    }
+  }
+
+  // Check for stub articles
+  const isStub = lowerText.includes('stub') && text.length < 500
+
+  if (isStub) {
+    return {
+      valid: true,
+      quality: 'medium',
+      reason: 'Stub article detected',
+    }
+  }
+
   return {
     valid: true,
     quality: 'high',
-    reason: 'Content appears to be a valid summary.',
+    reason: 'Content appears to be a valid, substantive summary',
+  }
+}
+
+/**
+ * Gets cache statistics
+ * @returns {Object} Cache statistics
+ */
+export function getWikipediaCacheStats() {
+  return wikipediaCache.getStats()
+}
+
+/**
+ * Clears the Wikipedia cache
+ * @returns {void}
+ */
+export function clearCache() {
+  wikipediaCache.clear()
+  logger.info('Wikipedia cache cleared')
+}
+
+/**
+ * Health check for Wikipedia API
+ * @returns {Promise<Object>} API health status
+ */
+export async function checkWikipediaApiHealth() {
+  try {
+    const result = await fetchWikipediaSummary('Wikipedia', {
+      skipCache: true,
+      useDisambiguation: false,
+    })
+
+    return {
+      operational: result.success,
+      error: result.error || null,
+      responseTime: result.metadata?.duration || null,
+    }
+  } catch (error) {
+    return {
+      operational: false,
+      error: error.message,
+      responseTime: null,
+    }
   }
 }
 

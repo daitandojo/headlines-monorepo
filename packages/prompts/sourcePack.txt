@@ -3,7 +3,7 @@
 Total: 31 files, 3 directories
 
 ```
-headlines/
+headlines-monorepo/
 ├── 📁 src/
 │   ├── 📁 examples/
 │   │   ├── 📄 shotsInputArticle.js
@@ -42,8 +42,8 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-05T19:41:33.284Z
-**Repository Path**: /home/mark/Repos/projects/headlines/packages/prompts
+**Generated**: 2025-10-10T00:11:02.002Z
+**Repository Path**: /home/mark/Repos/projects/headlines-monorepo/packages/prompts
 **Total Files**: 31
 **Package**: @headlines/prompts@1.0.0
 **Description**: Shared AI prompts for the Headlines monorepo.
@@ -907,7 +907,7 @@ export const instructionJudge = {
 ```
 
 ## 📄 src/instructionOpportunities.js
-*Lines: 26, Size: 4.52 KB*
+*Lines: 27, Size: 4.6 KB*
 
 ```javascript
 // packages/prompts/src/instructionOpportunities.js (version 3.2)
@@ -933,7 +933,8 @@ export const getInstructionOpportunities = () => ({
     Respond ONLY with a valid JSON object containing a single key "opportunities", which is an array of objects.
     Each object in the array MUST contain the key "reachOutTo" as a STRING.
     IF NO CONTACTS ARE FOUND, OR IF NO CONTACTS MEET THE $${settings.MINIMUM_EVENT_AMOUNT_USD_MILLIONS}M WEALTH THRESHOLD, RETURN AN EMPTY ARRAY.
-    It is vital that the email address field in the contactDetails is a valid email address or null - NEVER a description, or otherwise.`,
+    It is vital that the email address field in the contactDetails is a VALID email address or null - NEVER a description, or otherwise.
+    If you cannot find an email address, then do not shy away from putting null.`,
 })
 
 ```

@@ -1,3 +1,4 @@
+// apps/client/src/lib/api-client.js
 'use client'
 
 import { toast } from 'sonner'
@@ -13,7 +14,6 @@ async function fetchApi(
       body: body ? JSON.stringify(body) : undefined,
     })
 
-    // Handle file downloads
     if (
       response.headers.get('content-type')?.includes('csv') ||
       response.headers.get('content-type')?.includes('application/vnd.ms-excel')
@@ -32,17 +32,41 @@ async function fetchApi(
   }
 }
 
+export const loginUser = async (email, password) => {
+  const result = await fetchApi('/api/auth/login', { body: { email, password } })
+  if (!result.success) {
+    toast.error('Login Failed', { description: result.error })
+  }
+  return result
+}
+
+export const signupUser = async (signupData) => {
+  const result = await fetchApi('/api/auth/signup', { body: signupData })
+  if (!result.success) {
+    toast.error('Signup Failed', { description: result.error })
+  }
+  return result
+}
+
 export const generateChatTitle = (messages) =>
   fetchApi('/api/chat/title', { body: { messages } })
+
 export const savePushSubscription = (subscription) =>
   fetchApi('/api/push/subscribe', { body: subscription })
-export const saveSubscription = savePushSubscription // Alias
+
+export const saveSubscription = savePushSubscription
+
 export const updateUserInteraction = (interactionData) =>
   fetchApi('/api/user/interactions', { body: interactionData })
+
 export const clearDiscardedItems = () =>
   fetchApi('/api/user/settings/clear-discarded', { method: 'POST' })
+
 export const processUploadedArticle = (item) =>
   fetchApi('/api/upload-article', { body: { item } })
+
+export const sendItemToEmail = (itemId, itemType) =>
+  fetchApi('/api/email/send-item', { body: { itemId, itemType } })
 
 export const linkOpportunityToEventClient = (eventId, opportunityId) =>
   fetchApi('/api-admin/relationships/link', { body: { eventId, opportunityId } })

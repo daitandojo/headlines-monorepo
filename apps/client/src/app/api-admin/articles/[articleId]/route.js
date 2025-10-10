@@ -1,15 +1,11 @@
+// apps/client/src/app/api-admin/articles/[articleId]/route.js
 import { NextResponse } from 'next/server'
-// --- START DEFINITIVE FIX ---
-// Import the environment-specific dbConnect for the unwrapped GET handler
 import dbConnect from '@headlines/data-access/dbConnect/next'
-// Import data access functions from the Next.js-safe entry point
 import {
   updateArticle,
   deleteArticle,
   getArticleDetails,
 } from '@headlines/data-access/next'
-// --- END DEFINITIVE FIX ---
-import { Article } from '@headlines/models'
 import { createApiHandler } from '@/lib/api-handler'
 import mongoose from 'mongoose'
 
@@ -21,7 +17,6 @@ const handleGet = async (request, { params }) => {
   if (!mongoose.Types.ObjectId.isValid(articleId)) {
     return NextResponse.json({ error: 'Invalid article ID' }, { status: 400 })
   }
-  // The `getArticleDetails` function is now isomorphic and doesn't connect itself.
   const result = await getArticleDetails(articleId)
   if (!result.success) {
     return NextResponse.json({ error: result.error }, { status: 404 })
@@ -50,6 +45,7 @@ const handleDelete = async (request, { params }) => {
 }
 
 export const GET = handleGet
-export const PATCH = createApiHandler(handlePatch)
-export const DELETE = createApiHandler(handleDelete)
+// Use the new requireAdmin option
+export const PATCH = createApiHandler(handlePatch, { requireAdmin: true })
+export const DELETE = createApiHandler(handleDelete, { requireAdmin: true })
 export const dynamic = 'force-dynamic'

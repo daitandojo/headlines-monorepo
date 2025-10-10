@@ -1,7 +1,7 @@
 // apps/client/src/app/api/events/route.js
 import { NextResponse } from 'next/server'
-import { getEvents, getTotalEventCount } from '@headlines/data-access'
-import { createClientApiHandler } from '@/lib/api-handler'
+import { getEvents, getTotalEventCount } from '@headlines/data-access/next'
+import { createApiHandler } from '@/lib/api-handler' // Use the new single handler
 
 // This is the handler for GET requests to /api/events
 const handleGet = async (request, { user }) => {
@@ -14,7 +14,7 @@ const handleGet = async (request, { user }) => {
     favoritesOnly: searchParams.get('favorites') === 'true',
   }
 
-  // The user object is passed in from our createClientApiHandler wrapper
+  // The user object is passed in from our createApiHandler wrapper
   const [eventsResult, totalResult] = await Promise.all([
     getEvents({ page, filters, sort, userId: user.userId }),
     getTotalEventCount({ filters, userId: user.userId }),
@@ -29,6 +29,6 @@ const handleGet = async (request, { user }) => {
   return NextResponse.json({ data: eventsResult.data, total: totalResult.total })
 }
 
-// We wrap our handler with the authentication and error handling middleware
-export const GET = createClientApiHandler(handleGet)
+// We wrap our handler. The default for createApiHandler is requireAdmin: false, which is correct here.
+export const GET = createApiHandler(handleGet)
 export const dynamic = 'force-dynamic'

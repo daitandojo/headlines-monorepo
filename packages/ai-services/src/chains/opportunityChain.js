@@ -2,7 +2,7 @@ import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { getInstructionOpportunities } from '@headlines/prompts'
-import { getHighPowerModel } from '../lib/langchain.js'
+import { getProModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { opportunitySchema } from '@headlines/models/schemas'
 // Correct: Import from the /node entry point for the pipeline/Node.js environment
@@ -23,7 +23,7 @@ const prompt = ChatPromptTemplate.fromMessages([
 
 // --- DEFINITIVE FIX ---
 // The chain now ends with the model. The JsonOutputParser is removed.
-const chain = RunnableSequence.from([prompt, getHighPowerModel()])
+const chain = RunnableSequence.from([prompt, getProModel()])
 
 export const opportunityChain = {
   invoke: (input) => safeInvoke(chain, input, 'opportunityChain', opportunitySchema),

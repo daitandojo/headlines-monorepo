@@ -1,12 +1,41 @@
 // File: apps/client/src/app/(client)/settings/page.js (CORRECTED)
-import { getGlobalCountries } from '@headlines/data-access/next'
 import { SettingsForm } from '@/components/client/settings/SettingsForm'
+import { cookies } from 'next/headers'
 
 export const dynamic = 'force-dynamic'
 
 export default async function SettingsPage() {
-  // Fetch all countries with event counts to pass to the editor
-  const { data: allCountries } = await getGlobalCountries()
+  let allCountries = []
+
+  try {
+    // ✅ Fetch through the admin API route instead of a direct data-access call
+    const url = new URL(
+      '/api-admin/countries',
+      process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    )
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        cookie: cookies().toString(), // Forward cookies for authentication
+      },
+    })
+
+    if (response.ok) {
+      const result = await response.json()
+      if (result.success) {
+        allCountries = result.data
+      }
+    } else {
+      console.error(
+        '[SettingsPage] API responded with an error:',
+        response.status,
+        await response.text()
+      )
+    }
+  } catch (err) {
+    console.error('[SettingsPage] Failed to fetch countries data:', err.message)
+    // The component will proceed with an empty `allCountries` array, which the UI can handle.
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -16,7 +45,7 @@ export default async function SettingsPage() {
           Manage your profile and notification preferences.
         </p>
       </div>
-      <SettingsForm allCountries={allCountries || []} />
+      <SettingsForm allCountries={allCountries} />
     </div>
   )
 }

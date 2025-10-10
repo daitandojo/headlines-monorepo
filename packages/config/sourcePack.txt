@@ -3,7 +3,7 @@
 Total: 6 files, 1 directories
 
 ```
-headlines/
+headlines-monorepo/
 ├── 📁 src/
 │   ├── 📄 envSchema.js
 │   ├── 📄 index.js
@@ -15,8 +15,8 @@ headlines/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-05T19:41:33.276Z
-**Repository Path**: /home/mark/Repos/projects/headlines/packages/config
+**Generated**: 2025-10-10T00:11:01.994Z
+**Repository Path**: /home/mark/Repos/projects/headlines-monorepo/packages/config
 **Total Files**: 6
 **Package**: @headlines/config@3.0.0
 

@@ -1,4 +1,9 @@
 // apps/pipeline/scripts/tools/diagnose-stuck-articles.js
+/**
+ * @command tools:diagnose
+ * @group Tools
+ * @description Finds and displays properties of articles from the last 24 hours that may be stuck in the pipeline.
+ */
 import { initializeScriptEnv } from '../seed/lib/script-init.js'
 import { logger } from '@headlines/utils-shared'
 import { findArticles } from '@headlines/data-access'

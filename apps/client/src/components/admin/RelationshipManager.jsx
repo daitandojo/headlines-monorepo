@@ -1,4 +1,4 @@
-// apps/admin/src/app/_components/relationships/RelationshipManager.jsx (version 2.0.0)
+// apps/client/src/components/admin/RelationshipManager.jsx
 'use client'
 
 import { useState } from 'react'
@@ -11,13 +11,13 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-} from '../shared/elements'
+} from '@/components/shared'
 import { toast } from 'sonner'
 import { Link, Unlink, Plus, Loader2 } from 'lucide-react'
 import {
-  linkOpportunityToEventClient,
-  unlinkOpportunityFromEventClient,
-} from '@/lib/api-client'
+  linkOpportunityToEventAction,
+  unlinkOpportunityFromEventAction,
+} from '@/app/api-admin/actions'
 
 export function RelationshipManager({ item, itemType, refetch }) {
   const [newItemId, setNewItemId] = useState('')
@@ -27,13 +27,13 @@ export function RelationshipManager({ item, itemType, refetch }) {
     setIsLoading(true)
     let result
     if (itemType === 'event') {
-      result = await linkOpportunityToEventClient(item._id, newItemId)
+      result = await linkOpportunityToEventAction(item._id, newItemId)
     } // Add else if for 'opportunity' here for bidirectional linking
 
     if (result.success) {
       toast.success('Relationship added.')
       setNewItemId('')
-      refetch()
+      refetch() // This will now refetch data from the server with the updated relationship
     } else {
       toast.error('Failed to add relationship', { description: result.error })
     }
@@ -44,7 +44,7 @@ export function RelationshipManager({ item, itemType, refetch }) {
     setIsLoading(true)
     let result
     if (itemType === 'event') {
-      result = await unlinkOpportunityFromEventClient(item._id, relatedItemId)
+      result = await unlinkOpportunityFromEventAction(item._id, relatedItemId)
     } // Add else if for 'opportunity' here
 
     if (result.success) {

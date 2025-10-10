@@ -6,6 +6,18 @@ import { revalidatePath } from './revalidate.js'
 import { buildQuery } from './queryBuilder.js'
 import * as aiServices from '@headlines/ai-services/next'
 
+console.log('🔵 LOADING: data-access/next.js')
+
+/**
+ * IMPORTANT: The wrap() function is ONLY used for Server Actions and
+ * Server Components that call these functions directly.
+ *
+ * API route handlers already call dbConnect() in their middleware,
+ * so functions called from API routes should NOT be wrapped.
+ *
+ * However, Next.js Server Actions and Server Components DO need
+ * the wrapper since they don't go through the API handler middleware.
+ */
 const wrap =
   (fn) =>
   async (...args) => {
@@ -13,15 +25,11 @@ const wrap =
     return fn(...args)
   }
 
-// --- Functions that need AI services injected (now imported from ai-services) ---
-export const generateChatTitle = async (...args) => {
-  await dbConnect()
-  return aiServices.generateChatTitle(...args)
-}
-export const addKnowledge = async (...args) => {
-  await dbConnect()
-  return aiServices.addKnowledge(...args)
-}
+// --- AI Services (wrapped for Server Actions/Components) ---
+export const generateChatTitle = wrap(aiServices.generateChatTitle)
+export const addKnowledge = wrap(aiServices.addKnowledge)
+export const suggestSections = wrap(aiServices.suggestSections)
+
 export const processUploadedArticle = async (...args) => {
   await dbConnect()
   const result = await aiServices.processUploadedArticle(...args)
@@ -31,86 +39,84 @@ export const processUploadedArticle = async (...args) => {
   }
   return result
 }
-export const suggestSections = async (...args) => {
-  await dbConnect()
-  return aiServices.suggestSections(...args)
-}
 
-// --- All other functions that don't need AI services ---
-export const createSubscriber = wrap(core.createSubscriber)
-export const updateSubscriber = wrap(core.updateSubscriber)
-export const deleteSubscriber = wrap(core.deleteSubscriber)
-export const createCountry = wrap(core.createCountry)
-export const updateCountry = wrap(core.updateCountry)
-export const createSource = wrap(core.createSource)
-export const updateSource = wrap(core.updateSource)
-export const getAllCountries = wrap(core.getAllCountries)
-export const findSubscribers = wrap(core.findSubscribers)
-export const getAllSubscribers = wrap(core.getAllSubscribers)
-export const getAllSources = wrap(core.getAllSources)
-export const getAllWatchlistEntities = wrap(core.getAllWatchlistEntities)
-export const getSuggestions = wrap(core.getSuggestions)
-export const getArticles = wrap(core.getArticles)
-export const findArticles = wrap(core.findArticles)
-export const updateArticles = wrap(core.updateArticles)
-export const getTotalArticleCount = wrap(core.getTotalArticleCount)
-export const updateArticle = wrap(core.updateArticle)
-export const deleteArticle = wrap(core.deleteArticle)
-export const getArticleDetails = wrap(core.getArticleDetails)
-export const createSubscriberWithPassword = wrap(core.createSubscriberWithPassword)
-export const updateSubscriberPassword = wrap(core.updateSubscriberPassword)
-export const loginUser = wrap(core.loginUser)
-export const getDashboardStats = wrap(core.getDashboardStats)
-export const getDistinctCountries = wrap(core.getDistinctCountries)
-export const getGlobalCountries = wrap(core.getGlobalCountries)
-export const getPublicTickerEvents = wrap(core.getPublicTickerEvents)
-export const getEvents = wrap(core.getEvents)
-export const findEvents = wrap(core.findEvents)
-export const updateEvents = wrap(core.updateEvents)
-export const getEventDetails = wrap(core.getEventDetails)
-export const updateEvent = wrap(core.updateEvent)
-export const deleteEvent = wrap(core.deleteEvent)
-export const getTotalEventCount = wrap(core.getTotalEventCount)
-export const generateExport = wrap(core.generateExport)
-export const getDistinctOpportunityFields = wrap(core.getDistinctOpportunityFields)
-export const updateOpportunities = wrap(core.updateOpportunities)
-export const getTotalOpportunitiesCount = wrap(core.getTotalOpportunitiesCount)
-export const getOpportunities = wrap(core.getOpportunities)
-export const getOpportunityDetails = wrap(core.getOpportunityDetails)
-export const updateOpportunity = wrap(core.updateOpportunity)
-export const deleteOpportunity = wrap(core.deleteOpportunity)
-export const updateSourceAnalyticsBatch = wrap(core.updateSourceAnalyticsBatch)
-export const findSourcesForScraping = wrap(core.findSourcesForScraping)
-export const performHousekeeping = wrap(core.performHousekeeping)
-export const bulkWriteEvents = wrap(core.bulkWriteEvents)
-export const bulkWriteArticles = wrap(core.bulkWriteArticles)
-export const findEventsByKeys = wrap(core.findEventsByKeys)
-export const findArticlesByLinks = wrap(core.findArticlesByLinks)
-export const getActiveWatchlistEntityNames = wrap(core.getActiveWatchlistEntityNames)
-export const bulkWriteWatchlistSuggestions = wrap(core.bulkWriteWatchlistSuggestions)
-export const linkOpportunityToEvent = wrap(core.linkOpportunityToEvent)
-export const unlinkOpportunityFromEvent = wrap(core.unlinkOpportunityFromEvent)
-export const getSettings = wrap(core.getSettings)
-export const upsertSubscriber = wrap(core.upsertSubscriber)
-export const getAllPushSubscriptions = wrap(core.getAllPushSubscriptions)
-export const deletePushSubscription = wrap(core.deletePushSubscription)
-export const getCurrentSubscriber = wrap(core.getCurrentSubscriber)
-export const savePushSubscription = wrap(core.savePushSubscription)
-export const updateUserProfile = wrap(core.updateUserProfile)
-export const updateUserInteraction = wrap(core.updateUserInteraction)
-export const clearDiscardedItems = wrap(core.clearDiscardedItems)
-export const getRecentRunVerdicts = wrap(core.getRecentRunVerdicts)
-export const getRunVerdictById = wrap(core.getRunVerdictById)
-export const findWatchlistEntities = wrap(core.findWatchlistEntities)
-export const updateWatchlistEntities = wrap(core.updateWatchlistEntities)
-export const createWatchlistEntity = wrap(core.createWatchlistEntity)
-export const updateWatchlistEntity = wrap(core.updateWatchlistEntity)
-export const deleteWatchlistEntity = wrap(core.deleteWatchlistEntity)
-export const updateWatchlistSuggestion = wrap(core.updateWatchlistSuggestion)
-export const processWatchlistSuggestion = wrap(core.processWatchlistSuggestion)
-export const deleteAllSince = wrap(core.deleteAllSince)
-export const resetAllSourceAnalytics = wrap(core.resetAllSourceAnalytics)
-export const resetEventsEmailedStatusSince = wrap(core.resetEventsEmailedStatusSince)
+// --- Data Access Functions ---
+// These are NOT wrapped because they're called from API handlers that already connect
+// If you call these from Server Actions/Components, use the *Action versions below
+export const createSubscriber = core.createSubscriber
+export const updateSubscriber = core.updateSubscriber
+export const deleteSubscriber = core.deleteSubscriber
+export const createCountry = core.createCountry
+export const updateCountry = core.updateCountry
+export const createSource = core.createSource
+export const updateSource = core.updateSource
+export const getAllCountries = core.getAllCountries
+export const findSubscribers = core.findSubscribers
+export const getAllSubscribers = core.getAllSubscribers
+export const getAllSources = core.getAllSources
+export const getAllWatchlistEntities = core.getAllWatchlistEntities
+export const getSuggestions = core.getSuggestions
+export const getArticles = core.getArticles
+export const findArticles = core.findArticles
+export const updateArticles = core.updateArticles
+export const getTotalArticleCount = core.getTotalArticleCount
+export const updateArticle = core.updateArticle
+export const deleteArticle = core.deleteArticle
+export const getArticleDetails = core.getArticleDetails
+export const createSubscriberWithPassword = core.createSubscriberWithPassword
+export const updateSubscriberPassword = core.updateSubscriberPassword
+export const loginUser = core.loginUser
+export const getDashboardStats = core.getDashboardStats
+export const getDistinctCountries = core.getDistinctCountries
+export const getGlobalCountries = core.getGlobalCountries
+export const getPublicTickerEvents = core.getPublicTickerEvents
+export const getEvents = core.getEvents
+export const findEvents = core.findEvents
+export const updateEvents = core.updateEvents
+export const getEventDetails = core.getEventDetails
+export const updateEvent = core.updateEvent
+export const deleteEvent = core.deleteEvent
+export const getTotalEventCount = core.getTotalEventCount
+export const generateExport = core.generateExport
+export const getDistinctOpportunityFields = core.getDistinctOpportunityFields
+export const updateOpportunities = core.updateOpportunities
+export const getTotalOpportunitiesCount = core.getTotalOpportunitiesCount
+export const getOpportunities = core.getOpportunities
+export const getOpportunityDetails = core.getOpportunityDetails
+export const updateOpportunity = core.updateOpportunity
+export const deleteOpportunity = core.deleteOpportunity
+export const updateSourceAnalyticsBatch = core.updateSourceAnalyticsBatch
+export const findSourcesForScraping = core.findSourcesForScraping
+export const performHousekeeping = core.performHousekeeping
+export const bulkWriteEvents = core.bulkWriteEvents
+export const bulkWriteArticles = core.bulkWriteArticles
+export const findEventsByKeys = core.findEventsByKeys
+export const findArticlesByLinks = core.findArticlesByLinks
+export const getActiveWatchlistEntityNames = core.getActiveWatchlistEntityNames
+export const bulkWriteWatchlistSuggestions = core.bulkWriteWatchlistSuggestions
+export const linkOpportunityToEvent = core.linkOpportunityToEvent
+export const unlinkOpportunityFromEvent = core.unlinkOpportunityFromEvent
+export const getSettings = core.getSettings
+export const upsertSubscriber = core.upsertSubscriber
+export const getAllPushSubscriptions = core.getAllPushSubscriptions
+export const deletePushSubscription = core.deletePushSubscription
+export const getCurrentSubscriber = core.getCurrentSubscriber
+export const savePushSubscription = core.savePushSubscription
+export const updateUserProfile = core.updateUserProfile
+export const updateUserInteraction = core.updateUserInteraction
+export const clearDiscardedItems = core.clearDiscardedItems
+export const getRecentRunVerdicts = core.getRecentRunVerdicts
+export const getRunVerdictById = core.getRunVerdictById
+export const findWatchlistEntities = core.findWatchlistEntities
+export const updateWatchlistEntities = core.updateWatchlistEntities
+export const createWatchlistEntity = core.createWatchlistEntity
+export const updateWatchlistEntity = core.updateWatchlistEntity
+export const deleteWatchlistEntity = core.deleteWatchlistEntity
+export const updateWatchlistSuggestion = core.updateWatchlistSuggestion
+export const processWatchlistSuggestion = core.processWatchlistSuggestion
+export const deleteAllSince = core.deleteAllSince
+export const resetAllSourceAnalytics = core.resetAllSourceAnalytics
+export const resetEventsEmailedStatusSince = core.resetEventsEmailedStatusSince
 
 // Special wrapper for updateSettings to include revalidation
 export const updateSettings = async (...args) => {
@@ -121,5 +127,14 @@ export const updateSettings = async (...args) => {
   }
   return result
 }
+
+// --- Wrapped versions for Server Actions/Components ---
+// If you need to call these from Server Actions or Server Components
+// (not through API routes), use these versions instead:
+export const getEventsAction = wrap(core.getEvents)
+export const getArticlesAction = wrap(core.getArticles)
+export const getTotalEventCountAction = wrap(core.getTotalEventCount)
+export const getTotalArticleCountAction = wrap(core.getTotalArticleCount)
+// Add more *Action versions as needed for Server Actions/Components
 
 export { buildQuery, revalidatePath }

@@ -1,10 +1,10 @@
-// apps/client/src/components/admin/AdminHeader.jsx (version 2.0 - Restored & Pathed)
+// apps/client/src/components/admin/AdminHeader.jsx
 'use client'
 
 import Link from 'next/link'
-import { Button } from '@components/shared'
+import { Button } from '@/components/shared'
 import { Shield, LogOut, ArrowLeft } from 'lucide-react'
-import { useAuth } from '@headlines/auth/react'
+import { useAuth } from '@/lib/auth/client'
 
 export function AdminHeader() {
   const { user, logout } = useAuth()

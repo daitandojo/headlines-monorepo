@@ -1,4 +1,9 @@
 // apps/pipeline/scripts/sources/maintain.js
+/**
+ * @command sources:maintain
+ * @group Sources
+ * @description Run the autonomous agent to find, fix, and prune sources.
+ */
 import { initializeScriptEnv } from '../seed/lib/script-init.js'
 import { logger, sendErrorAlert } from '@headlines/utils-server'
 import { getAllSources, updateSource } from '@headlines/data-access'
