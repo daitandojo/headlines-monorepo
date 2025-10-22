@@ -1,26 +1,19 @@
-// packages/ai-services/src/chains/entityCanonicalizerChain.js (version 2.3 - Final)
+// packages/ai-services/src/chains/entityCanonicalizerChain.js
 import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionCanonicalizer } from '@headlines/prompts'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { canonicalizerSchema } from '@headlines/models/schemas'
+import { buildPrompt } from '../lib/promptBuilder.js'
 
-const systemPrompt = [
-  instructionCanonicalizer.whoYouAre,
-  instructionCanonicalizer.whatYouDo,
-  ...instructionCanonicalizer.guidelines,
-  instructionCanonicalizer.outputFormatDescription,
-].join('\n\n')
+const systemPrompt = buildPrompt(instructionCanonicalizer)
 
 const prompt = ChatPromptTemplate.fromMessages([
   ['system', systemPrompt],
   ['human', '{entity_name}'],
 ])
 
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
 const chain = RunnableSequence.from([prompt, getUtilityModel()])
 
 export const entityCanonicalizerChain = {

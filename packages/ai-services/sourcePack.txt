@@ -1,44 +1,48 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 54 files, 10 directories
+Total: 58 files, 10 directories
 
 ```
 headlines-monorepo/
 ├── 📁 src/
 │   ├── 📁 chains/
 │   │   ├── 📄 articleChain.js
-│   │   ├── 📄 articlePreAssessmentChain.js
 │   │   ├── 📄 batchHeadlineChain.js
 │   │   ├── 📄 clusteringChain.js
 │   │   ├── 📄 contactFinderChain.js
 │   │   ├── 📄 contactResolverChain.js
 │   │   ├── 📄 countryCorrectionChain.js
 │   │   ├── 📄 disambiguationChain.js
+│   │   ├── 📄 dossierUpdateChain.js
 │   │   ├── 📄 emailIntroChain.js
 │   │   ├── 📄 emailSubjectChain.js
 │   │   ├── 📄 entityCanonicalizerChain.js
 │   │   ├── 📄 entityExtractorChain.js
 │   │   ├── 📄 executiveSummaryChain.js
+│   │   ├── 📄 graphUpdaterChain.js
 │   │   ├── 📄 headlineChain.js
 │   │   ├── 📄 index.js
 │   │   ├── 📄 judgeChain.js
+│   │   ├── 📄 oppFactoryChain.js
 │   │   ├── 📄 opportunityChain.js
+│   │   ├── 📄 outreachDraftChain.js
 │   │   ├── 📄 sectionClassifierChain.js
 │   │   ├── 📄 selectorRepairChain.js
 │   │   ├── 📄 synthesisChain.js
 │   │   ├── 📄 translateChain.js
-│   │   └── 📄 watchlistSuggestionChain.js
+│   │   ├── 📄 watchlistSuggestionChain.js
+│   │   └── 📄 wealthPredictorChain.js
 │   ├── 📁 embeddings/
 │   │   ├── 📄 embeddings.js
 │   │   └── 📄 vectorSearch.js
 │   ├── 📁 lib/
 │   │   ├── 📄 AIAgent.js
 │   │   ├── 📄 langchain.js
+│   │   ├── 📄 promptBuilder.js
 │   │   └── 📄 safeInvoke.js
 │   ├── 📁 node/
 │   │   └── 📁 agents/
 │   │       ├── 📄 articleAgent.js
-│   │       ├── 📄 articlePreAssessmentAgent.js
 │   │       ├── 📄 batchArticleAgent.js
 │   │       ├── 📄 clusteringAgent.js
 │   │       ├── 📄 headlineAgent.js
@@ -72,9 +76,9 @@ headlines-monorepo/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-10T00:11:01.991Z
+**Generated**: 2025-10-21T18:41:06.979Z
 **Repository Path**: /home/mark/Repos/projects/headlines-monorepo/packages/ai-services
-**Total Files**: 54
+**Total Files**: 58
 **Package**: @headlines/ai-services@1.0.0
 **Description**: Centralized, LangChain-powered AI and external service logic.
 
@@ -84,7 +88,7 @@ headlines-monorepo/
 
 
 ## 📄 package.json
-*Lines: 36, Size: 973 Bytes*
+*Lines: 36, Size: 979 Bytes*
 
 ```json
 {
@@ -105,7 +109,7 @@ headlines-monorepo/
     "@headlines/prompts": "workspace:*",
     "@headlines/utils-server": "workspace:*",
     "@headlines/utils-shared": "workspace:*",
-    "@langchain/community": "*",
+    "@langchain/community": "^0.3.57",
     "@langchain/core": "*",
     "@langchain/openai": "*",
     "@langchain/pinecone": "*",
@@ -126,10 +130,10 @@ headlines-monorepo/
 ```
 
 ## 📄 src/chains/articleChain.js
-*Lines: 64, Size: 2.12 KB*
+*Lines: 55, Size: 1.86 KB*
 
 ```javascript
-// packages/ai-services/src/chains/articleChain.js (version 2.0.0)
+// packages/ai-services/src/chains/articleChain.js
 import {
   ChatPromptTemplate,
   HumanMessagePromptTemplate,
@@ -146,19 +150,10 @@ import {
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { logger } from '@headlines/utils-shared'
-// REFACTOR: Import Zod schema from the new canonical location.
 import { articleAssessmentSchema } from '@headlines/models/schemas'
+import { buildPrompt } from '../lib/promptBuilder.js'
 
-const instructions = getInstructionArticle(settings)
-const systemPrompt = [
-  instructions.whoYouAre,
-  instructions.whatYouDo,
-  instructions.primaryMandate,
-  instructions.analyticalFramework,
-  instructions.scoring,
-  instructions.outputFormatDescription,
-  instructions.reiteration,
-].join('\n\n')
+const systemPrompt = buildPrompt(getInstructionArticle)
 
 const messages = [
   SystemMessagePromptTemplate.fromTemplate(systemPrompt),
@@ -195,144 +190,94 @@ export const articleChain = { invoke }
 
 ```
 
-## 📄 src/chains/articlePreAssessmentChain.js
-*Lines: 31, Size: 1.21 KB*
-
-```javascript
-// packages/ai-services/src/chains/articlePreAssessmentChain.js (version 2.3 - Final)
-import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
-import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionArticlePreAssessment } from '@headlines/prompts'
-import { getUtilityModel } from '../lib/langchain.js'
-import { safeInvoke } from '../lib/safeInvoke.js'
-import { articlePreAssessmentSchema } from '@headlines/models/schemas'
-
-const systemPrompt = [
-  instructionArticlePreAssessment.whoYouAre,
-  instructionArticlePreAssessment.whatYouDo,
-  instructionArticlePreAssessment.classificationFramework,
-  instructionArticlePreAssessment.outputFormatDescription,
-  instructionArticlePreAssessment.reiteration,
-].join('\n\n')
-
-const prompt = ChatPromptTemplate.fromMessages([
-  ['system', systemPrompt],
-  ['human', '{input}'],
-])
-
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
-const chain = RunnableSequence.from([prompt, getUtilityModel()])
-
-export const articlePreAssessmentChain = {
-  invoke: (input) =>
-    safeInvoke(chain, input, 'articlePreAssessmentChain', articlePreAssessmentSchema),
-}
-
-```
-
 ## 📄 src/chains/batchHeadlineChain.js
-*Lines: 33, Size: 1.37 KB*
+*Lines: 21, Size: 677 Bytes*
 
 ```javascript
-// packages/ai-services/src/chains/batchHeadlineChain.js (version 1.0)
-import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
-import { RunnableSequence } from '@langchain/core/runnables'
-import { instructionBatchHeadlineAssessment } from '@headlines/prompts'
-import { getHeadlineModel } from '../lib/langchain.js' // Use the specific model for headlines
-import { safeInvoke } from '../lib/safeInvoke.js'
+// packages/ai-services/src/chains/batchHeadlineChain.js
+import { AIAgent } from '../lib/AIAgent.js'
 import { batchHeadlineAssessmentSchema } from '@headlines/models/schemas'
+import { settings } from '@headlines/config'
+import { instructionBatchHeadlineAssessment } from '@headlines/prompts'
 
-const systemPrompt = [
-  instructionBatchHeadlineAssessment.whoYouAre,
-  instructionBatchHeadlineAssessment.whatYouDo,
-  instructionBatchHeadlineAssessment.primaryMandate,
-  instructionBatchHeadlineAssessment.analyticalFramework,
-  instructionBatchHeadlineAssessment.outputFormatDescription,
-  instructionBatchHeadlineAssessment.reiteration,
-].join('\n\n')
+const getAgent = () =>
+  new AIAgent({
+    model: settings.LLM_MODEL_HEADLINE_ASSESSMENT,
+    systemPrompt: instructionBatchHeadlineAssessment,
+    zodSchema: batchHeadlineAssessmentSchema,
+  })
 
-const prompt = ChatPromptTemplate.fromMessages([
-  ['system', systemPrompt],
-  ['human', '{headlines_json_string}'],
-])
-
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
-// The safeInvoke function will be responsible for all parsing.
-const chain = RunnableSequence.from([prompt, getHeadlineModel()])
-
-export const batchHeadlineChain = {
-  invoke: (input) =>
-    safeInvoke(chain, input, 'batchHeadlineChain', batchHeadlineAssessmentSchema),
+async function invoke(input) {
+  const agent = getAgent()
+  const result = await agent.execute(input.headlines_json_string)
+  return result
 }
+
+export const batchHeadlineChain = { invoke }
 
 ```
 
 ## 📄 src/chains/clusteringChain.js
-*Lines: 29, Size: 1.05 KB*
+*Lines: 35, Size: 1.03 KB*
 
 ```javascript
-// packages/ai-services/src/chains/clusteringChain.js (version 3.2 - Final)
-import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
-import { RunnableSequence } from '@langchain/core/runnables'
+// packages/ai-services/src/chains/clusteringChain.js
+import { z } from 'zod'
+import { AIAgent } from '../lib/AIAgent.js'
 import { instructionCluster } from '@headlines/prompts'
-import { getHighPowerModel } from '../lib/langchain.js'
-import { safeInvoke } from '../lib/safeInvoke.js'
-import { clusterSchema } from '@headlines/models/schemas'
+import { settings } from '@headlines/config'
+import { logger } from '@headlines/utils-shared'
 
-const systemPrompt = [
-  instructionCluster.whoYouAre,
-  instructionCluster.whatYouDo,
-  ...instructionCluster.guidelines,
-  instructionCluster.outputFormatDescription,
-].join('\n\n')
+// This schema correctly matches the detailed prompt's output requirement.
+const clusterSchema = z.object({
+  events: z.array(
+    z.object({
+      event_key: z.string(),
+      article_ids: z.array(z.string()),
+    })
+  ),
+})
 
-const prompt = ChatPromptTemplate.fromMessages([
-  ['system', systemPrompt],
-  ['human', '{articles_json_string}'],
-])
+const getAgent = () =>
+  new AIAgent({
+    model: settings.LLM_MODEL_SYNTHESIS, // Clustering is a complex task
+    systemPrompt: instructionCluster,
+    zodSchema: clusterSchema,
+  })
 
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
-const chain = RunnableSequence.from([prompt, getHighPowerModel()])
+async function invoke(input) {
+  const agent = getAgent()
+  const result = await agent.execute(input.articles_json_string)
 
-export const clusteringChain = {
-  invoke: (input) => safeInvoke(chain, input, 'clusteringChain', clusterSchema),
+  // The AIAgent's execute method already handles retries, validation, and error logging.
+  // The output will either be the successfully validated data or an object with an `error` key.
+  return result
 }
+
+export const clusteringChain = { invoke }
 
 ```
 
 ## 📄 src/chains/contactFinderChain.js
-*Lines: 29, Size: 1.06 KB*
+*Lines: 22, Size: 816 Bytes*
 
 ```javascript
-// packages/ai-services/src/chains/contactFinderChain.js (version 2.3 - Final)
+// packages/ai-services/src/chains/contactFinderChain.js
 import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionContacts } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { findContactSchema } from '@headlines/models/schemas'
+import { buildPrompt } from '../lib/promptBuilder.js'
 
-const systemPrompt = [
-  instructionContacts.whoYouAre,
-  instructionContacts.whatYouDo,
-  ...instructionContacts.guidelines,
-  instructionContacts.outputFormatDescription,
-].join('\n\n')
+const systemPrompt = buildPrompt(instructionContacts)
 
 const prompt = ChatPromptTemplate.fromMessages([
   ['system', systemPrompt],
   ['human', '{snippets}'],
 ])
 
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
 const chain = RunnableSequence.from([prompt, getHighPowerModel()])
 
 export const contactFinderChain = {
@@ -342,32 +287,25 @@ export const contactFinderChain = {
 ```
 
 ## 📄 src/chains/contactResolverChain.js
-*Lines: 30, Size: 1.09 KB*
+*Lines: 23, Size: 839 Bytes*
 
 ```javascript
-// packages/ai-services/src/chains/contactResolverChain.js (version 2.3 - Final)
+// packages/ai-services/src/chains/contactResolverChain.js
 import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionEnrichContact } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { enrichContactSchema } from '@headlines/models/schemas'
+import { buildPrompt } from '../lib/promptBuilder.js'
 
-const systemPrompt = [
-  instructionEnrichContact.whoYouAre,
-  instructionEnrichContact.whatYouDo,
-  ...instructionEnrichContact.guidelines,
-  instructionEnrichContact.outputFormatDescription,
-].join('\n\n')
+const systemPrompt = buildPrompt(instructionEnrichContact)
 
 const prompt = ChatPromptTemplate.fromMessages([
   ['system', systemPrompt],
   ['human', '{context}'],
 ])
 
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
 const chain = RunnableSequence.from([prompt, getHighPowerModel()])
 
 export const contactResolverChain = {
@@ -378,12 +316,11 @@ export const contactResolverChain = {
 ```
 
 ## 📄 src/chains/countryCorrectionChain.js
-*Lines: 40, Size: 1.98 KB*
+*Lines: 40, Size: 1.99 KB*
 
 ```javascript
 // packages/ai-services/src/chains/countryCorrectionChain.js
 import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
@@ -413,7 +350,8 @@ const prompt = ChatPromptTemplate.fromMessages([
 ])
 
 // --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
+// The chain now ends with the model. The JsonOutputParser has been removed.
+// The new safeInvoke function will handle the parsing robustly.
 const chain = RunnableSequence.from([prompt, getUtilityModel()])
 
 export const countryCorrectionChain = {
@@ -424,24 +362,21 @@ export const countryCorrectionChain = {
 ```
 
 ## 📄 src/chains/disambiguationChain.js
-*Lines: 28, Size: 1 KB*
+*Lines: 25, Size: 1001 Bytes*
 
 ```javascript
-// packages/ai-services/src/chains/disambiguationChain.js (version 2.3 - Final)
+// packages/ai-services/src/chains/disambiguationChain.js
 import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionDisambiguation } from '@headlines/prompts'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { disambiguationSchema } from '@headlines/models/schemas'
+import { buildPrompt } from '../lib/promptBuilder.js'
 
-const systemPrompt = [
-  instructionDisambiguation.whoYouAre,
-  instructionDisambiguation.whatYouDo,
-  ...instructionDisambiguation.guidelines,
-  instructionDisambiguation.outputFormatDescription,
-].join('\n\n')
+// The robust buildPrompt helper handles the construction of the system prompt,
+// preventing errors if any properties on the instruction object are not iterable.
+const systemPrompt = buildPrompt(instructionDisambiguation)
 
 const prompt = ChatPromptTemplate.fromMessages([
   ['system', systemPrompt],
@@ -457,34 +392,77 @@ export const disambiguationChain = {
 
 ```
 
-## 📄 src/chains/emailIntroChain.js
-*Lines: 30, Size: 1.12 KB*
+## 📄 src/chains/dossierUpdateChain.js
+*Lines: 45, Size: 1.49 KB*
 
 ```javascript
-// packages/ai-services/src/chains/emailIntroChain.js (version 2.3 - Final)
+// packages/ai-services/src/chains/dossierUpdateChain.js
+import { AIAgent } from '../lib/AIAgent.js'
+import { instructionDossierUpdate } from '@headlines/prompts'
+import { opportunitySchema } from '@headlines/models/schemas'
+import { settings } from '@headlines/config'
+import { logger } from '@headlines/utils-shared'
+
+// --- START OF DEFINITIVE FIX ---
+// The previous agent was too slow and complex, causing timeouts.
+// This new version uses a faster model and a simplified task (re-generation instead of merging)
+// to ensure reliability and speed.
+const getAgent = () =>
+  new AIAgent({
+    model: settings.LLM_MODEL_SYNTHESIS, // Use the faster, more reliable synthesis model
+    systemPrompt: instructionDossierUpdate,
+    zodSchema: opportunitySchema,
+  })
+// --- END OF DEFINITIVE FIX ---
+
+async function invoke(input) {
+  const agent = getAgent()
+  const userContent = `Existing Dossier (JSON):\n\`\`\`${input.existing_dossier_json}\`\`\`\n\nNew Intelligence Brief (Text):\n\`\`\`${input.new_intelligence_text}\`\`\``
+  const result = await agent.execute(userContent)
+
+  if (result.error) {
+    return result
+  }
+
+  if (
+    Array.isArray(result.opportunities) &&
+    result.opportunities.length > 0 &&
+    Array.isArray(result.opportunities[0])
+  ) {
+    logger.warn(
+      { agent: 'dossierUpdateChain' },
+      'Detected nested array in opportunities output. Flattening to correct.'
+    )
+    result.opportunities = result.opportunities.flat()
+  }
+
+  return result
+}
+
+export const dossierUpdateChain = { invoke }
+
+```
+
+## 📄 src/chains/emailIntroChain.js
+*Lines: 22, Size: 843 Bytes*
+
+```javascript
+// packages/ai-services/src/chains/emailIntroChain.js
 import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionEmailIntro } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { emailIntroSchema } from '@headlines/models/schemas'
+import { buildPrompt } from '../lib/promptBuilder.js'
 
-const systemPrompt = [
-  instructionEmailIntro.whoYouAre,
-  instructionEmailIntro.whatYouDo,
-  ...instructionEmailIntro.guidelines,
-  instructionEmailIntro.outputFormatDescription,
-  instructionEmailIntro.reiteration,
-].join('\n\n')
+const systemPrompt = buildPrompt(instructionEmailIntro)
 
 const prompt = ChatPromptTemplate.fromMessages([
   ['system', systemPrompt],
   ['human', 'Client and Event Data: {payload_json_string}'],
 ])
 
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
 const chain = RunnableSequence.from([prompt, getHighPowerModel()])
 
 export const emailIntroChain = {
@@ -494,33 +472,25 @@ export const emailIntroChain = {
 ```
 
 ## 📄 src/chains/emailSubjectChain.js
-*Lines: 30, Size: 1.13 KB*
+*Lines: 22, Size: 846 Bytes*
 
 ```javascript
-// packages/ai-services/src/chains/emailSubjectChain.js (version 2.3 - Final)
+// packages/ai-services/src/chains/emailSubjectChain.js
 import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionEmailSubject } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { emailSubjectSchema } from '@headlines/models/schemas'
+import { buildPrompt } from '../lib/promptBuilder.js'
 
-const systemPrompt = [
-  instructionEmailSubject.whoYouAre,
-  instructionEmailSubject.whatYouDo,
-  ...instructionEmailSubject.guidelines,
-  instructionEmailSubject.outputFormatDescription,
-  instructionEmailSubject.reiteration,
-].join('\n\n')
+const systemPrompt = buildPrompt(instructionEmailSubject)
 
 const prompt = ChatPromptTemplate.fromMessages([
   ['system', systemPrompt],
   ['human', 'Events Data: {events_json_string}'],
 ])
 
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
 const chain = RunnableSequence.from([prompt, getHighPowerModel()])
 
 export const emailSubjectChain = {
@@ -530,32 +500,25 @@ export const emailSubjectChain = {
 ```
 
 ## 📄 src/chains/entityCanonicalizerChain.js
-*Lines: 30, Size: 1.1 KB*
+*Lines: 23, Size: 851 Bytes*
 
 ```javascript
-// packages/ai-services/src/chains/entityCanonicalizerChain.js (version 2.3 - Final)
+// packages/ai-services/src/chains/entityCanonicalizerChain.js
 import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionCanonicalizer } from '@headlines/prompts'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { canonicalizerSchema } from '@headlines/models/schemas'
+import { buildPrompt } from '../lib/promptBuilder.js'
 
-const systemPrompt = [
-  instructionCanonicalizer.whoYouAre,
-  instructionCanonicalizer.whatYouDo,
-  ...instructionCanonicalizer.guidelines,
-  instructionCanonicalizer.outputFormatDescription,
-].join('\n\n')
+const systemPrompt = buildPrompt(instructionCanonicalizer)
 
 const prompt = ChatPromptTemplate.fromMessages([
   ['system', systemPrompt],
   ['human', '{entity_name}'],
 ])
 
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
 const chain = RunnableSequence.from([prompt, getUtilityModel()])
 
 export const entityCanonicalizerChain = {
@@ -566,32 +529,25 @@ export const entityCanonicalizerChain = {
 ```
 
 ## 📄 src/chains/entityExtractorChain.js
-*Lines: 29, Size: 1.04 KB*
+*Lines: 22, Size: 808 Bytes*
 
 ```javascript
-// packages/ai-services/src/chains/entityExtractorChain.js (version 2.3 - Final)
+// packages/ai-services/src/chains/entityExtractorChain.js
 import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionEntity } from '@headlines/prompts'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { entitySchema } from '@headlines/models/schemas'
+import { buildPrompt } from '../lib/promptBuilder.js'
 
-const systemPrompt = [
-  instructionEntity.whoYouAre,
-  instructionEntity.whatYouDo,
-  ...instructionEntity.guidelines,
-  instructionEntity.outputFormatDescription,
-].join('\n\n')
+const systemPrompt = buildPrompt(instructionEntity)
 
 const prompt = ChatPromptTemplate.fromMessages([
   ['system', systemPrompt],
   ['human', '{article_text}'],
 ])
 
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
 const chain = RunnableSequence.from([prompt, getUtilityModel()])
 
 export const entityExtractorChain = {
@@ -601,34 +557,25 @@ export const entityExtractorChain = {
 ```
 
 ## 📄 src/chains/executiveSummaryChain.js
-*Lines: 32, Size: 1.24 KB*
+*Lines: 23, Size: 876 Bytes*
 
 ```javascript
-// packages/ai-services/src/chains/executiveSummaryChain.js (version 2.3 - Final)
+// packages/ai-services/src/chains/executiveSummaryChain.js
 import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionExecutiveSummary } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { executiveSummarySchema } from '@headlines/models/schemas'
+import { buildPrompt } from '../lib/promptBuilder.js'
 
-const systemPrompt = [
-  instructionExecutiveSummary.whoYouAre,
-  instructionExecutiveSummary.whatYouDo,
-  ...instructionExecutiveSummary.guidelines,
-  instructionExecutiveSummary.outputFormatDescription,
-  instructionExecutiveSummary.reiteration,
-].join('\n\n')
+const systemPrompt = buildPrompt(instructionExecutiveSummary)
 
 const prompt = ChatPromptTemplate.fromMessages([
   ['system', systemPrompt],
   ['human', 'Run Data: {payload_json_string}'],
 ])
 
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
-// The safeInvoke function will be responsible for all parsing.
 const chain = RunnableSequence.from([prompt, getHighPowerModel()])
 
 export const executiveSummaryChain = {
@@ -638,49 +585,71 @@ export const executiveSummaryChain = {
 
 ```
 
-## 📄 src/chains/headlineChain.js
-*Lines: 86, Size: 2.8 KB*
+## 📄 src/chains/graphUpdaterChain.js
+*Lines: 37, Size: 1.02 KB*
 
 ```javascript
-import {
-  ChatPromptTemplate,
-  HumanMessagePromptTemplate,
-  SystemMessagePromptTemplate,
-} from '@langchain/core/prompts'
-import { AIMessage, HumanMessage } from '@langchain/core/messages'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
-import { RunnableSequence } from '@langchain/core/runnables'
+// packages/ai-services/src/chains/graphUpdaterChain.js
+import { z } from 'zod'
+import { AIAgent } from '../lib/AIAgent.js'
+import { instructionGraphUpdater } from '@headlines/prompts'
+import { settings } from '@headlines/config'
+
+const graphUpdaterSchema = z.object({
+  entities: z
+    .array(z.string())
+    .describe('An array of all unique canonical entity names found.'),
+  relationships: z
+    .array(
+      z.tuple([
+        z.string(), // Subject
+        z.string(), // Predicate (Relationship Type)
+        z.string(), // Object
+      ])
+    )
+    .describe('An array of Subject-Predicate-Object triples representing relationships.'),
+})
+
+const getAgent = () =>
+  new AIAgent({
+    model: settings.LLM_MODEL_UTILITY,
+    systemPrompt: instructionGraphUpdater,
+    zodSchema: graphUpdaterSchema,
+  })
+
+async function invoke(input) {
+  const agent = getAgent()
+  // The userContent is the synthesized summary of an event
+  const result = await agent.execute(input.event_summary)
+  return result
+}
+
+export const graphUpdaterChain = { invoke }
+
+```
+
+## 📄 src/chains/headlineChain.js
+*Lines: 66, Size: 2.02 KB*
+
+```javascript
+// packages/ai-services/src/chains/headlineChain.js
+import { AIAgent } from '../lib/AIAgent.js'
+import { headlineAssessmentSchema } from '@headlines/models/schemas'
+import { settings } from '@headlines/config'
 import {
   instructionHeadlines,
   shotsInputHeadlines,
   shotsOutputHeadlines,
-} from '@headlines/prompts' // Correct: Import from the monorepo package
-import { getHighPowerModel } from '../lib/langchain.js'
-import { safeInvoke } from '../lib/safeInvoke.js'
-import { headlineAssessmentSchema } from '@headlines/models/schemas'
-import { settings } from '@headlines/config/node' // Correct: Import from the /node entry point
+} from '@headlines/prompts'
 
-const systemPrompt = [
-  instructionHeadlines.whoYouAre,
-  instructionHeadlines.whatYouDo,
-  instructionHeadlines.primaryMandate,
-  instructionHeadlines.analyticalFramework,
-  instructionHeadlines.outputFormatDescription,
-].join('\n\n')
-
-const messages = [
-  SystemMessagePromptTemplate.fromTemplate(systemPrompt),
-  ...shotsInputHeadlines.flatMap((input, i) => [
-    new HumanMessage(input),
-    new AIMessage(shotsOutputHeadlines[i]),
-  ]),
-  HumanMessagePromptTemplate.fromTemplate('{headlineWithContext}'),
-]
-
-const prompt = ChatPromptTemplate.fromMessages(messages)
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
-const chain = RunnableSequence.from([prompt, getHighPowerModel()])
+const getAgent = () =>
+  new AIAgent({
+    model: settings.LLM_MODEL_HEADLINE_ASSESSMENT,
+    systemPrompt: instructionHeadlines,
+    fewShotInputs: shotsInputHeadlines,
+    fewShotOutputs: shotsOutputHeadlines,
+    zodSchema: headlineAssessmentSchema,
+  })
 
 function prepareInput({ article, hits }) {
   let headlineWithContext = `[COUNTRY CONTEXT: ${article.country}] ${article.headline}`
@@ -696,34 +665,35 @@ function prepareInput({ article, hits }) {
 }
 
 async function invoke({ article, hits }) {
-  const input = prepareInput({ article, hits })
-  const result = await safeInvoke(chain, input, 'headlineChain', headlineAssessmentSchema)
+  const agent = getAgent()
+  const { headlineWithContext } = prepareInput({ article, hits })
 
-  if (result.error) {
-    return {
-      relevance_headline: 0,
-      assessment_headline: 'AI assessment failed.',
-      headline_en: article.headline,
+  // The agent expects a single string of user content
+  const response = await agent.execute(headlineWithContext)
+
+  // Default response in case of total failure
+  const fallbackAssessment = {
+    relevance_headline: 0,
+    assessment_headline: 'AI assessment failed.',
+    headline_en: article.headline,
+  }
+
+  if (response.error || !response.assessment || response.assessment.length === 0) {
+    return fallbackAssessment
+  }
+
+  // The schema ensures assessment is an array, but we only sent one headline
+  const assessment = response.assessment[0]
+
+  if (hits.length > 0) {
+    const boost = settings.WATCHLIST_SCORE_BOOST
+    if (boost > 0) {
+      assessment.relevance_headline = Math.min(100, assessment.relevance_headline + boost)
+      assessment.assessment_headline = `Watchlist boost (+${boost}). ${assessment.assessment_headline}`
     }
   }
 
-  const assessment = result.assessment?.[0]
-  if (assessment && hits.length > 0) {
-    let score = assessment.relevance_headline
-    if (settings.WATCHLIST_SCORE_BOOST > 0) {
-      score = Math.min(100, score + settings.WATCHLIST_SCORE_BOOST)
-      assessment.assessment_headline = `Watchlist boost (+${settings.WATCHLIST_SCORE_BOOST}). ${assessment.assessment_headline}`
-    }
-    assessment.relevance_headline = score
-  }
-
-  return (
-    assessment || {
-      relevance_headline: 0,
-      assessment_headline: 'AI assessment failed.',
-      headline_en: article.headline,
-    }
-  )
+  return assessment || fallbackAssessment
 }
 
 export const headlineChain = { invoke }
@@ -731,51 +701,58 @@ export const headlineChain = { invoke }
 ```
 
 ## 📄 src/chains/index.js
-*Lines: 46, Size: 2.95 KB*
+*Lines: 53, Size: 3.37 KB*
 
 ```javascript
-// packages/ai-services/src/chains/index.js (version 3.1 - Final)
+// packages/ai-services/src/chains/index.js
 import { articleChain as ac } from './articleChain.js'
-import { articlePreAssessmentChain as apac } from './articlePreAssessmentChain.js'
 import { clusteringChain as cc } from './clusteringChain.js'
 import { contactFinderChain as cfc } from './contactFinderChain.js'
 import { contactResolverChain as crc } from './contactResolverChain.js'
 import { disambiguationChain as dc } from './disambiguationChain.js'
+import { dossierUpdateChain as duc } from './dossierUpdateChain.js'
 import { emailIntroChain as eic } from './emailIntroChain.js'
 import { emailSubjectChain as esc } from './emailSubjectChain.js'
 import { entityCanonicalizerChain as ecc } from './entityCanonicalizerChain.js'
 import { entityExtractorChain as eec } from './entityExtractorChain.js'
 import { executiveSummaryChain as exsc } from './executiveSummaryChain.js'
+import { graphUpdaterChain as guc } from './graphUpdaterChain.js' // ADDED
 import { headlineChain as hc } from './headlineChain.js'
 import { judgeChain as jc } from './judgeChain.js'
 import { opportunityChain as oc } from './opportunityChain.js'
+import { oppFactoryChain as ofc } from './oppFactoryChain.js'
+import { outreachDraftChain as odc } from './outreachDraftChain.js'
 import { sectionClassifierChain as scc } from './sectionClassifierChain.js'
 import { selectorRepairChain as src } from './selectorRepairChain.js'
 import { synthesisChain as sc } from './synthesisChain.js'
 import { watchlistSuggestionChain as wsc } from './watchlistSuggestionChain.js'
+import { wealthPredictorChain as wpc } from './wealthPredictorChain.js'
 import { batchHeadlineChain as bhc } from './batchHeadlineChain.js'
 import { translateChain as tc } from './translateChain.js'
 import { countryCorrectionChain as ccc } from './countryCorrectionChain.js'
 
-// DEFINITIVE FIX: Export each chain's invoke method as a standalone async function
 export const articleChain = async (input) => ac.invoke(input)
-export const articlePreAssessmentChain = async (input) => apac.invoke(input)
 export const clusteringChain = async (input) => cc.invoke(input)
 export const contactFinderChain = async (input) => cfc.invoke(input)
 export const contactResolverChain = async (input) => crc.invoke(input)
 export const disambiguationChain = async (input) => dc.invoke(input)
+export const dossierUpdateChain = async (input) => duc.invoke(input)
 export const emailIntroChain = async (input) => eic.invoke(input)
 export const emailSubjectChain = async (input) => esc.invoke(input)
 export const entityCanonicalizerChain = async (input) => ecc.invoke(input)
 export const entityExtractorChain = async (input) => eec.invoke(input)
 export const executiveSummaryChain = async (input) => exsc.invoke(input)
+export const graphUpdaterChain = async (input) => guc.invoke(input) // ADDED
 export const headlineChain = async (input) => hc.invoke(input)
 export const judgeChain = async (input) => jc.invoke(input)
+export const oppFactoryChain = async (input) => ofc.invoke(input)
 export const opportunityChain = async (input) => oc.invoke(input)
+export const outreachDraftChain = async (input) => odc.invoke(input)
 export const sectionClassifierChain = async (input) => scc.invoke(input)
 export const selectorRepairChain = async (input) => src.invoke(input)
 export const synthesisChain = async (input) => sc.invoke(input)
 export const watchlistSuggestionChain = async (input) => wsc.invoke(input)
+export const wealthPredictorChain = async (input) => wpc.invoke(input)
 export const batchHeadlineChain = async (input) => bhc.invoke(input)
 export const translateChain = async (input) => tc.invoke(input)
 export const countryCorrectionChain = async (input) => ccc.invoke(input)
@@ -783,33 +760,25 @@ export const countryCorrectionChain = async (input) => ccc.invoke(input)
 ```
 
 ## 📄 src/chains/judgeChain.js
-*Lines: 30, Size: 1.06 KB*
+*Lines: 22, Size: 802 Bytes*
 
 ```javascript
-// packages/ai-services/src/chains/judgeChain.js (version 2.3 - Final)
+// packages/ai-services/src/chains/judgeChain.js
 import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionJudge } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { judgeSchema } from '@headlines/models/schemas'
+import { buildPrompt } from '../lib/promptBuilder.js'
 
-const systemPrompt = [
-  instructionJudge.whoYouAre,
-  instructionJudge.whatYouDo,
-  ...instructionJudge.guidelines,
-  instructionJudge.outputFormatDescription,
-  instructionJudge.reiteration,
-].join('\n\n')
+const systemPrompt = buildPrompt(instructionJudge)
 
 const prompt = ChatPromptTemplate.fromMessages([
   ['system', systemPrompt],
   ['human', 'Data for review: {payload_json_string}'],
 ])
 
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
 const chain = RunnableSequence.from([prompt, getHighPowerModel()])
 
 export const judgeChain = {
@@ -818,77 +787,191 @@ export const judgeChain = {
 
 ```
 
-## 📄 src/chains/opportunityChain.js
-*Lines: 31, Size: 1.15 KB*
+## 📄 src/chains/oppFactoryChain.js
+*Lines: 41, Size: 1.33 KB*
 
 ```javascript
-import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
-import { RunnableSequence } from '@langchain/core/runnables'
-import { getInstructionOpportunities } from '@headlines/prompts'
-import { getHighPowerModel } from '../lib/langchain.js'
-import { safeInvoke } from '../lib/safeInvoke.js'
-import { opportunitySchema } from '@headlines/models/schemas'
-// Correct: Import from the /node entry point for the pipeline/Node.js environment
-import { settings } from '@headlines/config/node'
+// packages/ai-services/src/chains/oppFactoryChain.js
+import { AIAgent } from '../lib/AIAgent.js'
+import { instructionOppFactory } from '@headlines/prompts'
+import { settings } from '@headlines/config'
+import { opportunitySchema } from '@headlines/models/schemas' // This is the rich, unified schema
 
-const instructions = getInstructionOpportunities(settings)
-const systemPrompt = [
-  instructions.whoYouAre,
-  instructions.whatYouDo,
-  ...instructions.guidelines,
-  instructions.outputFormatDescription,
-].join('\n\n')
+const getAgent = () =>
+  new AIAgent({
+    model: settings.LLM_MODEL_PRO,
+    systemPrompt: instructionOppFactory,
+    zodSchema: opportunitySchema,
+  })
+
+async function invoke(input) {
+  const agent = getAgent()
+  const userContent = `Target Name: ${input.name}\n\n--- Scraped Articles ---\n${input.articles_text}`
+  const result = await agent.execute(userContent)
+
+  // --- START OF HARDENING ---
+  // If the AI successfully generates a dossier but fails to provide a 'whyContact' reason,
+  // inject a generic fallback to prevent Zod validation failure.
+  if (
+    result &&
+    !result.error &&
+    result.opportunities &&
+    result.opportunities.length > 0
+  ) {
+    const opp = result.opportunities[0]
+    if (!opp.whyContact || opp.whyContact.length === 0) {
+      opp.whyContact = [
+        `Identified as a high-value individual (${input.name}) based on recent intelligence signals warranting further research and potential outreach.`,
+      ]
+    }
+  }
+  // --- END OF HARDENING ---
+
+  return result
+}
+
+export const oppFactoryChain = { invoke }
+
+```
+
+## 📄 src/chains/opportunityChain.js
+*Lines: 77, Size: 2.73 KB*
+
+```javascript
+// packages/ai-services/src/chains/opportunityChain.js
+import { z } from 'zod'
+import { AIAgent } from '../lib/AIAgent.js'
+import { settings } from '@headlines/config'
+import { logger } from '@headlines/utils-shared'
+
+// --- START OF MODIFICATION ---
+// A new, leaner schema and prompt specifically for the fast, in-pipeline chain.
+const simpleOpportunitySchema = z.object({
+  opportunities: z.array(
+    z
+      .object({
+        reachOutTo: z.string(),
+        contactDetails: z
+          .union([
+            z.string(),
+            z.object({
+              role: z.string().nullable(),
+              company: z.string().nullable(),
+            }),
+          ])
+          .transform((val) => {
+            if (typeof val === 'string') {
+              return { role: val, company: null }
+            }
+            return val
+          })
+          .default({}),
+        lastKnownEventLiquidityMM: z.number().nullable(),
+        whyContact: z
+          .union([z.string(), z.array(z.string())])
+          .transform((val) => (Array.isArray(val) ? val : [val])),
+        event_key: z.string().optional(),
+      })
+      .passthrough()
+  ),
+})
+
+const simpleInstruction = {
+  whoYouAre: `You are a high-speed intelligence extraction engine. Your task is to extract critical, Tier-1 data points about individuals from a text.`,
+  whatYouDo: `From the provided text, extract ONLY the following for each relevant individual: their full name, their role/company, the liquidity from this event, and a reason to contact them. Be fast and precise. Ignore biographical details.`,
+  outputFormatDescription: `Respond ONLY with a valid JSON object with a single key "opportunities", which is an array of objects containing ONLY 'reachOutTo', 'contactDetails', 'lastKnownEventLiquidityMM', and 'whyContact'. The 'whyContact' field MUST be an array of strings.`,
+}
+
+const getAgent = () =>
+  new AIAgent({
+    model: settings.LLM_MODEL_SYNTHESIS, // Use a powerful but fast model
+    systemPrompt: simpleInstruction,
+    zodSchema: simpleOpportunitySchema,
+  })
+
+async function invoke(input) {
+  const agent = getAgent()
+  // We no longer need to summarize; we just send the context to the simpler agent.
+  const userContent = `New Intelligence Brief (Text):\n\`\`\`${input.context_text}\`\`\``
+  const result = await agent.execute(userContent)
+
+  if (result.error) {
+    return result
+  }
+
+  // Post-processing to ensure the event_key is attached, as the AI no longer handles it.
+  if (result.opportunities) {
+    const eventKeyMatch = input.context_text.match(/Event Key: ([\w-]+)/)
+    if (eventKeyMatch) {
+      result.opportunities.forEach((opp) => {
+        opp.event_key = eventKeyMatch[1]
+      })
+    }
+  }
+
+  return result
+}
+// --- END OF MODIFICATION ---
+
+export const opportunityChain = { invoke }
+
+```
+
+## 📄 src/chains/outreachDraftChain.js
+*Lines: 28, Size: 1.01 KB*
+
+```javascript
+// packages/ai-services/src/chains/outreachDraftChain.js
+import { ChatPromptTemplate } from '@langchain/core/prompts'
+import { RunnableSequence } from '@langchain/core/runnables'
+import { instructionOutreachDraft } from '@headlines/prompts'
+import { getProModel } from '../lib/langchain.js'
+import { safeInvoke } from '../lib/safeInvoke.js'
+import { z } from 'zod'
+import { buildPrompt } from '../lib/promptBuilder.js'
+
+// Define the Zod schema for validation
+const outreachDraftSchema = z.object({
+  subject: z.string().min(1, 'Subject line cannot be empty.'),
+  body: z.string().min(1, 'Email body cannot be empty.'),
+})
+
+const systemPrompt = buildPrompt(instructionOutreachDraft)
 
 const prompt = ChatPromptTemplate.fromMessages([
   ['system', systemPrompt],
-  ['human', '{context_text}'],
+  ['human', 'Intelligence Dossier (JSON):\n```{opportunity_json_string}```'],
 ])
 
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
-const chain = RunnableSequence.from([prompt, getHighPowerModel()])
+const chain = RunnableSequence.from([prompt, getProModel()])
 
-export const opportunityChain = {
-  invoke: (input) => safeInvoke(chain, input, 'opportunityChain', opportunitySchema),
+export const outreachDraftChain = {
+  invoke: (input) => safeInvoke(chain, input, 'outreachDraftChain', outreachDraftSchema),
 }
 
 ```
 
 ## 📄 src/chains/sectionClassifierChain.js
-*Lines: 36, Size: 2.03 KB*
+*Lines: 23, Size: 867 Bytes*
 
 ```javascript
-// packages/ai-services/src/chains/sectionClassifierChain.js (version 2.3.0)
+// packages/ai-services/src/chains/sectionClassifierChain.js
 import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { getUtilityModel } from '../lib/langchain.js' // Correctly import the getter function
+import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { sectionClassifierSchema } from '@headlines/models/schemas'
+import { buildPrompt } from '../lib/promptBuilder.js'
+import { instructionSectionClassifier } from '@headlines/prompts'
 
-const INSTRUCTION = {
-  whoYouAre:
-    'You are a master website navigation analyst. Your task is to analyze a list of hyperlinks (anchor text and href) from a webpage and classify each one into one of four categories.',
-  guidelines: [
-    '**Categories:**',
-    '1.  **"news_section"**: A link to a major category or section of news (e.g., "Business", "Technology", "World News", "/erhverv", "/økonomi").',
-    '2.  **"article_headline"**: A link to a specific news article or story. The text is usually a full sentence or a descriptive title.',
-    '3.  **"navigation"**: A link to a functional page on the site (e.g., "About Us", "Contact", "Login").',
-    '4.  **"other"**: Any other type of link (advertisements, privacy policies, etc.).',
-    '**Instructions:**',
-    '-   You will receive a JSON array of link objects.',
-    '-   You MUST return a JSON object with a single key, "classifications".',
-    '-   The "classifications" array MUST contain one classification object for EACH link in the input, in the EXACT SAME ORDER.',
-  ],
-}
+const systemPrompt = buildPrompt(instructionSectionClassifier)
 
-const systemPrompt = [INSTRUCTION.whoYouAre, ...INSTRUCTION.guidelines].join('\n\n')
-const fullPrompt = `${systemPrompt}\n\nUser Input:\n{links_json_string}`
-const prompt = ChatPromptTemplate.fromTemplate(fullPrompt)
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
-const chain = RunnableSequence.from([prompt, getUtilityModel()]) // Call the getter function
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', systemPrompt],
+  ['human', '{links_json_string}'],
+])
+
+const chain = RunnableSequence.from([prompt, getUtilityModel()])
 
 export const sectionClassifierChain = {
   invoke: (input) =>
@@ -898,33 +981,25 @@ export const sectionClassifierChain = {
 ```
 
 ## 📄 src/chains/selectorRepairChain.js
-*Lines: 31, Size: 1.14 KB*
+*Lines: 23, Size: 848 Bytes*
 
 ```javascript
-// packages/ai-services/src/chains/selectorRepairChain.js (version 2.3 - Final)
+// packages/ai-services/src/chains/selectorRepairChain.js
 import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionSelectorRepair } from '@headlines/prompts'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { selectorRepairSchema } from '@headlines/models/schemas'
+import { buildPrompt } from '../lib/promptBuilder.js'
 
-const systemPrompt = [
-  instructionSelectorRepair.whoYouAre,
-  instructionSelectorRepair.whatYouDo,
-  ...instructionSelectorRepair.guidelines,
-  instructionSelectorRepair.outputFormatDescription,
-  instructionSelectorRepair.reiteration,
-].join('\n\n')
+const systemPrompt = buildPrompt(instructionSelectorRepair)
 
 const prompt = ChatPromptTemplate.fromMessages([
   ['system', systemPrompt],
   ['human', '{payload_json_string}'],
 ])
 
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
 const chain = RunnableSequence.from([prompt, getUtilityModel()])
 
 export const selectorRepairChain = {
@@ -935,33 +1010,26 @@ export const selectorRepairChain = {
 ```
 
 ## 📄 src/chains/synthesisChain.js
-*Lines: 29, Size: 1.06 KB*
+*Lines: 22, Size: 803 Bytes*
 
 ```javascript
-// packages/ai-services/src/chains/synthesisChain.js (version 2.3 - Final)
+// packages/ai-services/src/chains/synthesisChain.js
 import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionSynthesize } from '@headlines/prompts'
-import { getHighPowerModel } from '../lib/langchain.js'
+import { getProModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { synthesisSchema } from '@headlines/models/schemas'
+import { buildPrompt } from '../lib/promptBuilder.js'
 
-const systemPrompt = [
-  instructionSynthesize.whoYouAre,
-  instructionSynthesize.whatYouDo,
-  ...instructionSynthesize.guidelines,
-  instructionSynthesize.outputFormatDescription,
-].join('\n\n')
+const systemPrompt = buildPrompt(instructionSynthesize)
 
 const prompt = ChatPromptTemplate.fromMessages([
   ['system', systemPrompt],
   ['human', '{context_json_string}'],
 ])
 
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
-const chain = RunnableSequence.from([prompt, getHighPowerModel()])
+const chain = RunnableSequence.from([prompt, getProModel()])
 
 export const synthesisChain = {
   invoke: (input) => safeInvoke(chain, input, 'synthesisChain', synthesisSchema),
@@ -970,33 +1038,25 @@ export const synthesisChain = {
 ```
 
 ## 📄 src/chains/translateChain.js
-*Lines: 30, Size: 1.13 KB*
+*Lines: 22, Size: 854 Bytes*
 
 ```javascript
-// packages/ai-services/src/chains/translateChain.js (version 1.0.0)
+// packages/ai-services/src/chains/translateChain.js
 import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionTranslate } from '@headlines/prompts'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { translateSchema } from '@headlines/models/schemas'
+import { buildPrompt } from '../lib/promptBuilder.js'
 
-const systemPrompt = [
-  instructionTranslate.whoYouAre,
-  instructionTranslate.whatYouDo,
-  ...instructionTranslate.guidelines,
-  instructionTranslate.outputFormatDescription,
-  instructionTranslate.reiteration,
-].join('\\n\\n')
+const systemPrompt = buildPrompt(instructionTranslate)
 
 const prompt = ChatPromptTemplate.fromMessages([
   ['system', systemPrompt],
-  ['human', 'Target Language: {language}\\n\\nHTML Content:\\n```{html_content}```'],
+  ['human', 'Target Language: {language}\n\nHTML Content:\n```{html_content}```'],
 ])
 
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
 const chain = RunnableSequence.from([prompt, getUtilityModel()])
 
 export const translateChain = {
@@ -1006,39 +1066,59 @@ export const translateChain = {
 ```
 
 ## 📄 src/chains/watchlistSuggestionChain.js
-*Lines: 31, Size: 1.21 KB*
+*Lines: 23, Size: 899 Bytes*
 
 ```javascript
-// packages/ai-services/src/chains/watchlistSuggestionChain.js (version 2.3 - Final)
+// packages/ai-services/src/chains/watchlistSuggestionChain.js
 import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionWatchlistSuggestion } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { watchlistSuggestionSchema } from '@headlines/models/schemas'
+import { buildPrompt } from '../lib/promptBuilder.js'
 
-const systemPrompt = [
-  instructionWatchlistSuggestion.whoYouAre,
-  instructionWatchlistSuggestion.whatYouDo,
-  ...instructionWatchlistSuggestion.guidelines,
-  instructionWatchlistSuggestion.outputFormatDescription,
-  instructionWatchlistSuggestion.reiteration,
-].join('\n\n')
+const systemPrompt = buildPrompt(instructionWatchlistSuggestion)
 
 const prompt = ChatPromptTemplate.fromMessages([
   ['system', systemPrompt],
   ['human', 'Events Data: {events_json_string}'],
 ])
 
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
 const chain = RunnableSequence.from([prompt, getHighPowerModel()])
 
 export const watchlistSuggestionChain = {
   invoke: (input) =>
     safeInvoke(chain, input, 'watchlistSuggestionChain', watchlistSuggestionSchema),
 }
+
+```
+
+## 📄 src/chains/wealthPredictorChain.js
+*Lines: 22, Size: 793 Bytes*
+
+```javascript
+// packages/ai-services/src/chains/wealthPredictorChain.js
+import { AIAgent } from '../lib/AIAgent.js'
+import { instructionWealthPredictor } from '@headlines/prompts'
+import { settings } from '@headlines/config'
+import { wealthPredictorSchema } from '@headlines/models/schemas' // CORRECTED IMPORT
+
+const getAgent = () =>
+  new AIAgent({
+    model: settings.LLM_MODEL_UTILITY, // Fast and cheap for classification
+    systemPrompt: instructionWealthPredictor,
+    zodSchema: wealthPredictorSchema,
+  })
+
+async function invoke(input) {
+  const agent = getAgent()
+  const userContent = `Person's Name: "${input.name}"\n\nContext from article or entity graph: "${input.context}"`
+  const result = await agent.execute(userContent)
+  return result
+}
+
+export const wealthPredictorChain = { invoke }
 
 ```
 
@@ -1380,13 +1460,12 @@ export async function findSimilarArticles(queryText) {
 ```
 
 ## 📄 src/index.js
-*Lines: 204, Size: 7.09 KB*
+*Lines: 195, Size: 6.65 KB*
 
 ```javascript
 // packages/ai-services/src/index.js
-// This is the default, Node.js-safe entry point. It exports everything.
-
-// --- SHARED EXPORTS ---
+import { AIAgent } from './lib/AIAgent.js'
+export { AIAgent }
 export * from './lib/langchain.js'
 export * from './chains/index.js'
 export * from './search/search.js'
@@ -1400,11 +1479,9 @@ export * from './shared/agents/contactAgent.js'
 export * from './shared/agents/entityAgent.js'
 export * from './shared/agents/emailAgents.js'
 export * from './shared/agents/executiveSummaryAgent.js'
+export { dossierUpdateChain } from './chains/index.js'
 
-// --- NODE-ONLY EXPORTS ---
 export * from './node/agents/articleAgent.js'
-export * from './node/agents/articlePreAssessmentAgent.js'
-export * from './node/agents/batchArticleAgent.js'
 export * from './node/agents/clusteringAgent.js'
 export * from './node/agents/headlineAgent.js'
 export * from './node/agents/judgeAgent.js'
@@ -1412,16 +1489,14 @@ export * from './node/agents/sectionClassifierAgent.js'
 export * from './node/agents/selectorRepairAgent.js'
 export * from './node/agents/watchlistAgent.js'
 
-// --- MOVED LOGIC FROM DATA-ACCESS ---
 import { logger } from '@headlines/utils-shared'
 import { settings } from '@headlines/config/node'
 import { callLanguageModel } from './lib/langchain.js'
-import { SynthesizedEvent, Opportunity } from '@headlines/models/node'
+import { SynthesizedEvent, Opportunity, Article } from '@headlines/models/node'
 import { synthesizeEvent } from './shared/agents/synthesisAgent.js'
 import { generateOpportunitiesFromEvent } from './shared/agents/opportunityAgent.js'
 import { instructionSourceDiscovery } from '@headlines/prompts'
 import { generateEmbedding } from './embeddings/embeddings.js'
-import { Article } from '@headlines/models'
 import mongoose from 'mongoose'
 
 const TITLE_GENERATOR_PROMPT = `You are a title generation AI. Your task is to read a conversation and create a concise, 5-word-or-less title that accurately summarizes the main topic. Example Title: "Anders Holch Povlsen's Bestseller"`
@@ -1543,17 +1618,15 @@ export async function suggestSections(url) {
   }
 }
 
-// --- Sanity Check Function ---
 export async function performAiSanityCheck() {
   try {
     logger.info('🔬 Performing AI service sanity check (OpenAI)...')
     const answer = await callLanguageModel({
-      modelName: 'gpt-3.5-turbo', // Use a standard, widely available model for the check
-      prompt: 'In one word, what is the capital of France?',
+      modelName: 'gpt-5-nano',
+      userContent: 'In one word, what is the capital of France?',
       isJson: false,
     })
 
-    // Handle API call failure from safeExecute
     if (answer && answer.error) {
       logger.fatal(
         { details: answer.error },
@@ -1562,7 +1635,6 @@ export async function performAiSanityCheck() {
       return false
     }
 
-    // Handle unexpected response format
     if (
       !answer ||
       typeof answer !== 'string' ||
@@ -1578,7 +1650,6 @@ export async function performAiSanityCheck() {
     logger.info('✅ AI service sanity check passed.')
     return true
   } catch (error) {
-    // This will catch any unexpected synchronous errors in the function itself.
     logger.fatal(
       { err: error },
       'OpenAI sanity check failed with an unexpected exception.'
@@ -1590,12 +1661,15 @@ export async function performAiSanityCheck() {
 ```
 
 ## 📄 src/lib/AIAgent.js
-*Lines: 65, Size: 1.82 KB*
+*Lines: 111, Size: 3.98 KB*
 
 ```javascript
-// packages/ai-services/src/lib/AIAgent.js (version 2.0.0)
+// packages/ai-services/src/lib/AIAgent.js
 import { callLanguageModel } from './langchain.js'
 import { logger } from '@headlines/utils-shared'
+import { buildPrompt } from './promptBuilder.js'
+
+const MAX_CORRECTION_ATTEMPTS = 1
 
 export class AIAgent {
   constructor({
@@ -1605,65 +1679,109 @@ export class AIAgent {
     fewShotInputs = [],
     fewShotOutputs = [],
     zodSchema,
+    responseWrapperKey = null,
   }) {
     if (!model || !systemPrompt) {
       throw new Error('AIAgent requires a model and systemPrompt.')
     }
     this.model = model
-    this.systemPrompt = systemPrompt
     this.isJson = isJson
     this.fewShotInputs = fewShotInputs
     this.fewShotOutputs = fewShotOutputs
     this.zodSchema = zodSchema
-
-    logger.trace(
-      { agentConfig: { model, isJson, hasSchema: !!zodSchema } },
-      'Initialized new AIAgent.'
-    )
+    this.systemPrompt = buildPrompt(systemPrompt)
+    this.responseWrapperKey = responseWrapperKey
   }
 
   async execute(userContent) {
-    let systemPromptContent = this.systemPrompt
-    // If the provided prompt is a function (for dynamic settings), execute it.
-    if (typeof systemPromptContent === 'function') {
-      systemPromptContent = systemPromptContent()
-    }
+    let currentContent = userContent
+    try {
+      for (let attempt = 0; attempt <= MAX_CORRECTION_ATTEMPTS; attempt++) {
+        const response = await callLanguageModel({
+          modelName: this.model,
+          systemPrompt: this.systemPrompt,
+          userContent: currentContent,
+          isJson: this.isJson,
+          fewShotInputs: this.fewShotInputs,
+          fewShotOutputs: this.fewShotOutputs,
+        })
 
-    const response = await callLanguageModel({
-      modelName: this.model,
-      systemPrompt: systemPromptContent,
-      userContent,
-      isJson: this.isJson,
-      fewShotInputs: this.fewShotInputs,
-      fewShotOutputs: this.fewShotOutputs,
-    })
+        // --- START OF DEFINITIVE FIX ---
+        // If the underlying API call returns an error object (e.g., from a timeout),
+        // return it gracefully instead of throwing a fatal exception.
+        if (response.error) {
+          logger.error(
+            { agent: this.constructor.name, model: this.model, error: response.error },
+            `AIAgent's call to language model failed.`
+          )
+          return { error: response.error }
+        }
+        // --- END OF DEFINITIVE FIX ---
 
-    if (this.isJson && this.zodSchema && !response.error) {
-      const validationResult = this.zodSchema.safeParse(response)
-      if (!validationResult.success) {
-        logger.error(
+        let dataToValidate = response
+        if (this.responseWrapperKey && response[this.responseWrapperKey]) {
+          dataToValidate = response[this.responseWrapperKey]
+        }
+
+        if (!this.zodSchema) {
+          return dataToValidate
+        }
+
+        const validationResult = this.zodSchema.safeParse(dataToValidate)
+
+        if (validationResult.success) {
+          if (attempt > 0) {
+            logger.warn(
+              { model: this.model, agent: this.constructor.name },
+              `AI self-correction succeeded on attempt ${attempt + 1}.`
+            )
+          }
+          return this.responseWrapperKey
+            ? { [this.responseWrapperKey]: validationResult.data }
+            : validationResult.data
+        }
+
+        if (attempt === MAX_CORRECTION_ATTEMPTS) {
+          logger.error(
+            {
+              agentName: this.constructor.name,
+              model: this.model,
+              validationErrors: validationResult.error.flatten(),
+              rawResponseFromAI: response,
+            },
+            `AI response failed Zod validation after all correction attempts.`
+          )
+          throw new Error('Zod validation failed permanently')
+        }
+
+        logger.warn(
           {
-            details: validationResult.error.flatten(),
             model: this.model,
-            rawResponse: response, // Log the raw response for debugging
+            agent: this.constructor.name,
+            errors: validationResult.error.flatten(),
           },
-          `AI response failed Zod validation.`
+          `Zod validation failed on attempt ${attempt + 1}. Initiating self-correction...`
         )
-        return { error: 'Zod validation failed', details: validationResult.error }
-      }
-      return validationResult.data
-    }
 
-    return response
+        currentContent = `The previous response you provided was invalid. You MUST correct it. Here was the original request (condensed):\n---\n${userContent.substring(0, 2000)}...\n---\nHere was your invalid JSON response:\n---\n${JSON.stringify(response, null, 2)}\n---\nHere are the specific validation errors you MUST fix:\n---\n${JSON.stringify(validationResult.error.flatten(), null, 2)}\n---\nNow, generate a new, corrected JSON response that strictly adheres to the schema and fixes all the listed errors. Respond ONLY with the corrected JSON object.`
+      }
+    } catch (error) {
+      logger.error(
+        { err: error, agent: this.constructor.name, model: this.model },
+        `AIAgent execution failed catastrophically.`
+      )
+      return { error: error.message || 'A critical error occurred in the AI agent.' }
+    }
   }
 }
 
 ```
 
 ## 📄 src/lib/langchain.js
-*Lines: 91, Size: 2.92 KB*
+*Lines: 107, Size: 3.84 KB*
 
 ```javascript
+// packages/ai-services/src/lib/langchain.js
 import { ChatOpenAI } from '@langchain/openai'
 import { env, settings } from '@headlines/config/node'
 import { logger } from '@headlines/utils-shared'
@@ -1671,25 +1789,43 @@ import { tokenTracker } from '@headlines/utils-server/node'
 import { safeExecute } from '@headlines/utils-server/helpers'
 import OpenAI from 'openai'
 
+// This function is kept for the pre-flight check
+export function validatePromptBraces(promptText, agentName) {
+  const singleBraceRegex = /(?<!\{)\{(?!\{)|(?<!\})\}(?!\})/g
+  const match = singleBraceRegex.exec(promptText)
+  if (match) {
+    const char = match[0]
+    const index = match.index
+    const contextSnippet = promptText.substring(
+      Math.max(0, index - 30),
+      Math.min(promptText.length, index + 30)
+    )
+    const errorMessage = `\n[PROMPT VALIDATION ERROR] for agent/model '${agentName}'.\nFound a single unpaired curly brace '${char}' at position ${index}.\nAll curly braces in instruction prompts must be doubled (e.g., '{{' and '}}') to be treated as literal text and avoid template errors.\n\nContext:\n..."${contextSnippet}"...\n         ^\n`
+    throw new Error(errorMessage)
+  }
+}
+
 const modelConfig = { response_format: { type: 'json_object' } }
 
-// Temperature parameters have been removed to rely on provider defaults, which is more robust.
+// LangChain model exports are kept for potential future use with different features (e.g., streaming)
 export const getHeadlineModel = () =>
   new ChatOpenAI({ modelName: settings.LLM_MODEL_HEADLINE_ASSESSMENT }).bind(modelConfig)
 export const getHighPowerModel = () =>
   new ChatOpenAI({ modelName: settings.LLM_MODEL_SYNTHESIS }).bind(modelConfig)
 export const getUtilityModel = () =>
   new ChatOpenAI({ modelName: settings.LLM_MODEL_UTILITY }).bind(modelConfig)
+export const getProModel = () =>
+  new ChatOpenAI({ modelName: settings.LLM_MODEL_PRO }).bind(modelConfig)
 
+// Use the official OpenAI client for core, reliable API calls.
 const baseClient = new OpenAI({
   apiKey: env.OPENAI_API_KEY,
-  timeout: 120 * 1000, // This is a TCP-level timeout, good to have.
+  timeout: 120 * 1000,
   maxRetries: 3,
 })
 
 export async function callLanguageModel({
   modelName,
-  prompt,
   systemPrompt,
   userContent,
   isJson = true,
@@ -1698,9 +1834,7 @@ export async function callLanguageModel({
 }) {
   const messages = []
   if (systemPrompt) {
-    const systemContent =
-      typeof systemPrompt === 'object' ? JSON.stringify(systemPrompt) : systemPrompt
-    messages.push({ role: 'system', content: systemContent })
+    messages.push({ role: 'system', content: systemPrompt })
   }
   fewShotInputs.forEach((input, i) => {
     const shotContent = typeof input === 'string' ? input : JSON.stringify(input)
@@ -1709,44 +1843,44 @@ export async function callLanguageModel({
       messages.push({ role: 'assistant', content: fewShotOutputs[i] })
     }
   })
-  const finalUserContent = userContent || prompt
-  messages.push({ role: 'user', content: finalUserContent })
-  logger.trace(
-    { payload: { model: modelName, messages_count: messages.length } },
-    'Sending payload to LLM.'
-  )
+  messages.push({ role: 'user', content: userContent })
 
-  const apiPayload = {
-    model: modelName,
-    messages: messages,
-  }
+  const apiPayload = { model: modelName, messages: messages }
   if (isJson) {
     apiPayload.response_format = { type: 'json_object' }
   }
 
-  // Use the robust safeExecute with its built-in timeout race.
-  // We'll give it an 85-second timeout, slightly less than the safeExecute default.
+  // --- START OF DEFINITIVE FIX ---
+  // The timeout wrapper is now placed around the direct API call,
+  // not the entire agent's logic.
   const result = await safeExecute(() => baseClient.chat.completions.create(apiPayload), {
     timeout: 85000,
   })
 
-  if (!result) {
-    // safeExecute will have already logged the error (timeout or otherwise).
-    return { error: 'API call failed or timed out' }
-  }
+  if (!result) return { error: 'API call failed or timed out' }
+  // --- END OF DEFINITIVE FIX ---
 
-  if (result.usage) {
-    tokenTracker.recordUsage(modelName, result.usage)
+  if (result.usage) tokenTracker.recordUsage(modelName, result.usage)
+
+  const responseContent = result.choices[0]?.message?.content
+
+  if (typeof responseContent !== 'string') {
+    logger.error(
+      { response: result },
+      `LLM response for model ${modelName} was empty or in an unexpected format.`
+    )
+    return { error: 'LLM response was empty or invalid.' }
   }
-  const responseContent = result.choices[0].message.content
-  logger.trace({ chars: responseContent.length }, 'Received LLM response.')
 
   if (isJson) {
     try {
-      return JSON.parse(responseContent)
+      const jsonMatch = responseContent.match(/\{[\s\S]*\}/)
+      if (!jsonMatch)
+        throw new Error("No valid JSON object found in the LLM's string response.")
+      return JSON.parse(jsonMatch[0])
     } catch (parseError) {
       logger.error(
-        { err: parseError, details: responseContent },
+        { err: parseError, rawContent: responseContent },
         `LLM response JSON Parse Error for model ${modelName}`
       )
       return { error: 'JSON Parsing Error' }
@@ -1754,17 +1888,57 @@ export async function callLanguageModel({
   }
   return responseContent
 }
+```
+
+## 📄 src/lib/promptBuilder.js
+*Lines: 35, Size: 1.2 KB*
+
+```javascript
+// packages/ai-services/src/lib/promptBuilder.js
+import { settings } from '@headlines/config'
+
+/**
+ * A robust, centralized function to build a string prompt from an instruction object.
+ * It handles instruction objects, functions that return objects, and plain strings.
+ * @param {object|Function|string} instruction - The prompt instruction object or function.
+ * @returns {string} The fully constructed prompt string.
+ */
+export function buildPrompt(instruction) {
+  let promptSource = instruction
+
+  // If the prompt is a function, execute it to get the object.
+  if (typeof promptSource === 'function') {
+    promptSource = promptSource(settings)
+  }
+
+  // If the result is an object, automatically build the string.
+  if (typeof promptSource === 'object' && promptSource !== null) {
+    return Object.values(promptSource)
+      .flat() // Seamlessly handles both 'string' and ['array', 'of', 'strings']
+      .filter((value) => typeof value === 'string')
+      .join('\n\n')
+  }
+
+  // If it's already a string, use it directly.
+  if (typeof promptSource === 'string') {
+    return promptSource
+  }
+
+  throw new Error(
+    'buildPrompt received an invalid instruction type. Must be an object, function, or string.'
+  )
+}
 
 ```
 
 ## 📄 src/lib/safeInvoke.js
-*Lines: 90, Size: 3.06 KB*
+*Lines: 104, Size: 3.45 KB*
 
 ```javascript
+// packages/ai-services/src/lib/safeInvoke.js
 import { logger } from '@headlines/utils-shared'
 import { getRedisClient } from '@headlines/utils-server/node'
 import { createHash } from 'crypto'
-import { StringOutputParser } from '@langchain/core/output_parsers'
 
 const MAX_RETRIES = 1
 const CACHE_TTL_SECONDS = 60 * 60 * 24
@@ -1797,24 +1971,37 @@ export async function safeInvoke(chain, input, agentName, zodSchema) {
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      // --- START OF THE DEFINITIVE FIX ---
-      // The chain now outputs a raw BaseMessage. We pipe it to a StringOutputParser
-      // here to get the raw string content from the AI.
-      const stringParser = new StringOutputParser()
-      const stringResult = await chain.pipe(stringParser).invoke(input)
+      let result = await chain.invoke(input)
 
-      // This is more robust because it finds the JSON even if the AI adds extra text.
-      const jsonMatch = stringResult.match(/\{[\s\S]*\}/)
+      // --- START OF DEFINITIVE, FINAL FIX ---
+      // The old logic relied on LangChain's strict JsonOutputParser. This new logic is more robust.
+      // 1. Unwrap the AIMessage object to get the raw string content.
+      if (result && typeof result.content === 'string' && result.id) {
+        result = result.content
+      }
+
+      if (typeof result !== 'string') {
+        throw new Error('AI response was not a string after unwrapping.')
+      }
+
+      // 2. Use a regex to find the JSON block, ignoring any conversational text from the AI.
+      const jsonMatch = result.match(/\{[\s\S]*\}/)
       if (!jsonMatch) {
         throw new Error("No valid JSON object found in the LLM's string response.")
       }
-      const result = JSON.parse(jsonMatch[0])
-      // --- END OF THE DEFINITIVE FIX ---
 
-      const validation = zodSchema.safeParse(result)
+      // 3. Parse only the extracted JSON block.
+      const parsedResult = JSON.parse(jsonMatch[0])
+      // --- END OF DEFINITIVE, FINAL FIX ---
+
+      const validation = zodSchema.safeParse(parsedResult)
       if (!validation.success) {
         logger.error(
-          { details: validation.error.flatten(), agent: agentName, output: result },
+          {
+            agent: agentName,
+            zodErrorSummary: validation.error.flatten(),
+            rawAIDataThatFailedValidation: parsedResult,
+          },
           `Zod validation failed for ${agentName}.`
         )
         throw new Error('Zod validation failed')
@@ -1840,11 +2027,12 @@ export async function safeInvoke(chain, input, agentName, zodSchema) {
           { agent: agentName, attempt: attempt + 1, error: error.message },
           `Invocation failed for ${agentName}. Retrying...`
         )
+        await new Promise((res) => setTimeout(res, 1500 * (attempt + 1)))
         continue
       }
       logger.error(
         { err: error, agent: agentName },
-        `LangChain invocation failed for ${agentName}.`
+        `Chain invocation failed for ${agentName} after all retries.`
       )
       return { error: `Agent ${agentName} failed: ${error.message}` }
     }
@@ -1914,10 +2102,10 @@ export const performAiSanityCheck = coreSanityCheck
 ```
 
 ## 📄 src/node/agents/articleAgent.js
-*Lines: 75, Size: 2.68 KB*
+*Lines: 108, Size: 3.69 KB*
 
 ```javascript
-// packages/ai-services/src/node/agents/articleAgent.js (version 1.0.0)
+// packages/ai-services/src/node/agents/articleAgent.js
 import { truncateString } from '@headlines/utils-shared'
 import { logger } from '@headlines/utils-shared'
 import { AIAgent } from '../../lib/AIAgent.js'
@@ -1938,9 +2126,12 @@ const getAgent = () =>
     zodSchema: articleAssessmentSchema,
   })
 
-// The agent now accepts `hits` as a parameter, breaking the circular dependency.
-// It is no longer responsible for fetching data.
-export async function assessArticleContent(article, hits = [], isSalvaged = false) {
+export async function assessArticleContent(
+  article,
+  hits = [],
+  isSalvaged = false,
+  externalContext = ''
+) {
   const articleAssessmentAgent = getAgent()
   const fullContent = (article.articleContent?.contents || []).join('\n')
   const truncatedContent = truncateString(fullContent, settings.LLM_CONTEXT_MAX_CHARS)
@@ -1952,23 +2143,31 @@ export async function assessArticleContent(article, hits = [], isSalvaged = fals
         truncatedLength: truncatedContent.length,
         limit: settings.LLM_CONTEXT_MAX_CHARS,
       },
-      `Article content for LLM was truncated to prevent context overload.`
+      `Article content for LLM was truncated.`
     )
   }
 
-  let articleText = `HEADLINE: ${article.headline}\n\nBODY:\n${truncatedContent}`
+  let articleText = `HEADLINE: ${article.headline}\n\nBODY:\n${article.headline}\n\n${truncatedContent}`
 
   if (hits.length > 0) {
     const hitStrings = hits.map(
-      (hit) => `[WATCHLIST HIT: ${hit.name} | CONTEXT: ${hit.context || 'N/A'}]`
+      (hit) =>
+        `[WATCHLIST HIT: ${hit.entity.name} | CONTEXT: ${hit.entity.context || 'N/A'}]`
     )
     const hitPrefix = hitStrings.join(' ')
     articleText = `${hitPrefix} ${articleText}`
-    logger.info({ hits: hits.map((h) => h.name) }, 'Watchlist entities found in article.')
+    logger.info(
+      { hits: hits.map((h) => h.entity.name) },
+      'Watchlist entities found in article.'
+    )
   }
 
   if (isSalvaged) {
     articleText = `[SALVAGE CONTEXT: The original source for this headline failed to scrape. This content is from an alternative source. Please assess based on this new context.]\n\n${articleText}`
+  }
+
+  if (externalContext) {
+    articleText = `[EXTERNAL CONTEXT FROM WEB SEARCH]:\n${externalContext}\n\n[ORIGINAL ARTICLE DATA]:\n${articleText}`
   }
 
   const response = await articleAssessmentAgent.execute(articleText)
@@ -1981,6 +2180,28 @@ export async function assessArticleContent(article, hits = [], isSalvaged = fals
     return { ...article, error: `AI Error: ${response.error}` }
   }
 
+  // --- START OF DEFINITIVE FIX ---
+  // The AI can sometimes hallucinate individuals not present in the text. This filter ensures that only
+  // individuals who are actually mentioned in the article body are included in the final output.
+  if (response.key_individuals && response.key_individuals.length > 0) {
+    const articleTextLower = articleText.toLowerCase()
+    response.key_individuals = response.key_individuals.filter((ind) => {
+      if (!ind || !ind.name) return false // Filter out null/undefined entries
+      const isPresent = ind.name
+        .split(' ')
+        .filter((p) => p.length > 2)
+        .some((p) => articleTextLower.includes(p.toLowerCase()))
+      if (!isPresent) {
+        logger.warn(
+          { individual: ind.name, article: article.headline },
+          'Discarding hallucinated key individual not present in article text.'
+        )
+      }
+      return isPresent
+    })
+  }
+  // --- END OF DEFINITIVE FIX ---
+
   if (
     response.amount > 0 &&
     response.amount < settings.MINIMUM_EVENT_AMOUNT_USD_MILLIONS
@@ -1990,34 +2211,6 @@ export async function assessArticleContent(article, hits = [], isSalvaged = fals
   }
 
   return { ...article, ...response, error: null }
-}
-
-```
-
-## 📄 src/node/agents/articlePreAssessmentAgent.js
-*Lines: 22, Size: 784 Bytes*
-
-```javascript
-// packages/ai-services/src/agents/articlePreAssessmentAgent.js
-import { AIAgent } from '../../lib/AIAgent.js'
-import { articlePreAssessmentSchema } from '@headlines/models/schemas' // CORRECTED PATH
-import { settings } from '@headlines/config/node'
-import { instructionArticlePreAssessment } from '@headlines/prompts'
-
-const getAgent = () =>
-  new AIAgent({
-    model: settings.LLM_MODEL_UTILITY,
-    systemPrompt: instructionArticlePreAssessment,
-    zodSchema: articlePreAssessmentSchema,
-  })
-
-export async function preAssessArticle(articleContent) {
-  const articlePreAssessmentAgent = getAgent()
-  const response = await articlePreAssessmentAgent.execute(articleContent)
-  if (response.error) {
-    return { classification: null, error: response.error }
-  }
-  return response
 }
 
 ```

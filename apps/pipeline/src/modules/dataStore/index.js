@@ -1,14 +1,15 @@
-// apps/pipeline/src/modules/dataStore/index.js (CORRECTED - Handles empty articles array)
+// apps/pipeline/src/modules/dataStore/index.js
 import { Pinecone } from '@pinecone-database/pinecone'
 import { logger } from '@headlines/utils-shared'
 import { generateEmbedding } from '@headlines/ai-services'
 import { env } from '@headlines/config'
-import { Opportunity } from '@headlines/models'
+import { Opportunity, SynthesizedEvent } from '@headlines/models'
 import {
   bulkWriteEvents,
   bulkWriteArticles,
   findEventsByKeys,
   findArticlesByLinks,
+  findArticles,
 } from '@headlines/data-access'
 
 const { PINECONE_API_KEY, PINECONE_INDEX_NAME } = env
@@ -17,44 +18,66 @@ if (!PINECONE_API_KEY) throw new Error('Pinecone API Key is missing!')
 const pc = new Pinecone({ apiKey: PINECONE_API_KEY })
 const pineconeIndex = pc.index(PINECONE_INDEX_NAME)
 
-export async function savePipelineResults(
-  articlesToSave, // This may now be an empty array
-  eventsToSave,
-  savedOpportunities
-) {
+/**
+ * Saves pipeline results to MongoDB and Pinecone
+ * @param {Array} articlesToSave - Articles to upsert
+ * @param {Array} eventsToSave - Events to upsert
+ * @returns {Promise<Object>} Result with savedEvents array
+ */
+export async function savePipelineResults(articlesToSave, eventsToSave) {
   logger.info(`Committing pipeline results to databases (MongoDB & Pinecone)...`)
-
   let savedEvents = []
   const pineconeVectors = []
 
   try {
+    // ===== STEP 1: Save Events (RE-ARCHITECTED FOR RELIABILITY) =====
     if (eventsToSave && eventsToSave.length > 0) {
-      const eventOps = eventsToSave.map((event) => {
-        const eventPayload = event.toObject ? event.toObject() : event
-        delete eventPayload._id
-        return {
-          updateOne: {
-            filter: { event_key: event.event_key },
-            update: { $set: { ...eventPayload, emailed: false } },
-            upsert: true,
+      // --- START OF DEFINITIVE, FINAL FIX ---
+      // Abandoning bulkWrite for events. It is too unreliable for upserts where no changes occur.
+      // This new loop uses findOneAndUpdate, which is atomic and GUARANTEES the document is returned,
+      // solving the root cause of all downstream failures.
+      let upsertedCount = 0
+      let modifiedCount = 0
+      for (const event of eventsToSave) {
+        const cleanEventPayload =
+          typeof event.toObject === 'function' ? event.toObject() : { ...event }
+
+        delete cleanEventPayload._id
+        delete cleanEventPayload.__v
+        delete cleanEventPayload.createdAt
+
+        cleanEventPayload.emailed = false
+        cleanEventPayload.updatedAt = new Date()
+
+        const result = await SynthesizedEvent.findOneAndUpdate(
+          { event_key: event.event_key },
+          {
+            $set: cleanEventPayload,
+            $setOnInsert: { createdAt: new Date() },
           },
+          { upsert: true, new: true, runValidators: true, lean: true }
+        )
+        if (result) {
+          savedEvents.push(result)
+          // Check if it was an insert or an update for logging
+          if (result.createdAt.getTime() === result.updatedAt.getTime()) {
+            upsertedCount++
+          } else {
+            modifiedCount++
+          }
         }
-      })
-      const eventResult = await bulkWriteEvents(eventOps)
-      if (!eventResult.success) throw new Error(eventResult.error)
+      }
       logger.info(
-        `MongoDB Event commit complete. Upserted: ${eventResult.upsertedCount}, Modified: ${eventResult.modifiedCount}.`
+        `MongoDB Event commit complete. Upserted: ${upsertedCount}, Modified: ${modifiedCount}.`
       )
+      // --- END OF DEFINITIVE, FINAL FIX ---
 
-      const eventKeys = eventsToSave.map((e) => e.event_key)
-      const findResult = await findEventsByKeys(eventKeys)
-      if (!findResult.success) throw new Error(findResult.error)
-      savedEvents = findResult.data
-
+      // Create Pinecone vectors for events
       for (const event of savedEvents) {
         const textToEmbed = `${event.synthesized_headline}\n${event.synthesized_summary}`
         const embedding = await generateEmbedding(textToEmbed)
-        const eventDate = event.event_date ? new Date(event.event_date) : new Date()
+        const eventDate = new Date(event.createdAt || Date.now())
+
         pineconeVectors.push({
           id: `event_${event._id.toString()}`,
           values: embedding,
@@ -64,23 +87,29 @@ export async function savePipelineResults(
             summary: event.synthesized_summary,
             country: Array.isArray(event.country)
               ? event.country.join(', ')
-              : event.country, // Handle array
+              : event.country,
             event_date: eventDate.toISOString(),
             key_individuals: (event.key_individuals || []).map((p) => p.name).join(', '),
+            transactionType: event.transactionDetails?.transactionType || 'N/A',
+            valuationUSD: event.transactionDetails?.valuationAtEventUSD || 0,
+            tags: event.tags || [],
           },
         })
       }
     }
 
-    // ACTION: This block will now often be skipped, which is correct.
+    // ===== STEP 2: Save Articles =====
     if (articlesToSave && articlesToSave.length > 0) {
       const articleOps = []
       const eventKeyToIdMap = new Map(savedEvents.map((e) => [e.event_key, e._id]))
       const articleIdToEventKeyMap = new Map()
+
       for (const event of eventsToSave) {
         for (const sourceArticle of event.source_articles) {
           const article = articlesToSave.find((a) => a.link === sourceArticle.link)
-          if (article) articleIdToEventKeyMap.set(article._id.toString(), event.event_key)
+          if (article) {
+            articleIdToEventKeyMap.set(article._id.toString(), event.event_key)
+          }
         }
       }
 
@@ -105,16 +134,16 @@ export async function savePipelineResults(
             },
           })
         }
-
         const eventKey = articleIdToEventKeyMap.get(articleIdStr)
-        if (eventKey) article.synthesizedEventId = eventKeyToIdMap.get(eventKey)
-
+        if (eventKey) {
+          article.synthesizedEventId = eventKeyToIdMap.get(eventKey)
+        }
         const { _id, ...dataToSet } = article
         delete dataToSet.articleContent
+        delete dataToSet.embedding
         Object.keys(dataToSet).forEach(
           (key) => dataToSet[key] === undefined && delete dataToSet[key]
         )
-        delete dataToSet.embedding
         articleOps.push({
           updateOne: {
             filter: { link: article.link },
@@ -129,24 +158,7 @@ export async function savePipelineResults(
       )
     }
 
-    const opportunityDocs =
-      (await Opportunity.find({
-        _id: { $in: (savedOpportunities || []).map((o) => o._id) },
-      }).lean()) || []
-    for (const opp of opportunityDocs) {
-      if (opp.embedding && opp.embedding.length > 0) {
-        pineconeVectors.push({
-          id: `opportunity_${opp._id.toString()}`,
-          values: opp.embedding,
-          metadata: {
-            type: 'opportunity',
-            headline: opp.reachOutTo,
-            summary: opp.whyContact.join(' '),
-            country: Array.isArray(opp.basedIn) ? opp.basedIn.join(', ') : opp.basedIn,
-          },
-        })
-      }
-    }
+    // ===== STEP 3: Upsert to Pinecone =====
     if (pineconeVectors.length > 0) {
       await pineconeIndex.upsert(pineconeVectors)
       logger.info(`Pinecone commit complete. Upserted ${pineconeVectors.length} vectors.`)
@@ -162,22 +174,64 @@ export async function savePipelineResults(
   }
 }
 
-// ... (filterFreshArticles function remains unchanged) ...
+export async function saveOpportunitiesToPinecone(savedOpportunities) {
+  if (!savedOpportunities || savedOpportunities.length === 0) {
+    logger.info('No opportunities to save to Pinecone.')
+    return true
+  }
+  try {
+    const pineconeVectors = []
+    const opportunityDocs = await Opportunity.find({
+      _id: { $in: savedOpportunities.map((o) => o._id) },
+    }).lean()
+    for (const opp of opportunityDocs) {
+      if (opp.embedding && opp.embedding.length > 0) {
+        pineconeVectors.push({
+          id: `opportunity_${opp._id.toString()}`,
+          values: opp.embedding,
+          metadata: {
+            type: 'opportunity',
+            headline: opp.reachOutTo,
+            summary:
+              (Array.isArray(opp.whyContact)
+                ? opp.whyContact.join(' ')
+                : opp.whyContact) || '',
+            country: Array.isArray(opp.basedIn) ? opp.basedIn.join(', ') : opp.basedIn,
+            wealthOrigin: opp.profile?.wealthOrigin || 'N/A',
+          },
+        })
+      }
+    }
+    if (pineconeVectors.length > 0) {
+      await pineconeIndex.upsert(pineconeVectors)
+      logger.info(
+        `Pinecone opportunity commit complete. Upserted ${pineconeVectors.length} opportunity vectors.`
+      )
+    }
+    return true
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to save opportunities to Pinecone')
+    return false
+  }
+}
+
 export async function filterFreshArticles(articles, isRefreshMode = false) {
   if (!articles || articles.length === 0) return []
   const scrapedLinks = articles.map((a) => a.link)
+
   if (isRefreshMode) {
-    logger.warn('REFRESH MODE: All scraped articles will be processed.')
-    const result = await findArticlesByLinks(scrapedLinks)
+    logger.warn('REFRESH MODE: All scraped articles will be re-processed.')
+    const result = await findArticles({
+      filter: { link: { $in: scrapedLinks } },
+    })
     if (!result.success) throw new Error(result.error)
-    const existingArticlesMap = new Map(result.data.map((a) => [a.link, a._id]))
-    const articlesForReprocessing = articles.map((scrapedArticle) =>
-      existingArticlesMap.get(scrapedArticle.link)
-        ? { ...scrapedArticle, _id: existingArticlesMap.get(scrapedArticle.link) }
-        : scrapedArticle
-    )
-    return articlesForReprocessing
+    const existingArticlesMap = new Map(result.data.map((a) => [a.link, a]))
+    return articles.map((scrapedArticle) => {
+      const existingArticle = existingArticlesMap.get(scrapedArticle.link)
+      return existingArticle || scrapedArticle
+    })
   }
+
   const result = await findArticlesByLinks(scrapedLinks)
   if (!result.success) throw new Error(result.error)
   const existingLinks = new Set(result.data.map((a) => a.link))

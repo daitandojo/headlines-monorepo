@@ -3,7 +3,6 @@
 
 export * from './apiSchemas.js' // Added new API schemas
 export * from './articleAssessmentSchema.js'
-export * from './articlePreAssessmentSchema.js'
 export * from './batchArticleAssessmentSchema.js'
 export * from './batchHeadlineAssessmentSchema.js'
 export * from './canonicalizerSchema.js'
@@ -27,3 +26,4 @@ export * from './translateSchema.js'
 export * from './userSchemas.js'
 export * from './watchlistSchemas.js'
 export * from './watchlistSuggestionSchema.js'
+export * from './wealthPredictorSchema.js'

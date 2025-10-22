@@ -1,4 +1,4 @@
-// File: apps/client/src/components/client/EventList.jsx (Restored)
+// apps/client/src/components/client/events/EventList.jsx
 'use client'
 import { Accordion } from '@/components/shared'
 import { SynthesizedEventCard } from './SynthesizedEventCard'
@@ -13,6 +13,7 @@ export const EventList = ({
   userFavoritedIds,
 }) => {
   return (
+    // MODIFIED: Wrapped the list in the Accordion component to enable functionality
     <Accordion type="single" collapsible>
       <AnimatedList className="w-full space-y-4">
         <AnimatePresence>
@@ -21,7 +22,7 @@ export const EventList = ({
             const isFavorited = userFavoritedIds.has(event._id)
             return (
               <motion.div
-                key={event.event_key}
+                key={event._id}
                 variants={itemVariants}
                 exit={itemVariants.exit}
                 layout

@@ -1,4 +1,4 @@
-// packages/models/src/Article.js (version 2.1.0 - Multi-country support)
+// packages/models/src/Article.js
 import mongoose from 'mongoose'
 import { ARTICLE_STATUSES } from './prompt-constants.js'
 
@@ -21,10 +21,14 @@ const ArticleSchema = new Schema(
     link: { type: String, required: true, unique: true, trim: true },
     newspaper: { type: String, required: true, trim: true },
     source: { type: String, required: true, trim: true },
-    country: { type: [String], trim: true, index: true }, // MODIFIED: Changed to array of strings
+    country: { type: [String], trim: true, index: true },
     imageUrl: { type: String, trim: true },
     relevance_headline: { type: Number, required: true, min: 0, max: 100 },
     assessment_headline: { type: String, required: true, trim: true },
+    // --- START OF DEFINITIVE FIX ---
+    // Add the new field to persist the concise summary generated in Stage 3.
+    one_line_summary: { type: String, trim: true },
+    // --- END OF DEFINITIVE FIX ---
     articleContent: {
       type: { contents: { type: [String], default: [] } },
       required: false,
@@ -32,6 +36,8 @@ const ArticleSchema = new Schema(
     },
     relevance_article: { type: Number, min: 0, max: 100 },
     assessment_article: { type: String, trim: true },
+    transactionType: { type: String, trim: true, required: false },
+    tags: { type: [String], default: [] },
     key_individuals: [
       {
         _id: false,
@@ -51,7 +57,14 @@ const ArticleSchema = new Schema(
       required: false,
     },
     status: { type: String, enum: ARTICLE_STATUSES, default: 'scraped', index: true },
-    pipeline_lifecycle: { type: [LifecycleEventSchema], default: [] },
+    pipelineTrace: { type: [LifecycleEventSchema], default: [], select: false },
+    watchlistHits: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'WatchlistEntity',
+        index: true,
+      },
+    ],
   },
   {
     timestamps: true,

@@ -1,18 +1,15 @@
-// packages/ai-services/src/chains/disambiguationChain.js (version 2.3 - Final)
+// packages/ai-services/src/chains/disambiguationChain.js
 import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionDisambiguation } from '@headlines/prompts'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { disambiguationSchema } from '@headlines/models/schemas'
+import { buildPrompt } from '../lib/promptBuilder.js'
 
-const systemPrompt = [
-  instructionDisambiguation.whoYouAre,
-  instructionDisambiguation.whatYouDo,
-  ...instructionDisambiguation.guidelines,
-  instructionDisambiguation.outputFormatDescription,
-].join('\n\n')
+// The robust buildPrompt helper handles the construction of the system prompt,
+// preventing errors if any properties on the instruction object are not iterable.
+const systemPrompt = buildPrompt(instructionDisambiguation)
 
 const prompt = ChatPromptTemplate.fromMessages([
   ['system', systemPrompt],

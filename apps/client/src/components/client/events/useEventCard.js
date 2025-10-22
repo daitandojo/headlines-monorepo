@@ -24,11 +24,7 @@ export function useEventCard(event, onDelete, onFavoriteToggle, isFavorited) {
   }
 
   const handleSwipeRight = () => {
-    if (isFavorited) {
-      setIsEmailDialogOpen(true)
-    } else {
-      toast.info('Item must be favorited to email.')
-    }
+    onFavoriteToggle(event._id, !isFavorited)
   }
 
   const handleChatAboutEvent = (e) => {
@@ -44,19 +40,50 @@ export function useEventCard(event, onDelete, onFavoriteToggle, isFavorited) {
   }
 
   const handleShowArticles = (e) => {
-    e.stopPropagation()
+    if (e) e.stopPropagation()
     setIsArticlesModalOpen(true)
   }
 
   const handleShowOpportunities = async (e) => {
     if (e) e.stopPropagation()
+
+    // An opportunity is fully populated if it has the 'whyContact' field.
+    // The initial list fetch only populates '_id' and 'reachOutTo'.
+    const isFullyPopulated = event.relatedOpportunities?.[0]?.whyContact
+
+    if (isFullyPopulated) {
+      setOpportunitiesForModal(event.relatedOpportunities)
+      setIsOpportunitiesModalOpen(true)
+      return
+    }
+
     setIsLoadingOpportunities(true)
     try {
+      // If not fully populated, we must fetch the full event details,
+      // which includes the fully populated opportunities.
       const res = await fetch(`/api/events/${event._id}`)
-      if (!res.ok) throw new Error('Failed to fetch event details')
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Failed to fetch event details')
+      }
       const result = await res.json()
-      setOpportunitiesForModal(result.data.relatedOpportunities || [])
-      setIsOpportunitiesModalOpen(true)
+      const fullEventData = result.data
+
+      if (
+        fullEventData.relatedOpportunities &&
+        fullEventData.relatedOpportunities.length > 0
+      ) {
+        setOpportunitiesForModal(fullEventData.relatedOpportunities)
+        setIsOpportunitiesModalOpen(true)
+      } else if (event.key_individuals && event.key_individuals.length > 0) {
+        // This case is now correct: It means individuals were found, but dossier generation is pending or failed.
+        toast.info(
+          'Opportunities are being generated for these key individuals. Please check back shortly.'
+        )
+      } else {
+        // This should not happen if the "Opportunities" button is visible, but is a safe fallback.
+        toast.error('No opportunities found for this event.')
+      }
     } catch (error) {
       toast.error('Could not load opportunities', { description: error.message })
     } finally {

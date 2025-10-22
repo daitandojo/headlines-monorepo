@@ -24,6 +24,7 @@ apps/client/.vercel
 apps/pipeline/debug_html
 apps/pipeline/logs
 apps/pipeline/backup
+opportunity_seeds
 
 # Packages
 packages/**/node_modules

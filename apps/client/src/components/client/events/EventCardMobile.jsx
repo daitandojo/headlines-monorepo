@@ -1,9 +1,9 @@
-// File: apps/client/src/components/client/events/EventCardMobile.jsx
+// apps/client/src/components/client/events/EventCardMobile.jsx
 'use client'
 
 import { Badge, Button } from '@/components/shared'
 import { formatDistanceToNow } from 'date-fns'
-import { Trash2, MessageSquarePlus, Users, Loader2 } from 'lucide-react'
+import { Trash2, MessageSquarePlus, Users, Loader2, FileText, Heart } from 'lucide-react'
 import { getCountryFlag } from '@headlines/utils-shared'
 import { cn } from '@headlines/utils-shared'
 
@@ -17,37 +17,36 @@ export function EventCardMobile({
   event,
   onChat,
   onDelete,
-  onShowIndividuals,
+  onFavorite,
+  onShowArticles,
   onShowOpportunities,
   isOpportunitiesLoading,
+  isFavorited,
   isPending,
 }) {
   if (!event) return null
-  const flags = (event.country || []).map((c) => getCountryFlag(c)).join(' ')
+  const countryArray = Array.isArray(event.country)
+    ? event.country
+    : [event.country].filter(Boolean)
+  const flags = countryArray.map(getCountryFlag).join(' ')
   const primaryImageUrl = event.source_articles?.find((a) => a.imageUrl)?.imageUrl
   const updatedAt = formatDistanceToNow(new Date(event.updatedAt), { addSuffix: true })
-  const opportunityCount = event.relatedOpportunities?.length || 0
-  const individualCount = event.key_individuals?.length || 0
-
-  const handleShowContent = (e) => {
-    e.stopPropagation()
-    if (isPending || isOpportunitiesLoading) return
-
-    if (opportunityCount > 0 && onShowOpportunities) {
-      onShowOpportunities()
-    } else if (onShowIndividuals) {
-      onShowIndividuals()
-    }
-  }
+  // --- START OF FIX ---
+  // The count should be based on the key_individuals identified within the event itself.
+  const opportunityCount = event.key_individuals?.length || 0
+  // --- END OF FIX ---
 
   const handleChatClick = (e) => {
     e.stopPropagation()
     onChat()
   }
-
   const handleDeleteClick = (e) => {
     e.stopPropagation()
     onDelete()
+  }
+  const handleFavoriteClick = (e) => {
+    e.stopPropagation()
+    onFavorite()
   }
 
   return (
@@ -62,14 +61,11 @@ export function EventCardMobile({
         {primaryImageUrl && (
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent z-0 rounded-lg" />
         )}
-
         <div className="relative z-10">
           <div className="flex justify-between items-start gap-2 mb-2">
             <div className="flex items-center gap-2 min-w-0">
               <Badge
-                className={`text-sm font-bold px-2 py-0.5 ${getRelevanceBadgeClass(
-                  event.highest_relevance_score
-                )}`}
+                className={`text-sm font-bold px-2 py-0.5 ${getRelevanceBadgeClass(event.highest_relevance_score)}`}
               >
                 {event.highest_relevance_score}
               </Badge>
@@ -83,6 +79,16 @@ export function EventCardMobile({
               </p>
             </div>
             <div className="flex flex-col items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleFavoriteClick}
+                className="text-slate-300 hover:text-red-500 bg-black/20 hover:bg-red-500/20 h-8 w-8"
+              >
+                <Heart
+                  className={cn('h-4 w-4', isFavorited && 'fill-current text-red-500')}
+                />
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"
@@ -113,7 +119,6 @@ export function EventCardMobile({
           </h3>
         </div>
       </div>
-
       <div
         className={cn(
           'pt-4',
@@ -124,31 +129,44 @@ export function EventCardMobile({
           {event.synthesized_summary}
         </p>
         <div className="mt-4 pt-4 border-t border-slate-800/50 flex flex-col justify-between items-start gap-4">
-          {(individualCount > 0 || opportunityCount > 0) && (
+          <div className="space-y-3">
+            {opportunityCount > 0 && (
+              <Button
+                variant="ghost"
+                className="p-0 h-auto text-left text-slate-400 hover:text-slate-200"
+                onClick={(e) => onShowOpportunities && onShowOpportunities(e)}
+                disabled={isPending || isOpportunitiesLoading}
+              >
+                <div className="flex items-start gap-3">
+                  {isOpportunitiesLoading ? (
+                    <Loader2 className="h-5 w-5 mt-0.5 shrink-0 animate-spin" />
+                  ) : (
+                    <Users className="h-5 w-5 mt-0.5 shrink-0 text-green-400" />
+                  )}
+                  <p className="text-sm font-medium text-green-300">
+                    {opportunityCount} Opportunit
+                    {opportunityCount > 1 ? 'ies' : 'y'} Identified
+                  </p>
+                </div>
+              </Button>
+            )}
             <Button
               variant="ghost"
               className="p-0 h-auto text-left text-slate-400 hover:text-slate-200"
-              onClick={handleShowContent}
-              disabled={isPending || isOpportunitiesLoading}
+              onClick={(e) => onShowArticles && onShowArticles(e)}
+              disabled={isPending}
             >
               <div className="flex items-start gap-3">
-                {isOpportunitiesLoading ? (
-                  <Loader2 className="h-5 w-5 mt-0.5 shrink-0 animate-spin" />
-                ) : (
-                  <Users className="h-5 w-5 mt-0.5 shrink-0 text-slate-500" />
-                )}
+                <FileText className="h-5 w-5 mt-0.5 shrink-0 text-slate-500" />
                 <p className="text-sm font-medium text-slate-300">
-                  {opportunityCount > 0
-                    ? `${opportunityCount} Opportunit${opportunityCount > 1 ? 'ies' : 'y'}`
-                    : `${individualCount} Key Individual(s)`}{' '}
-                  Identified
+                  {event.source_articles?.length || 0} Source Article(s)
                 </p>
               </div>
             </Button>
-          )}
-          {event.ai_assessment_reason && (
+          </div>
+          {event.advisorSummary && (
             <p className="text-xs text-slate-500 italic sm:text-right flex-grow">
-              {event.ai_assessment_reason}
+              {event.advisorSummary}
             </p>
           )}
         </div>

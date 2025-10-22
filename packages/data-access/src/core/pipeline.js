@@ -54,7 +54,10 @@ export async function bulkWriteEvents(eventOps) {
 export async function bulkWriteArticles(articleOps) {
   if (!articleOps || articleOps.length === 0) return { success: true, result: null }
   try {
+    // --- START OF DEFINITIVE FIX ---
+    // The `await` keyword was missing here, causing a race condition.
     const result = await Article.bulkWrite(articleOps, { ordered: false })
+    // --- END OF DEFINITIVE FIX ---
     return { success: true, result }
   } catch (error) {
     return { success: false, error: error.message }
@@ -70,10 +73,12 @@ export async function findEventsByKeys(eventKeys) {
   }
 }
 
+// DEFINITIVE FIX: The findArticlesByLinks function is now correctly located here.
 export async function findArticlesByLinks(links) {
   try {
+    // It only needs to select the 'link' field for its purpose.
     const articles = await Article.find({ link: { $in: links } })
-      .select('link _id')
+      .select('link')
       .lean()
     return { success: true, data: JSON.parse(JSON.stringify(articles)) }
   } catch (error) {

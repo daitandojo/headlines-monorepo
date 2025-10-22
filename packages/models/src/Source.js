@@ -1,4 +1,4 @@
-// packages/models/src/Source.js (version 7.2.0 - ledeSelector removed)
+// packages/models/src/Source.js
 import mongoose from 'mongoose'
 import {
   SOURCE_STATUSES,
@@ -47,10 +47,13 @@ const SourceSchema = new Schema(
       required: true,
       default: 'declarative',
     },
+    // --- START OF FIX ---
+    // Add the missing extractorKey field.
+    extractorKey: { type: String, required: false, trim: true, default: null },
+    // --- END OF FIX ---
     headlineSelector: { type: [String], required: false, default: [] },
     linkSelector: { type: String, required: false, trim: true },
     headlineTextSelector: { type: String, required: false, trim: true },
-    // ledeSelector: { type: [String], required: false, default: [] }, // REMOVED
     articleSelector: { type: [String], required: false, default: [] },
     lastScrapedAt: { type: Date, required: false, index: true },
     lastSuccessAt: { type: Date, required: false },

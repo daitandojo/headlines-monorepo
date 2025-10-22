@@ -4,14 +4,6 @@ import { verifySession, verifyAdmin } from '@/lib/auth/server'
 import dbConnect from '@headlines/data-access/dbConnect/next'
 import { sendErrorAlert } from '@headlines/utils-server/next'
 
-/**
- * Creates a robust API handler for Next.js API routes.
- * It manages database connection, authentication/authorization, and centralized error handling.
- * @param {Function} handler The core API logic function.
- * @param {object} [options={ requireAdmin: false }] Configuration options.
- * @param {boolean} [options.requireAdmin=false] If true, requires the user to have an 'admin' role.
- * @returns {Function} An async function compatible with Next.js API routes.
- */
 export function createApiHandler(handler, options = { requireAdmin: false }) {
   return async (request, context) => {
     let userPayload = null
@@ -29,6 +21,21 @@ export function createApiHandler(handler, options = { requireAdmin: false }) {
         )
       }
       userPayload = user
+
+      // --- START OF MODIFICATION ---
+      // Enforce trial expiration for non-admin users.
+      if (
+        user.role !== 'admin' &&
+        user.subscriptionTier === 'trial' &&
+        user.subscriptionExpiresAt &&
+        new Date(user.subscriptionExpiresAt) < new Date()
+      ) {
+        return NextResponse.json(
+          { error: 'Your 30-day trial has expired. Please upgrade to continue access.' },
+          { status: 403 } // 403 Forbidden is the correct status code for this.
+        )
+      }
+      // --- END OF MODIFICATION ---
 
       return await handler(request, { ...context, user })
     } catch (error) {

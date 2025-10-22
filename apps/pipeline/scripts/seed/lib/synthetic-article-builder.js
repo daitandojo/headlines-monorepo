@@ -9,7 +9,6 @@ import mongoose from 'mongoose'
  */
 export function createSyntheticArticle(person, eventChunk) {
   const headline = `Event Profile: ${eventChunk.type} involving ${eventChunk.participants.join(', ')}`
-  // Combine the specific event description with the general background for rich context
   const content = `An analysis of a specific wealth event involving ${person.name}.
 Event Type: ${eventChunk.type}
 Event Date: ${eventChunk.date}
@@ -19,9 +18,13 @@ General Background Context:
 ${person.background}
 ${person.wealthSummary || ''}`
 
-  // Create a unique link based on the person and a hash of the event description
   const eventHash = new mongoose.Types.ObjectId().toString().slice(-6)
-  const link = `https://richlist.norway/${person.name.toLowerCase().replace(/\s+/g, '-')}-${eventChunk.date}-${eventHash}`
+  const link = `https://richlist.ingestion/${person.name.toLowerCase().replace(/\s+/g, '-')}-${eventChunk.date}-${eventHash}`
+
+  // Ensure 'country' is an array for model compatibility
+  const countryArray = Array.isArray(person.country)
+    ? person.country
+    : [person.country].filter(Boolean)
 
   return {
     _id: new mongoose.Types.ObjectId(),
@@ -29,7 +32,7 @@ ${person.wealthSummary || ''}`
     link,
     newspaper: `Kapital Rich List ${person.year}`,
     source: 'Richlist Ingestion',
-    country: person.country,
+    country: countryArray, // MODIFIED: Ensure country is an array
     createdAt: new Date(eventChunk.date),
     articleContent: { contents: [content] },
     relevance_headline: 100,

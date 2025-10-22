@@ -1,6 +1,5 @@
 // packages/ai-services/src/chains/countryCorrectionChain.js
 import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
@@ -30,7 +29,8 @@ const prompt = ChatPromptTemplate.fromMessages([
 ])
 
 // --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
+// The chain now ends with the model. The JsonOutputParser has been removed.
+// The new safeInvoke function will handle the parsing robustly.
 const chain = RunnableSequence.from([prompt, getUtilityModel()])
 
 export const countryCorrectionChain = {

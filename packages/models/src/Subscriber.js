@@ -43,6 +43,7 @@ const SubscriberSchema = new Schema(
     lastName: { type: String, required: false, trim: true },
     language: { type: String, required: true, default: 'English' },
     countries: { type: [CountrySubscriptionSchema], default: [] },
+    sectors: { type: [String], default: [], index: true }, // ADDED
     role: { type: String, enum: SUBSCRIBER_ROLES, default: 'user', required: true },
     emailNotificationsEnabled: { type: Boolean, default: true },
     pushNotificationsEnabled: { type: Boolean, default: true },
@@ -59,9 +60,6 @@ const SubscriberSchema = new Schema(
   },
   { timestamps: true, collection: 'subscribers' }
 )
-
-// The pre('save') hook for password hashing has been REMOVED.
-// Hashing is now handled explicitly in the data-access layer.
 
 SubscriberSchema.methods.comparePassword = function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password)

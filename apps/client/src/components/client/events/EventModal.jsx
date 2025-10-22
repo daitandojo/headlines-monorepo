@@ -1,5 +1,4 @@
-// File: apps/client/src/components/client/events/EventModal.jsx
-
+// apps/client/src/components/client/events/EventModal.jsx
 'use client'
 
 import {
@@ -19,14 +18,36 @@ import {
   Building,
   ExternalLink,
   AlertCircle,
+  FileText, // NEW
+  DollarSign, // NEW
+  Percent, // NEW
+  ArrowRight, // NEW
 } from 'lucide-react'
 import { getCountryFlag } from '@headlines/utils-shared'
+
+function TransactionDetail({ label, value, icon, unit = '' }) {
+  if (value === null || value === undefined) return null
+  const Icon = icon
+  return (
+    <div className="flex items-center gap-2">
+      <Icon className="h-4 w-4 text-slate-500" />
+      <span className="font-medium text-slate-400">{label}:</span>
+      <span className="font-semibold text-slate-200">
+        {value}
+        {unit}
+      </span>
+    </div>
+  )
+}
 
 function EventDetail({ event }) {
   if (!event) return null
 
-  const flags = (event.country || []).map((c) => getCountryFlag(c)).join(' ')
+  const flags = Array.isArray(event.country)
+    ? event.country.map(getCountryFlag).join(' ')
+    : getCountryFlag(event.country)
   const score = event.highest_relevance_score || 0
+  const { transactionDetails, primarySubject, relatedCompanies, tags } = event
 
   const getRelevanceBadgeClass = (score) => {
     if (score >= 90) return 'bg-red-500/20 text-red-300 border border-red-500/30'
@@ -43,14 +64,22 @@ function EventDetail({ event }) {
             {flags && <span className="text-xl mr-2 align-middle">{flags}</span>}
             {event.synthesized_headline}
           </h3>
-          {event.eventClassification && (
-            <Badge
-              variant="outline"
-              className="border-yellow-500/30 text-yellow-300 bg-yellow-500/10"
-            >
-              {event.eventClassification}
-            </Badge>
-          )}
+          <div className="flex items-center gap-2 flex-wrap">
+            {event.eventClassification && (
+              <Badge
+                variant="outline"
+                className="border-yellow-500/30 text-yellow-300 bg-yellow-500/10"
+              >
+                {event.eventClassification}
+              </Badge>
+            )}
+            {tags &&
+              tags.map((tag) => (
+                <Badge key={tag} variant="secondary" className="capitalize">
+                  {tag}
+                </Badge>
+              ))}
+          </div>
         </div>
         <Badge
           className={`text-base font-bold px-3 py-1 ${getRelevanceBadgeClass(score)}`}
@@ -64,16 +93,52 @@ function EventDetail({ event }) {
         {event.synthesized_summary || 'No summary available.'}
       </p>
 
-      {/* AI Assessment */}
-      {event.ai_assessment_reason && (
+      {/* NEW: Transaction Details Section */}
+      {transactionDetails && (
+        <div className="p-3 bg-slate-800/30 rounded-md border border-slate-700/50 space-y-2 text-sm">
+          <h4 className="font-semibold text-sm text-slate-400 mb-1">
+            Transaction Details
+          </h4>
+          <TransactionDetail
+            label="Type"
+            value={transactionDetails.transactionType}
+            icon={FileText}
+          />
+          <TransactionDetail
+            label="Valuation"
+            value={transactionDetails.valuationAtEventUSD}
+            icon={DollarSign}
+            unit="M USD"
+          />
+          <TransactionDetail
+            label="Ownership Change"
+            value={transactionDetails.ownershipPercentageChange}
+            icon={Percent}
+            unit="%"
+          />
+          {transactionDetails.liquidityFlow?.nature && (
+            <div className="flex items-center gap-2 pt-2 border-t border-slate-700/50 mt-2">
+              <ArrowRight className="h-4 w-4 text-slate-500" />
+              <span className="font-medium text-slate-400">Flow:</span>
+              <span className="font-semibold text-slate-200">
+                {transactionDetails.liquidityFlow.nature} (~$
+                {transactionDetails.liquidityFlow.approxAmountUSD}M)
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Advisor Summary */}
+      {event.advisorSummary && (
         <div className="flex items-start gap-2 text-xs text-slate-500 italic p-2 bg-slate-800/30 rounded-md">
           <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-          <p>{event.ai_assessment_reason}</p>
+          <p>{event.advisorSummary}</p>
         </div>
       )}
 
       {/* Key Individuals */}
-      {event.key_individuals && event.key_individuals.length > 0 && (
+      {event.key_individuals?.length > 0 && (
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-slate-400">Key Individuals</h4>
           {event.key_individuals.map((person, index) => (
@@ -106,27 +171,43 @@ function EventDetail({ event }) {
         </div>
       )}
 
-      {/* Source Articles */}
-      {event.source_articles && event.source_articles.length > 0 && (
-        <div>
-          <h4 className="font-semibold text-sm text-slate-400 mb-2">Source Articles</h4>
-          <div className="flex flex-wrap gap-2">
-            {event.source_articles.map((article) => (
-              <a
-                href={article.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                key={article.link}
-              >
-                <Badge variant="secondary" className="hover:bg-slate-700">
-                  {article.newspaper}
-                  <ExternalLink className="h-3 w-3 ml-1.5" />
-                </Badge>
-              </a>
-            ))}
+      {/* Source Articles & Related Companies */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {event.source_articles?.length > 0 && (
+          <div>
+            <h4 className="font-semibold text-sm text-slate-400 mb-2">Source Articles</h4>
+            <div className="flex flex-wrap gap-2">
+              {event.source_articles.map((article) => (
+                <a
+                  href={article.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  key={article.link}
+                >
+                  <Badge variant="secondary" className="hover:bg-slate-700">
+                    {article.newspaper}
+                    <ExternalLink className="h-3 w-3 ml-1.5" />
+                  </Badge>
+                </a>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+        {relatedCompanies?.length > 0 && (
+          <div>
+            <h4 className="font-semibold text-sm text-slate-400 mb-2">
+              Related Companies
+            </h4>
+            <div className="flex flex-wrap gap-2">
+              {relatedCompanies.map((company) => (
+                <Badge key={company} variant="outline">
+                  {company}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -144,7 +225,7 @@ export function EventModal({ events = [], open, onOpenChange }) {
           </DialogTitle>
           <DialogDescription className="text-slate-400">
             {eventCount > 0
-              ? `Displaying ${eventCount} event${eventCount > 1 ? 's' : ''} matching the criteria.`
+              ? `Displaying ${eventCount} event${eventCount > 1 ? 's' : ''}.`
               : 'No events found.'}
           </DialogDescription>
         </DialogHeader>

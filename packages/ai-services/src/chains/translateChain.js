@@ -1,27 +1,19 @@
-// packages/ai-services/src/chains/translateChain.js (version 1.0.0)
+// packages/ai-services/src/chains/translateChain.js
 import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionTranslate } from '@headlines/prompts'
 import { getUtilityModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { translateSchema } from '@headlines/models/schemas'
+import { buildPrompt } from '../lib/promptBuilder.js'
 
-const systemPrompt = [
-  instructionTranslate.whoYouAre,
-  instructionTranslate.whatYouDo,
-  ...instructionTranslate.guidelines,
-  instructionTranslate.outputFormatDescription,
-  instructionTranslate.reiteration,
-].join('\\n\\n')
+const systemPrompt = buildPrompt(instructionTranslate)
 
 const prompt = ChatPromptTemplate.fromMessages([
   ['system', systemPrompt],
-  ['human', 'Target Language: {language}\\n\\nHTML Content:\\n```{html_content}```'],
+  ['human', 'Target Language: {language}\n\nHTML Content:\n```{html_content}```'],
 ])
 
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
 const chain = RunnableSequence.from([prompt, getUtilityModel()])
 
 export const translateChain = {

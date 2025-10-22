@@ -17,13 +17,13 @@ function calculateRate(numerator, denominator) {
   if (denominator === 0) return '0.00%'
   return ((numerator / denominator) * 100).toFixed(2) + '%'
 }
-
 function truncateSourceName(name) {
   if (!name) return 'N/A'
   const stopIndex = name.indexOf('(')
   return (stopIndex !== -1 ? name.substring(0, stopIndex) : name).trim()
 }
 
+// --- START OF MODIFICATION ---
 function formatJudgeVerdictSummary(judgeVerdict) {
   if (!judgeVerdict) return ''
   const eventCount = judgeVerdict.event_judgements?.length || 0
@@ -33,7 +33,8 @@ function formatJudgeVerdictSummary(judgeVerdict) {
     const counts = { positive: 0, negative: 0 }
     ;(judgements || []).forEach((j) => {
       const q = j.quality?.toLowerCase()
-      if (q === 'excellent' || q === 'good') counts.positive++
+      // "Acceptable" is a positive outcome.
+      if (q === 'excellent' || q === 'good' || q === 'acceptable') counts.positive++
       if (q === 'poor' || q === 'irrelevant') counts.negative++
     })
     return counts
@@ -41,6 +42,39 @@ function formatJudgeVerdictSummary(judgeVerdict) {
   const eventCounts = getQualityCounts(judgeVerdict.event_judgements)
   let summary = `  ${colors.magenta}Judge Verdict Summary:${colors.reset} ${eventCount} Events (${colors.green}${eventCounts.positive} OK${colors.reset}, ${colors.red}${eventCounts.negative} Bad${colors.reset})`
   return summary + '\n'
+}
+// --- END OF MODIFICATION ---
+
+export function formatJudgeVerdictDetails(runStats) {
+  const { judgeVerdict } = runStats
+  if (
+    !judgeVerdict ||
+    (!judgeVerdict.event_judgements?.length &&
+      !judgeVerdict.opportunity_judgements?.length)
+  )
+    return ''
+  let section = `  ${colors.yellow}--- ⚖️ Judge's Final Verdict Details ---${colors.reset}\n`
+  const formatVerdict = (v) => {
+    const quality = v.quality.toUpperCase()
+    let color = colors.reset
+    if (['EXCELLENT', 'GOOD'].includes(quality)) color = colors.green
+    if (['POOR', 'IRRELEVANT'].includes(quality)) color = colors.red
+    if (['ACCEPTABLE', 'MARGINAL'].includes(quality)) color = colors.yellow
+    return `  - ${color}[${quality.padEnd(10)}]${colors.reset} "${truncateString(v.identifier, 60)}"\n    ${colors.grey}└─ Commentary: ${v.commentary}${colors.reset}\n`
+  }
+  if (judgeVerdict.event_judgements?.length) {
+    section += `  ${colors.cyan}Event Judgements:${colors.reset}\n`
+    judgeVerdict.event_judgements.forEach((v) => {
+      section += formatVerdict(v)
+    })
+  }
+  if (judgeVerdict.opportunity_judgements?.length) {
+    section += `  ${colors.cyan}Opportunity Judgements:${colors.reset}\n`
+    judgeVerdict.opportunity_judgements.forEach((v) => {
+      section += formatVerdict(v)
+    })
+  }
+  return section + '\n'
 }
 
 export function formatRunFunnel(runStats) {
@@ -57,33 +91,18 @@ export function formatRunFunnel(runStats) {
     runStats.eventsSynthesized,
     runStats.freshHeadlinesFound
   )
-
   section += `  ${'Headlines Scraped:'.padEnd(30)} ${runStats.headlinesScraped}\n`
-  section += `  ${'Fresh/Refreshed Articles:'.padEnd(30)} ${
-    runStats.freshHeadlinesFound
-  }\n`
+  section += `  ${'Fresh/Refreshed Articles:'.padEnd(30)} ${runStats.freshHeadlinesFound}\n`
   section += `  ${'Headlines Assessed:'.padEnd(30)} ${runStats.headlinesAssessed}\n`
-  section += `  ${'  > Relevant for Enrichment:'.padEnd(30)} ${
-    runStats.relevantHeadlines
-  } (${colors.cyan}${headlineToEnrichRate}${colors.reset})\n`
-  section += `  ${'Articles Enriched:'.padEnd(30)} ${
-    runStats.enrichmentOutcomes?.length || 0
-  }\n`
-  section += `  ${'  > Relevant for Event:'.padEnd(30)} ${
-    runStats.relevantArticles
-  } (${colors.cyan}${enrichToEventRate}${colors.reset})\n`
+  section += `  ${'  > Relevant for Enrichment:'.padEnd(30)} ${runStats.relevantHeadlines} (${colors.cyan}${headlineToEnrichRate}${colors.reset})\n`
+  section += `  ${'Articles Enriched:'.padEnd(30)} ${runStats.enrichmentOutcomes?.length || 0}\n`
+  section += `  ${'  > Relevant for Event:'.padEnd(30)} ${runStats.relevantArticles} (${colors.cyan}${enrichToEventRate}${colors.reset})\n`
   section += `  ${'Events Synthesized:'.padEnd(30)} ${runStats.eventsSynthesized}\n`
-  section += `  ${colors.green}${'Notifications Sent:'.padEnd(30)} ${
-    runStats.eventsEmailed
-  }${colors.reset}\n`
+  section += `  ${colors.green}${'Notifications Sent:'.padEnd(30)} ${runStats.eventsEmailed}${colors.reset}\n`
   if (runStats.errors?.length > 0) {
-    section += `  ${colors.red}${'Errors Encountered:'.padEnd(30)} ${
-      runStats.errors.length
-    }${colors.reset}\n`
+    section += `  ${colors.red}${'Errors Encountered:'.padEnd(30)} ${runStats.errors.length}${colors.reset}\n`
   }
-  section += `  ${colors.yellow}${'Overall Signal/Noise Ratio:'.padEnd(30)} ${signalToNoiseRatio}${
-    colors.reset
-  }\n`
+  section += `  ${colors.yellow}${'Overall Signal/Noise Ratio:'.padEnd(30)} ${signalToNoiseRatio}${colors.reset}\n`
   section += formatJudgeVerdictSummary(runStats.judgeVerdict)
   return section
 }
@@ -96,9 +115,7 @@ export function formatTopEvents(runStats) {
     return ''
   let section = `  ${colors.yellow}--- Top Synthesized Events (This Run) ---${colors.reset}\n`
   runStats.synthesizedEventsForReport.slice(0, 5).forEach((event) => {
-    section += `  ${colors.green}[${String(event.highest_relevance_score).padStart(
-      3
-    )}]${colors.reset} "${truncateString(event.synthesized_headline, 70)}"\n`
+    section += `  ${colors.green}[${String(event.highest_relevance_score).padStart(3)}]${colors.reset} "${truncateString(event.synthesized_headline, 70)}"\n`
   })
   return section + '\n'
 }
@@ -124,9 +141,7 @@ export function formatTokenUsage(runStats) {
     totalCost += stats.cost
   })
   section += `  ------------------------------------------------\n`
-  section += `  ${colors.green}${'Total Estimated Cost:'.padEnd(
-    25
-  )} $${totalCost.toFixed(4)}${colors.reset}\n`
+  section += `  ${colors.green}${'Total Estimated Cost:'.padEnd(25)} $${totalCost.toFixed(4)}${colors.reset}\n`
   return section + '\n'
 }
 
@@ -145,69 +160,49 @@ export function formatApiUsage(runStats) {
   servicesWithUsage.forEach((service) => {
     const stats = usage[service]
     const costString = stats.cost > 0 ? `$${stats.cost.toFixed(4)}` : '(Free)'
-    section += `  ${`${service}:`.padEnd(25)} ${`${stats.calls.toLocaleString()} calls`.padEnd(
-      15
-    )} ${costString}\n`
+    section += `  ${`${service}:`.padEnd(25)} ${`${stats.calls.toLocaleString()} calls`.padEnd(15)} ${costString}\n`
     totalCost += stats.cost
   })
   section += `  ------------------------------------------------\n`
-  section += `  ${colors.green}${'Total Estimated Cost:'.padEnd(
-    25
-  )} $${totalCost.toFixed(4)}${colors.reset}\n`
+  section += `  ${colors.green}${'Total Estimated Cost:'.padEnd(25)} $${totalCost.toFixed(4)}${colors.reset}\n`
   return section + '\n'
 }
 
 export function formatContentScrapingFailures(runStats) {
-  if (!runStats.enrichmentOutcomes || runStats.enrichmentOutcomes.length === 0) {
-    return ''
-  }
-
+  if (!runStats.enrichmentOutcomes || runStats.enrichmentOutcomes.length === 0) return ''
   const contentFailures = runStats.enrichmentOutcomes.filter(
     (outcome) =>
       outcome.outcome === 'High-Signal Failure' ||
       (outcome.outcome === 'Dropped' &&
         (outcome.reason || '').includes('Content scrape failed'))
   )
-
-  if (contentFailures.length === 0) {
-    return ''
-  }
-
-  const sources = [...new Set(contentFailures.map((f) => f.newspaper))]
-
+  if (contentFailures.length === 0) return ''
   let section = `  ${colors.red}--- ACTION REQUIRED: Content Scraping Failures ---${colors.reset}\n`
   section += `  The following sources successfully scraped headlines but failed to extract article content for high-relevance items.\n`
   section += `  Their 'articleSelector' likely needs to be updated. Check the article trace logs for full HTML.\n`
-
   contentFailures.forEach((item) => {
     section += `  - ${colors.yellow}${item.newspaper}:${colors.reset} "${truncateString(item.headline, 50)}..."\n`
     section += `    ${colors.grey}Reason: ${item.reason}${colors.reset}\n`
-    // ✅ ADDITION: Display the selectors that were used during the failed attempt.
     if (item.extractionSelectors && item.extractionSelectors.length > 0) {
       section += `    ${colors.grey}Selectors Used (${item.extractionMethod}): [${item.extractionSelectors.join(', ')}]${colors.reset}\n`
     }
   })
-
   return section + '\n'
 }
 
 export async function formatStrugglingSources(runStats, dbStats) {
   const headlineFailures = (runStats.scraperHealth || []).filter((h) => !h.success)
   const strugglingSources = new Map()
-
   headlineFailures.forEach((failure) => {
     strugglingSources.set(
       failure.source,
       'Scraped 0 headlines (Immediate Action Required)'
     )
   })
-
   let section = `  ${colors.magenta}Actionable Source Health Alerts:${colors.reset}\n`
   if (strugglingSources.size > 0) {
     strugglingSources.forEach((reason, sourceName) => {
-      section += `  ${colors.red}${`- ${truncateSourceName(sourceName)}:`.padEnd(
-        25
-      )}${reason}${colors.reset}\n`
+      section += `  ${colors.red}${`- ${truncateSourceName(sourceName)}:`.padEnd(25)}${reason}${colors.reset}\n`
     })
   } else {
     section += `  ${colors.green}  All sources are performing within expected parameters.${colors.reset}\n`

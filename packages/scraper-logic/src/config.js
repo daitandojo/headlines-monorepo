@@ -10,13 +10,13 @@ let _config = {
   },
   configStore: null,
   utilityFunctions: null,
-};
+}
 
 export function configure(appConfig) {
   // Merge the provided app config with the existing config.
-  _config = { ..._config, ...appConfig };
+  _config = { ..._config, ...appConfig }
 }
 
 export function getConfig() {
-  return _config;
+  return _config
 }

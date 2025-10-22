@@ -1,6 +1,6 @@
 # 📁 PROJECT DIRECTORY STRUCTURE
 
-Total: 45 files, 2 directories
+Total: 47 files, 2 directories
 
 ```
 headlines-monorepo/
@@ -8,7 +8,6 @@ headlines-monorepo/
 │   ├── 📁 schemas/
 │   │   ├── 📄 apiSchemas.js
 │   │   ├── 📄 articleAssessmentSchema.js
-│   │   ├── 📄 articlePreAssessmentSchema.js
 │   │   ├── 📄 batchArticleAssessmentSchema.js
 │   │   ├── 📄 batchHeadlineAssessmentSchema.js
 │   │   ├── 📄 canonicalizerSchema.js
@@ -32,10 +31,13 @@ headlines-monorepo/
 │   │   ├── 📄 translateSchema.js
 │   │   ├── 📄 userSchemas.js
 │   │   ├── 📄 watchlistSchemas.js
-│   │   └── 📄 watchlistSuggestionSchema.js
+│   │   ├── 📄 watchlistSuggestionSchema.js
+│   │   └── 📄 wealthPredictorSchema.js
 │   ├── 📄 Article.js
 │   ├── 📄 client.js
 │   ├── 📄 Country.js
+│   ├── 📄 EntityGraph.js
+│   ├── 📄 Feedback.js
 │   ├── 📄 index.js
 │   ├── 📄 next.js
 │   ├── 📄 node.js
@@ -55,9 +57,9 @@ headlines-monorepo/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-10T00:11:01.999Z
+**Generated**: 2025-10-21T18:41:06.993Z
 **Repository Path**: /home/mark/Repos/projects/headlines-monorepo/packages/models
-**Total Files**: 45
+**Total Files**: 47
 **Package**: @headlines/models@2.0.0
 **Description**: Shared Mongoose models and Zod validation schemas for the Headlines monorepo.
 
@@ -94,10 +96,10 @@ headlines-monorepo/
 ```
 
 ## 📄 src/Article.js
-*Lines: 79, Size: 2.51 KB*
+*Lines: 90, Size: 2.75 KB*
 
 ```javascript
-// packages/models/src/Article.js (version 2.1.0 - Multi-country support)
+// packages/models/src/Article.js
 import mongoose from 'mongoose'
 import { ARTICLE_STATUSES } from './prompt-constants.js'
 
@@ -120,7 +122,7 @@ const ArticleSchema = new Schema(
     link: { type: String, required: true, unique: true, trim: true },
     newspaper: { type: String, required: true, trim: true },
     source: { type: String, required: true, trim: true },
-    country: { type: [String], trim: true, index: true }, // MODIFIED: Changed to array of strings
+    country: { type: [String], trim: true, index: true },
     imageUrl: { type: String, trim: true },
     relevance_headline: { type: Number, required: true, min: 0, max: 100 },
     assessment_headline: { type: String, required: true, trim: true },
@@ -131,6 +133,8 @@ const ArticleSchema = new Schema(
     },
     relevance_article: { type: Number, min: 0, max: 100 },
     assessment_article: { type: String, trim: true },
+    transactionType: { type: String, trim: true, required: false },
+    tags: { type: [String], default: [] },
     key_individuals: [
       {
         _id: false,
@@ -150,7 +154,16 @@ const ArticleSchema = new Schema(
       required: false,
     },
     status: { type: String, enum: ARTICLE_STATUSES, default: 'scraped', index: true },
-    pipeline_lifecycle: { type: [LifecycleEventSchema], default: [] },
+    pipelineTrace: { type: [LifecycleEventSchema], default: [], select: false },
+    // --- START OF MODIFICATION ---
+    watchlistHits: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'WatchlistEntity',
+        index: true,
+      },
+    ],
+    // --- END OF MODIFICATION ---
   },
   {
     timestamps: true,
@@ -213,11 +226,101 @@ export default models.Country || model('Country', CountrySchema)
 
 ```
 
-## 📄 src/Opportunity.js
-*Lines: 30, Size: 1.12 KB*
+## 📄 src/EntityGraph.js
+*Lines: 35, Size: 1.05 KB*
 
 ```javascript
-// packages/models/src/Opportunity.js (version 9.1.0 - Multi-country support)
+// packages/models/src/EntityGraph.js
+import mongoose from 'mongoose'
+import { ENTITY_TYPES } from './prompt-constants.js'
+const { Schema, model, models } = mongoose
+
+const RelationshipSchema = new Schema(
+  {
+    targetId: {
+      type: Schema.Types.ObjectId,
+      ref: 'EntityGraph',
+      required: true,
+      index: true,
+    },
+    targetName: { type: String, required: true },
+    type: { type: String, required: true, trim: true }, // e.g., 'Founder Of', 'Acquired', 'Board Member Of'
+    context: { type: String, trim: true }, // e.g., "From event [Event ID]" or "Source: Wikipedia"
+  },
+  { _id: false }
+)
+
+const EntityGraphSchema = new Schema(
+  {
+    name: { type: String, required: true, unique: true, trim: true, index: true },
+    type: { type: String, enum: ENTITY_TYPES, required: true, index: true },
+    aliases: { type: [String], index: true },
+    relationships: { type: [RelationshipSchema], default: [] },
+  },
+  {
+    timestamps: true,
+    collection: 'entity_graph',
+  }
+)
+
+export default models.EntityGraph || model('EntityGraph', EntityGraphSchema)
+
+```
+
+## 📄 src/Feedback.js
+*Lines: 43, Size: 923 Bytes*
+
+```javascript
+// packages/models/src/Feedback.js
+import mongoose from 'mongoose'
+const { Schema, model, models } = mongoose
+
+const FeedbackSchema = new Schema(
+  {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Subscriber',
+      required: true,
+      index: true,
+    },
+    itemId: {
+      type: Schema.Types.ObjectId,
+      required: true,
+      index: true,
+    },
+    itemType: {
+      type: String,
+      enum: ['article', 'event', 'opportunity'],
+      required: true,
+      index: true,
+    },
+    // 'favorite' is positive feedback, 'discard' is negative.
+    feedbackType: {
+      type: String,
+      enum: ['favorite', 'discard', 'report_inaccurate'],
+      required: true,
+    },
+    // For future explicit feedback UI
+    notes: {
+      type: String,
+      trim: true,
+    },
+  },
+  {
+    timestamps: true,
+    collection: 'feedback',
+  }
+)
+
+export default models.Feedback || model('Feedback', FeedbackSchema)
+
+```
+
+## 📄 src/Opportunity.js
+*Lines: 70, Size: 2.24 KB*
+
+```javascript
+// packages/models/src/Opportunity.js
 import mongoose from 'mongoose'
 const { Schema, model, models } = mongoose
 
@@ -230,23 +333,63 @@ const ContactDetailsSchema = new Schema(
   { _id: false }
 )
 
+const ProfileSchema = new Schema(
+  {
+    profilePhotoUrl: { type: String, trim: true },
+    yearOfBirth: { type: Number },
+    biography: { type: String, trim: true },
+    estimatedNetWorthMM: { type: Number, default: 0 },
+    wealthOrigin: { type: String, trim: true },
+    familyOffice: {
+      name: { type: String, trim: true },
+      officer: { type: String, trim: true },
+    },
+    assetAllocation: { type: String, trim: true },
+    investmentInterests: { type: [String], default: [] },
+    directInvestments: { type: [String], default: [] },
+    philanthropicInterests: { type: [String], default: [] },
+    hobbies: { type: [String], default: [] },
+    specialInterests: { type: [String], default: [] },
+    children: { type: [String], default: [] },
+    // ADDED: Field for AI-assessed dossier quality.
+    dossierQuality: {
+      type: String,
+      enum: ['bronze', 'silver', 'gold'],
+      default: 'bronze',
+    },
+  },
+  { _id: false }
+)
+
 const OpportunitySchema = new Schema(
   {
     reachOutTo: { type: String, required: true, trim: true, unique: true, index: true },
     contactDetails: { type: ContactDetailsSchema },
-    basedIn: { type: [String], trim: true, index: true }, // MODIFIED: Changed to array of strings
+    basedIn: { type: [String], trim: true, index: true },
     city: { type: String, trim: true, required: false },
     whyContact: { type: [String], required: true },
-    likelyMMDollarWealth: { type: Number, required: true, default: 0 },
+    lastKnownEventLiquidityMM: { type: Number, required: true, default: 0 },
+    profile: { type: ProfileSchema, required: false },
     embedding: { type: [Number] },
     events: [{ type: Schema.Types.ObjectId, ref: 'SynthesizedEvent', index: true }],
     relatedOpportunities: [{ type: Schema.Types.ObjectId, ref: 'Opportunity' }],
   },
-  { timestamps: true, collection: 'opportunities' }
+  {
+    timestamps: true,
+    collection: 'opportunities',
+    virtuals: {
+      likelyMMDollarWealth: {
+        get() {
+          return this.lastKnownEventLiquidityMM
+        },
+      },
+    },
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 )
 
 export default models.Opportunity || model('Opportunity', OpportunitySchema)
-
 ```
 
 ## 📄 src/PushSubscription.js
@@ -352,10 +495,10 @@ export default models.Setting || model('Setting', SettingSchema)
 ```
 
 ## 📄 src/Source.js
-*Lines: 66, Size: 2.25 KB*
+*Lines: 69, Size: 2.31 KB*
 
 ```javascript
-// packages/models/src/Source.js (version 7.2.0 - ledeSelector removed)
+// packages/models/src/Source.js
 import mongoose from 'mongoose'
 import {
   SOURCE_STATUSES,
@@ -404,10 +547,13 @@ const SourceSchema = new Schema(
       required: true,
       default: 'declarative',
     },
+    // --- START OF FIX ---
+    // Add the missing extractorKey field.
+    extractorKey: { type: String, required: false, trim: true, default: null },
+    // --- END OF FIX ---
     headlineSelector: { type: [String], required: false, default: [] },
     linkSelector: { type: String, required: false, trim: true },
     headlineTextSelector: { type: String, required: false, trim: true },
-    // ledeSelector: { type: [String], required: false, default: [] }, // REMOVED
     articleSelector: { type: [String], required: false, default: [] },
     lastScrapedAt: { type: Date, required: false, index: true },
     lastSuccessAt: { type: Date, required: false },
@@ -461,7 +607,7 @@ export default models.SourceSuggestion ||
 ```
 
 ## 📄 src/Subscriber.js
-*Lines: 71, Size: 2.49 KB*
+*Lines: 69, Size: 2.43 KB*
 
 ```javascript
 // packages/models/src/Subscriber.js
@@ -509,6 +655,7 @@ const SubscriberSchema = new Schema(
     lastName: { type: String, required: false, trim: true },
     language: { type: String, required: true, default: 'English' },
     countries: { type: [CountrySubscriptionSchema], default: [] },
+    sectors: { type: [String], default: [], index: true }, // ADDED
     role: { type: String, enum: SUBSCRIBER_ROLES, default: 'user', required: true },
     emailNotificationsEnabled: { type: Boolean, default: true },
     pushNotificationsEnabled: { type: Boolean, default: true },
@@ -526,9 +673,6 @@ const SubscriberSchema = new Schema(
   { timestamps: true, collection: 'subscribers' }
 )
 
-// The pre('save') hook for password hashing has been REMOVED.
-// Hashing is now handled explicitly in the data-access layer.
-
 SubscriberSchema.methods.comparePassword = function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password)
 }
@@ -538,10 +682,10 @@ export default models.Subscriber || model('Subscriber', SubscriberSchema)
 ```
 
 ## 📄 src/SynthesizedEvent.js
-*Lines: 74, Size: 2.39 KB*
+*Lines: 138, Size: 4.26 KB*
 
 ```javascript
-// packages/models/src/SynthesizedEvent.js (version 8.1.0 - Multi-country support)
+// packages/models/src/SynthesizedEvent.js
 import mongoose from 'mongoose'
 const { Schema, model, models } = mongoose
 
@@ -566,15 +710,61 @@ const KeyIndividualSchema = new Schema(
   { _id: false }
 )
 
+const TransactionDetailsSchema = new Schema(
+  {
+    transactionType: { type: String, trim: true },
+    valuationAtEventUSD: { type: Number },
+    ownershipPercentageChange: { type: Number },
+    liquidityFlow: {
+      from: { type: String, trim: true },
+      to: { type: String, trim: true },
+      approxAmountUSD: { type: Number },
+      nature: { type: String, trim: true },
+    },
+  },
+  { _id: false }
+)
+
+const PrimarySubjectSchema = new Schema(
+  {
+    name: { type: String, trim: true },
+    role: { type: String, trim: true },
+  },
+  { _id: false }
+)
+
+const LifecycleEventSchema = new Schema(
+  {
+    stage: { type: String, required: true },
+    status: { type: String, required: true },
+    reason: { type: String },
+    timestamp: { type: Date, default: Date.now },
+  },
+  { _id: false }
+)
+
+const JudgeVerdictSchema = new Schema(
+  {
+    quality: { type: String, required: true },
+    commentary: { type: String, required: true },
+  },
+  { _id: false }
+)
+
 const SynthesizedEventSchema = new Schema(
   {
+    // --- START OF DEFINITIVE FIX ---
+    // The `event_key` is used for lookups in the commit stage fallback logic.
+    // Without an index, this query is extremely slow on a large collection and times out.
+    // Adding `index: true` is the critical performance fix that resolves the cascade of failures.
     event_key: { type: String, required: true, unique: true, trim: true, index: true },
+    // --- END OF DEFINITIVE FIX ---
     synthesized_headline: { type: String, required: true, trim: true },
     synthesized_summary: { type: String, required: true, trim: true },
     advisorSummary: { type: String, trim: true },
     ai_assessment_reason: { type: String, trim: true },
     eventClassification: { type: String, trim: true },
-    country: { type: [String], required: true, index: true }, // MODIFIED: Changed to array of strings
+    country: { type: [String], required: true, index: true },
     source_articles: { type: [SourceArticleSchema], required: true },
     highest_relevance_score: { type: Number, required: true, min: 0, max: 100 },
     key_individuals: { type: [KeyIndividualSchema], default: [] },
@@ -588,6 +778,24 @@ const SynthesizedEventSchema = new Schema(
     },
     emailed: { type: Boolean, default: false },
     email_sent_at: { type: Date },
+    transactionDetails: { type: TransactionDetailsSchema, required: false },
+    primarySubject: { type: PrimarySubjectSchema, required: false },
+    relatedCompanies: { type: [String], default: [] },
+    tags: { type: [String], default: [], index: true },
+    eventStatus: {
+      type: String,
+      enum: ['Completed', 'Pending', 'Rumored'],
+      default: 'Completed',
+    },
+    judgeVerdict: { type: JudgeVerdictSchema, required: false, select: false },
+    pipelineTrace: { type: [LifecycleEventSchema], default: [], select: false },
+    watchlistHits: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'WatchlistEntity',
+        index: true,
+      },
+    ],
   },
   {
     timestamps: true,
@@ -618,10 +826,10 @@ export default models.SynthesizedEvent ||
 ```
 
 ## 📄 src/WatchlistEntity.js
-*Lines: 33, Size: 1.13 KB*
+*Lines: 42, Size: 1.3 KB*
 
 ```javascript
-// packages/models/src/WatchlistEntity.js (version 2.1.0)
+// packages/models/src/WatchlistEntity.js
 import mongoose from 'mongoose'
 import { ENTITY_TYPES, ENTITY_STATUSES } from './prompt-constants.js'
 
@@ -645,6 +853,15 @@ const WatchlistEntitySchema = new Schema(
     estimatedNetWorthUSD_MM: { type: Number, required: false },
     primaryCompany: { type: String, trim: true, required: false },
     notes: { type: String, trim: true, required: false },
+    // --- START OF MODIFICATION ---
+    likelihoodToTransact: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 0,
+      index: true,
+    },
+    // --- END OF MODIFICATION ---
   },
   {
     timestamps: true,
@@ -722,14 +939,17 @@ export const {
 ```
 
 ## 📄 src/index.js
-*Lines: 31, Size: 860 Bytes*
+*Lines: 36, Size: 1017 Bytes*
 
 ```javascript
+// packages/models/src/index.js
 // This file is the core, shared module for the models package.
 // It exports all Mongoose models and is environment-agnostic.
 
 import Article from './Article.js'
 import Country from './Country.js'
+import EntityGraph from './EntityGraph.js' // ADDED
+import Feedback from './Feedback.js'
 import Opportunity from './Opportunity.js'
 import PushSubscription from './PushSubscription.js'
 import RunVerdict from './RunVerdict.js'
@@ -744,6 +964,8 @@ import WatchlistSuggestion from './WatchlistSuggestion.js'
 export {
   Article,
   Country,
+  EntityGraph, // ADDED
+  Feedback,
   Opportunity,
   PushSubscription,
   RunVerdict,
@@ -847,10 +1069,10 @@ export const loginSchema = z.object({
 ```
 
 ## 📄 src/schemas/articleAssessmentSchema.js
-*Lines: 24, Size: 753 Bytes*
+*Lines: 53, Size: 1.53 KB*
 
 ```javascript
-// packages/ai-services/src/schemas/articleAssessmentSchema.js (version 1.1)
+// packages/models/src/schemas/articleAssessmentSchema.js
 import { z } from 'zod'
 
 export const articleAssessmentSchema = z.object({
@@ -859,32 +1081,48 @@ export const articleAssessmentSchema = z.object({
     is_liquidity_event: z.boolean(),
     beneficiary: z.string(),
   }),
-  // NEW FIELD: Added classification to the schema.
-  classification: z.enum(['New wealth', 'Wealth detection', 'Interview', 'IPO', 'Other']),
+  transactionType: z
+    .enum([
+      'Leadership Succession',
+      'M&A',
+      'Divestment',
+      'IPO',
+      'Funding Round',
+      'Wealth Profile',
+      'Legal/Dispute',
+      'Operational News',
+      'Other',
+    ])
+    .describe('The specific type of financial or business transaction.'),
   relevance_article: z.number().min(0).max(100),
   assessment_article: z.string().min(1),
-  amount: z.number().nullable().optional(),
-  key_individuals: z.array(
-    z.object({
-      name: z.string(),
-      role_in_event: z.string(),
-      company: z.string().nullable(),
-      email_suggestion: z.string().nullable(),
+
+  amount: z
+    .union([z.number(), z.object({ amount: z.number() }).passthrough(), z.null()])
+    .transform((val) => {
+      if (typeof val === 'number' || val === null) {
+        return val
+      }
+      return val.amount
     })
-  ),
-})
+    .optional(),
 
-```
+  // DEFINITIVE FIX: Add a .transform() to automatically filter out invalid entries from the AI's output.
+  // This will remove any objects where 'name' is null, undefined, or an empty string.
+  key_individuals: z
+    .array(
+      z.object({
+        name: z.string().nullable(), // Temporarily allow null during parsing
+        role_in_event: z.string(),
+        company: z.string().nullable().optional(),
+        email_suggestion: z.string().nullable().optional(),
+      })
+    )
+    .transform((individuals) => individuals.filter((ind) => ind.name)),
 
-## 📄 src/schemas/articlePreAssessmentSchema.js
-*Lines: 7, Size: 223 Bytes*
-
-```javascript
-// packages/ai-services/src/schemas/articlePreAssessmentSchema.js (version 1.0)
-import { z } from 'zod'
-
-export const articlePreAssessmentSchema = z.object({
-  classification: z.enum(['private', 'public', 'corporate']),
+  tags: z
+    .array(z.string())
+    .describe('An array of 3-5 relevant lowercase tags for the event.'),
 })
 
 ```
@@ -904,16 +1142,20 @@ export const batchArticleAssessmentSchema = z.object({
 ```
 
 ## 📄 src/schemas/batchHeadlineAssessmentSchema.js
-*Lines: 9, Size: 371 Bytes*
+*Lines: 13, Size: 451 Bytes*
 
 ```javascript
 // packages/ai-services/src/schemas/batchHeadlineAssessmentSchema.js (version 1.0)
 import { z } from 'zod'
 import { headlineAssessmentSchema } from './headlineAssessmentSchema.js'
 
-// The batch schema reuses the single assessment schema
+// The batch schema reuses the single assessment schema and adds the required 'id' field.
 export const batchHeadlineAssessmentSchema = z.object({
-  assessments: z.array(headlineAssessmentSchema.shape.assessment.element),
+  assessments: z.array(
+    headlineAssessmentSchema.shape.assessment.element.extend({
+      id: z.string(),
+    })
+  ),
 })
 
 ```
@@ -1093,7 +1335,6 @@ export const headlineAssessmentSchema = z.object({
 
 export * from './apiSchemas.js' // Added new API schemas
 export * from './articleAssessmentSchema.js'
-export * from './articlePreAssessmentSchema.js'
 export * from './batchArticleAssessmentSchema.js'
 export * from './batchHeadlineAssessmentSchema.js'
 export * from './canonicalizerSchema.js'
@@ -1117,6 +1358,7 @@ export * from './translateSchema.js'
 export * from './userSchemas.js'
 export * from './watchlistSchemas.js'
 export * from './watchlistSuggestionSchema.js'
+export * from './wealthPredictorSchema.js'
 
 ```
 
@@ -1141,28 +1383,98 @@ export const judgeSchema = z.object({
 ```
 
 ## 📄 src/schemas/opportunitySchema.js
-*Lines: 22, Size: 929 Bytes*
+*Lines: 92, Size: 3.31 KB*
 
 ```javascript
-// packages/ai-services/src/schemas/opportunitySchema.js (version 2.1)
+// packages/models/src/schemas/opportunitySchema.js
 import { z } from 'zod'
+
+// This is the definitive, unified schema for a rich dossier.
+const profileSchema = z
+  .object({
+    profilePhotoUrl: z.string().url().nullable().optional(),
+    yearOfBirth: z.number().nullable().optional(),
+    biography: z.string().nullable().optional(),
+    estimatedNetWorthMM: z.number().default(0),
+    wealthOrigin: z.string().nullable().optional(),
+    familyOffice: z
+      .object({
+        name: z.string().nullable().optional(),
+        officer: z.string().nullable().optional(),
+      })
+      .nullable()
+      .optional(),
+    assetAllocation: z.string().nullable().optional(),
+    investmentInterests: z.array(z.string()).optional(),
+    directInvestments: z.array(z.string()).optional(),
+    philanthropicInterests: z.array(z.string()).optional(),
+    hobbies: z.array(z.string()).optional(),
+    specialInterests: z.array(z.string()).optional(),
+    children: z.array(z.string()).optional(),
+    dossierQuality: z.enum(['bronze', 'silver', 'gold']).default('bronze'),
+  })
+  .passthrough() // Use passthrough to be more robust against extra fields from the AI
 
 export const opportunitySchema = z.object({
   opportunities: z.array(
-    // DEFINITIVE FIX: Use .passthrough() to allow the AI to include extra fields
-    // without causing a validation error. We will only use the fields we define.
-    z.object({
-      reachOutTo: z.string().describe("The full name of the individual or family to contact."),
-      contactDetails: z.object({
-        email: z.string().email().nullable(),
-        role: z.string().nullable(),
-        company: z.string().nullable(),
-      }),
-      basedIn: z.string().nullable(),
-      whyContact: z.array(z.string()).describe("An array of concise, one-sentence reasons for contact."),
-      likelyMMDollarWealth: z.number().nullable(),
-      event_key: z.string().describe("The unique key of the source event for this opportunity."),
-    }).passthrough()
+    z
+      .object({
+        reachOutTo: z.string().min(1, 'reachOutTo cannot be empty'),
+        contactDetails: z
+          .object({
+            email: z
+              .string()
+              .email()
+              .nullable()
+              .optional()
+              .or(z.literal(''))
+              .transform((val) => val || undefined),
+            role: z
+              .string()
+              .nullable()
+              .optional()
+              .transform((val) => val || undefined),
+            company: z
+              .string()
+              .nullable()
+              .optional()
+              .transform((val) => val || undefined),
+          })
+          .default({}),
+        basedIn: z
+          .union([z.string(), z.array(z.string()), z.null(), z.undefined()])
+          .transform((val) => {
+            if (val === null || val === undefined || val === '') return []
+            if (Array.isArray(val)) return val.filter((v) => v && v.trim())
+            return [val]
+          })
+          .default([]),
+        whyContact: z
+          .union([z.string(), z.array(z.string())])
+          .nullable()
+          .transform((val) => {
+            if (val === null || val === undefined) return []
+            if (Array.isArray(val)) return val
+            if (typeof val === 'string' && val.trim()) return [val]
+            return []
+          })
+          .pipe(z.array(z.string()).min(1, 'whyContact must have at least one reason')),
+        lastKnownEventLiquidityMM: z
+          .union([z.number(), z.string(), z.null(), z.undefined()])
+          .transform((val) => {
+            if (val === null || val === undefined) return null
+            if (typeof val === 'number') return val
+            if (typeof val === 'string') {
+              const parsed = parseFloat(val)
+              return isNaN(parsed) ? null : parsed
+            }
+            return null
+          })
+          .pipe(z.number().nullable()),
+        event_key: z.string().optional(), // Make optional as oppFactory doesn't have an event key
+        profile: profileSchema.optional(),
+      })
+      .passthrough() // Use passthrough on the main object as well
   ),
 })
 
@@ -1234,11 +1546,40 @@ export const selectorRepairSchema = z.object({
 ```
 
 ## 📄 src/schemas/synthesisSchema.js
-*Lines: 27, Size: 860 Bytes*
+*Lines: 65, Size: 2.35 KB*
 
 ```javascript
-// packages/models/src/schemas/synthesisSchema.js (CORRECTED)
+// packages/models/src/schemas/synthesisSchema.js
 import { z } from 'zod'
+
+// NEW: Sub-schemas for new data structures.
+const transactionDetailsSchema = z.object({
+  transactionType: z
+    .string()
+    .describe("The type of event, e.g., 'Leadership succession', 'M&A'."),
+  valuationAtEventUSD: z
+    .number()
+    .nullable()
+    .describe('The company valuation at the time of the event in millions USD, or null.'),
+  ownershipPercentageChange: z
+    .number()
+    .nullable()
+    .describe('The change in ownership percentage for the primary subject, or null.'),
+  liquidityFlow: z.object({
+    from: z.string().nullable().describe('Entity where liquidity originates.'),
+    to: z.string().nullable().describe('Entity receiving the liquidity.'),
+    approxAmountUSD: z
+      .number()
+      .nullable()
+      .describe('Approximate liquid amount transferred in millions USD, or null.'),
+    nature: z.string().nullable().describe('A brief description of the flow.'),
+  }),
+})
+
+const primarySubjectSchema = z.object({
+  name: z.string().min(0).describe('The primary person or family name for this event.'),
+  role: z.string().min(0).describe('Their role in the event (e.g., "Founder and CEO").'),
+})
 
 export const synthesisSchema = z.object({
   events: z.array(
@@ -1250,7 +1591,6 @@ export const synthesisSchema = z.object({
         .min(1)
         .describe('The one-sentence actionable summary for wealth advisors.'),
       eventClassification: z.string().min(1).describe("The event's classification type."),
-      // DEFINITIVE FIX: The 'country' field must now be an array of strings.
       country: z.array(z.string()).min(1, 'Country array cannot be empty.'),
       key_individuals: z.array(
         z.object({
@@ -1260,6 +1600,16 @@ export const synthesisSchema = z.object({
           email_suggestion: z.string().nullable(),
         })
       ),
+      // NEW: Adding all the new fields to the Zod schema for the AI to populate.
+      transactionDetails: transactionDetailsSchema,
+      primarySubject: primarySubjectSchema,
+      relatedCompanies: z
+        .array(z.string())
+        .describe('A list of other relevant company names.'),
+      tags: z.array(z.string()).describe('An array of 3-5 relevant lowercase tags.'),
+      eventStatus: z
+        .enum(['Completed', 'Pending', 'Rumored'])
+        .describe('The current status of the event.'),
     })
   ),
 })
@@ -1369,6 +1719,29 @@ export const watchlistSuggestionSchema = z.object({
       searchTerms: z.array(z.string()).describe("An array of 2-4 unique, lowercase search terms."),
     })
   ),
+})
+
+```
+
+## 📄 src/schemas/wealthPredictorSchema.js
+*Lines: 17, Size: 482 Bytes*
+
+```javascript
+// packages/models/src/schemas/wealthPredictorSchema.js
+import { z } from 'zod'
+
+export const wealthPredictorSchema = z.object({
+  is_uhnw: z
+    .boolean()
+    .describe(
+      'True if the individual is likely a UHNW/HNW individual (>$30M), false otherwise.'
+    ),
+  score: z
+    .number()
+    .min(0)
+    .max(100)
+    .describe('Confidence score (0-100) for the is_uhnw prediction.'),
+  reasoning: z.string().describe('A brief, one-sentence explanation for the decision.'),
 })
 
 ```

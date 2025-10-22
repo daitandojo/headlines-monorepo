@@ -1,4 +1,4 @@
-// src/components/events/EventCardDetails.jsx (version 1.0)
+// apps/client/src/components/client/events/EventCardDetails.jsx
 'use client'
 
 import { Users, Mail, Building, Briefcase, ExternalLink } from 'lucide-react'
@@ -8,7 +8,7 @@ export function EventCardDetails({ event, onShowArticles }) {
   if (!event) return null
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-700/50">
       {/* Key Individuals Column */}
       {event.key_individuals && event.key_individuals.length > 0 && (
         <div className="space-y-3">
@@ -44,8 +44,10 @@ export function EventCardDetails({ event, onShowArticles }) {
           ))}
         </div>
       )}
+
       {/* Source Articles Column */}
       <div className="space-y-2">
+        {/* MODIFIED: The button now triggers the modal via onShowArticles */}
         <Button
           variant="ghost"
           onClick={onShowArticles}
@@ -57,18 +59,17 @@ export function EventCardDetails({ event, onShowArticles }) {
         </Button>
 
         {event.source_articles.map((article) => (
-          <a
+          // MODIFIED: This is now a button to open the modal, not a direct link
+          <button
             key={article.link}
-            href={article.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block p-3 rounded-md bg-slate-800/50 hover:bg-slate-800/80 transition-colors"
+            onClick={onShowArticles}
+            className="w-full text-left block p-3 rounded-md bg-slate-800/50 hover:bg-slate-800/80 transition-colors"
           >
             <p className="font-medium text-slate-200 line-clamp-1 text-sm">
               {article.headline}
             </p>
             <p className="text-xs text-slate-400">{article.newspaper}</p>
-          </a>
+          </button>
         ))}
       </div>
     </div>

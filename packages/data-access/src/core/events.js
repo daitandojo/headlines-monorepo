@@ -23,6 +23,11 @@ export async function getEvents({
       .sort(sortOptions)
       .skip(skipAmount)
       .limit(EVENTS_PER_PAGE)
+      // --- START OF FINAL FIX ---
+      // We populate not just the ID but also the `reachOutTo` field.
+      // This allows the UI to check if the opportunity object is partially populated.
+      .populate({ path: 'relatedOpportunities', select: '_id reachOutTo' })
+      // --- END OF FINAL FIX ---
       .lean(),
     SynthesizedEvent.countDocuments(queryFilter),
   ])
@@ -63,8 +68,9 @@ export async function updateEvents(filter, update) {
 export async function getEventDetails(eventId) {
   if (!mongoose.Types.ObjectId.isValid(eventId))
     return { success: false, error: 'Invalid event ID' }
+  // This already correctly populates the full opportunity object for the modal
   const event = await SynthesizedEvent.findById(eventId)
-    .populate({ path: 'relatedOpportunities', model: Opportunity, select: 'reachOutTo' })
+    .populate({ path: 'relatedOpportunities', model: Opportunity })
     .lean()
   if (!event) return { success: false, error: 'Event not found' }
   return { success: true, data: JSON.parse(JSON.stringify(event)) }

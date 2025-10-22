@@ -1,5 +1,4 @@
-// File: apps/client/src/components/client/opportunities/OpportunityModal.jsx
-
+// apps/client/src/components/client/opportunities/OpportunityModal.jsx
 'use client'
 
 import {
@@ -19,6 +18,7 @@ import {
   Zap,
   MessageSquare,
   ExternalLink,
+  BookOpen, // NEW ICON
 } from 'lucide-react'
 import { getCountryFlag } from '@headlines/utils-shared'
 import Link from 'next/link'
@@ -26,7 +26,10 @@ import Link from 'next/link'
 function OpportunityDetail({ opportunity }) {
   if (!opportunity) return null
 
-  const flags = (opportunity.basedIn || []).map((c) => getCountryFlag(c)).join(' ')
+  // Backwards compatibility for old data
+  const flags = Array.isArray(opportunity.basedIn)
+    ? opportunity.basedIn.map(getCountryFlag).join(' ')
+    : getCountryFlag(opportunity.basedIn)
   const reasonsToContact = Array.isArray(opportunity.whyContact)
     ? opportunity.whyContact
     : [opportunity.whyContact]
@@ -56,7 +59,9 @@ function OpportunityDetail({ opportunity }) {
                 <span className="text-base mr-1">{flags}</span>
                 {opportunity.city}
                 {opportunity.city && opportunity.basedIn?.length > 0 ? ', ' : ''}
-                {(opportunity.basedIn || []).join(', ')}
+                {Array.isArray(opportunity.basedIn)
+                  ? opportunity.basedIn.join(', ')
+                  : opportunity.basedIn}
               </p>
             )}
             {opportunity.contactDetails?.email && (
@@ -67,6 +72,15 @@ function OpportunityDetail({ opportunity }) {
                 <Mail className="h-4 w-4 text-slate-500" />
                 {opportunity.contactDetails.email}
               </a>
+            )}
+            {/* NEW: Display wealthOrigin */}
+            {opportunity.wealthOrigin && (
+              <p className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-slate-500" />
+                <span>
+                  Wealth Origin: <strong>{opportunity.wealthOrigin}</strong>
+                </span>
+              </p>
             )}
           </div>
         </div>
@@ -134,7 +148,7 @@ export function OpportunityModal({ opportunities = [], open, onOpenChange }) {
           </DialogTitle>
           <DialogDescription className="text-slate-400">
             {opportunityCount > 0
-              ? `Found ${opportunityCount} opportunity${opportunityCount > 1 ? 's' : ''} matching the criteria.`
+              ? `Found ${opportunityCount} opportunity${opportunityCount > 1 ? 's' : ''}.`
               : 'No opportunities found.'}
           </DialogDescription>
         </DialogHeader>

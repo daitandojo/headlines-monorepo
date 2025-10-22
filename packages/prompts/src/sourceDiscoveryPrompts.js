@@ -9,20 +9,20 @@ export const SECTION_SUGGESTER_PROMPT = `You are a web intelligence analyst spec
 4.  Ignore links related to sports, lifestyle, entertainment, contact pages, or privacy policies.
 
 Respond ONLY with a valid JSON object in the following format:
-{
+{{
   "suggestions": [
-    {
+    {{
       "url": "https://example.com/business",
       "text": "Business News",
       "reasoning": "Clearly labeled as the main business section."
-    },
-    {
+    }},
+    {{
       "url": "https://example.com/technology",
       "text": "Tech",
       "reasoning": "A primary category for technology-related news."
-    }
+    }}
   ]
-}`
+}}`
 
 export const SELECTOR_SUGGESTER_PROMPT = `You are an expert web scraping engineer. Your task is to analyze the provided HTML of a news category page and determine the most precise and robust CSS selector to extract all main article headlines.
 
@@ -37,8 +37,8 @@ The user is trying to find the CSS selector for: **{TARGET_TYPE}**
 5.  Extract the text content of the first element that matches your proposed selector as a 'sample' for user verification.
 
 Respond ONLY with a valid JSON object in the following format:
-{
+{{
   "selector": "a.article-card__link",
   "confidence": 0.95,
   "sample": "Tech Giant Acquires Local Startup for $500M"
-}`
+}}`

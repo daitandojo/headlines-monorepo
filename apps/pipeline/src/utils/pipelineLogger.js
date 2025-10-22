@@ -1,4 +1,4 @@
-// apps/pipeline/src/utils/pipelineLogger.js (version 4.1.0)
+// apps/pipeline/src/utils/pipelineLogger.js
 import { logger } from '@headlines/utils-shared'
 import moment from 'moment'
 import 'moment-duration-format'
@@ -9,6 +9,7 @@ import {
   formatTokenUsage,
   formatApiUsage,
   formatContentScrapingFailures,
+  formatJudgeVerdictDetails, // IMPORT THE NEW FUNCTION
 } from './reportSections.js'
 
 const colors = {
@@ -37,6 +38,9 @@ export async function logFinalReport(runStats, duration) {
   report += formatContentScrapingFailures(runStats)
   report += formatTopEvents(runStats)
   report += await formatStrugglingSources(runStats)
+
+  // ADD THE NEW SECTION HERE
+  report += formatJudgeVerdictDetails(runStats)
 
   report += '\n' + formatRunFunnel(runStats)
   report += `${colors.cyan}=============================================================${colors.reset}\n`

@@ -1,4 +1,4 @@
-// apps/client/src/app/admin/events/columns.jsx (MODIFIED with MultiSelect)
+// apps/client/src/app/admin/events/columns.jsx
 'use client'
 
 import React, { useState, useCallback } from 'react'
@@ -20,8 +20,7 @@ import {
   CardContent,
   CardFooter,
   Label,
-  Textarea,
-  MultiSelect, // ACTION: Import MultiSelect
+  MultiSelect,
 } from '@/components/shared'
 import { Loader2, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
@@ -37,6 +36,7 @@ const eventCategories = [
   'Background',
   'Other',
 ]
+const eventStatuses = ['Completed', 'Pending', 'Rumored'] // NEW
 
 const FormField = ({ id, label, children }) => (
   <div className="space-y-2">
@@ -53,7 +53,7 @@ export const EventListItem = ({
   onDelete,
   isExpanded,
   onDetailsNeeded,
-  availableCountries, // ACTION: Accept the new prop
+  availableCountries,
 }) => {
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
 
@@ -70,9 +70,7 @@ export const EventListItem = ({
   }, [event, onDetailsNeeded])
 
   React.useEffect(() => {
-    if (isExpanded && !event.details && !isLoadingDetails) {
-      loadDetails()
-    }
+    if (isExpanded && !event.details && !isLoadingDetails) loadDetails()
   }, [isExpanded, event.details, isLoadingDetails, loadDetails])
 
   return (
@@ -83,7 +81,7 @@ export const EventListItem = ({
             {format(new Date(event.createdAt), 'dd MMM yyyy, HH:mm')}
           </div>
           <div className="w-[140px] flex-shrink-0">
-            {(event.country || []).join(', ')}
+            {Array.isArray(event.country) ? event.country.join(', ') : event.country}
           </div>
           <div className="w-[180px] flex-shrink-0">
             {event.eventClassification || 'N/A'}
@@ -120,19 +118,7 @@ export const EventListItem = ({
                     }
                   />
                 </FormField>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <FormField label="Country">
-                    {/* ACTION: Replace EditableCell with MultiSelect */}
-                    <MultiSelect
-                      options={availableCountries}
-                      selected={event.details.country || []}
-                      onChange={(newCountries) =>
-                        onUpdate(event.details, { country: newCountries.sort() })
-                      }
-                      placeholder="Select countries..."
-                    />
-                  </FormField>
+                <div className="grid grid-cols-2 gap-4">
                   <FormField label="Classification">
                     <Select
                       value={event.details.eventClassification}
@@ -152,18 +138,50 @@ export const EventListItem = ({
                       </SelectContent>
                     </Select>
                   </FormField>
-                  <FormField label="Relevance Score">
-                    <EditableCell
-                      initialValue={event.details.highest_relevance_score}
-                      onSave={(newValue) =>
-                        onUpdate(event.details, {
-                          highest_relevance_score: Number(newValue),
-                        })
+                  <FormField label="Status">
+                    <Select
+                      value={event.details.eventStatus || 'Completed'}
+                      onValueChange={(newValue) =>
+                        onUpdate(event.details, { eventStatus: newValue })
                       }
-                    />
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {eventStatuses.map((stat) => (
+                          <SelectItem key={stat} value={stat}>
+                            {stat}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </FormField>
                 </div>
-
+                <FormField label="Country">
+                  <MultiSelect
+                    options={availableCountries}
+                    selected={event.details.country || []}
+                    onChange={(newCountries) =>
+                      onUpdate(event.details, { country: newCountries.sort() })
+                    }
+                    placeholder="Select countries..."
+                  />
+                </FormField>
+                <FormField label="Tags">
+                  <EditableCell
+                    initialValue={(event.details.tags || []).join(', ')}
+                    onSave={(newValue) =>
+                      onUpdate(event.details, {
+                        tags: newValue
+                          .split(',')
+                          .map((s) => s.trim())
+                          .filter(Boolean),
+                      })
+                    }
+                    placeholder="Add tags..."
+                  />
+                </FormField>
                 <FormField label="Synthesized Summary">
                   <EditableCell
                     useTextarea={true}

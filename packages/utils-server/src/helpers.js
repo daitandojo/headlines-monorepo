@@ -35,9 +35,7 @@ export async function safeExecute(asyncFn, { errorHandler, timeout = 90000 } = {
     if (errorHandler) {
       return errorHandler(error)
     }
-    // DEFINITIVE FIX: Use the injected Pino logger instead of console.error
-    // to ensure errors are captured and formatted correctly in the main log stream.
     logger.error({ err: error }, 'An unexpected error occurred in a safeExecute block.')
-    return null // Return null on failure
+    return null
   }
 }

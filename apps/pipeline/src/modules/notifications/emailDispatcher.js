@@ -18,10 +18,10 @@ export async function sendBulkEmails(emailQueue) {
       'DRY RUN MODE: Email dispatch is being simulated. No actual emails will be sent.'
     )
     let simulatedSuccessCount = 0
-    for (const { user, events } of emailQueue) {
-      if (events && events.length > 0) {
+    for (const { user, events, opportunities } of emailQueue) {
+      if ((events && events.length > 0) || (opportunities && opportunities.length > 0)) {
         logger.info(
-          `[DRY RUN] Would have sent ${user.language} email to ${user.email} with ${events.length} events.`
+          `[DRY RUN] Would have sent ${user.language} email to ${user.email} with ${events.length} events and ${opportunities.length} opportunities.`
         )
         simulatedSuccessCount++
       }
@@ -36,18 +36,28 @@ export async function sendBulkEmails(emailQueue) {
 
   for (const { user, events, opportunities } of emailQueue) {
     try {
-      if (!events || events.length === 0) {
-        logger.info(`Skipping email for ${user.email} as it contained no valid events.`)
+      const hasContent =
+        (events && events.length > 0) || (opportunities && opportunities.length > 0)
+      if (!hasContent) {
+        logger.info(`Skipping email for ${user.email} as it contained no valid content.`)
         continue
       }
 
+      // --- START OF MODIFICATION ---
       const eventsByCountry = groupItemsByCountry(events, 'country')
-      const primaryCountry = Object.keys(eventsByCountry)[0]
+      const opportunitiesByCountry = groupItemsByCountry(opportunities, 'basedIn')
+      const primaryCountry =
+        Object.keys(opportunitiesByCountry)[0] || Object.keys(eventsByCountry)[0]
       const countryFlag = getCountryFlag(primaryCountry)
 
-      const eventPayloadForAI = events.map((e) => ({
+      const eventPayloadForAI = (events || []).map((e) => ({
         headline: e.synthesized_headline,
         summary: e.synthesized_summary,
+      }))
+      const oppPayloadForAI = (opportunities || []).map((o) => ({
+        name: o.reachOutTo,
+        reason: Array.isArray(o.whyContact) ? o.whyContact.join(' ') : o.whyContact,
+        liquidity: o.lastKnownEventLiquidityMM,
       }))
 
       const [subjectResult, introResult] = await Promise.all([
@@ -58,9 +68,11 @@ export async function sendBulkEmails(emailQueue) {
           payload_json_string: JSON.stringify({
             firstName: user.firstName,
             events: eventPayloadForAI,
+            opportunities: oppPayloadForAI,
           }),
         }),
       ])
+      // --- END OF MODIFICATION ---
 
       const aiSubject = subjectResult.subject_headline || 'Key Developments'
 
@@ -68,7 +80,7 @@ export async function sendBulkEmails(emailQueue) {
         ? {
             greeting: `Dear ${user.firstName},`,
             body: 'Here are the latest relevant wealth events we have identified for your review.',
-            bullets: events
+            bullets: (events || [])
               .slice(0, 2)
               .map(
                 (e) =>
@@ -78,11 +90,12 @@ export async function sendBulkEmails(emailQueue) {
           }
         : introResult
 
-      const subject = `${countryFlag} Wealth News (${events.length}): ${aiSubject}`
+      const subject = `${countryFlag} Intelligence Briefing: ${aiSubject}`
 
       const htmlBody = await createPersonalizedEmailBody(
         user,
         eventsByCountry,
+        opportunitiesByCountry, // Pass opportunities to the body builder
         subject,
         aiIntro
       )

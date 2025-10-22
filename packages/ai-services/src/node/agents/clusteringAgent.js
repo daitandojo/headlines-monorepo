@@ -35,7 +35,7 @@ export async function clusterArticlesIntoEvents(articles) {
       id: a._id.toString(),
       headline: a.headline,
       source: a.newspaper,
-      summary: (a.assessment_article || a.assessment_headline || '').substring(0, 400),
+      summary: a.one_line_summary || a.assessment_headline || '',
     }))
     const userContent = JSON.stringify(articlePayload)
     const response = await articleClusterAgent.execute(userContent)

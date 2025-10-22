@@ -1,7 +1,6 @@
-// apps/pipeline/src/pipeline/submodules/commit/3_triggerNotifications.js (version 2.0.0)
+// apps/pipeline/src/pipeline/submodules/commit/3_triggerNotifications.js
 import { logger } from '@headlines/utils-shared'
 import { triggerRealtimeEvent } from '@headlines/utils-server'
-// REFACTOR: Import the new centralized constants.
 import { REALTIME_CHANNELS, REALTIME_EVENTS } from '@headlines/utils-shared'
 import { SynthesizedEvent, Article } from '@headlines/models'
 import { settings } from '@headlines/config'
@@ -12,7 +11,16 @@ export async function triggerNotifications(
   savedEvents,
   savedOpportunities
 ) {
-  const { assessedCandidates, isDryRun, runStatsManager } = pipelinePayload
+  // --- START OF DEFINITIVE FIX ---
+  // The isTestMode flag was not being correctly passed through.
+  // This fix ensures it is read from the payload and sent to the notification module.
+  const {
+    assessedCandidates,
+    isDryRun,
+    runStatsManager,
+    test: isTestMode,
+  } = pipelinePayload
+  // --- END OF DEFINITIVE FIX ---
 
   const eventIds = savedEvents.map((e) => e._id)
 
@@ -27,7 +35,6 @@ export async function triggerNotifications(
           link: { $in: relevantArticleLinks },
         })
         for (const articleDoc of relevantArticleDocs) {
-          // REFACTOR: Use the imported constants instead of magic strings.
           await triggerRealtimeEvent(
             REALTIME_CHANNELS.ARTICLES,
             REALTIME_EVENTS.NEW_ARTICLE,
@@ -42,7 +49,6 @@ export async function triggerNotifications(
         _id: { $in: eventIds },
       })
       for (const eventDoc of eventDocsForStreaming) {
-        // REFACTOR: Use the imported constants instead of magic strings.
         await triggerRealtimeEvent(
           REALTIME_CHANNELS.EVENTS,
           REALTIME_EVENTS.NEW_EVENT,
@@ -52,15 +58,17 @@ export async function triggerNotifications(
     }
   }
 
-  const eventsForNotification = isDryRun
-    ? savedEvents
-    : await SynthesizedEvent.find({ _id: { $in: eventIds } }).lean()
+  const eventsForNotification = savedEvents
 
+  // --- START OF DEFINITIVE FIX ---
+  // The isTestMode flag is now correctly passed to sendNotifications.
   const { emailSentCount } = await sendNotifications(
     eventsForNotification,
-    savedOpportunities
+    savedOpportunities,
+    isTestMode // Pass the flag
   )
-  // REFACTOR: Use the RunStatsManager to set the final count.
+  // --- END OF DEFINITIVE FIX ---
+
   runStatsManager.set('eventsEmailed', emailSentCount)
 
   if (emailSentCount > 0 && !isDryRun) {

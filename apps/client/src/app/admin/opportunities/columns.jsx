@@ -1,23 +1,24 @@
-// apps/client/src/app/admin/opportunities/columns.jsx (Multi-country support)
+// apps/client/src/app/admin/opportunities/columns.jsx
 'use client'
 
 import React from 'react'
-import {
-  Button,
-  DataTableColumnHeader,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '@/components/shared'
-import { Trash2, Edit } from 'lucide-react'
+import { Button, DataTableColumnHeader, Badge } from '@/components/shared'
+import { Trash2, Edit, UserCheck } from 'lucide-react'
 import { format } from 'date-fns'
 import { EditableCell } from '@/components/shared/elements/EditableCell'
-import Link from 'next/link'
 
-export const columns = (onUpdate, onDelete) => [
+export const columns = (onEdit, onUpdate, onDelete) => [
+  // NEW: Profile status column
+  {
+    id: 'profileStatus',
+    header: 'Profile',
+    cell: ({ row }) => {
+      const hasProfile =
+        row.original.profile && Object.keys(row.original.profile).length > 0
+      return hasProfile ? <UserCheck className="h-4 w-4 text-green-400" /> : null
+    },
+    size: 50,
+  },
   {
     accessorKey: 'reachOutTo',
     header: ({ column }) => (
@@ -32,53 +33,57 @@ export const columns = (onUpdate, onDelete) => [
     minSize: 200,
   },
   {
-    accessorKey: 'contactDetails.company',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Company" />,
+    accessorKey: 'profile.estimatedNetWorthMM', // MODIFIED: Path to new total wealth field
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Net Worth ($M)" />
+    ),
     cell: ({ row }) => (
       <EditableCell
-        initialValue={row.original.contactDetails?.company}
+        initialValue={row.original.profile?.estimatedNetWorthMM}
         onSave={(newValue) =>
-          onUpdate(row.original, { 'contactDetails.company': newValue })
+          onUpdate(row.original, { 'profile.estimatedNetWorthMM': Number(newValue) })
         }
         placeholder="N/A"
-      />
-    ),
-    size: 200,
-  },
-  {
-    accessorKey: 'contactDetails.email',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Email" />,
-    cell: ({ row }) => (
-      <EditableCell
-        initialValue={row.original.contactDetails?.email}
-        onSave={(newValue) =>
-          onUpdate(row.original, { 'contactDetails.email': newValue })
-        }
-        placeholder="N/A"
-      />
-    ),
-    size: 250,
-  },
-  {
-    accessorKey: 'likelyMMDollarWealth',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Wealth ($M)" />,
-    cell: ({ row }) => (
-      <EditableCell
-        initialValue={row.original.likelyMMDollarWealth}
-        onSave={(newValue) =>
-          onUpdate(row.original, { likelyMMDollarWealth: Number(newValue) })
-        }
       />
     ),
     size: 120,
   },
   {
+    accessorKey: 'lastKnownEventLiquidityMM', // MODIFIED: Path to new event liquidity field
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Event Size ($M)" />
+    ),
+    cell: ({ row }) => (
+      <Badge variant="outline">{row.original.lastKnownEventLiquidityMM || 0}</Badge>
+    ),
+    size: 120,
+  },
+  {
+    accessorKey: 'profile.wealthOrigin', // MODIFIED: Path to new field
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Wealth Origin" />
+    ),
+    cell: ({ row }) => (
+      <EditableCell
+        initialValue={row.original.profile?.wealthOrigin}
+        onSave={(newValue) =>
+          onUpdate(row.original, { 'profile.wealthOrigin': newValue })
+        }
+        placeholder="Add origin..."
+      />
+    ),
+    size: 200,
+  },
+  {
     accessorKey: 'basedIn',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Country" />,
     cell: ({ row }) => (
-      // MODIFIED: EditableCell now handles arrays via join/split
       <EditableCell
-        initialValue={(row.original.basedIn || []).join(', ')}
+        initialValue={
+          Array.isArray(row.original.basedIn)
+            ? row.original.basedIn.join(', ')
+            : row.original.basedIn
+        }
         onSave={(newValue) =>
           onUpdate(row.original, {
             basedIn: newValue
@@ -93,15 +98,17 @@ export const columns = (onUpdate, onDelete) => [
     size: 150,
   },
   {
-    accessorKey: 'createdAt',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Created" />,
-    cell: ({ row }) => format(new Date(row.original.createdAt), 'dd MMM yyyy, HH:mm'),
-    size: 180,
-  },
-  {
     id: 'actions',
     cell: ({ row }) => (
       <div className="text-right">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => onEdit(row.original._id)}
+        >
+          <Edit className="h-4 w-4" />
+        </Button>
         <Button
           variant="ghost"
           size="icon"

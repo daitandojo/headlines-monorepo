@@ -1,26 +1,19 @@
-// packages/ai-services/src/chains/contactResolverChain.js (version 2.3 - Final)
+// packages/ai-services/src/chains/contactResolverChain.js
 import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionEnrichContact } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { enrichContactSchema } from '@headlines/models/schemas'
+import { buildPrompt } from '../lib/promptBuilder.js'
 
-const systemPrompt = [
-  instructionEnrichContact.whoYouAre,
-  instructionEnrichContact.whatYouDo,
-  ...instructionEnrichContact.guidelines,
-  instructionEnrichContact.outputFormatDescription,
-].join('\n\n')
+const systemPrompt = buildPrompt(instructionEnrichContact)
 
 const prompt = ChatPromptTemplate.fromMessages([
   ['system', systemPrompt],
   ['human', '{context}'],
 ])
 
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
 const chain = RunnableSequence.from([prompt, getHighPowerModel()])
 
 export const contactResolverChain = {

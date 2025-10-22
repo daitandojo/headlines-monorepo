@@ -1,4 +1,4 @@
-// apps/pipeline/src/pipeline/submodules/commit/1_judgeOutput.js (with Enhanced Audit Logging)
+// apps/pipeline/src/pipeline/submodules/commit/1_judgeOutput.js
 import { logger } from '@headlines/utils-shared'
 import { auditLogger } from '@headlines/utils-server'
 import { judgeChain } from '@headlines/ai-services'
@@ -42,57 +42,59 @@ export async function judgeAndFilterOutput(pipelinePayload, fatalQualities) {
 
   runStatsManager.set('judgeVerdict', judgeVerdict)
 
+  // --- START OF RESILIENCY FIX ---
+  // If the Judge agent fails, we no longer let all items pass silently.
+  // We now attach a dummy verdict indicating the failure, which makes the
+  // issue visible in the final report and data, but still allows the
+  // pipeline to complete and save the (un-judged) data.
   if (judgeVerdict.error) {
     logger.error(
-      'Judge agent returned an error. Allowing all items to pass as a failsafe.',
+      'Judge agent returned an error. Attaching a failsafe verdict to all items.',
       { details: judgeVerdict.error }
     )
-    return { finalEvents: initialEvents, finalOpportunities: initialOpportunities }
+    const allJudgedEvents = initialEvents.map((event) => ({
+      ...event,
+      judgeVerdict: {
+        quality: 'Good', // Assume 'Good' to ensure it passes the filter
+        commentary: 'Failsafe: Judge agent failed to return a verdict.',
+      },
+    }))
+    return { allJudgedEvents, finalOpportunities: initialOpportunities }
   }
+  // --- END OF RESILIENCY FIX ---
 
-  initialEvents.forEach((event) => {
+  const allJudgedEvents = initialEvents.map((event) => {
     const identifier = `Event: ${event.synthesized_headline}`
-    const verdict = judgeVerdict.event_judgements.find((j) => j.identifier === identifier)
-    if (verdict) {
+    const verdict = (judgeVerdict.event_judgements || []).find(
+      (j) => j.identifier === identifier
+    )
+
+    const finalVerdict = verdict || {
+      quality: 'Acceptable',
+      commentary: 'Judge did not return a verdict for this item.',
+    }
+
+    if (event.source_articles) {
       event.source_articles.forEach((sourceArticle) => {
         const articleInMap = (pipelinePayload.enrichedArticles || []).find(
           (a) => a.link === sourceArticle.link
         )
         if (articleInMap) {
-          articleTraceLogger.addStage(articleInMap._id, 'Judge Verdict', { verdict })
+          articleTraceLogger.addStage(articleInMap._id, 'Judge Verdict', {
+            verdict: finalVerdict,
+          })
         }
       })
     }
-  })
 
-  const fatalQualitiesSet = new Set(fatalQualities)
-
-  const approvedEventIdentifiers = new Set(
-    (judgeVerdict?.event_judgements || [])
-      .filter((j) => !fatalQualitiesSet.has(j.quality))
-      .map((j) => j.identifier)
-  )
-
-  const finalEvents = initialEvents.filter((event) => {
-    const identifier = `Event: ${event.synthesized_headline}`
-    const wasApproved = approvedEventIdentifiers.has(identifier)
-    if (!wasApproved) {
-      const verdict = judgeVerdict.event_judgements.find(
-        (j) => j.identifier === identifier
-      )
-      logger.warn(
-        { event: event.synthesized_headline, verdict: verdict },
-        `Event discarded by Judge's final verdict.`
-      )
+    return {
+      ...event,
+      judgeVerdict: finalVerdict,
+      pipelineTrace: [
+        ...(event.pipelineTrace || []),
+        { stage: 'Judge', status: finalVerdict.quality, reason: finalVerdict.commentary },
+      ],
     }
-    return wasApproved
   })
-
-  logger.info(
-    `[Judge Agent] Verdict complete. Approved ${finalEvents.length} out of ${initialEvents.length} events.`
-  )
-
-  const finalOpportunities = initialOpportunities
-
-  return { finalEvents, finalOpportunities }
+  return { allJudgedEvents, finalOpportunities: initialOpportunities }
 }

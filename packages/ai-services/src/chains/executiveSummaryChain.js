@@ -1,28 +1,19 @@
-// packages/ai-services/src/chains/executiveSummaryChain.js (version 2.3 - Final)
+// packages/ai-services/src/chains/executiveSummaryChain.js
 import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionExecutiveSummary } from '@headlines/prompts'
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { executiveSummarySchema } from '@headlines/models/schemas'
+import { buildPrompt } from '../lib/promptBuilder.js'
 
-const systemPrompt = [
-  instructionExecutiveSummary.whoYouAre,
-  instructionExecutiveSummary.whatYouDo,
-  ...instructionExecutiveSummary.guidelines,
-  instructionExecutiveSummary.outputFormatDescription,
-  instructionExecutiveSummary.reiteration,
-].join('\n\n')
+const systemPrompt = buildPrompt(instructionExecutiveSummary)
 
 const prompt = ChatPromptTemplate.fromMessages([
   ['system', systemPrompt],
   ['human', 'Run Data: {payload_json_string}'],
 ])
 
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
-// The safeInvoke function will be responsible for all parsing.
 const chain = RunnableSequence.from([prompt, getHighPowerModel()])
 
 export const executiveSummaryChain = {

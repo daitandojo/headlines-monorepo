@@ -1,26 +1,54 @@
-// File: apps/pipeline/src/modules/notifications/index.js
-
+// apps/pipeline/src/modules/notifications/index.js
 import { groupItemsByCountry } from '@headlines/utils-shared'
 import { logger } from '@headlines/utils-shared'
 import { Subscriber, PushSubscription } from '@headlines/models'
 import { sendBulkEmails } from './emailDispatcher.js'
 import { sendBulkPushNotifications } from './pushService.js'
 
-export async function sendNotifications(newEvents, newOpportunities = []) {
+function filterItemsForUser(items, userCountries, countryKey) {
+  return items.filter((item) => {
+    if (!item[countryKey]) {
+      return false
+    }
+    const itemCountries = Array.isArray(item[countryKey])
+      ? item[countryKey]
+      : String(item[countryKey]).split(',')
+    return itemCountries.some((country) => userCountries.has(country.trim()))
+  })
+}
+
+export async function sendNotifications(
+  newEvents,
+  newOpportunities = [],
+  isTestMode = false
+) {
   logger.info(
     `📧 Starting personalized notification dispatch for ${newEvents.length} events and ${newOpportunities.length} opportunities.`
   )
+  if (isTestMode) {
+    logger.warn('--- TEST MODE: Notifications will ONLY be sent to admin users. ---')
+  }
 
-  const [activeSubscribers, allPushSubscriptions] = await Promise.all([
-    Subscriber.find({ isActive: true }).lean(),
-    PushSubscription.find().lean(),
-  ])
+  // --- START OF DEFINITIVE FIX ---
+  // The previous logic was flawed. This new logic fetches all active subscribers first,
+  // THEN filters them down to ONLY admins if isTestMode is true.
+  let subscribersToNotify = await Subscriber.find({ isActive: true }).lean()
 
-  if (activeSubscribers.length === 0) {
+  if (isTestMode) {
+    subscribersToNotify = subscribersToNotify.filter((user) => user.role === 'admin')
+    if (subscribersToNotify.length === 0) {
+      logger.warn('TEST MODE: No active admin users found to send test notifications to.')
+      return { emailSentCount: 0, pushSentCount: 0 }
+    }
+  }
+  // --- END OF DEFINITIVE FIX ---
+
+  if (subscribersToNotify.length === 0) {
     logger.info('No active subscribers found. Skipping notification dispatch.')
     return { emailSentCount: 0, pushSentCount: 0 }
   }
 
+  const allPushSubscriptions = await PushSubscription.find().lean()
   const pushSubsByUserId = allPushSubscriptions.reduce((acc, sub) => {
     if (!sub.subscriberId) return acc
     const userId = sub.subscriberId.toString()
@@ -29,39 +57,32 @@ export async function sendNotifications(newEvents, newOpportunities = []) {
     return acc
   }, {})
 
-  const eventsByCountry = groupItemsByCountry(newEvents, 'country')
-  const opportunitiesByCountry = groupItemsByCountry(newOpportunities, 'basedIn')
-
   const emailQueue = []
   const pushQueue = []
 
-  for (const user of activeSubscribers) {
+  for (const user of subscribersToNotify) {
     let userEvents = []
     let userOpportunities = []
 
-    // --- START OF THE FIX ---
     if (user.role === 'admin') {
-      // If the user is an admin, they get all events and opportunities.
       userEvents = newEvents
       userOpportunities = newOpportunities
       logger.trace(`Admin user ${user.email} is subscribed to all items.`)
     } else {
-      // For regular users, filter based on their country subscriptions.
       const userCountries = new Set(
         (user.countries || []).filter((c) => c.active).map((c) => c.name)
       )
-
-      // The original bug was here: this would skip admins. Now it only skips users with no subscriptions.
       if (userCountries.size === 0) continue
-
-      userEvents = filterItemsForUser(eventsByCountry, userCountries)
-      userOpportunities = filterItemsForUser(opportunitiesByCountry, userCountries)
+      userEvents = filterItemsForUser(newEvents, userCountries, 'country')
+      userOpportunities = filterItemsForUser(newOpportunities, userCountries, 'basedIn')
     }
-    // --- END OF THE FIX ---
 
     if (userEvents.length === 0 && userOpportunities.length === 0) continue
 
-    if (user.emailNotificationsEnabled && userEvents.length > 0) {
+    if (
+      user.emailNotificationsEnabled &&
+      (userEvents.length > 0 || userOpportunities.length > 0)
+    ) {
       emailQueue.push({ user, events: userEvents, opportunities: userOpportunities })
     }
 
@@ -113,14 +134,4 @@ export async function sendNotifications(newEvents, newOpportunities = []) {
     `✅ Notification dispatch complete. Emails Sent: ${emailSentCount}, Push Notifications Sent: ${pushSentCount}.`
   )
   return { emailSentCount, pushSentCount }
-}
-
-function filterItemsForUser(itemsByCountry, userCountries) {
-  const userItems = []
-  for (const country of userCountries) {
-    if (itemsByCountry[country]) {
-      userItems.push(...itemsByCountry[country])
-    }
-  }
-  return userItems
 }

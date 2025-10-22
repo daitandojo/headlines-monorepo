@@ -1,24 +1,37 @@
-// apps/client/src/app/api-admin/scrape/route.js (version 2.0.0)
+// apps/client/src/app/api-admin/scrape/route.js
 import { NextResponse } from 'next/server'
 import { createApiHandler } from '@/lib/api-handler'
 import { cookies } from 'next/headers'
 import { env } from '@headlines/config/next'
+import { z } from 'zod' // IMPORT ZOD
 
 const SERVER_API_URL = env.INTERNAL_SERVER_URL || 'http://localhost:3002'
 
-// This Next.js API route now acts as a secure proxy.
-// It authenticates the admin user, grabs their JWT, and forwards the
-// request to the dedicated Node.js server that can run Playwright.
-const handlePost = async (request) => {
-  const { sourceId, articleUrl } = await request.json()
-  const token = cookies().get('headlines-jwt')?.value
+// DEFINE A SCHEMA for input validation
+const scrapeTestSchema = z.object({
+  sourceId: z.string().min(1, { message: 'sourceId is required.' }),
+  articleUrl: z.string().url({ message: 'A valid articleUrl is required.' }).optional(),
+});
 
+const handlePost = async (request) => {
+  const token = cookies().get('headlines-jwt')?.value
   if (!token) {
-    return NextResponse.json(
-      { error: 'Authentication token not found.' },
-      { status: 401 }
-    )
+    return NextResponse.json({ error: 'Authentication token not found.' }, { status: 401 })
   }
+
+  // --- START OF MODIFICATION ---
+  const body = await request.json();
+  const validation = scrapeTestSchema.safeParse(body);
+
+  if (!validation.success) {
+    return NextResponse.json(
+      { error: 'Invalid input.', details: validation.error.flatten() },
+      { status: 400 }
+    );
+  }
+
+  const { sourceId, articleUrl } = validation.data;
+  // --- END OF MODIFICATION ---
 
   try {
     const response = await fetch(`${SERVER_API_URL}/api/scrape-test`, {
@@ -36,8 +49,6 @@ const handlePost = async (request) => {
       throw new Error(result.error || `Scraper server returned status ${response.status}`)
     }
 
-    // The original logic in `performScrape` from `scraper-ide/page.jsx` expects
-    // a specific structure, so we re-map the response to match it.
     if (result.content) {
       return NextResponse.json({ success: true, content: result.content.preview })
     } else if (result.headlines) {
@@ -54,5 +65,5 @@ const handlePost = async (request) => {
   }
 }
 
-export const POST = createApiHandler(handlePost)
+export const POST = createApiHandler(handlePost, { requireAdmin: true }) // Ensure admin protection
 export const dynamic = 'force-dynamic'

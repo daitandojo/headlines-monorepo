@@ -1,301 +1,133 @@
 // apps/pipeline/src/pipeline/3_assessAndEnrich.js
-import { truncateString, sleep } from '@headlines/utils-shared'
 import { logger } from '@headlines/utils-shared'
-import { auditLogger } from '@headlines/utils-server'
 import { settings } from '@headlines/config/node'
-import { WatchlistEntity } from '@headlines/models'
-import { bulkWriteArticles } from '@headlines/data-access'
-import { batchHeadlineChain } from '@headlines/ai-services/node'
-import { processSingleArticle } from './submodules/processSingleArticle.js'
-import pLimit from 'p-limit'
-import { env } from '@headlines/config/node'
-
-const BATCH_SIZE = 8
-const MAX_RETRIES = 1
-
-async function withRetry(fn, retries = MAX_RETRIES) {
-  for (let i = 0; i <= retries; i++) {
-    try {
-      return await fn()
-    } catch (error) {
-      if (i === retries) {
-        throw error
-      }
-      logger.warn(
-        `Operation failed. Retrying in 2 seconds... (Attempt ${i + 1}/${retries})`
-      )
-      await sleep(2000)
-    }
-  }
-}
-
-function findWatchlistHits(text, country, watchlistEntities) {
-  const hits = new Map()
-  const lowerText = text.toLowerCase()
-  const createSearchRegex = (term) =>
-    new RegExp(`\\b${term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`, 'i')
-  const relevantEntities = watchlistEntities.filter(
-    (entity) =>
-      !entity.country ||
-      entity.country === country ||
-      entity.country === 'Global PE' ||
-      entity.country === 'M&A Aggregators'
-  )
-  for (const entity of relevantEntities) {
-    const terms = [entity.name.toLowerCase(), ...(entity.searchTerms || [])]
-      .map((t) => t.trim())
-      .filter(Boolean)
-    for (const term of terms) {
-      if (term.length > 3 && createSearchRegex(term).test(lowerText)) {
-        if (!hits.has(entity.name)) hits.set(entity.name, { entity, matchedTerm: term })
-      }
-    }
-  }
-  return Array.from(hits.values())
-}
+import { assessHeadlines } from './submodules/assessHeadlines.js'
+import { enrichArticles } from './submodules/enrichArticles.js'
+import { findArticles } from '@headlines/data-access'
 
 export async function runAssessAndEnrich(pipelinePayload) {
   logger.info('--- STAGE 3: ASSESS & ENRICH ---')
-  const { runStatsManager, articlesForPipeline, articleTraceLogger } = pipelinePayload
+  const {
+    runStatsManager,
+    articleTraceLogger,
+    isRefreshMode,
+    lean: isLeanMode,
+    articlesForPipeline, // Use the data passed from the previous stage
+  } = pipelinePayload
+
   if (!articlesForPipeline || articlesForPipeline.length === 0) {
+    logger.info(
+      'No articles found to assess and enrich for the current filter. Skipping stage.'
+    )
     pipelinePayload.enrichedArticles = []
+    pipelinePayload.assessedCandidates = []
     return { success: true, payload: pipelinePayload }
   }
-  const watchlistEntities = await WatchlistEntity.find({ status: 'active' }).lean()
+
+  logger.info(`Found ${articlesForPipeline.length} articles to assess and enrich.`)
+
   const syntheticArticles = articlesForPipeline.filter(
-    (a) => a.source === 'Richlist Ingestion'
+    (a) => a.source === 'Richlist Ingestion' || a.source === 'Test E2E Source'
   )
   const realArticles = articlesForPipeline.filter(
-    (a) => a.source !== 'Richlist Ingestion'
+    (a) => a.source !== 'Richlist Ingestion' && a.source !== 'Test E2E Source'
   )
+
   let assessedCandidates = []
-  if (realArticles.length > 0) {
+  if (isRefreshMode) {
     logger.info(
-      `Assessing ${realArticles.length} real headlines in batches of ${BATCH_SIZE}...`
+      'REFRESH MODE: Skipping headline assessment as articles are already assessed.'
     )
-    const batches = []
-    for (let i = 0; i < realArticles.length; i += BATCH_SIZE) {
-      batches.push(realArticles.slice(i, i + BATCH_SIZE))
-    }
-    for (const [index, batch] of batches.entries()) {
-      logger.info(`Assessing batch ${index + 1} of ${batches.length}...`)
-      try {
-        const batchProcessor = async () => {
-          const batchWithContext = batch.map((article) => {
-            const hits = findWatchlistHits(
-              article.headline,
-              article.country,
-              watchlistEntities
-            )
-            let headlineWithContext = `[COUNTRY CONTEXT: ${article.country}] ${article.headline}`
-            if (hits.length > 0) {
-              const hitStrings = hits
-                .map(
-                  (hit) =>
-                    `[WATCHLIST HIT: ${hit.entity.name} (matched on '${hit.matchedTerm}')]`
-                )
-                .join(' ')
-              headlineWithContext = `${hitStrings} ${headlineWithContext}`
-            }
-            return { ...article, headlineWithContext, hits }
-          })
-          const response = await batchHeadlineChain({
-            headlines_json_string: JSON.stringify(
-              batchWithContext.map((a) => a.headlineWithContext)
-            ),
-          })
-          if (
-            response.error ||
-            !response.assessments ||
-            response.assessments.length !== batch.length
-          ) {
-            throw new Error('Batch assessment failed or returned mismatched count.')
-          }
-          const batchResults = batchWithContext.map((originalArticle, i) => {
-            const assessment = response.assessments[i]
-            if (originalArticle.hits.length > 0) {
-              let score = assessment.relevance_headline
-              score = Math.min(100, score + settings.WATCHLIST_SCORE_BOOST)
-              assessment.assessment_headline = `Watchlist boost (+${settings.WATCHLIST_SCORE_BOOST}). ${assessment.assessment_headline}`
-              assessment.relevance_headline = score
-            }
-            return { ...originalArticle, ...assessment }
-          })
-          return batchResults
-        }
-        const results = await withRetry(batchProcessor)
-        assessedCandidates.push(...results)
-        auditLogger.info(
-          {
-            context: {
-              batch_number: index + 1,
-              input_headlines: batch.map((a) => a.headline),
-              output_assessments: results.map((r) => ({
-                headline: r.headline,
-                score: r.relevance_headline,
-                assessment: r.assessment_headline,
-              })),
-            },
-          },
-          'Headline Assessment Batch Processed'
-        )
-      } catch (batchError) {
-        logger.error(
-          { err: batchError },
-          `Batch ${index + 1} failed after all retries. FALLING BACK to single-article assessment.`
-        )
-        const fallbackPromises = batch.map((article) => {
-          const hits = findWatchlistHits(
-            article.headline,
-            article.country,
-            watchlistEntities
-          )
-          return processSingleArticle(article, hits)
-        })
-        const fallbackResults = await Promise.all(fallbackPromises)
-        fallbackResults.forEach((result, i) => {
-          const originalArticle = batch[i]
-          if (result.article) {
-            assessedCandidates.push({ ...originalArticle, ...result.article })
-          } else {
-            assessedCandidates.push({
-              ...originalArticle,
-              relevance_headline: 0,
-              assessment_headline: result.lifecycleEvent.reason,
-            })
-          }
-        })
-      }
-    }
+    assessedCandidates = realArticles
+  } else {
+    assessedCandidates = await assessHeadlines(realArticles, articleTraceLogger)
   }
+
   runStatsManager.set('headlinesAssessed', assessedCandidates.length)
-  logger.info('--- Headline Assessment Complete ---')
+
   assessedCandidates.forEach((article) => {
-    if (article.relevance_headline >= settings.HEADLINES_RELEVANCE_THRESHOLD) {
-      articleTraceLogger.startTrace(article)
-      articleTraceLogger.addStage(article._id, 'Headline Assessment', {
-        score: article.relevance_headline,
-        assessment: article.assessment_headline,
-        hits: article.hits.map((h) => h.entity.name),
-      })
-    }
     const status =
       article.relevance_headline >= settings.HEADLINES_RELEVANCE_THRESHOLD
         ? 'PASSED'
         : 'DROPPED'
     const color = status === 'PASSED' ? '\x1b[32m' : '\x1b[90m'
     logger.info(
-      `${color}[${status.padEnd(7)}] [Score: ${String(article.relevance_headline).padStart(3)}] "${truncateString(article.headline, 60)}" (${article.assessment_headline})\x1b[0m`
+      `${color}[${status.padEnd(7)}] [Score: ${String(
+        article.relevance_headline
+      ).padStart(3)}] "${article.headline}"\x1b[0m`
     )
   })
-  const relevantCandidates = assessedCandidates.filter(
+
+  if (assessedCandidates.length > 0 && !isRefreshMode) {
+    const assessedLinks = assessedCandidates.map((a) => a.link)
+    const refetchResult = await findArticles({
+      filter: { link: { $in: assessedLinks } },
+      select: '+articleContent',
+    })
+    if (refetchResult.success && refetchResult.data.length > 0) {
+      logger.info(
+        `Synchronized state for ${refetchResult.data.length} assessed articles from the database to ensure data integrity.`
+      )
+      assessedCandidates = refetchResult.data
+    } else {
+      logger.error(
+        { err: refetchResult.error },
+        'CRITICAL: Failed to re-fetch assessed articles after saving. The pipeline cannot safely proceed.'
+      )
+      throw new Error(
+        'Failed to synchronize article state from database after assessment.'
+      )
+    }
+  }
+
+  let relevantCandidates = assessedCandidates.filter(
     (a) => a.relevance_headline >= settings.HEADLINES_RELEVANCE_THRESHOLD
   )
   runStatsManager.set('relevantHeadlines', relevantCandidates.length)
-  const enrichmentQueue = [...relevantCandidates, ...syntheticArticles]
-  logger.info(
-    `Found ${relevantCandidates.length} relevant headlines. Total for full enrichment (including synthetic): ${enrichmentQueue.length}.`
-  )
-  if (enrichmentQueue.length === 0) {
-    pipelinePayload.enrichedArticles = []
-    const articlesToPersist = assessedCandidates.map(
-      ({ articleContent, ...rest }) => rest
+
+  if (isLeanMode && relevantCandidates.length > 0) {
+    logger.warn(
+      `[LEAN MODE] Pre-selecting top 5 candidates for enrichment to find one champion.`
     )
-    if (articlesToPersist.length > 0) {
-      const bulkOps = articlesToPersist.map((article) => ({
-        updateOne: {
-          filter: { link: article.link },
-          update: { $set: article },
-          upsert: true,
-        },
-      }))
-      await bulkWriteArticles(bulkOps)
-      logger.info(
-        `Persisted ${articlesToPersist.length} assessed articles to prevent re-scraping.`
+    relevantCandidates.sort((a, b) => b.relevance_headline - a.relevance_headline)
+    const topCandidates = relevantCandidates.slice(0, 5)
+
+    const { enrichedArticles: leanEnriched, enrichmentOutcomes } = await enrichArticles(
+      topCandidates,
+      syntheticArticles,
+      articleTraceLogger
+    )
+
+    runStatsManager.set('enrichmentOutcomes', enrichmentOutcomes)
+
+    if (leanEnriched.length > 0) {
+      const championArticle = leanEnriched.reduce((max, current) =>
+        (current.relevance_article || 0) > (max.relevance_article || 0) ? current : max
       )
-    }
-    return { success: true, payload: pipelinePayload }
-  }
-  const limit = pLimit(env.CONCURRENCY_LIMIT)
-  const processingPromises = enrichmentQueue.map((article) =>
-    limit(() => {
-      const hits =
-        article.hits ||
-        findWatchlistHits(article.headline, article.country, watchlistEntities)
-      return processSingleArticle(article, hits)
-    })
-  )
-  const results = await Promise.all(processingPromises)
-  const enrichedArticles = []
-  const allProcessedArticles = []
-  const enrichmentOutcomes = []
-  logger.info('--- Full Article Enrichment Results ---')
-  results.forEach((result, index) => {
-    const originalArticle = enrichmentQueue[index]
-    const finalArticleState = {
-      ...originalArticle,
-      ...(result.article || {}),
-      pipeline_lifecycle: [
-        ...(originalArticle.pipeline_lifecycle || []),
-        result.lifecycleEvent,
-      ],
-    }
-    delete finalArticleState.articleContent
-    allProcessedArticles.push(finalArticleState)
-    articleTraceLogger.addStage(originalArticle._id, 'Content Enrichment', {
-      outcome: result.lifecycleEvent.status,
-      reason: result.lifecycleEvent.reason,
-      raw_html_snippet: truncateString(result.rawHtml, 500),
-      extracted_content: result.contentPreview,
-      llm_assessment: result.article,
-    })
-    const outcome = result.lifecycleEvent.status
-    enrichmentOutcomes.push({
-      link: finalArticleState.link,
-      headline: finalArticleState.headline,
-      newspaper: finalArticleState.newspaper,
-      headlineScore: finalArticleState.relevance_headline,
-      assessment_headline: finalArticleState.assessment_headline,
-      finalScore: finalArticleState.relevance_article,
-      assessment_article: finalArticleState.assessment_article,
-      content_snippet: result.contentPreview,
-      outcome: outcome,
-      reason: result.lifecycleEvent.reason,
-      // ✅ ADDITION: Pass selector info to the final report.
-      extractionMethod: result.extractionMethod,
-      extractionSelectors: result.extractionSelectors,
-    })
-    if (outcome === 'success') {
-      enrichedArticles.push(finalArticleState)
-      logger.info(
-        `✅ [SUCCESS] "${truncateString(originalArticle.headline, 60)}" - Final Score: ${finalArticleState.relevance_article}`
+      pipelinePayload.enrichedArticles = [championArticle]
+      logger.warn(
+        `[LEAN MODE] Champion selected with final score ${championArticle.relevance_article}: "${championArticle.headline}"`
       )
     } else {
-      logger.warn(
-        `❌ [${outcome.toUpperCase()}] "${truncateString(originalArticle.headline, 60)}" - Reason: ${result.lifecycleEvent.reason}`
-      )
+      pipelinePayload.enrichedArticles = []
+      logger.warn('[LEAN MODE] No articles survived enrichment to become champion.')
     }
-  })
-  if (allProcessedArticles.length > 0) {
-    const bulkOps = allProcessedArticles.map((article) => ({
-      updateOne: {
-        filter: { link: article.link },
-        update: { $set: article },
-        upsert: true,
-      },
-    }))
-    await bulkWriteArticles(bulkOps)
-    logger.info(
-      `Persisted ${allProcessedArticles.length} processed articles to prevent re-scraping.`
-    )
+    pipelinePayload.assessedCandidates = assessedCandidates
+    return { success: true, payload: pipelinePayload }
   }
+
+  const { enrichedArticles, enrichmentOutcomes } = await enrichArticles(
+    relevantCandidates,
+    syntheticArticles,
+    articleTraceLogger
+  )
+
   runStatsManager.set('enrichmentOutcomes', enrichmentOutcomes)
   runStatsManager.set('articlesEnriched', enrichedArticles.length)
   runStatsManager.set('relevantArticles', enrichedArticles.length)
-  logger.info(
-    `Enrichment complete. Successfully enriched ${enrichedArticles.length} of ${enrichmentQueue.length} candidates.`
-  )
+
   pipelinePayload.enrichedArticles = enrichedArticles
   pipelinePayload.assessedCandidates = assessedCandidates
+
   return { success: true, payload: pipelinePayload }
 }

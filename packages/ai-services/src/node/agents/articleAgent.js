@@ -36,21 +36,23 @@ export async function assessArticleContent(
         truncatedLength: truncatedContent.length,
         limit: settings.LLM_CONTEXT_MAX_CHARS,
       },
-      `Article content for LLM was truncated to prevent context overload.`
+      `Article content for LLM was truncated.`
     )
   }
 
-  // CRITICAL FIX: Always include the headline as part of the body to ensure it's analyzed.
-  // This is crucial for cases where only the headline and a short snippet are available.
   let articleText = `HEADLINE: ${article.headline}\n\nBODY:\n${article.headline}\n\n${truncatedContent}`
 
   if (hits.length > 0) {
     const hitStrings = hits.map(
-      (hit) => `[WATCHLIST HIT: ${hit.name} | CONTEXT: ${hit.context || 'N/A'}]`
+      (hit) =>
+        `[WATCHLIST HIT: ${hit.entity.name} | CONTEXT: ${hit.entity.context || 'N/A'}]`
     )
     const hitPrefix = hitStrings.join(' ')
     articleText = `${hitPrefix} ${articleText}`
-    logger.info({ hits: hits.map((h) => h.name) }, 'Watchlist entities found in article.')
+    logger.info(
+      { hits: hits.map((h) => h.entity.name) },
+      'Watchlist entities found in article.'
+    )
   }
 
   if (isSalvaged) {
@@ -70,6 +72,28 @@ export async function assessArticleContent(
     )
     return { ...article, error: `AI Error: ${response.error}` }
   }
+
+  // --- START OF DEFINITIVE FIX ---
+  // The AI can sometimes hallucinate individuals not present in the text. This filter ensures that only
+  // individuals who are actually mentioned in the article body are included in the final output.
+  if (response.key_individuals && response.key_individuals.length > 0) {
+    const articleTextLower = articleText.toLowerCase()
+    response.key_individuals = response.key_individuals.filter((ind) => {
+      if (!ind || !ind.name) return false // Filter out null/undefined entries
+      const isPresent = ind.name
+        .split(' ')
+        .filter((p) => p.length > 2)
+        .some((p) => articleTextLower.includes(p.toLowerCase()))
+      if (!isPresent) {
+        logger.warn(
+          { individual: ind.name, article: article.headline },
+          'Discarding hallucinated key individual not present in article text.'
+        )
+      }
+      return isPresent
+    })
+  }
+  // --- END OF DEFINITIVE FIX ---
 
   if (
     response.amount > 0 &&

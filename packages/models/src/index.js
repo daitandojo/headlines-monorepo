@@ -1,8 +1,11 @@
+// packages/models/src/index.js
 // This file is the core, shared module for the models package.
 // It exports all Mongoose models and is environment-agnostic.
 
 import Article from './Article.js'
 import Country from './Country.js'
+import EntityGraph from './EntityGraph.js' // ADDED
+import Feedback from './Feedback.js'
 import Opportunity from './Opportunity.js'
 import PushSubscription from './PushSubscription.js'
 import RunVerdict from './RunVerdict.js'
@@ -17,6 +20,8 @@ import WatchlistSuggestion from './WatchlistSuggestion.js'
 export {
   Article,
   Country,
+  EntityGraph, // ADDED
+  Feedback,
   Opportunity,
   PushSubscription,
   RunVerdict,

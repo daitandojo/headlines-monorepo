@@ -47,22 +47,27 @@ export async function getOpportunities({
 
   if (sort === 'size_desc') {
     if (queryFilter.$and) {
-      queryFilter.$and.push({ likelyMMDollarWealth: { $gt: 0 } })
+      queryFilter.$and.push({ lastKnownEventLiquidityMM: { $gt: 0 } }) // MODIFIED: Use new field name
     } else if (Object.keys(queryFilter).length > 0) {
-      queryFilter = { $and: [queryFilter, { likelyMMDollarWealth: { $gt: 0 } }] }
+      queryFilter = { $and: [queryFilter, { lastKnownEventLiquidityMM: { $gt: 0 } }] }
     } else {
-      queryFilter = { likelyMMDollarWealth: { $gt: 0 } }
+      queryFilter = { lastKnownEventLiquidityMM: { $gt: 0 } }
     }
   }
 
   const skipAmount = (page - 1) * OPPORTUNITIES_PER_PAGE
   const [opportunities, total] = await Promise.all([
     Opportunity.find(queryFilter)
-      .populate({ path: 'events', select: 'synthesized_headline', options: { limit: 1 } })
+      // DEFINITIVE FIX: Add 'createdAt' to the select statement to make it available to the UI.
+      .populate({
+        path: 'events',
+        select: 'synthesized_headline createdAt',
+        options: { limit: 1, sort: { createdAt: -1 } },
+      })
       .sort(sortOptions)
       .skip(skipAmount)
       .limit(OPPORTUNITIES_PER_PAGE)
-      .lean(),
+      .lean({ virtuals: true }), // Ensure virtuals like likelyMMDollarWealth are included
     Opportunity.countDocuments(queryFilter),
   ])
   return { success: true, data: JSON.parse(JSON.stringify(opportunities)), total }
@@ -74,7 +79,7 @@ export async function getOpportunityDetails(opportunityId) {
   }
   const opportunity = await Opportunity.findById(opportunityId)
     .populate({ path: 'events', options: { sort: { createdAt: -1 } } })
-    .lean()
+    .lean({ virtuals: true })
   if (!opportunity) return { success: false, error: 'Opportunity not found.' }
   return { success: true, data: JSON.parse(JSON.stringify(opportunity)) }
 }
@@ -84,7 +89,7 @@ export async function updateOpportunity(oppId, updateData) {
     oppId,
     { $set: updateData },
     { new: true, runValidators: true }
-  ).lean()
+  ).lean({ virtuals: true })
   if (!opp) return { success: false, error: 'Opportunity not found.' }
   return { success: true, data: JSON.parse(JSON.stringify(opp)) }
 }

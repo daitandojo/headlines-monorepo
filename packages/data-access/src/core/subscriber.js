@@ -1,5 +1,5 @@
 // packages/data-access/src/core/subscriber.js
-import { Subscriber, PushSubscription } from '@headlines/models'
+import { Subscriber, PushSubscription, Feedback } from '@headlines/models' // ADDED: Feedback model
 
 export async function upsertSubscriber(filter, userData) {
   try {
@@ -81,7 +81,7 @@ export async function updateUserProfile({ userId, updateData }) {
 }
 
 export async function updateUserInteraction({ userId, itemId, itemType, action }) {
-  const modelName = `${itemType}s` // e.g., 'articles', 'events'
+  const modelName = `${itemType}s`
   let updateQuery
 
   switch (action) {
@@ -101,8 +101,23 @@ export async function updateUserInteraction({ userId, itemId, itemType, action }
   try {
     const result = await Subscriber.updateOne({ _id: userId }, updateQuery)
     if (result.matchedCount === 0) return { success: false, error: 'User not found.' }
+
+    // --- START OF MODIFICATION ---
+    // After successfully updating the user's preference, log this as a feedback event.
+    // We treat 'unfavorite' as a form of 'discard' for feedback purposes.
+    const feedbackType = action === 'unfavorite' ? 'discard' : action
+    const feedbackDoc = new Feedback({
+      userId,
+      itemId,
+      itemType,
+      feedbackType,
+    })
+    await feedbackDoc.save()
+    // --- END OF MODIFICATION ---
+
     return { success: true }
   } catch (e) {
+    console.error('[updateUserInteraction Error]', e) // Added more detailed logging
     return { success: false, error: 'Database interaction failed.' }
   }
 }

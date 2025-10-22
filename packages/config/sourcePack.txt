@@ -15,7 +15,7 @@ headlines-monorepo/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-10T00:11:01.994Z
+**Generated**: 2025-10-21T18:41:06.985Z
 **Repository Path**: /home/mark/Repos/projects/headlines-monorepo/packages/config
 **Total Files**: 6
 **Package**: @headlines/config@3.0.0
@@ -209,7 +209,7 @@ export * from './index.js'
 ```
 
 ## 📄 src/settings.js
-*Lines: 53, Size: 1.75 KB*
+*Lines: 54, Size: 1.78 KB*
 
 ```javascript
 // packages/config/src/settings.js (version 2.0.0)
@@ -235,6 +235,7 @@ const DEFAULTS = {
   LLM_MODEL_ARTICLE_ASSESSMENT: 'gpt-5-mini',
   LLM_MODEL_SYNTHESIS: 'gpt-5-mini',
   LLM_MODEL_UTILITY: 'gpt-5-nano',
+  LLM_MODEL_PRO: 'gpt-5'
 }
 
 export const settings = { ...DEFAULTS }

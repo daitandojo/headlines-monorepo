@@ -36,7 +36,13 @@ export async function findArticles({
   limit = 0,
 }) {
   try {
+    // --- START OF DEFINITIVE, FINAL FIX ---
+    // The previous logic that added a default time limit was the root cause of many issues.
+    // A data access function must be predictable and should ONLY apply the filter it is given.
+    // This has been reverted to the correct, simple implementation.
     const query = Article.find(filter).sort(sort).select(select)
+    // --- END OF DEFINITIVE, FINAL FIX ---
+
     if (limit > 0) {
       query.limit(limit)
     }

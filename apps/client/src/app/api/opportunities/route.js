@@ -1,7 +1,7 @@
 // apps/client/src/app/api/opportunities/route.js
 import { NextResponse } from 'next/server'
 import { getOpportunities, getTotalOpportunitiesCount } from '@headlines/data-access/next'
-import { createApiHandler } from '@/lib/api-handler' // Use the new single handler
+import { createApiHandler } from '@/lib/api-handler'
 
 const handleGet = async (request, { user }) => {
   const { searchParams } = new URL(request.url)
@@ -11,7 +11,7 @@ const handleGet = async (request, { user }) => {
     q: searchParams.get('q') || '',
     country: searchParams.get('country') || '',
     withEmail: searchParams.get('withEmail') === 'true',
-    favoritesOnly: searchParams.get('favorites') === 'true',
+    favoritesOnly: searchParams.get('favorites') === 'true', // ADDED
   }
 
   const [oppsResult, totalResult] = await Promise.all([

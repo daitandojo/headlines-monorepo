@@ -1,0 +1,502 @@
+[
+  {
+    "rank": 101,
+    "name": "Paloma García Peña y familia",
+    "wealth (EUR Millions)": 700,
+    "company": "El Corte Inglés",
+    "sector": "Distribución",
+    "location": "Cataluña",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/paloma-garcia-pena.html",
+    "first_year_on_list": "2006"
+  },
+  {
+    "rank": 102,
+    "name": "Familia Samper Rivas",
+    "wealth (EUR Millions)": 685,
+    "company": "Grupo Jorge, Forestalia",
+    "sector": "Alimentación, Cárnica, Renovables",
+    "location": "Aragón",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/familia-samper-rivas.html",
+    "first_year_on_list": "2021"
+  },
+  {
+    "rank": 103,
+    "name": "Roberto Tojeiro Rodríguez y familia",
+    "wealth (EUR Millions)": 675,
+    "company": "Gadisa, Reganosa",
+    "sector": "Distribución",
+    "location": "Galicia",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/roberto-tojeiro-rodriguez.html",
+    "first_year_on_list": "2017"
+  },
+  {
+    "rank": 104,
+    "name": "Joan y Josep Font Fabregó",
+    "wealth (EUR Millions)": 660,
+    "company": "Bonpreu, Turttle Capital",
+    "sector": "Distribución",
+    "location": "Cataluña",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/joan-y-josep-font-fabrego.html",
+    "first_year_on_list": "2019"
+  },
+  {
+    "rank": 105,
+    "name": "Héctor y Manuel Colonques Moreno",
+    "wealth (EUR Millions)": 650,
+    "company": "Porcelanosa",
+    "sector": "Construcción, Cerámica",
+    "location": "C. Valenciana",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/hector-y-manuel-colonques-moreno.html",
+    "first_year_on_list": "2006"
+  },
+  {
+    "rank": 106,
+    "name": "José Manuel Cortizo Sóñora",
+    "wealth (EUR Millions)": 645,
+    "company": "Aluminios Cortizo",
+    "sector": "Industria",
+    "location": "Galicia",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/jose-manuel-cortizo-sonora.html",
+    "first_year_on_list": "2019"
+  },
+  {
+    "rank": 107,
+    "name": "José Miguel Isidro Rincón y familia",
+    "wealth (EUR Millions)": 630,
+    "company": "Ibervalles, Gaea SCR",
+    "sector": "Inmuebles",
+    "location": "Castilla y León",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/jose-miguel-isidro-rincon.html",
+    "first_year_on_list": "2006"
+  },
+  {
+    "rank": 108,
+    "name": "Julio Iglesias de la Cueva",
+    "wealth (EUR Millions)": 625,
+    "company": "",
+    "sector": "",
+    "location": "Madrid",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/julio-iglesias-de-la-cueva.html",
+    "first_year_on_list": "2007"
+  },
+  {
+    "rank": 109,
+    "name": "Familia Arregui Abendivar",
+    "wealth (EUR Millions)": 625,
+    "company": "Ence",
+    "sector": "Industria, Vino",
+    "location": "País Vasco",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/familia-arregui-abendivar.html",
+    "first_year_on_list": "2007"
+  },
+  {
+    "rank": 110,
+    "name": "Vicente Boluda Fos",
+    "wealth (EUR Millions)": 620,
+    "company": "Corporación Boluda",
+    "sector": "Transporte, Navieras, Puertos",
+    "location": "C. Valenciana",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/vicente-boluda-fos.html",
+    "first_year_on_list": "2020"
+  },
+  {
+    "rank": 111,
+    "name": "Alberto Cortina Alcocer",
+    "wealth (EUR Millions)": 615,
+    "company": "Alcor Corporación, ACS",
+    "sector": "Construcción, Finanzas",
+    "location": "Madrid",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/alberto-cortina-alcocer.html",
+    "first_year_on_list": "2006"
+  },
+  {
+    "rank": 112,
+    "name": "Jesús y José Luis Esteve Román",
+    "wealth (EUR Millions)": 615,
+    "company": "Neolith",
+    "sector": "Construcción",
+    "location": "C. Valenciana",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/jesus-y-jose-luis-esteve-roman.html",
+    "first_year_on_list": "2024"
+  },
+  {
+    "rank": 113,
+    "name": "Abel Matutes Juan y familia",
+    "wealth (EUR Millions)": 605,
+    "company": "Palladium Hotels, Grupo de Empresas Matutes",
+    "sector": "Turismo",
+    "location": "Baleares",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/abel-matutes-juan.html",
+    "first_year_on_list": "2007"
+  },
+  {
+    "rank": 114,
+    "name": "Familia Suqué Mateu",
+    "wealth (EUR Millions)": 605,
+    "company": "Grup Peralada, Inverama",
+    "sector": "Juego, Vino, Industria",
+    "location": "Cataluña",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/familia-suque-mateu.html",
+    "first_year_on_list": "2006"
+  },
+  {
+    "rank": 115,
+    "name": "Enrique Díaz-Tejeiro Gutiérrez y familia",
+    "wealth (EUR Millions)": 600,
+    "company": "Solaria",
+    "sector": "Energía, Renovables, Inmuebles",
+    "location": "Madrid",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/enrique-diaz-tejeiro-gutierrez.html",
+    "first_year_on_list": "2020"
+  },
+  {
+    "rank": 116,
+    "name": "Mercedes Calvo Caminero",
+    "wealth (EUR Millions)": 595,
+    "company": "Mahou San Miguel, Chocolates Trapa",
+    "sector": "Alimentación, Bebidas",
+    "location": "Madrid",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/mercedes-calvo-caminero.html",
+    "first_year_on_list": "2018"
+  },
+  {
+    "rank": 117,
+    "name": "Alberto Alcocer Torra",
+    "wealth (EUR Millions)": 595,
+    "company": "Alcor Corporación, ACS",
+    "sector": "Finanzas",
+    "location": "Madrid",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/alberto-alcocer-torra.html",
+    "first_year_on_list": "2020"
+  },
+  {
+    "rank": 118,
+    "name": "Felipe Peraire Palos",
+    "wealth (EUR Millions)": 590,
+    "company": "Mavdi Inversiones y Desarrollos SL",
+    "sector": "Inmuebles",
+    "location": "C. Valenciana",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/felipe-peraire-palos.html",
+    "first_year_on_list": "2025"
+  },
+  {
+    "rank": 119,
+    "name": "Familia Lara",
+    "wealth (EUR Millions)": 590,
+    "company": "Grupo Planeta",
+    "sector": "Comunicación, Finanzas",
+    "location": "Cataluña",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/familia-lara.html",
+    "first_year_on_list": "2006"
+  },
+  {
+    "rank": 120,
+    "name": "Thomas Andreas Meyer",
+    "wealth (EUR Millions)": 590,
+    "company": "Desigual",
+    "sector": "Textil",
+    "location": "Cataluña",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/thomas-andreas-meyer.html",
+    "first_year_on_list": "2007"
+  },
+  {
+    "rank": 121,
+    "name": "David Ruiz de Andrés",
+    "wealth (EUR Millions)": 580,
+    "company": "Grenergy, Dauran VC",
+    "sector": "Energía, Renovables",
+    "location": "Madrid",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/david-ruiz-de-andres.html",
+    "first_year_on_list": "2020"
+  },
+  {
+    "rank": 122,
+    "name": "Familia Usó Ferrera",
+    "wealth (EUR Millions)": 570,
+    "company": "Coca-Cola EuroPacific Partners",
+    "sector": "Alimentación, Bebidas",
+    "location": "C. Valenciana",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/familia-uso-ferrera.html",
+    "first_year_on_list": "2017"
+  },
+  {
+    "rank": 123,
+    "name": "Familia Jiménez Blázquez",
+    "wealth (EUR Millions)": 570,
+    "company": "Mediterránea 84 SL, Eryel Invest SL",
+    "sector": "Servicios, Restauración, Inmuebles",
+    "location": "Madrid",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/familia-jimenez-blazquez.html",
+    "first_year_on_list": "2022"
+  },
+  {
+    "rank": 124,
+    "name": "Hermanos Bernat Serra",
+    "wealth (EUR Millions)": 565,
+    "company": "Bernat Family Office, Casa Batlló",
+    "sector": "Inmuebles",
+    "location": "Cataluña",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/hermanos-bernat-serra.html",
+    "first_year_on_list": "2006"
+  },
+  {
+    "rank": 125,
+    "name": "Alberto Zardoya Arana y familia",
+    "wealth (EUR Millions)": 565,
+    "company": "ex Zardoya Ascensores, Mecalux",
+    "sector": "Industria",
+    "location": "País Vasco",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/alberto-zardoya-arana.html",
+    "first_year_on_list": "2006"
+  },
+  {
+    "rank": 126,
+    "name": "Javier Ormazabal y familia",
+    "wealth (EUR Millions)": 555,
+    "company": "Velatia",
+    "sector": "Industria",
+    "location": "País Vasco",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/javier-ormazabal.html",
+    "first_year_on_list": "2010"
+  },
+  {
+    "rank": 127,
+    "name": "José Antonio Jainaga Gómez",
+    "wealth (EUR Millions)": 545,
+    "company": "Sidenor",
+    "sector": "Industria, Metalurgia",
+    "location": "País Vasco",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/jose-antonio-jainaga-gomez.html",
+    "first_year_on_list": "2022"
+  },
+  {
+    "rank": 128,
+    "name": "Juan y Pedro Alcaraz Alcaraz",
+    "wealth (EUR Millions)": 540,
+    "company": "Aligrupo Business Opportunities",
+    "sector": "Inmuebles",
+    "location": "C. Valenciana",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/juan-y-pedro-alcaraz-alcaraz.html",
+    "first_year_on_list": "2016"
+  },
+  {
+    "rank": 129,
+    "name": "Familia Reyzábal",
+    "wealth (EUR Millions)": 535,
+    "company": "Reyza 2006, Forter",
+    "sector": "Inmuebles",
+    "location": "Madrid",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/familia-reyzabal.html",
+    "first_year_on_list": "2008"
+  },
+  {
+    "rank": 130,
+    "name": "José Luis Carrillo Rodríguez y familia",
+    "wealth (EUR Millions)": 535,
+    "company": "Mecalux",
+    "sector": "Industria",
+    "location": "Cataluña",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/jose-luis-carrillo-rodriguez.html",
+    "first_year_on_list": "2018"
+  },
+  {
+    "rank": 131,
+    "name": "Hermanos Pascual Sánchez-Gijón",
+    "wealth (EUR Millions)": 530,
+    "company": "Pascual Hospitales",
+    "sector": "Salud, Hospitales",
+    "location": "Andalucía",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/hermanos-pascual-sanchez-gijon.html",
+    "first_year_on_list": "2009"
+  },
+  {
+    "rank": 132,
+    "name": "Familia Loriente Piqueras",
+    "wealth (EUR Millions)": 525,
+    "company": "Incarlopsa",
+    "sector": "Alimentación, Cárnica",
+    "location": "Castilla-La Mancha",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/familia-loriente-piqueras.html",
+    "first_year_on_list": "2018"
+  },
+  {
+    "rank": 133,
+    "name": "Nicolás Osuna García",
+    "wealth (EUR Millions)": 520,
+    "company": "Inmobiliaria Osuna, Hoteles Center",
+    "sector": "Construcción, Turismo, Agricultura",
+    "location": "Andalucía",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/nicolas-osuna-garcia.html",
+    "first_year_on_list": "2006"
+  },
+  {
+    "rank": 134,
+    "name": "José Domingo Rodríguez Losada",
+    "wealth (EUR Millions)": 520,
+    "company": "Azata Patrimonio",
+    "sector": "Inmuebles",
+    "location": "Madrid",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/jose-domingo-rodriguez-losada.html",
+    "first_year_on_list": "2009"
+  },
+  {
+    "rank": 135,
+    "name": "José Galíndez Zubiria y familia",
+    "wealth (EUR Millions)": 520,
+    "company": "Beraunberri",
+    "sector": "Energía, Telecomunicaciones, Inmuebles",
+    "location": "País Vasco",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/jose-galindez-zubiria.html",
+    "first_year_on_list": "2020"
+  },
+  {
+    "rank": 136,
+    "name": "Familia Ventós Omedes",
+    "wealth (EUR Millions)": 505,
+    "company": "Lucta, Eduardo Ventós",
+    "sector": "Industria, Cosmética, Moda",
+    "location": "Cataluña",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/familia-ventos-omedes.html",
+    "first_year_on_list": "2025"
+  },
+  {
+    "rank": 137,
+    "name": "Ángel Asín Barcelona",
+    "wealth (EUR Millions)": 500,
+    "company": "Arama Futuro",
+    "sector": "Tecnología",
+    "location": "Madrid",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/angel-asin-barcelona.html",
+    "first_year_on_list": "2024"
+  },
+  {
+    "rank": 138,
+    "name": "Familia Alonso Villarón",
+    "wealth (EUR Millions)": 495,
+    "company": "Grupo Daniel Alonso",
+    "sector": "Industria, Renovables",
+    "location": "Asturias",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/familia-alonso-villaron.html",
+    "first_year_on_list": "2022"
+  },
+  {
+    "rank": 139,
+    "name": "Familia Álvarez Mezquíriz",
+    "wealth (EUR Millions)": 490,
+    "company": "Eulen, Vega Sicilia",
+    "sector": "Servicios, Vino",
+    "location": "Castilla y León",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/familia-alvarez-mezquiriz.html",
+    "first_year_on_list": "2006"
+  },
+  {
+    "rank": 140,
+    "name": "Antonio Pellicer Martínez",
+    "wealth (EUR Millions)": 490,
+    "company": "Instituto Valenciano de Infertilidad (IVI), Nurolu SL",
+    "sector": "Salud, Fertilidad, Transporte",
+    "location": "C. Valenciana",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/antonio-pellicer-martinez.html",
+    "first_year_on_list": "2020"
+  },
+  {
+    "rank": 141,
+    "name": "Juan Abarca y Carmen Cidón",
+    "wealth (EUR Millions)": 485,
+    "company": "HM Hospitales",
+    "sector": "Salud",
+    "location": "Madrid",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/juan-abarca-y-carmen-cidon.html",
+    "first_year_on_list": "2020"
+  },
+  {
+    "rank": 142,
+    "name": "Familia Tous Oriol",
+    "wealth (EUR Millions)": 480,
+    "company": "Tous, DayaDay",
+    "sector": "Moda, Inmuebles",
+    "location": "Cataluña",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/familia-tous-oriol.html",
+    "first_year_on_list": "2006"
+  },
+  {
+    "rank": 143,
+    "name": "Francisco José Elías Navarro",
+    "wealth (EUR Millions)": 480,
+    "company": "Audax, La Sirena",
+    "sector": "Energía, Distribución, Inmuebles",
+    "location": "Cataluña",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/francisco-jose-elias-navarro.html",
+    "first_year_on_list": "2020"
+  },
+  {
+    "rank": 144,
+    "name": "Familia Gassó",
+    "wealth (EUR Millions)": 480,
+    "company": "Gassbona 2006 SL",
+    "sector": "Inmuebles",
+    "location": "Cataluña",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/familia-gasso.html",
+    "first_year_on_list": "2025"
+  },
+  {
+    "rank": 145,
+    "name": "Familia Carbó",
+    "wealth (EUR Millions)": 465,
+    "company": "Grup Caboel",
+    "sector": "Inmuebles",
+    "location": "Cataluña",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/familia-carbo.html",
+    "first_year_on_list": "2019"
+  },
+  {
+    "rank": 146,
+    "name": "Rosa María de Castellví",
+    "wealth (EUR Millions)": 465,
+    "company": "Instituto Valenciano de Infertilidad (IVI), DeCastellví 1323 SL",
+    "sector": "Salud",
+    "location": "C. Valenciana",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/rosa-maria-de-castellvi.html",
+    "first_year_on_list": "2024"
+  },
+  {
+    "rank": 147,
+    "name": "Enrique Riquelme Vives",
+    "wealth (EUR Millions)": 460,
+    "company": "Cox Energy",
+    "sector": "Energía, Renovables",
+    "location": "C. Valenciana",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/enrique-riquelme-vives.html",
+    "first_year_on_list": "2025"
+  },
+  {
+    "rank": 148,
+    "name": "Familia Gallego Jurado",
+    "wealth (EUR Millions)": 460,
+    "company": "Migasa, Aceites Ybarra",
+    "sector": "Alimentación, Aceite",
+    "location": "Andalucía",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/familia-gallego-jurado.html",
+    "first_year_on_list": "2017"
+  },
+  {
+    "rank": 149,
+    "name": "Familia Serna Lorente",
+    "wealth (EUR Millions)": 455,
+    "company": "Torreblanca del Mediterráneo, The Fives Hotels",
+    "sector": "Inmuebles, Construcción, Hoteles",
+    "location": "C. Valenciana",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/familia-serna-lorente.html",
+    "first_year_on_list": "2018"
+  },
+  {
+    "rank": 150,
+    "name": "Hermanos Domínguez Santana",
+    "wealth (EUR Millions)": 455,
+    "company": "Dinosol Supermercados, Grupo HD",
+    "sector": "Distribución, Turismo",
+    "location": "Canarias",
+    "profile_url": "https://www.elmundo.es/especiales/los-mas-ricos/hermanos-dominguez-santana.html",
+    "first_year_on_list": "2022"
+  }
+]

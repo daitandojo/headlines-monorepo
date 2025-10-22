@@ -1,301 +1,156 @@
 // packages/scraper-logic/src/scraper/contentScraper.js
-import * as cheerio from 'cheerio'
-import fs from 'fs/promises'
-import path from 'path'
 import { JSDOM, VirtualConsole } from 'jsdom'
 import { Readability } from '@mozilla/readability'
-
+import * as cheerio from 'cheerio'
 import { getConfig } from '../config.js'
 import { fetchPageWithPlaywright } from '../browser.js'
 import { contentExtractorRegistry } from './extractors/index.js'
 import { settings } from '@headlines/config/node'
 
-const QUALITY_WEIGHTS = {
-  length: 0.3,
-  paragraphs: 0.2,
-  linkDensity: 0.15,
-  punctuation: 0.15,
-  wordVariety: 0.2,
-}
-
-function getQualityWeights(source) {
-  return source.qualityWeights || QUALITY_WEIGHTS
-}
-
-async function saveDebugHtml(filename, html) {
-  const config = getConfig()
-  const debugDir = config.paths?.debugHtmlDir
-  if (!debugDir) return null
-
-  try {
-    await fs.mkdir(debugDir, { recursive: true })
-    const filePath = path.join(debugDir, filename)
-    await fs.writeFile(filePath, html)
-    return filePath
-  } catch (error) {
-    config.logger.error({ err: error, file: filename }, 'Failed to save debug HTML.')
-    return null
-  }
-}
-
+/**
+ * Cleans and formats text extracted by Readability or other methods.
+ * @param {string} text - The raw text content.
+ * @returns {string} The cleaned text.
+ */
 function cleanText(text) {
   if (!text) return ''
+  // Normalize whitespace and ensure meaningful paragraph breaks.
   return text
-    .replace(/\s+/g, ' ')
-    .replace(/\n{3,}/g, '\n\n')
-    .replace(/[^\S\n]+/g, ' ')
+    .replace(/\s\s+/g, ' ')
+    .replace(/\n\s*\n/g, '\n\n')
     .trim()
 }
 
-function calculateContentQuality(content, $, weights = QUALITY_WEIGHTS) {
-  if (!content) return 0
-  const words = content.split(/\s+/)
-  const wordCount = words.length
-  const lengthScore = Math.min(wordCount / 500, 5000 / Math.max(wordCount, 1)) / 5
-  const paragraphs = content.split(/\n\n+/).filter((p) => p.trim().length > 50)
-  const paragraphScore = Math.min(paragraphs.length / 10, 1)
-  const linkTextLength = $('a').text().length
-  const totalTextLength = $.text().length
-  const linkDensity = totalTextLength > 0 ? linkTextLength / totalTextLength : 0
-  const linkScore = Math.max(0, 1 - linkDensity * 2)
-  const punctuationCount = (content.match(/[.!?]/g) || []).length
-  const punctuationScore = Math.min(punctuationCount / (wordCount / 20), 1)
-  const uniqueWords = new Set(words.map((w) => w.toLowerCase()))
-  const varietyScore = wordCount > 0 ? uniqueWords.size / wordCount : 0
-  return (
-    lengthScore * weights.length +
-    paragraphScore * weights.paragraphs +
-    linkScore * weights.linkDensity +
-    punctuationScore * weights.punctuation +
-    varietyScore * weights.wordVariety
-  )
+/**
+ * A fallback text extractor used only when Readability fails, to provide a snippet for logging.
+ * @param {string} html - The raw HTML of the page.
+ * @returns {string} A raw text snippet from the body.
+ */
+function extractFallbackSnippet(html) {
+  if (!html) return ''
+  const $ = cheerio.load(html)
+  $('script, style, nav, footer, header, aside, form, button').remove()
+  return $('body').text().replace(/\s+/g, ' ').trim()
 }
 
-function extractWithReadability(url, html) {
-  try {
-    const virtualConsole = new VirtualConsole()
-    virtualConsole.on('cssParseError', () => {})
-    virtualConsole.on('jsdomError', () => {})
-    const doc = new JSDOM(html, { url, virtualConsole, resources: 'usable' })
-    const reader = new Readability(doc.window.document, {
-      charThreshold: settings.MIN_ARTICLE_CHARS || 500,
-      classesToPreserve: ['caption', 'credit'],
-    })
-    const article = reader.parse()
-    if (!article?.textContent) return null
-    return {
-      content: cleanText(article.textContent),
-      title: article.title,
-      excerpt: article.excerpt,
-      byline: article.byline,
-      length: article.length,
-    }
-  } catch (error) {
-    getConfig().logger.warn(
-      { err: error, url },
-      'Readability.js failed to parse article.'
-    )
-    return null
-  }
-}
-
-function extractWithSelectors($, selectors) {
-  const selectorArray = Array.isArray(selectors) ? selectors : [selectors].filter(Boolean)
-  if (selectorArray.length === 0) return { content: '', selectors: [] }
-  const usedSelectors = []
-  const processedElements = new Set()
-  const contentParts = []
-  for (const selector of selectorArray) {
-    try {
-      const elements = $(selector)
-      if (elements.length > 0) {
-        usedSelectors.push(selector)
-        elements.each((_, el) => {
-          if (processedElements.has(el)) return
-          processedElements.add(el)
-          const $el = $(el).clone()
-          $el.find('script, style, nav, aside, footer, header').remove()
-          const text = $el.text().replace(/\s+/g, ' ').trim()
-          if (text && text.length > 50) contentParts.push(text)
-        })
-      }
-    } catch (error) {
-      getConfig().logger.warn({ selector, err: error }, 'Selector extraction failed')
-    }
-  }
-  const finalContent = contentParts.join('\n\n')
-  return { content: cleanText(finalContent), selectors: usedSelectors }
-}
-
-function detectContentBlockers($) {
-  const blockers = {
-    paywall: false,
-    subscription: false,
-    cookieNotice: false,
-    loginRequired: false,
-  }
-  const paywallIndicators = [
-    '[class*="paywall"]',
-    '[id*="paywall"]',
-    '[class*="subscription"]',
-    '[class*="premium"]',
-    '[class*="subscriber"]',
-    'meta[name="article:paywall"]',
-  ]
-  const loginIndicators = [
-    '[class*="login-required"]',
-    '[class*="sign-in"]',
-    '*:contains("sign in to continue")',
-  ]
-  blockers.paywall = paywallIndicators.some((selector) => $(selector).length > 0)
-  blockers.loginRequired = loginIndicators.some((selector) => $(selector).length > 0)
-  blockers.cookieNotice = $('[class*="cookie"], [id*="cookie"]').length > 0
-  return blockers
-}
-
+/**
+ * The new universal content extractor. It uses a prioritized, multi-strategy approach.
+ * 1. Custom Extractor (if defined)
+ * 2. RSS Content (if available)
+ * 3. Mozilla's Readability (primary method)
+ * @param {object} article - The article object with a 'link' property.
+ * @param {object} source - The source document.
+ * @returns {Promise<object>} The article object, enriched with content or an error.
+ */
 export async function scrapeArticleContent(article, source) {
   const logger = getConfig().logger
   const startTime = Date.now()
+
+  // Strategy 1: Custom Extractor (for special cases like popups)
   if (
     source.extractionMethod === 'custom' &&
     contentExtractorRegistry[source.extractorKey]
   ) {
     try {
-      logger.trace({ extractorKey: source.extractorKey }, 'Using custom extractor')
+      logger.trace(
+        { extractorKey: source.extractorKey },
+        'Using custom content extractor.'
+      )
       return await contentExtractorRegistry[source.extractorKey](article, source)
     } catch (error) {
       logger.error(
         { err: error, extractorKey: source.extractorKey },
-        'Custom extractor failed'
+        'Custom content extractor failed. Falling back to standard methods.'
       )
     }
   }
+
+  // Strategy 2: RSS Content (fast and reliable if available)
   if (article.rssContent && article.rssContent.length >= settings.MIN_ARTICLE_CHARS) {
+    // --- START OF DEFINITIVE FIX ---
+    // The function was named `cleanReadabilityText` in a previous version. It is now `cleanText`.
     const cleanedRss = cleanText(article.rssContent)
+    // --- END OF DEFINITIVE FIX ---
     if (cleanedRss.length >= settings.MIN_ARTICLE_CHARS) {
-      article.articleContent = {
-        contents: [cleanedRss],
-        method: 'RSS Feed',
-        quality: 'medium',
+      logger.trace(
+        { headline: article.headline },
+        'Using high-quality content from RSS feed.'
+      )
+      return {
+        ...article,
+        articleContent: { contents: [cleanedRss], method: 'RSS Feed' },
+        rawHtml: `RSS Content for ${article.headline}`,
+        extractionMethod: 'RSS',
       }
-      logger.trace({ headline: article.headline }, 'Using RSS content')
-      return { ...article, rawHtml: `RSS Content for ${article.headline}` }
     }
   }
-  const html = await fetchPageWithPlaywright(article.link, 'ContentScraper')
+
+  // Strategy 3: Readability (The Universal Default)
+  const html = await fetchPageWithPlaywright(article.link, 'UniversalContentScraper')
+
   if (!html) {
     return {
       ...article,
       enrichment_error: 'Playwright failed to fetch page HTML',
       contentPreview: '',
       rawHtml: null,
+      extractionMethod: 'Readability',
     }
   }
-  const $ = cheerio.load(html)
-  const blockers = detectContentBlockers($)
-  const selectorResult = extractWithSelectors($, source.articleSelector)
-  const readabilityResult = extractWithReadability(article.link, html)
-  const weights = getQualityWeights(source)
-  const candidates = [
-    {
-      content: selectorResult.content,
-      method: 'CSS Selectors',
-      quality: calculateContentQuality(selectorResult.content, $, weights),
-      metadata: { selectors: selectorResult.selectors },
-    },
-    {
-      content: readabilityResult?.content || '',
-      method: 'Readability.js',
-      quality: calculateContentQuality(readabilityResult?.content || '', $, weights),
-      metadata: { title: readabilityResult?.title, byline: readabilityResult?.byline },
-    },
-  ].filter((c) => c.content.length >= settings.MIN_ARTICLE_CHARS)
 
-  candidates.sort((a, b) => b.quality - a.quality)
-  let bestResult = candidates[0]
+  try {
+    const virtualConsole = new VirtualConsole()
+    virtualConsole.on('cssParseError', () => {})
+    const doc = new JSDOM(html, { url: article.link, virtualConsole })
+    const reader = new Readability(doc.window.document, {
+      charThreshold: settings.MIN_ARTICLE_CHARS,
+    })
+    const readabilityArticle = reader.parse()
 
-  // FALLBACK: If primary methods fail, try to find a pre-paywall summary/lede
-  if (!bestResult) {
-    logger.warn(
-      { headline: article.headline },
-      'Primary content extraction failed. Attempting to find pre-paywall lede text.'
-    )
-    const ledeSelectors = [
-      '.summary',
-      '.vrs-article-header__summary',
-      '.article__summary',
-      '.lede',
-      '.dek',
-      'p[itemprop="description"]',
-    ]
-    const ledeResult = extractWithSelectors($, ledeSelectors)
-    if (ledeResult.content.length >= settings.MIN_ARTICLE_CHARS) {
-      bestResult = {
-        content: ledeResult.content,
-        method: 'Lede Snippet',
-        quality: 0.5, // Assign a medium base quality
-        metadata: { selectors: ledeResult.selectors },
-      }
-      logger.info(
-        { headline: article.headline },
-        'Successfully extracted pre-paywall snippet as fallback content.'
+    if (!readabilityArticle || !readabilityArticle.textContent) {
+      throw new Error('Readability failed to extract a main article body.')
+    }
+
+    // --- START OF DEFINITIVE FIX ---
+    // The function was named `cleanReadabilityText` in a previous version. It is now `cleanText`.
+    const content = cleanText(readabilityArticle.textContent)
+    // --- END OF DEFINITIVE FIX ---
+
+    if (content.length < settings.MIN_ARTICLE_CHARS) {
+      throw new Error(
+        `Extracted content is too short (${content.length} chars). Likely a paywall or error page.`
       )
     }
-  }
 
-  if (bestResult) {
-    article.articleContent = {
-      contents: [bestResult.content],
-      method: bestResult.method,
-      quality:
-        bestResult.quality > 0.7 ? 'high' : bestResult.quality > 0.4 ? 'medium' : 'low',
-      metadata: bestResult.metadata,
-    }
     const duration = Date.now() - startTime
     logger.trace(
       {
         article: {
           headline: article.headline,
-          chars: bestResult.content.length,
-          method: bestResult.method,
-          quality: bestResult.quality.toFixed(2),
+          chars: content.length,
           duration: `${duration}ms`,
         },
       },
-      '✅ Content enrichment successful'
+      '✅ Universal content extraction successful'
     )
-  } else {
-    let errorReason = 'All extraction methods failed'
-    const previewContent = selectorResult.content || readabilityResult?.content || ''
-    if (blockers.paywall) {
-      errorReason = `Paywall detected. Extracted only ${previewContent.length} chars.`
-    } else if (blockers.loginRequired) {
-      errorReason = `Login required. Content inaccessible.`
-    } else if (
-      previewContent.length > 0 &&
-      previewContent.length < settings.MIN_ARTICLE_CHARS
-    ) {
-      errorReason = `Content too short (${previewContent.length} chars, minimum ${settings.MIN_ARTICLE_CHARS}).`
-    }
-    article.enrichment_error = errorReason
-    article.contentPreview = previewContent ? previewContent.substring(0, 200) : ''
-    const filename = `${source.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}_fail.html`
-    await saveDebugHtml(filename, html)
-    logger.warn(
-      {
-        article: { headline: article.headline, link: article.link },
-        reason: errorReason,
-        blockers,
-      },
-      '❌ Content enrichment failed'
-    )
-  }
 
-  return {
-    ...article,
-    rawHtml: html,
-    extractionMethod: bestResult?.method || 'N/A',
-    extractionSelectors:
-      bestResult?.metadata?.selectors || selectorResult.selectors || [],
+    return {
+      ...article,
+      articleContent: { contents: [content], method: 'Readability.js' },
+      rawHtml: html,
+      extractionMethod: 'Readability',
+    }
+  } catch (error) {
+    logger.warn(
+      { article: { headline: article.headline, link: article.link }, err: error.message },
+      '❌ Universal content extraction failed'
+    )
+    return {
+      ...article,
+      enrichment_error: `Readability Failed: ${error.message}`,
+      contentPreview: extractFallbackSnippet(html).substring(0, 300),
+      rawHtml: html,
+      extractionMethod: 'Readability',
+    }
   }
 }

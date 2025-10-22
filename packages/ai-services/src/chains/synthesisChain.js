@@ -1,26 +1,19 @@
-// packages/ai-services/src/chains/synthesisChain.js (version 2.3 - Final)
+// packages/ai-services/src/chains/synthesisChain.js
 import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { instructionSynthesize } from '@headlines/prompts'
 import { getProModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { synthesisSchema } from '@headlines/models/schemas'
+import { buildPrompt } from '../lib/promptBuilder.js'
 
-const systemPrompt = [
-  instructionSynthesize.whoYouAre,
-  instructionSynthesize.whatYouDo,
-  ...instructionSynthesize.guidelines,
-  instructionSynthesize.outputFormatDescription,
-].join('\n\n')
+const systemPrompt = buildPrompt(instructionSynthesize)
 
 const prompt = ChatPromptTemplate.fromMessages([
   ['system', systemPrompt],
   ['human', '{context_json_string}'],
 ])
 
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
 const chain = RunnableSequence.from([prompt, getProModel()])
 
 export const synthesisChain = {

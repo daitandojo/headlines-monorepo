@@ -1,4 +1,4 @@
-// packages/models/src/WatchlistEntity.js (version 2.1.0)
+// packages/models/src/WatchlistEntity.js
 import mongoose from 'mongoose'
 import { ENTITY_TYPES, ENTITY_STATUSES } from './prompt-constants.js'
 
@@ -22,6 +22,15 @@ const WatchlistEntitySchema = new Schema(
     estimatedNetWorthUSD_MM: { type: Number, required: false },
     primaryCompany: { type: String, trim: true, required: false },
     notes: { type: String, trim: true, required: false },
+    // --- START OF MODIFICATION ---
+    likelihoodToTransact: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 0,
+      index: true,
+    },
+    // --- END OF MODIFICATION ---
   },
   {
     timestamps: true,

@@ -9,6 +9,7 @@ import { LoadingOverlay, SkeletonCard } from '@/components/shared'
 import { EventListWrapper } from '../events/EventListWrapper'
 import { ArticleListWrapper } from '../articles/ArticleListWrapper'
 import { OpportunityListWrapper } from '../opportunities/OpportunityListWrapper'
+import { WatchlistFeedWrapper } from '../watchlist/WatchlistFeedWrapper' // IMPORTED
 import { InfiniteScrollLoader } from '../../shared/screen/InfiniteScrollLoader'
 import { useAuth } from '@/lib/auth/client'
 import { toast } from 'sonner'
@@ -22,7 +23,9 @@ async function fetchData({ queryKey, pageParam = 1 }) {
   if (params.sort) urlParams.set('sort', params.sort)
   if (params.q) urlParams.set('q', params.q)
   if (params.withEmail) urlParams.set('withEmail', 'true')
-  if (params.country) urlParams.set('country', params.country) // ADDED
+  if (params.country) urlParams.set('country', params.country)
+  if (params.category) urlParams.set('category', params.category)
+  if (params.favorites) urlParams.set('favorites', 'true')
 
   const res = await fetch(`/api/${queryKeyPrefix}?${urlParams.toString()}`)
   if (!res.ok) throw new Error('Network response was not ok')
@@ -42,11 +45,14 @@ async function updateUserInteraction(interactionData) {
   return res.json()
 }
 
+// --- START OF MODIFICATION ---
 const componentMap = {
   'event-list': EventListWrapper,
   'article-list': ArticleListWrapper,
   'opportunity-list': OpportunityListWrapper,
+  'watchlist-feed': WatchlistFeedWrapper, // ADDED MAPPING
 }
+// --- END OF MODIFICATION ---
 
 export function DataView({
   viewTitle,
@@ -73,11 +79,13 @@ export function DataView({
   const q = searchParams.get('q') || ''
   const sort = searchParams.get('sort') || sortOptions[0].value
   const withEmail = searchParams.get('withEmail') === 'true'
-  const country = searchParams.get('country') || '' // ADDED
+  const country = searchParams.get('country') || ''
+  const category = searchParams.get('category') || ''
+  const favorites = searchParams.get('favorites') === 'true'
 
   const memoizedSearchParams = useMemo(
-    () => ({ q, sort, withEmail, country }), // MODIFIED
-    [q, sort, withEmail, country] // MODIFIED
+    () => ({ q, sort, withEmail, country, category, favorites }),
+    [q, sort, withEmail, country, category, favorites]
   )
   const listQueryKey = useMemo(
     () => [queryKeyPrefix, memoizedSearchParams],
@@ -91,12 +99,7 @@ export function DataView({
       lastPage?.data?.length > 0 ? allPages.length + 1 : undefined,
     initialPageParam: 1,
     initialData: {
-      pages: [
-        {
-          data: initialData || [],
-          total: initialTotal,
-        },
-      ],
+      pages: [{ data: initialData || [], total: initialTotal }],
       pageParams: [1],
     },
     enabled: !!user,
@@ -114,57 +117,94 @@ export function DataView({
 
   const { mutate: performInteraction } = useMutation({
     mutationFn: updateUserInteraction,
-    onMutate: async ({ itemId, action }) => {
+    onMutate: async ({ itemId, itemType, action }) => {
       await queryClient.cancelQueries({ queryKey: listQueryKey })
-      const previousData = queryClient.getQueryData(listQueryKey)
+      await queryClient.cancelQueries({ queryKey: ['user', 'profile'] })
+
+      const previousListData = queryClient.getQueryData(listQueryKey)
+      const previousUserData = queryClient.getQueryData(['user', 'profile'])
+
+      queryClient.setQueryData(['user', 'profile'], (oldUser) => {
+        if (!oldUser) return oldUser
+        const favoritedItems = oldUser.favoritedItems?.[`${itemType}s`] || []
+        let newFavoritedItems
+        if (action === 'favorite') {
+          newFavoritedItems = [...new Set([...favoritedItems, itemId])]
+        } else {
+          newFavoritedItems = favoritedItems.filter((id) => id !== itemId)
+        }
+        return {
+          ...oldUser,
+          favoritedItems: {
+            ...oldUser.favoritedItems,
+            [`${itemType}s`]: newFavoritedItems,
+          },
+        }
+      })
 
       if (action === 'discard') {
         queryClient.setQueryData(listQueryKey, (old) => {
           if (!old) return old
-          const newPages = old.pages.map((page) => ({
-            ...page,
-            data: page.data.filter((item) => item._id !== itemId),
-          }))
-          return { ...old, pages: newPages }
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              data: page.data.filter((item) => item._id !== itemId),
+            })),
+          }
         })
       }
-      return { previousData }
+
+      return { previousListData, previousUserData }
     },
     onError: (err, variables, context) => {
       toast.error('Action failed. Restoring data.')
-      if (context?.previousData) {
-        queryClient.setQueryData(listQueryKey, context.previousData)
-      }
+      if (context?.previousListData)
+        queryClient.setQueryData(listQueryKey, context.previousListData)
+      if (context?.previousUserData)
+        queryClient.setQueryData(['user', 'profile'], context.previousUserData)
     },
     onSuccess: (data, { action }) => {
       toast.success(`Item ${action}ed.`)
       queryClient.invalidateQueries({ queryKey: ['user', 'profile'] })
-      router.refresh()
+      queryClient.invalidateQueries({ queryKey: listQueryKey })
     },
   })
 
-  const handleInteraction = (itemId, action) => {
-    performInteraction({ itemId, itemType: queryKeyPrefix.slice(0, -1), action })
+  const handleInteraction = (item, action) => {
+    // DEFINITIVE FIX:
+    // The watchlist feed provides `_type` on each item. For dedicated pages
+    // (articles, events, opportunities), we derive the type from the `queryKeyPrefix` prop.
+    // This ensures `itemType` is never undefined.
+    const itemType = item._type || queryKeyPrefix.replace(/s$/, '')
+    performInteraction({ itemId: item._id, itemType, action })
   }
 
   const items = useMemo(() => data?.pages.flatMap((page) => page.data) ?? [], [data])
-  const userFavoritedIds = useMemo(
-    () => new Set(user?.favoritedItems?.[queryKeyPrefix] || []),
-    [user, queryKeyPrefix]
-  )
+  // This now needs to merge all favorited item types
+  const userFavoritedIds = useMemo(() => {
+    if (!user?.favoritedItems) return new Set()
+    const allIds = [
+      ...(user.favoritedItems.articles || []),
+      ...(user.favoritedItems.events || []),
+      ...(user.favoritedItems.opportunities || []),
+    ]
+    return new Set(allIds)
+  }, [user])
 
   return (
     <>
-      <ViewHeader title={viewTitle} sortOptions={sortOptions} searchTerm={q} />
+      <ViewHeader title={viewTitle} sortOptions={sortOptions} />
       <Suspense fallback={<SkeletonCard />}>
         <div className="relative max-w-5xl mx-auto space-y-6">
           <LoadingOverlay isLoading={isFetching && items.length === 0} />
           {items.length > 0 ? (
             <ListComponent
               items={items}
-              onDelete={(itemId) => handleInteraction(itemId, 'discard')}
-              onFavoriteToggle={(itemId, isFavorited) =>
-                handleInteraction(itemId, isFavorited ? 'favorite' : 'unfavorite')
+              // MODIFIED: Pass the full item to the interaction handler
+              onDelete={(item) => handleInteraction(item, 'discard')}
+              onFavoriteToggle={(item, isFavorited) =>
+                handleInteraction(item, isFavorited ? 'favorite' : 'unfavorite')
               }
               userFavoritedIds={userFavoritedIds}
             />

@@ -1,3 +1,4 @@
+// apps/client/src/components/admin/main-nav.jsx
 'use client'
 
 import Link from 'next/link'
@@ -14,6 +15,8 @@ import {
   FileText,
   Code,
   ArrowLeftCircle,
+  BarChart,
+  Activity, // ADDED ICON
 } from 'lucide-react'
 import { cn } from '@headlines/utils-shared'
 import { Separator } from '@/components/shared'
@@ -29,6 +32,16 @@ const navSections = [
     ],
   },
   {
+    title: 'Analytics',
+    items: [
+      { name: 'Source Performance', href: '/admin/analytics/sources', icon: BarChart },
+      // --- START OF MODIFICATION ---
+      { name: 'Cost & Usage', href: '/admin/analytics/runs', icon: Activity },
+      // --- END OF MODIFICATION ---
+    ],
+  },
+  {
+    title: 'Content Management',
     items: [
       { name: 'Events', href: '/admin/events', icon: Zap },
       { name: 'Articles', href: '/admin/articles', icon: FileText },
@@ -36,10 +49,7 @@ const navSections = [
     ],
   },
   {
-    items: [
-      // The "Countries" item has been removed from this section.
-      { name: 'Settings', href: '/admin/settings', icon: Settings },
-    ],
+    items: [{ name: 'Settings', href: '/admin/settings', icon: Settings }],
   },
 ]
 
@@ -65,6 +75,11 @@ export default function MainNav() {
       <div className="flex-1 overflow-y-auto p-4">
         {navSections.map((section, index) => (
           <React.Fragment key={index}>
+            {section.title && (
+              <h2 className="px-3 py-2 text-xs font-semibold text-muted-foreground tracking-wider uppercase">
+                {section.title}
+              </h2>
+            )}
             <ul className="space-y-1">
               {section.items.map((item) => (
                 <li key={item.name}>

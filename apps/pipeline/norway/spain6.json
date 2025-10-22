@@ -1,0 +1,502 @@
+[
+  {
+    "rank": 251,
+    "name": "Antón María Pradera Jauregui",
+    "wealth (EUR Millions)": 275,
+    "company": "Cie Automotive",
+    "sector": "Industria, Automoción",
+    "location": "País Vasco",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 252,
+    "name": "Marta Santacana Gri",
+    "wealth (EUR Millions)": 275,
+    "company": "Anagru Grup SL, Eurofred SA",
+    "sector": "Industria, Energía",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 253,
+    "name": "Familia Vivancos Muñoz",
+    "wealth (EUR Millions)": 275,
+    "company": "Grupo Tefim, Hispavima",
+    "sector": "Inmuebles, Plástico",
+    "location": "Murcia",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 254,
+    "name": "Familia Ramió Costa",
+    "wealth (EUR Millions)": 275,
+    "company": "Friselva",
+    "sector": "Alimentación, Cárnica",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 255,
+    "name": "Gerard Romy Belilos",
+    "wealth (EUR Millions)": 275,
+    "company": "ex Imagina, Mediapro",
+    "sector": "Comunicación",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 256,
+    "name": "Enrique Cerezo Torres",
+    "wealth (EUR Millions)": 270,
+    "company": "Vídeo Mercury Films, Atlético de Madrid",
+    "sector": "Ocio, Cine, Deportes",
+    "location": "Madrid",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 257,
+    "name": "Josep Espelt Civit",
+    "wealth (EUR Millions)": 270,
+    "company": "H10 Hotels",
+    "sector": "Turismo",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 258,
+    "name": "Tomás Pascual Gómez-Cuétara y familia",
+    "wealth (EUR Millions)": 270,
+    "company": "Calidad Pascual, Grupo Inmobiliario La Quinta",
+    "sector": "Alimentación, Inmuebles",
+    "location": "Castilla y León",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 259,
+    "name": "José Luis Díaz-Varela Somoza y familia",
+    "wealth (EUR Millions)": 270,
+    "company": "Indukern",
+    "sector": "Industria, Cosmética",
+    "location": "Galicia",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 260,
+    "name": "Familia Jiménez Reverte",
+    "wealth (EUR Millions)": 270,
+    "company": "Grupo Juramenta, Jisap",
+    "sector": "Alimentación, Cárnica, Agricultura",
+    "location": "Murcia",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 261,
+    "name": "Familia Baroja",
+    "wealth (EUR Millions)": 270,
+    "company": "Conservas Cidacos",
+    "sector": "Alimentación",
+    "location": "La Rioja",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 262,
+    "name": "Familia Hinojosa García-Puente",
+    "wealth (EUR Millions)": 270,
+    "company": "Darpat, Hinober 88 SL",
+    "sector": "Inmuebles",
+    "location": "Madrid",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 263,
+    "name": "Jaume Roures Llop",
+    "wealth (EUR Millions)": 265,
+    "company": "Mediacable Servicios de Producción SL, Orpheus Media",
+    "sector": "Comunicación",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 264,
+    "name": "Joseba Grajales Jiménez",
+    "wealth (EUR Millions)": 265,
+    "company": "Sanitas Internacional, Centauro Capital",
+    "sector": "Industria, Salud",
+    "location": "País Vasco",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 265,
+    "name": "Familia Rosales",
+    "wealth (EUR Millions)": 265,
+    "company": "Alvic",
+    "sector": "Industria, Muebles",
+    "location": "Andalucía",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 266,
+    "name": "Familia Romeu",
+    "wealth (EUR Millions)": 265,
+    "company": "Grupo Romeu",
+    "sector": "Transporte, Logística, Puertos",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 267,
+    "name": "Rosario Lafita González-Gayarra y Víctor Ruiz-Rubio",
+    "wealth (EUR Millions)": 265,
+    "company": "Inverlasa, Azkoyen",
+    "sector": "Industria, Automoción",
+    "location": "Madrid",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 268,
+    "name": "Constantino Fernández Pico",
+    "wealth (EUR Millions)": 265,
+    "company": "Altia Consulting",
+    "sector": "Tecnología",
+    "location": "Galicia",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 269,
+    "name": "Emilio Restoy Cabrera y familia",
+    "wealth (EUR Millions)": 260,
+    "company": "Zamora Company, Ramón Bilbao",
+    "sector": "Alimentación, Bebidas",
+    "location": "Murcia",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 270,
+    "name": "Fernando Gumuzio Íñiguez de Onzoño",
+    "wealth (EUR Millions)": 260,
+    "company": "Azora",
+    "sector": "Inmuebles",
+    "location": "País Vasco",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 271,
+    "name": "Mikel Soraluze Celaya",
+    "wealth (EUR Millions)": 260,
+    "company": "Olot Meats Group, Cárnicas Celrà",
+    "sector": "Alimentación, Cárnica",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 272,
+    "name": "Familia Martinón García",
+    "wealth (EUR Millions)": 260,
+    "company": "Grupo Martinón Grumarsa",
+    "sector": "Turismo, Construcción, Alimentación",
+    "location": "Canarias",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 273,
+    "name": "Familia Fuentes García",
+    "wealth (EUR Millions)": 260,
+    "company": "Grupo Ricardo Fuentes e Hijos SL",
+    "sector": "Alimentación, Pesca, Inmuebles",
+    "location": "Murcia",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 274,
+    "name": "Familia Lantero",
+    "wealth (EUR Millions)": 260,
+    "company": "Grupo Lantero",
+    "sector": "Industria, Embalaje",
+    "location": "Madrid",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 275,
+    "name": "Manuel y Carlos Muñoz García",
+    "wealth (EUR Millions)": 255,
+    "company": "Nesgar Promociones",
+    "sector": "Inmuebles, Construcción",
+    "location": "Madrid",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 276,
+    "name": "Susana y Yolanda García-Cereceda López",
+    "wealth (EUR Millions)": 255,
+    "company": "LaFinca Global Assets",
+    "sector": "Inmuebles",
+    "location": "Madrid",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 277,
+    "name": "Hermanos Martí Escursell",
+    "wealth (EUR Millions)": 255,
+    "company": "Marfina, Moventia",
+    "sector": "Transporte",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 278,
+    "name": "Javier y Ángel Escribano Ruiz",
+    "wealth (EUR Millions)": 250,
+    "company": "Escribano Mechanical & Engineering, Indra",
+    "sector": "Defensa",
+    "location": "Madrid",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 279,
+    "name": "Familia Arteche",
+    "wealth (EUR Millions)": 245,
+    "company": "Grupo Arteche",
+    "sector": "Industria",
+    "location": "País Vasco",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 280,
+    "name": "Jaime Castellanos Borrego y familia",
+    "wealth (EUR Millions)": 245,
+    "company": "Lazars, Olive Partners SA",
+    "sector": "Finanzas",
+    "location": "País Vasco",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 281,
+    "name": "Eduardo Santos-Ruiz Díaz",
+    "wealth (EUR Millions)": 245,
+    "company": "Barón de Ley",
+    "sector": "Alimentación, Vino",
+    "location": "Castilla y León",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 282,
+    "name": "Fernando Núñez Rebolo",
+    "wealth (EUR Millions)": 240,
+    "company": "Restaurant Brands Iberia",
+    "sector": "Restauración",
+    "location": "Madrid",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 283,
+    "name": "Amid Achi Fadul",
+    "wealth (EUR Millions)": 240,
+    "company": "Almacenes Nº1",
+    "sector": "Inmuebles, Inmuebles",
+    "location": "Canarias",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 284,
+    "name": "Manuel García Pardo",
+    "wealth (EUR Millions)": 240,
+    "company": "Greenalia",
+    "sector": "Energía, Renovables",
+    "location": "Galicia",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 285,
+    "name": "Josep María 'Tatxo' Benet",
+    "wealth (EUR Millions)": 240,
+    "company": "Imagina, Mediapro",
+    "sector": "Comunicación",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 286,
+    "name": "Luis de Valdivia Castro",
+    "wealth (EUR Millions)": 240,
+    "company": "Ecoener",
+    "sector": "Energía, Renovables",
+    "location": "Galicia",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 287,
+    "name": "Familia Oriol",
+    "wealth (EUR Millions)": 235,
+    "company": "Talgo",
+    "sector": "Industria, Transporte",
+    "location": "Madrid",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 288,
+    "name": "Familia Cánovas García",
+    "wealth (EUR Millions)": 235,
+    "company": "Moyca Grapes",
+    "sector": "Alimentación",
+    "location": "Murcia",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 289,
+    "name": "Familia Pont Amenós",
+    "wealth (EUR Millions)": 235,
+    "company": "Borges",
+    "sector": "Alimentación",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 290,
+    "name": "José Luis Carrillo Benítez",
+    "wealth (EUR Millions)": 235,
+    "company": "Optursa",
+    "sector": "Turismo",
+    "location": "Andalucía",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 291,
+    "name": "Javier Virto Moreno",
+    "wealth (EUR Millions)": 235,
+    "company": "Grupo Virto",
+    "sector": "Alimentación",
+    "location": "Navarra",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 292,
+    "name": "Ginés y María Jesús García Acebo",
+    "wealth (EUR Millions)": 230,
+    "company": "Gadisa",
+    "sector": "Distribución",
+    "location": "Galicia",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 293,
+    "name": "Familia Grimalt",
+    "wealth (EUR Millions)": 230,
+    "company": "Clave Denia SA, Ale-Hop Grimalt SL",
+    "sector": "Distribución",
+    "location": "C. Valenciana",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 294,
+    "name": "Begoña, Pablo y Ana Serratosa Luján",
+    "wealth (EUR Millions)": 230,
+    "company": "Zríser",
+    "sector": "Construcción",
+    "location": "C. Valenciana",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 295,
+    "name": "Concha Osácar",
+    "wealth (EUR Millions)": 230,
+    "company": "Azora",
+    "sector": "Inmuebles",
+    "location": "Navarra",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 296,
+    "name": "Albert Costafreda Jo y hermanos",
+    "wealth (EUR Millions)": 230,
+    "company": "ex Panrico, Universal Panadería y Bollería (UPB)",
+    "sector": "Alimentación, Inmuebles",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 297,
+    "name": "César Álvarez Álvarez",
+    "wealth (EUR Millions)": 230,
+    "company": "El Corte Inglés, ACS",
+    "sector": "Distribución, Construcción",
+    "location": "Asturias",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 298,
+    "name": "Familia Losantos Santorromán",
+    "wealth (EUR Millions)": 225,
+    "company": "Neinver",
+    "sector": "Inmuebles",
+    "location": "La Rioja",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 299,
+    "name": "Familia Pereda Espeso",
+    "wealth (EUR Millions)": 225,
+    "company": "Grupo Lar",
+    "sector": "Inmuebles",
+    "location": "Madrid",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 300,
+    "name": "Familia Ayala",
+    "wealth (EUR Millions)": 225,
+    "company": "Grupo Ayala 2000",
+    "sector": "Distribución",
+    "location": "Andalucía",
+    "profile_url": null,
+    "first_year_on_list": ""
+  }
+]

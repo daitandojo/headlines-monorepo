@@ -1,4 +1,4 @@
-// packages/ai-services/src/chains/articleChain.js (version 2.0.0)
+// packages/ai-services/src/chains/articleChain.js
 import {
   ChatPromptTemplate,
   HumanMessagePromptTemplate,
@@ -15,19 +15,10 @@ import {
 import { getHighPowerModel } from '../lib/langchain.js'
 import { safeInvoke } from '../lib/safeInvoke.js'
 import { logger } from '@headlines/utils-shared'
-// REFACTOR: Import Zod schema from the new canonical location.
 import { articleAssessmentSchema } from '@headlines/models/schemas'
+import { buildPrompt } from '../lib/promptBuilder.js'
 
-const instructions = getInstructionArticle(settings)
-const systemPrompt = [
-  instructions.whoYouAre,
-  instructions.whatYouDo,
-  instructions.primaryMandate,
-  instructions.analyticalFramework,
-  instructions.scoring,
-  instructions.outputFormatDescription,
-  instructions.reiteration,
-].join('\n\n')
+const systemPrompt = buildPrompt(getInstructionArticle)
 
 const messages = [
   SystemMessagePromptTemplate.fromTemplate(systemPrompt),

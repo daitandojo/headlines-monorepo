@@ -1,8 +1,7 @@
-// apps/client/src/app/(public)/_components/SignUpFlow.jsx
+// apps/client/src/components/landing/SignUpFlow.jsx
 'use client'
 
 import { useState } from 'react'
-import { motion } from 'framer-motion'
 import {
   Card,
   CardContent,
@@ -16,10 +15,8 @@ import {
   TabsTrigger,
 } from '@/components/shared'
 import { useAuth } from '@/lib/auth/client'
-import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 
-// Dummy data for now
 const allCountries = [
   'Denmark',
   'Sweden',
@@ -34,6 +31,7 @@ const allCountries = [
   'Switzerland',
   'Netherlands',
 ].sort()
+// MODIFIED: Expanded the list of sectors for a more complete user choice.
 const allSectors = [
   'Technology',
   'Healthcare',
@@ -41,18 +39,22 @@ const allSectors = [
   'Real Estate',
   'Consumer Goods',
   'Financial Services',
-]
+  'Energy',
+  'Logistics',
+  'M&A',
+  'IPO',
+  'Succession',
+].sort()
 
 export function SignUpFlow() {
   const { signup } = useAuth()
-  const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     countries: ['Denmark', 'Sweden', 'Norway'],
-    sectors: ['Technology'],
+    sectors: ['Technology', 'Healthcare', 'M&A'], // Updated default
     plan: 'trial',
   })
 
@@ -64,18 +66,18 @@ export function SignUpFlow() {
     e.preventDefault()
     setIsLoading(true)
 
+    // MODIFIED: Ensure sectors are included in the signup payload.
     const result = await signup({
       name: formData.name,
       email: formData.email,
       password: formData.password,
       countries: formData.countries,
+      sectors: formData.sectors, // This is the key addition.
       plan: formData.plan,
     })
 
-    // On success, the AuthProvider will handle the redirect.
-    // We only need to handle the loading state here.
     if (!result.success) {
-      setIsLoading(false) // Stop loading on failure
+      setIsLoading(false)
     }
   }
 
@@ -243,3 +245,5 @@ export function SignUpFlow() {
     </section>
   )
 }
+
+  

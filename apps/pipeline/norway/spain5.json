@@ -1,0 +1,502 @@
+[
+  {
+    "rank": 201,
+    "name": "Juan Fabre Marqués",
+    "wealth (EUR Millions)": 340,
+    "company": "Bancalé",
+    "sector": "Inmuebles",
+    "location": "Aragón",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 202,
+    "name": "Familia Soler Rodríguez",
+    "wealth (EUR Millions)": 335,
+    "company": "Agrindus Investment, Lipsa",
+    "sector": "Alimentación, Cosmética",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 203,
+    "name": "Sergi Ferrer-Salat Serra Di Migni y familia",
+    "wealth (EUR Millions)": 335,
+    "company": "Laboratorios Ferrer",
+    "sector": "Salud, Farmacéutica, Agricultura",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 204,
+    "name": "Juan Miguel Sanjuán y Jover",
+    "wealth (EUR Millions)": 330,
+    "company": "Grupo Satocán, Sacyr",
+    "sector": "Construcción, Renovables, Contratas",
+    "location": "Canarias",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 205,
+    "name": "Familia Aparici",
+    "wealth (EUR Millions)": 330,
+    "company": "STN Cerámica, Rimar",
+    "sector": "Construcción, Cerámica",
+    "location": "C. Valenciana",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 206,
+    "name": "Familia Govantes",
+    "wealth (EUR Millions)": 330,
+    "company": "Laboratorios Normon",
+    "sector": "Salud, Laboratorios",
+    "location": "Madrid",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 207,
+    "name": "Maurice Botton Carasso",
+    "wealth (EUR Millions)": 325,
+    "company": "Germina, ex Danone",
+    "sector": "Alimentación",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 208,
+    "name": "Familia Sánchez Bernal",
+    "wealth (EUR Millions)": 325,
+    "company": "Fini, Sánchez Cano SA",
+    "sector": "Alimentación",
+    "location": "Murcia",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 209,
+    "name": "Juan Lao Hernández",
+    "wealth (EUR Millions)": 325,
+    "company": "Conej, Braker Corporation",
+    "sector": "Juego, Inmuebles",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 210,
+    "name": "Familia Uriach",
+    "wealth (EUR Millions)": 325,
+    "company": "Laboratorios J. Uriach",
+    "sector": "Salud",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 211,
+    "name": "Rafael Juan Fernández y familia",
+    "wealth (EUR Millions)": 325,
+    "company": "Vicky Foods",
+    "sector": "Alimentación",
+    "location": "C. Valenciana",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 212,
+    "name": "Gregorio Álvarez Cabreros",
+    "wealth (EUR Millions)": 325,
+    "company": "Ibereólica Renovables, Grupo Iberecológica SL",
+    "sector": "Energía, Renovables, Industria",
+    "location": "Castilla y León",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 213,
+    "name": "Familia Garrigós",
+    "wealth (EUR Millions)": 325,
+    "company": "Fluidra",
+    "sector": "Industria, Agua",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 214,
+    "name": "Familia Plomer Pujol",
+    "wealth (EUR Millions)": 325,
+    "company": "Hoteles Viva",
+    "sector": "Turismo",
+    "location": "Baleares",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 215,
+    "name": "Familia Moya Yoldi",
+    "wealth (EUR Millions)": 325,
+    "company": "Persán",
+    "sector": "Industria, Química",
+    "location": "Andalucía",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 216,
+    "name": "Juan Antonio Carpintero López y familia",
+    "wealth (EUR Millions)": 320,
+    "company": "Grupo Ortiz",
+    "sector": "Construcción, Renovables, Energía",
+    "location": "Madrid",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 217,
+    "name": "Familia Martín",
+    "wealth (EUR Millions)": 320,
+    "company": "Quesos Entrepinares",
+    "sector": "Alimentación, Lácteas",
+    "location": "Castilla y León",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 218,
+    "name": "Familia Sanahuja",
+    "wealth (EUR Millions)": 320,
+    "company": "Indicesa",
+    "sector": "Inmuebles",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 219,
+    "name": "Enrique Bernardo García Chillón",
+    "wealth (EUR Millions)": 315,
+    "company": "Profand Fishing Holding SL",
+    "sector": "Alimentación, Pesca",
+    "location": "Galicia",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 220,
+    "name": "Familia Carrión Cáceres",
+    "wealth (EUR Millions)": 315,
+    "company": "Transportes J. Carrión, Veinsur",
+    "sector": "Transporte, Automoción, Inmuebles",
+    "location": "Andalucía",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 221,
+    "name": "Familia Llull",
+    "wealth (EUR Millions)": 315,
+    "company": "Hipotels",
+    "sector": "Turismo",
+    "location": "Baleares",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 222,
+    "name": "Miguel Carreras Calvete y familia",
+    "wealth (EUR Millions)": 315,
+    "company": "Transportes Carreras, Transportes",
+    "sector": "Transporte, Inmuebles",
+    "location": "Aragón",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 223,
+    "name": "Ángel Jove Capellán",
+    "wealth (EUR Millions)": 310,
+    "company": "Anjoca",
+    "sector": "Inmuebles, Turismo",
+    "location": "Galicia",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 224,
+    "name": "Familia Ballester Ríos",
+    "wealth (EUR Millions)": 305,
+    "company": "Igsa",
+    "sector": "Inmuebles, Turismo",
+    "location": "C. Valenciana",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 225,
+    "name": "Hermanos Solís Yáñez",
+    "wealth (EUR Millions)": 305,
+    "company": "Bodegas Félix Solís",
+    "sector": "Alimentación, Vino",
+    "location": "Castilla-La Mancha",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 226,
+    "name": "Familia Batallé Deulonder",
+    "wealth (EUR Millions)": 305,
+    "company": "Cárnica Batallé, Carniques de Juià SA",
+    "sector": "Alimentación, Cárnica, Piensos",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 227,
+    "name": "Ángel Soria Vaquerizo",
+    "wealth (EUR Millions)": 305,
+    "company": "Torre Rioja",
+    "sector": "Inmuebles",
+    "location": "Madrid",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 228,
+    "name": "Familia Hinojosa Ventura",
+    "wealth (EUR Millions)": 305,
+    "company": "Rafael Hinojosa SA",
+    "sector": "Industria, Papel",
+    "location": "C. Valenciana",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 229,
+    "name": "Jesús Huerta de Soto Ballester",
+    "wealth (EUR Millions)": 305,
+    "company": "España, SA Seguros",
+    "sector": "Finanzas, Seguros",
+    "location": "Madrid",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 230,
+    "name": "Familia Ucín",
+    "wealth (EUR Millions)": 305,
+    "company": "Algeposa, Bodegas Olarra",
+    "sector": "Industria, Logística, Puertos",
+    "location": "País Vasco",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 231,
+    "name": "Daniel Bravo Andreu",
+    "wealth (EUR Millions)": 300,
+    "company": "Danimar 1990 SL, Acerinox",
+    "sector": "Metalurgia, Inmuebles",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 232,
+    "name": "Familia Miarnau Montserrat",
+    "wealth (EUR Millions)": 300,
+    "company": "Iosa Inmuebles, Comsa",
+    "sector": "Inmuebles, Construcción",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 233,
+    "name": "Miguel Ángel Gil Marín y familia",
+    "wealth (EUR Millions)": 295,
+    "company": "Atlético de Madrid",
+    "sector": "Deportes, Inmuebles",
+    "location": "Madrid",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 234,
+    "name": "Manuel Giró",
+    "wealth (EUR Millions)": 295,
+    "company": "Destilerías MG SL, Ron Barceló",
+    "sector": "Alimentación, Bebidas",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 235,
+    "name": "Leonardo Sánchez-Heredero Álvarez",
+    "wealth (EUR Millions)": 295,
+    "company": "Promociones Keops, Parcesa",
+    "sector": "Construcción, Inmuebles, Funerarias",
+    "location": "Madrid",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 236,
+    "name": "Familia Marí Washbourne",
+    "wealth (EUR Millions)": 295,
+    "company": "Alonso Marí",
+    "sector": "Turismo",
+    "location": "Baleares",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 237,
+    "name": "Familia Miquel Ballart",
+    "wealth (EUR Millions)": 295,
+    "company": "ex Miquel Alimentació",
+    "sector": "Inmuebles",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 238,
+    "name": "Familia Matutes Barceló",
+    "wealth (EUR Millions)": 295,
+    "company": "Sirenis Hotels",
+    "sector": "Turismo",
+    "location": "Baleares",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 239,
+    "name": "Alfonso Soláns Soláns",
+    "wealth (EUR Millions)": 290,
+    "company": "Pikolín, Iberebro",
+    "sector": "Industria, Inmuebles",
+    "location": "Aragón",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 240,
+    "name": "Jesús Cantarero Morales",
+    "wealth (EUR Millions)": 290,
+    "company": "Tajoso Internacional Española SL, Alvinesa Natural Ingredients SA",
+    "sector": "Alimentación, Bebidas",
+    "location": "Castilla-La Mancha",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 241,
+    "name": "José Manuel Loureda Mantiñán",
+    "wealth (EUR Millions)": 290,
+    "company": "Sacyr, Repsol",
+    "sector": "Construcción, Contratas",
+    "location": "Galicia",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 242,
+    "name": "Adolfo Utor",
+    "wealth (EUR Millions)": 290,
+    "company": "Balearia",
+    "sector": "Transporte",
+    "location": "C. Valenciana",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 243,
+    "name": "Familia Santos Martínez",
+    "wealth (EUR Millions)": 285,
+    "company": "Inmobiliaria Sandi",
+    "sector": "Inmuebles",
+    "location": "Madrid",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 244,
+    "name": "Alejandro Chaves Martínez",
+    "wealth (EUR Millions)": 285,
+    "company": "OPDEnergy",
+    "sector": "Energía, Renovables",
+    "location": "Navarra",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 245,
+    "name": "Gustavo Carrero Díez",
+    "wealth (EUR Millions)": 285,
+    "company": "Marearoja Internacional SL, OPDEnergy",
+    "sector": "Energía, Renovables",
+    "location": "País Vasco",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 246,
+    "name": "Familia Martínez Ruiz",
+    "wealth (EUR Millions)": 285,
+    "company": "Panstar, Panamar Bakery Group",
+    "sector": "Alimentación, Pan",
+    "location": "Cantabria",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 247,
+    "name": "José María Pacheco Guardiola",
+    "wealth (EUR Millions)": 280,
+    "company": "Grupo Konecta, Sainberg Olives",
+    "sector": "Tecnología, Servicios, Agricultura",
+    "location": "Andalucía",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 248,
+    "name": "Jordi Mestre Masdeu",
+    "wealth (EUR Millions)": 280,
+    "company": "Step Foward, ex Selenta",
+    "sector": "Turismo, Hoteles",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 249,
+    "name": "Familia Iturri Franco",
+    "wealth (EUR Millions)": 280,
+    "company": "Iturri",
+    "sector": "Servicios, Seguridad",
+    "location": "Andalucía",
+    "profile_url": null,
+    "first_year_on_list": ""
+  },
+  {
+    "rank": 250,
+    "name": "Familia Torres",
+    "wealth (EUR Millions)": 280,
+    "company": "Bodegas Torres",
+    "sector": "Alimentación, Vino",
+    "location": "Cataluña",
+    "profile_url": null,
+    "first_year_on_list": ""
+  }
+]

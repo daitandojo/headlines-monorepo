@@ -8,11 +8,14 @@ import {
   DataTable,
   ConfirmationDialog,
   ExportButton,
+  Sheet, // NEW
+  SheetContent, // NEW
 } from '@/components/shared'
 import { columns } from './columns'
 import { updateOpportunityAction, deleteOpportunityAction } from './actions'
 import { handleExport } from '@/lib/api-client'
 import { useQueryClient } from '@tanstack/react-query'
+import OpportunityProfileEditor from './OpportunityProfileEditor' // NEW
 
 const QUERY_KEY = 'adminOpportunities'
 const API_ENDPOINT = 'opportunities'
@@ -20,6 +23,7 @@ const API_ENDPOINT = 'opportunities'
 export default function OpportunitiesClientPage() {
   const queryClient = useQueryClient()
   const [confirmState, setConfirmState] = useState({ isOpen: false, opportunityId: null })
+  const [editorState, setEditorState] = useState({ isOpen: false, opportunityId: null }) // NEW
 
   const invalidateData = () => queryClient.invalidateQueries({ queryKey: [API_ENDPOINT] })
 
@@ -41,6 +45,11 @@ export default function OpportunitiesClientPage() {
     setConfirmState({ isOpen: true, opportunityId })
   }, [])
 
+  // NEW: Handler to open the editor
+  const handleEditRequest = useCallback((opportunityId) => {
+    setEditorState({ isOpen: true, opportunityId })
+  }, [])
+
   const confirmDelete = useCallback(async () => {
     const { opportunityId } = confirmState
     setConfirmState({ isOpen: false, opportunityId: null })
@@ -55,8 +64,8 @@ export default function OpportunitiesClientPage() {
   }, [confirmState, invalidateData])
 
   const tableColumns = useMemo(
-    () => columns(handleUpdate, handleDeleteRequest),
-    [handleUpdate, handleDeleteRequest]
+    () => columns(handleEditRequest, handleUpdate, handleDeleteRequest),
+    [handleEditRequest, handleUpdate, handleDeleteRequest]
   )
 
   const onExport = (fileType) => {
@@ -82,6 +91,26 @@ export default function OpportunitiesClientPage() {
           />
         </div>
       </div>
+
+      {/* NEW: Sheet component for the editor */}
+      <Sheet
+        open={editorState.isOpen}
+        onOpenChange={(isOpen) => setEditorState({ ...editorState, isOpen })}
+      >
+        <SheetContent className="w-full sm:max-w-3xl p-0">
+          {editorState.isOpen && (
+            <OpportunityProfileEditor
+              opportunityId={editorState.opportunityId}
+              onSave={() => {
+                setEditorState({ isOpen: false, opportunityId: null })
+                invalidateData()
+              }}
+              onCancel={() => setEditorState({ isOpen: false, opportunityId: null })}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
+
       <ConfirmationDialog
         open={confirmState.isOpen}
         onOpenChange={(isOpen) => setConfirmState({ ...confirmState, isOpen })}

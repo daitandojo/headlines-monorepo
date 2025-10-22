@@ -2,6 +2,7 @@
 import { logger } from '@headlines/utils-shared'
 import { EMAIL_CONFIG } from '../../../config/index.js'
 import { formatEventForEmail } from './eventFormatter.js'
+import { formatOpportunityForEmail } from './opportunityFormatter.js' // IMPORTED
 import { getCountryFlag } from '@headlines/utils-shared'
 
 function createEmailWrapper(bodyContent, subject) {
@@ -39,14 +40,23 @@ function createEmailWrapper(bodyContent, subject) {
   `
 }
 
-export async function createPersonalizedEmailBody(user, eventsByCountry, subject, intro) {
+export async function createPersonalizedEmailBody(
+  user,
+  eventsByCountry,
+  opportunitiesByCountry, // ADDED
+  subject,
+  intro
+) {
   logger.info(
     { user: user.email, countries: Object.keys(eventsByCountry) },
     'Initiating email body generation.'
   )
 
-  if (!user || !eventsByCountry || Object.keys(eventsByCountry).length === 0) {
-    logger.warn('createPersonalizedEmailBody: Missing user or events data.')
+  const hasEvents = eventsByCountry && Object.keys(eventsByCountry).length > 0
+  const hasOpps = opportunitiesByCountry && Object.keys(opportunitiesByCountry).length > 0
+
+  if (!user || (!hasEvents && !hasOpps)) {
+    logger.warn('createPersonalizedEmailBody: Missing user or content data.')
     return null
   }
 
@@ -54,7 +64,6 @@ export async function createPersonalizedEmailBody(user, eventsByCountry, subject
     .map((b) => `<li style="margin-bottom: 10px;">${b}</li>`)
     .join('')
 
-  // CORRECTED: Handle the signoff as an array and join with <br>
   const signoffHtml = Array.isArray(intro.signoff)
     ? intro.signoff.join('<br>')
     : intro.signoff
@@ -66,30 +75,39 @@ export async function createPersonalizedEmailBody(user, eventsByCountry, subject
     <p class="paragraph" style="margin:0 0 25px 0; font-size: 15px;">${signoffHtml}</p>
   `
 
-  let formattedEventsHtml = ''
-  for (const [country, events] of Object.entries(eventsByCountry)) {
+  // --- START OF MODIFICATION ---
+  let formattedContentHtml = ''
+  const allCountries = [
+    ...new Set([...Object.keys(eventsByCountry), ...Object.keys(opportunitiesByCountry)]),
+  ].sort()
+
+  for (const country of allCountries) {
     const flag = getCountryFlag(country)
-    formattedEventsHtml += `<tr><td style="padding: 30px 0 10px 0;"><h2 style="margin:0; font-size: 24px; font-weight: 500; color: #EAEAEA;">${flag} ${country}</h2></td></tr>`
+    formattedContentHtml += `<tr><td style="padding: 30px 0 10px 0;"><h2 style="margin:0; font-size: 24px; font-weight: 500; color: #EAEAEA;">${flag} ${country}</h2></td></tr>`
 
-    const eventPromises = events.map((event) => formatEventForEmail(event))
-    const results = await Promise.allSettled(eventPromises)
+    if (opportunitiesByCountry[country]) {
+      formattedContentHtml += `<tr><td><h3 style="margin:10px 0; font-size: 18px; color: #4CAF50;">Actionable Opportunities</h3></td></tr>`
+      const oppPromises = opportunitiesByCountry[country].map(formatOpportunityForEmail)
+      const oppResults = await Promise.allSettled(oppPromises)
+      oppResults.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          formattedContentHtml += `<tr><td>${result.value}</td></tr>`
+        }
+      })
+    }
 
-    results.forEach((result, index) => {
-      if (result.status === 'fulfilled') {
-        formattedEventsHtml += `<tr><td>${result.value}</td></tr>`
-      } else {
-        const failedEvent = events[index]
-        logger.error(
-          {
-            err: result.reason,
-            event: { _id: failedEvent._id, headline: failedEvent.synthesized_headline },
-          },
-          'A single event card failed to render. It will be skipped in the email.'
-        )
-        formattedEventsHtml += `<tr><td><p style="color:red;">Error: Could not render event: ${failedEvent.synthesized_headline}</p></td></tr>`
-      }
-    })
+    if (eventsByCountry[country]) {
+      formattedContentHtml += `<tr><td><h3 style="margin:10px 0; font-size: 18px; color: #58a6ff;">Synthesized Events</h3></td></tr>`
+      const eventPromises = eventsByCountry[country].map(formatEventForEmail)
+      const eventResults = await Promise.allSettled(eventPromises)
+      eventResults.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          formattedContentHtml += `<tr><td>${result.value}</td></tr>`
+        }
+      })
+    }
   }
+  // --- END OF MODIFICATION ---
 
   const mainContent = `
     <div class="content-table" style="margin:0 auto;">
@@ -107,7 +125,7 @@ export async function createPersonalizedEmailBody(user, eventsByCountry, subject
                            <table role="presentation" border="0" cellspacing="0" cellpadding="0"><tr><td class="button" style="padding:14px 28px;"><a href="https://headlines-client.vercel.app" target="_blank" style="font-size: 16px;">View Full Dashboard</a></td></tr></table>
                         </td>
                       </tr>
-                      ${formattedEventsHtml}
+                      ${formattedContentHtml}
                   </table>
               </td>
           </tr>

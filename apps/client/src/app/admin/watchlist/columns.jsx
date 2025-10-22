@@ -1,3 +1,4 @@
+// apps/client/src/app/admin/watchlist/columns.jsx
 'use client'
 
 import React from 'react'
@@ -18,6 +19,28 @@ import {
 } from '@/components/shared'
 import { MoreHorizontal, Building, User, Users, Trash2, Check, X } from 'lucide-react'
 import { EditableCell } from '@/components/shared/elements/EditableCell'
+import { cn } from '@headlines/utils-shared'
+
+// NEW COMPONENT for the likelihood score
+const LikelihoodCell = ({ score }) => {
+  const getScoreColor = (s) => {
+    if (s > 60) return 'bg-red-500'
+    if (s > 35) return 'bg-yellow-500'
+    return 'bg-blue-500'
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="font-mono font-bold w-8">{score}</span>
+      <div className="w-full bg-slate-700 rounded-full h-2">
+        <div
+          className={cn('h-2 rounded-full', getScoreColor(score))}
+          style={{ width: `${score}%` }}
+        />
+      </div>
+    </div>
+  )
+}
 
 const TypeIcon = ({ type }) => {
   if (type === 'person') return <User className="h-5 w-5 text-blue-400" />
@@ -43,6 +66,15 @@ export const watchlistColumns = (handleEdit, onUpdate, onDelete) => [
       </div>
     ),
   },
+  // --- START OF MODIFICATION ---
+  {
+    accessorKey: 'likelihoodToTransact',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Transaction Likelihood" />
+    ),
+    cell: ({ row }) => <LikelihoodCell score={row.original.likelihoodToTransact || 0} />,
+  },
+  // --- END OF MODIFICATION ---
   {
     accessorKey: 'searchTerms',
     header: 'Search Terms',
@@ -104,6 +136,7 @@ export const watchlistColumns = (handleEdit, onUpdate, onDelete) => [
 ]
 
 export const suggestionColumns = (onAction, onUpdate) => [
+  // ... (unchanged)
   {
     accessorKey: 'name',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,

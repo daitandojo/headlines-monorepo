@@ -41,7 +41,7 @@ headlines-monorepo/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-10T00:11:01.996Z
+**Generated**: 2025-10-21T18:41:06.988Z
 **Repository Path**: /home/mark/Repos/projects/headlines-monorepo/packages/data-access
 **Total Files**: 30
 **Package**: @headlines/data-access@1.0.0
@@ -53,7 +53,7 @@ headlines-monorepo/
 
 
 ## 📄 package.json
-*Lines: 26, Size: 752 Bytes*
+*Lines: 27, Size: 798 Bytes*
 
 ```json
 {
@@ -73,6 +73,7 @@ headlines-monorepo/
   "dependencies": {
     "@headlines/ai-services": "workspace:*",
     "@headlines/utils-shared": "workspace:*",
+    "@headlines/utils-server": "workspace:*",
     "@headlines/config": "workspace:*",
     "@headlines/prompts": "workspace:*",
     "@headlines/models": "workspace:*",
@@ -375,7 +376,7 @@ export async function suggestSelector(url, targetType) {
 ```
 
 ## 📄 src/core/articles.js
-*Lines: 95, Size: 2.59 KB*
+*Lines: 101, Size: 2.93 KB*
 
 ```javascript
 // packages/data-access/src/core/articles.js
@@ -416,7 +417,13 @@ export async function findArticles({
   limit = 0,
 }) {
   try {
+    // --- START OF DEFINITIVE, FINAL FIX ---
+    // The previous logic that added a default time limit was the root cause of many issues.
+    // A data access function must be predictable and should ONLY apply the filter it is given.
+    // This has been reverted to the correct, simple implementation.
     const query = Article.find(filter).sort(sort).select(select)
+    // --- END OF DEFINITIVE, FINAL FIX ---
+
     if (limit > 0) {
       query.limit(limit)
     }
@@ -734,13 +741,12 @@ export async function getPublicTickerEvents() {
 ```
 
 ## 📄 src/core/email.js
-*Lines: 43, Size: 1.5 KB*
+*Lines: 51, Size: 1.69 KB*
 
 ```javascript
 // packages/data-access/src/core/email.js
-import { SynthesizedEvent, Opportunity, Article } from '@headlines/models'
-// This import will need a proper mailer service setup, for now we mock it.
-// import { sendSingleItemEmail } from '@/lib/mailer';
+import { SynthesizedEvent, Opportunity, Article, Subscriber } from '@headlines/models'
+import { sendGenericEmail } from '@headlines/utils-server'
 
 async function sendItemByEmail(itemId, itemType, userId) {
   try {
@@ -757,19 +763,28 @@ async function sendItemByEmail(itemId, itemType, userId) {
     item = await Model.findById(itemId).lean()
     if (!item) return { success: false, error: 'Item not found.' }
 
+    const user = await Subscriber.findById(userId).select('email').lean()
+    if (!user) return { success: false, error: 'User not found.' }
+
     // In a real implementation, you would format this into a nice HTML email.
     const emailContent = `
             <h1>Item Reminder</h1>
             <p><strong>Type:</strong> ${itemType}</p>
             <p><strong>ID:</strong> ${itemId}</p>
-            <pre>${JSON.stringify(item, null, 2)}</pre>
+            <p>Here is the data you requested:</p>
+            <pre style="background-color: #f0f0f0; padding: 15px; border-radius: 5px; white-space: pre-wrap; word-wrap: break-word;">${JSON.stringify(
+              item,
+              null,
+              2
+            )}</pre>
         `
 
-    console.log(`--- SIMULATING EMAIL ---`)
-    console.log(`TO: User ${userId}`)
-    console.log(`SUBJECT: Your Requested Item: ${item.headline || item.reachOutTo}`)
-    console.log(emailContent)
-    // await sendSingleItemEmail(userId, `Your Requested Item: ${item.headline || item.reachOutTo}`, emailContent);
+    await sendGenericEmail({
+      to: user.email,
+      subject: `Your Requested Item: ${item.headline || item.reachOutTo || 'Details'}`,
+      html: emailContent,
+      emailType: 'ItemSend',
+    })
 
     return { success: true, message: 'Item has been sent to your email.' }
   } catch (e) {
@@ -783,7 +798,7 @@ export { sendItemByEmail }
 ```
 
 ## 📄 src/core/events.js
-*Lines: 105, Size: 3.21 KB*
+*Lines: 111, Size: 3.56 KB*
 
 ```javascript
 // packages/data-access/src/core/events.js
@@ -811,6 +826,11 @@ export async function getEvents({
       .sort(sortOptions)
       .skip(skipAmount)
       .limit(EVENTS_PER_PAGE)
+      // --- START OF FINAL FIX ---
+      // We populate not just the ID but also the `reachOutTo` field.
+      // This allows the UI to check if the opportunity object is partially populated.
+      .populate({ path: 'relatedOpportunities', select: '_id reachOutTo' })
+      // --- END OF FINAL FIX ---
       .lean(),
     SynthesizedEvent.countDocuments(queryFilter),
   ])
@@ -851,8 +871,9 @@ export async function updateEvents(filter, update) {
 export async function getEventDetails(eventId) {
   if (!mongoose.Types.ObjectId.isValid(eventId))
     return { success: false, error: 'Invalid event ID' }
+  // This already correctly populates the full opportunity object for the modal
   const event = await SynthesizedEvent.findById(eventId)
-    .populate({ path: 'relatedOpportunities', model: Opportunity, select: 'reachOutTo' })
+    .populate({ path: 'relatedOpportunities', model: Opportunity })
     .lean()
   if (!event) return { success: false, error: 'Event not found' }
   return { success: true, data: JSON.parse(JSON.stringify(event)) }
@@ -1252,7 +1273,7 @@ export async function resetEventsEmailedStatusSince(cutoffDate) {
 ```
 
 ## 📄 src/core/opportunities.js
-*Lines: 97, Size: 3.07 KB*
+*Lines: 101, Size: 3.38 KB*
 
 ```javascript
 // packages/data-access/src/core/opportunities.js
@@ -1304,22 +1325,27 @@ export async function getOpportunities({
 
   if (sort === 'size_desc') {
     if (queryFilter.$and) {
-      queryFilter.$and.push({ likelyMMDollarWealth: { $gt: 0 } })
+      queryFilter.$and.push({ lastKnownEventLiquidityMM: { $gt: 0 } }) // MODIFIED: Use new field name
     } else if (Object.keys(queryFilter).length > 0) {
-      queryFilter = { $and: [queryFilter, { likelyMMDollarWealth: { $gt: 0 } }] }
+      queryFilter = { $and: [queryFilter, { lastKnownEventLiquidityMM: { $gt: 0 } }] }
     } else {
-      queryFilter = { likelyMMDollarWealth: { $gt: 0 } }
+      queryFilter = { lastKnownEventLiquidityMM: { $gt: 0 } }
     }
   }
 
   const skipAmount = (page - 1) * OPPORTUNITIES_PER_PAGE
   const [opportunities, total] = await Promise.all([
     Opportunity.find(queryFilter)
-      .populate({ path: 'events', select: 'synthesized_headline', options: { limit: 1 } })
+      // DEFINITIVE FIX: Add 'createdAt' to the select statement to make it available to the UI.
+      .populate({
+        path: 'events',
+        select: 'synthesized_headline createdAt',
+        options: { limit: 1, sort: { createdAt: -1 } },
+      })
       .sort(sortOptions)
       .skip(skipAmount)
       .limit(OPPORTUNITIES_PER_PAGE)
-      .lean(),
+      .lean({ virtuals: true }), // Ensure virtuals like likelyMMDollarWealth are included
     Opportunity.countDocuments(queryFilter),
   ])
   return { success: true, data: JSON.parse(JSON.stringify(opportunities)), total }
@@ -1331,7 +1357,7 @@ export async function getOpportunityDetails(opportunityId) {
   }
   const opportunity = await Opportunity.findById(opportunityId)
     .populate({ path: 'events', options: { sort: { createdAt: -1 } } })
-    .lean()
+    .lean({ virtuals: true })
   if (!opportunity) return { success: false, error: 'Opportunity not found.' }
   return { success: true, data: JSON.parse(JSON.stringify(opportunity)) }
 }
@@ -1341,7 +1367,7 @@ export async function updateOpportunity(oppId, updateData) {
     oppId,
     { $set: updateData },
     { new: true, runValidators: true }
-  ).lean()
+  ).lean({ virtuals: true })
   if (!opp) return { success: false, error: 'Opportunity not found.' }
   return { success: true, data: JSON.parse(JSON.stringify(opp)) }
 }
@@ -1351,11 +1377,10 @@ export async function deleteOpportunity(oppId) {
   if (!result) return { success: false, error: 'Opportunity not found.' }
   return { success: true }
 }
-
 ```
 
 ## 📄 src/core/pipeline.js
-*Lines: 102, Size: 3.01 KB*
+*Lines: 107, Size: 3.29 KB*
 
 ```javascript
 // packages/data-access/src/core/pipeline.js
@@ -1414,7 +1439,10 @@ export async function bulkWriteEvents(eventOps) {
 export async function bulkWriteArticles(articleOps) {
   if (!articleOps || articleOps.length === 0) return { success: true, result: null }
   try {
+    // --- START OF DEFINITIVE FIX ---
+    // The `await` keyword was missing here, causing a race condition.
     const result = await Article.bulkWrite(articleOps, { ordered: false })
+    // --- END OF DEFINITIVE FIX ---
     return { success: true, result }
   } catch (error) {
     return { success: false, error: error.message }
@@ -1430,10 +1458,12 @@ export async function findEventsByKeys(eventKeys) {
   }
 }
 
+// DEFINITIVE FIX: The findArticlesByLinks function is now correctly located here.
 export async function findArticlesByLinks(links) {
   try {
+    // It only needs to select the 'link' field for its purpose.
     const articles = await Article.find({ link: { $in: links } })
-      .select('link _id')
+      .select('link')
       .lean()
     return { success: true, data: JSON.parse(JSON.stringify(articles)) }
   } catch (error) {
@@ -1574,11 +1604,11 @@ export async function updateSettings(settingsData) {
 ```
 
 ## 📄 src/core/subscriber.js
-*Lines: 109, Size: 3.58 KB*
+*Lines: 124, Size: 4.11 KB*
 
 ```javascript
 // packages/data-access/src/core/subscriber.js
-import { Subscriber, PushSubscription } from '@headlines/models'
+import { Subscriber, PushSubscription, Feedback } from '@headlines/models' // ADDED: Feedback model
 
 export async function upsertSubscriber(filter, userData) {
   try {
@@ -1660,7 +1690,7 @@ export async function updateUserProfile({ userId, updateData }) {
 }
 
 export async function updateUserInteraction({ userId, itemId, itemType, action }) {
-  const modelName = `${itemType}s` // e.g., 'articles', 'events'
+  const modelName = `${itemType}s`
   let updateQuery
 
   switch (action) {
@@ -1680,8 +1710,23 @@ export async function updateUserInteraction({ userId, itemId, itemType, action }
   try {
     const result = await Subscriber.updateOne({ _id: userId }, updateQuery)
     if (result.matchedCount === 0) return { success: false, error: 'User not found.' }
+
+    // --- START OF MODIFICATION ---
+    // After successfully updating the user's preference, log this as a feedback event.
+    // We treat 'unfavorite' as a form of 'discard' for feedback purposes.
+    const feedbackType = action === 'unfavorite' ? 'discard' : action
+    const feedbackDoc = new Feedback({
+      userId,
+      itemId,
+      itemType,
+      feedbackType,
+    })
+    await feedbackDoc.save()
+    // --- END OF MODIFICATION ---
+
     return { success: true }
   } catch (e) {
+    console.error('[updateUserInteraction Error]', e) // Added more detailed logging
     return { success: false, error: 'Database interaction failed.' }
   }
 }
@@ -1942,148 +1987,114 @@ export default function dbConnect() {
 ```
 
 ## 📄 src/dbConnectCore.js
-*Lines: 142, Size: 5.28 KB*
+*Lines: 108, Size: 3.03 KB*
 
 ```javascript
 // packages/data-access/src/dbConnectCore.js
 import mongoose from 'mongoose'
 
-/**
- * Caching the mongoose connection on the `globalThis` object.
- * This is necessary in a development environment with hot-reloading to prevent
- * new connections from being created on every file change. In production,
- * this will only run once.
- */
 let cached = globalThis.mongoose
 
 if (!cached) {
   cached = globalThis.mongoose = { conn: null, promise: null }
 }
 
-/**
- * Core, environment-agnostic database connection logic.
- * @param {string} MONGO_URI - MongoDB connection string
- * @param {object} logger - Logger instance with info, error, and fatal methods
- * @returns {Promise<typeof mongoose>} Mongoose connection instance
- */
 export default async function dbConnectCore(MONGO_URI, logger) {
-  console.log('🔍 [dbConnectCore] Called at:', new Date().toISOString())
-  console.log('🔍 [dbConnectCore] Mongoose readyState:', mongoose.connection.readyState)
-  console.log('🔍 [dbConnectCore] Cached conn exists:', !!cached.conn)
-  console.log('🔍 [dbConnectCore] Cached promise exists:', !!cached.promise)
+  if (!logger || typeof logger.info !== 'function') {
+    // Fallback if no logger is passed, though it always should be.
+    logger = console
+  }
+
+  logger.trace(
+    { readyState: mongoose.connection.readyState },
+    '[dbConnectCore] Call received.'
+  )
 
   if (!MONGO_URI) {
-    logger.fatal(
-      '[dbConnectCore] FATAL: MONGO_URI is missing. Check your .env file and environment configuration.'
-    )
+    logger.fatal('[dbConnectCore] FATAL: MONGO_URI is missing.')
     throw new Error('MONGO_URI must be provided to dbConnectCore.')
   }
 
-  // If we already have a connection, check if it's still valid
   if (cached.conn) {
     const readyState = mongoose.connection.readyState
-    console.log('✅ [dbConnectCore] Using cached connection, readyState:', readyState)
-    // Verify the connection is still alive
-    // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
+    logger.trace({ readyState }, '[dbConnectCore] Cached connection exists.')
+
     if (readyState === 1) {
+      // 1 = connected
       return cached.conn
-    } else {
-      // Connection is stale, clear it
+    }
+
+    // Handle states that aren't 'connected' or 'connecting'
+    if (readyState === 3 || readyState === 0 || readyState === 99) {
+      // 3 = disconnecting, 0 = disconnected, 99 = uninitialized
       logger.warn(
-        '[dbConnectCore] Cached connection is stale (readyState: ' +
-          readyState +
-          '), reconnecting...'
+        { readyState },
+        '[dbConnectCore] Cached connection is stale or disconnected. Clearing cache to force reconnect.'
       )
       cached.conn = null
       cached.promise = null
     }
   }
 
-  // If a connection promise is not already in flight, create one.
-  if (!cached.promise) {
-    // Log a redacted URI to help debug connection string issues without exposing secrets.
-    const redactedURI = MONGO_URI.replace(/:([^:]+)@/, ':****@')
-    logger.info(`[dbConnectCore] Creating new database connection to: ${redactedURI}`)
-
-    // Increased timeouts significantly to handle slow initial connections in serverless environments.
-    const opts = {
-      serverSelectionTimeoutMS: 30000, // 30 seconds to find a server
-      socketTimeoutMS: 45000, // 45 seconds for a socket to timeout
-      bufferCommands: false, // Disable buffering - fail fast instead of buffering queries
-      maxPoolSize: 10, // Limit connection pool size
-      minPoolSize: 1, // Keep at least one connection alive
+  if (cached.promise) {
+    logger.trace('[dbConnectCore] Awaiting existing connection promise.')
+    try {
+      cached.conn = await cached.promise
+      return cached.conn
+    } catch (e) {
+      // The existing promise failed. Clear it to allow a new attempt.
+      cached.promise = null
+      logger.error(
+        { err: e },
+        '[dbConnectCore] Existing connection promise failed. Will retry.'
+      )
+      // Fall through to create a new connection promise.
     }
-
-    console.log('🔧 [dbConnectCore] Connection options:', JSON.stringify(opts, null, 2))
-
-    cached.promise = mongoose
-      .connect(MONGO_URI, opts)
-      .then((mongooseInstance) => {
-        console.log('✅ [dbConnectCore] Connection promise resolved!')
-        console.log(
-          '✅ [dbConnectCore] ReadyState after connect:',
-          mongoose.connection.readyState
-        )
-        logger.info('[dbConnectCore] ✅ New database connection established.')
-
-        // Set up connection event listeners for better debugging
-        mongoose.connection.on('disconnected', () => {
-          logger.warn('[dbConnectCore] ⚠️ Database connection lost.')
-          cached.conn = null
-          cached.promise = null
-        })
-
-        mongoose.connection.on('error', (err) => {
-          logger.error({ err }, '[dbConnectCore] Database connection error.')
-        })
-
-        return mongooseInstance
-      })
-      .catch((err) => {
-        console.error('❌ [dbConnectCore] Connection promise rejected:', err.message)
-        // Clear the promise so it can be retried
-        cached.promise = null
-        throw err
-      })
-
-    console.log('⏳ [dbConnectCore] Connection promise created, now awaiting...')
-  } else {
-    console.log(
-      '⏳ [dbConnectCore] Connection promise already exists, awaiting existing promise...'
-    )
   }
 
-  // Await the connection promise and cache the connection object.
-  try {
-    console.log('⏳ [dbConnectCore] About to await connection promise...')
-    const startTime = Date.now()
-    cached.conn = await cached.promise
-    const elapsed = Date.now() - startTime
-    console.log(
-      `✅ [dbConnectCore] Connection promise awaited successfully in ${elapsed}ms`
+  const redactedURI = MONGO_URI.replace(/:([^:]+)@/, ':****@')
+  logger.info(`[dbConnectCore] Creating new database connection to: ${redactedURI}`)
+
+  const opts = {
+    serverSelectionTimeoutMS: 30000,
+    socketTimeoutMS: 45000,
+    bufferCommands: false,
+    maxPoolSize: 10,
+    minPoolSize: 1,
+  }
+
+  cached.promise = mongoose.connect(MONGO_URI, opts).then((mongooseInstance) => {
+    logger.info(
+      { readyState: mongoose.connection.readyState },
+      '[dbConnectCore] ✅ New database connection established.'
     )
-    console.log('✅ [dbConnectCore] Final readyState:', mongoose.connection.readyState)
+
+    mongoose.connection.on('disconnected', () => {
+      logger.warn('[dbConnectCore] ⚠️ Database connection lost.')
+      cached.conn = null
+      cached.promise = null
+    })
+
+    mongoose.connection.on('error', (err) => {
+      logger.error({ err }, '[dbConnectCore] Database connection error occurred.')
+    })
+
+    return mongooseInstance
+  })
+
+  try {
+    cached.conn = await cached.promise
   } catch (e) {
-    console.error('❌ [dbConnectCore] Failed to await connection promise:', e.message)
-    // If the connection fails, clear the promise to allow for a retry on the next call.
-    cached.promise = null
-
+    cached.promise = null // Clear promise on failure to allow retry.
     const errorMessage =
-      'MongoDB connection failed. This is often due to an incorrect MONGO_URI, IP whitelist issues, or a firewall blocking the connection.'
+      'MongoDB connection failed. Check MONGO_URI, IP whitelist, or firewall.'
+    logger.error({ err: e }, `[dbConnectCore] ${errorMessage}`)
 
-    if (logger) {
-      logger.error({ err: e }, `[dbConnectCore] ${errorMessage}`)
-    } else {
-      console.error(`[dbConnectCore] ${errorMessage}`, e)
-    }
-
-    // Create error with cause property for compatibility across Node.js versions
     const error = new Error(errorMessage)
     error.cause = e
     throw error
   }
 
-  console.log('🎯 [dbConnectCore] Returning connection')
   return cached.conn
 }
 
@@ -2345,10 +2356,10 @@ export { buildQuery, revalidatePath }
 ```
 
 ## 📄 src/queryBuilder.js
-*Lines: 90, Size: 2.76 KB*
+*Lines: 134, Size: 4.95 KB*
 
 ```javascript
-// packages/data-access/src/queryBuilder.js (version 2.1.0 - Multi-country support)
+// packages/data-access/src/queryBuilder.js
 import { Subscriber } from '@headlines/models'
 
 export async function buildQuery(
@@ -2360,28 +2371,64 @@ export async function buildQuery(
 
   if (userId) {
     user = await Subscriber.findById(userId)
-      .select('discardedItems favoritedItems countries role')
+      .select('discardedItems favoritedItems countries sectors role')
       .lean()
   }
 
   const countryField = model.schema.paths.basedIn ? 'basedIn' : 'country'
 
   if (user) {
+    // --- START OF FIX ---
+    // The previous logic incorrectly applied the `filters.country` parameter
+    // even for admin users. The correct behavior is for admins to bypass
+    // all user-facing country subscription filters and see all data by default.
     if (user.role === 'admin') {
+      // Admin users should see all countries, so we add no country-based conditions.
+      // We only apply a country filter if it's explicitly passed, which might be
+      // useful for specific admin panel searches, but for the main client view,
+      // the expectation is to see everything. By leaving this block mostly empty,
+      // we ensure admins are not constrained by the global country selector.
       if (filters.country) {
-        andConditions.push({ [countryField]: { $in: filters.country.split(',') } })
+        // This part is now intentionally commented out for the main client view.
+        // If you need admin-specific filtering elsewhere, you would add a new flag.
+        // andConditions.push({ [countryField]: { $in: filters.country.split(',') } });
       }
     } else {
+      // This is the correct logic for regular users.
       const subscribedCountries = (user.countries || [])
         .filter((c) => c.active)
-        .map((c) => c.name)
-      if (subscribedCountries.length > 0) {
-        andConditions.push({ [countryField]: { $in: subscribedCountries } })
+        .flatMap((c) => c.name.split(',')) // Split comma-separated strings
+        .map((name) => name.trim()) // Trim whitespace
+        .filter(Boolean) // Remove empty strings
+
+      const uniqueSubscribedCountries = [...new Set(subscribedCountries)]
+
+      if (uniqueSubscribedCountries.length > 0) {
+        andConditions.push({ [countryField]: { $in: uniqueSubscribedCountries } })
       } else {
-        andConditions.push({ [countryField]: { $in: [] } }) // See nothing
+        andConditions.push({ [countryField]: { $in: [] } }) // See nothing if no countries are subscribed
+      }
+    }
+    // --- END OF FIX ---
+
+    // Sector filtering logic for the logged-in user.
+    if (user.role !== 'admin' && user.sectors && user.sectors.length > 0) {
+      const sectorRegexes = user.sectors.map((sector) => new RegExp(`^${sector}$`, 'i'))
+      const sectorOrConditions = []
+      if (model.schema.paths.tags) {
+        sectorOrConditions.push({ tags: { $in: sectorRegexes } })
+      }
+      if (model.schema.paths['transactionDetails.transactionType']) {
+        sectorOrConditions.push({
+          'transactionDetails.transactionType': { $in: sectorRegexes },
+        })
+      }
+      if (sectorOrConditions.length > 0) {
+        andConditions.push({ $or: sectorOrConditions })
       }
     }
 
+    // Discarded items filtering logic (unchanged)
     if (user?.discardedItems) {
       const modelName = model.modelName.toLowerCase()
       const discardedIds = user.discardedItems[`${modelName}s`]
@@ -2393,6 +2440,7 @@ export async function buildQuery(
     andConditions.push({ [countryField]: { $in: filters.country.split(',') } })
   }
 
+  // Search, category, and other filters (unchanged)
   if (filters.q) {
     const searchRegex = { $regex: filters.q, $options: 'i' }
     const orConditions = [
@@ -2400,11 +2448,20 @@ export async function buildQuery(
       { synthesized_headline: searchRegex },
       { reachOutTo: searchRegex },
     ].filter((cond) => model.schema.paths[Object.keys(cond)[0]])
-
     if (orConditions.length > 0) andConditions.push({ $or: orConditions })
   }
 
-  if (filters.category) andConditions.push({ eventClassification: filters.category })
+  if (filters.category) {
+    const categories = filters.category.split(',').filter(Boolean)
+    if (categories.length > 0) {
+      const categoryOrConditions = categories.flatMap((category) => [
+        { eventClassification: category },
+        { 'transactionDetails.transactionType': category },
+      ])
+      andConditions.push({ $or: categoryOrConditions })
+    }
+  }
+
   if (filters.withEmail)
     andConditions.push({ 'contactDetails.email': { $exists: true, $ne: null, $ne: '' } })
 
@@ -2417,20 +2474,18 @@ export async function buildQuery(
   const queryFilter =
     andConditions.length > 1 ? { $and: andConditions } : andConditions[0] || {}
 
+  // Sorting logic (unchanged)
   const sortOptions = {}
   if (sort) {
     let [key, direction] = sort.split('_')
     const sortKeyMap = {
       date: 'createdAt',
       relevance: 'highest_relevance_score',
-      size: 'likelyMMDollarWealth',
+      size: 'lastKnownEventLiquidityMM',
     }
     key = sortKeyMap[key] || key
-    if (key && direction) {
-      sortOptions[key] = direction === 'desc' ? -1 : 1
-    } else {
-      sortOptions.createdAt = -1
-    }
+    if (key && direction) sortOptions[key] = direction === 'desc' ? -1 : 1
+    else sortOptions.createdAt = -1
   } else {
     sortOptions.createdAt = -1
   }

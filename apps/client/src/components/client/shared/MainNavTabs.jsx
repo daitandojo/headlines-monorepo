@@ -1,4 +1,4 @@
-// src/components/MainNavTabs.jsx (version 2.0)
+// apps/client/src/components/client/shared/MainNavTabs.jsx
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -6,14 +6,23 @@ import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button, Tabs, TabsList, TabsTrigger } from '../../shared'
-import { Zap, Newspaper, UploadCloud, MessageSquare, Target, ArrowUp } from 'lucide-react'
+import {
+  Zap,
+  Newspaper,
+  UploadCloud,
+  MessageSquare,
+  Target,
+  ArrowUp,
+  Star,
+} from 'lucide-react' // Star icon for watchlist
 
 const TABS = [
   { value: 'events', label: 'Events', icon: Zap },
-  { value: 'articles', label: 'Articles', icon: Newspaper },
+  { value: 'my-watchlist', label: 'My Watchlist', icon: Star }, // ADDED
   { value: 'opportunities', label: 'Opportunities', icon: Target },
-  { value: 'upload', label: 'Upload', icon: UploadCloud },
+  { value: 'articles', label: 'Articles', icon: Newspaper },
   { value: 'chat', label: 'Chat', icon: MessageSquare },
+  { value: 'upload', label: 'Upload', icon: UploadCloud },
 ]
 
 export function MainNavTabs() {
@@ -23,25 +32,18 @@ export function MainNavTabs() {
 
   useEffect(() => {
     const checkScrollTop = () => {
-      // Show button if user has scrolled down more than 400px
       if (window.scrollY > 400) {
         setShowScrollButton(true)
       } else {
         setShowScrollButton(false)
       }
     }
-
     window.addEventListener('scroll', checkScrollTop)
-    return () => {
-      window.removeEventListener('scroll', checkScrollTop)
-    }
+    return () => window.removeEventListener('scroll', checkScrollTop)
   }, [])
 
   const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth',
-    })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   return (

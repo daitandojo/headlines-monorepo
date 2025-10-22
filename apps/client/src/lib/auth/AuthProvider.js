@@ -21,13 +21,15 @@ export function AuthProvider({ initialUser, children }) {
     return () => clearTimeout(timer)
   }, [])
 
+  // Main routing and authentication logic
   useEffect(() => {
     if (isLoading) return
 
     const isPublicPage = pathname === '/' || pathname.startsWith('/login')
     const isAdminPage = pathname.startsWith('/admin')
+    const isUpgradePage = pathname.startsWith('/upgrade')
 
-    if (!user && !isPublicPage) {
+    if (!user && !isPublicPage && !isUpgradePage) {
       router.push('/')
     } else if (user && (pathname === '/' || pathname === '/login')) {
       router.push('/events')
@@ -36,10 +38,32 @@ export function AuthProvider({ initialUser, children }) {
     }
   }, [user, isLoading, pathname, router])
 
+  // --- START OF MODIFICATION ---
+  // New effect to handle trial expiration redirection
+  useEffect(() => {
+    if (isLoading || !user) return
+
+    const isTrialExpired =
+      user.role !== 'admin' &&
+      user.subscriptionTier === 'trial' &&
+      user.subscriptionExpiresAt &&
+      new Date(user.subscriptionExpiresAt) < new Date()
+
+    const isOnUpgradePage = pathname.startsWith('/upgrade')
+
+    if (isTrialExpired && !isOnUpgradePage) {
+      toast.error('Your trial has expired.', {
+        description: 'Please upgrade your plan to continue accessing our intelligence.',
+      })
+      router.push('/upgrade')
+    }
+  }, [user, isLoading, pathname, router])
+  // --- END OF MODIFICATION ---
+
   const login = async (email, password) => {
+    // ... (unchanged)
     const result = await loginUser(email, password)
     if (result.success) {
-      // Don't call setUser here, the page will hard reload
       window.location.href = '/events'
       return true
     }
@@ -47,6 +71,7 @@ export function AuthProvider({ initialUser, children }) {
   }
 
   const signup = async (signupData) => {
+    // ... (unchanged)
     const result = await signupUser(signupData)
     if (result.success) {
       window.location.href = '/events'
@@ -56,6 +81,7 @@ export function AuthProvider({ initialUser, children }) {
   }
 
   const logout = async () => {
+    // ... (unchanged)
     await fetch('/api/auth/logout', { method: 'POST' })
     toast.info('You have been logged out.')
     setUser(null)
@@ -63,7 +89,8 @@ export function AuthProvider({ initialUser, children }) {
   }
 
   const updateUserPreferences = useCallback(async (updateData) => {
-    setUser((prev) => (prev ? { ...prev, ...updateData } : null)) // Optimistic update
+    // ... (unchanged)
+    setUser((prev) => (prev ? { ...prev, ...updateData } : null))
     try {
       const response = await fetch('/api/user/profile', {
         method: 'PATCH',
@@ -74,11 +101,10 @@ export function AuthProvider({ initialUser, children }) {
       if (!response.ok) {
         throw new Error(updatedUser.error || 'Failed to update preferences.')
       }
-      setUser(updatedUser) // Update with confirmed data from server
+      setUser(updatedUser)
       toast.success('Preferences updated successfully.')
     } catch (error) {
       toast.error('Update Failed', { description: error.message })
-      // Revert optimistic update by refetching user session
       const res = await fetch('/api/auth/session')
       if (res.ok) setUser((await res.json()).user)
     }

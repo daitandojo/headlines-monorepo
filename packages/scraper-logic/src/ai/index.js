@@ -1,53 +1,59 @@
-// packages/scraper-logic/src/ai/index.js (version 6.1.0)
+// packages/scraper-logic/src/ai/index.js
 import { getConfig } from '../config.js'
-import { callLanguageModel } from '../../../ai-services/src/index.js'
-import { AIAgent } from './AIAgent.js'
-import { assessArticleContent } from './agents/articleAgent.js'
-import { articleAssessmentSchema } from './schemas/articleAssessmentSchema.js'
-import { preAssessArticle } from './agents/articlePreAssessmentAgent.js'
-import { articlePreAssessmentSchema } from './schemas/articlePreAssessmentSchema.js'
-import { clusterArticlesIntoEvents } from './agents/clusteringAgent.js'
-import { clusterSchema } from './schemas/clusterSchema.js'
-import { resolveVagueContact, findContactDetails } from './agents/contactAgent.js'
-import { enrichContactSchema } from './schemas/enrichContactSchema.js'
-import { findContactSchema } from './schemas/findContactSchema.js'
+
 import {
+  articleAssessmentSchema,
+  batchArticleAssessmentSchema,
+  batchHeadlineAssessmentSchema,
+  canonicalizerSchema,
+  clusterSchema,
+  disambiguationSchema,
+  emailIntroSchema,
+  emailSubjectSchema,
+  enrichContactSchema,
+  entitySchema,
+  findContactSchema,
+  headlineAssessmentSchema,
+  judgeSchema,
+  opportunitySchema,
+  sectionClassifierSchema,
+  selectorRepairSchema,
+  synthesisSchema,
+  watchlistSuggestionSchema,
+} from '@headlines/models/schemas'
+
+import {
+  callLanguageModel,
+  AIAgent,
+  assessArticleContent,
+  clusterArticlesIntoEvents,
+  // --- START OF DEFINITIVE FIX ---
+  // 'resolveVagueContact' was removed as it is no longer exported by ai-services
+  // --- END OF DEFINITIVE FIX ---
+  findContactDetails,
   generateEmailSubjectLine,
   generatePersonalizedIntro,
-} from './agents/emailAgents.js'
-import { emailSubjectSchema } from './schemas/emailSubjectSchema.js'
-import { emailIntroSchema } from './schemas/emailIntroSchema.js'
-import {
   extractEntities,
   entityCanonicalizerAgent as getEntityCanonicalizerAgent,
-} from './agents/entityAgent.js'
-import { entitySchema } from './schemas/entitySchema.js'
-import { canonicalizerSchema } from './schemas/canonicalizerSchema.js'
-import { assessHeadlinesInBatches } from './agents/headlineAgent.js'
-import { headlineAssessmentSchema } from './schemas/headlineAssessmentSchema.js'
-import { judgePipelineOutput } from './agents/judgeAgent.js'
-import { judgeSchema } from './schemas/judgeSchema.js'
-import { generateOpportunitiesFromEvent } from './agents/opportunityAgent.js'
-import { opportunitySchema } from './schemas/opportunitySchema.js'
-import { suggestNewSelector } from './agents/selectorRepairAgent.js'
-import { selectorRepairSchema } from './schemas/selectorRepairSchema.js'
-import { synthesizeEvent, synthesizeFromHeadline } from './agents/synthesisAgent.js'
-import { synthesisSchema } from './schemas/synthesisSchema.js'
-import { generateWatchlistSuggestions } from './agents/watchlistAgent.js'
-import { watchlistSuggestionSchema } from './schemas/watchlistSuggestionSchema.js'
-import { disambiguationSchema } from './schemas/disambiguationSchema.js'
-import { batchAssessArticles } from './agents/batchArticleAgent.js'
-import { batchArticleAssessmentSchema } from './schemas/batchArticleAssessmentSchema.js'
-import { classifyLinks as sectionClassifierAgent } from './agents/sectionClassifierAgent.js'
-import { generateExecutiveSummary } from './agents/executiveSummaryAgent.js'
+  assessHeadlinesInBatches,
+  judgePipelineOutput,
+  generateOpportunitiesFromEvent,
+  suggestNewSelector,
+  synthesizeEvent,
+  synthesizeFromHeadline,
+  generateWatchlistSuggestions,
+  batchAssessArticles,
+  classifyLinks as sectionClassifierAgent,
+  generateExecutiveSummary,
+} from '@headlines/ai-services'
 
 let isApiKeyInvalid = false
 export async function performAiSanityCheck() {
   try {
     getConfig().logger.info('🔬 Performing AI service sanity check (OpenAI)...')
     const answer = await callLanguageModel({
-      modelName: 'gpt-5-nano', // Use a standard, widely available model for the check
-      prompt: 'What is in one word the name of the capital of France',
+      modelName: 'gpt-5-nano',
+      userContent: 'In one word, what is the capital of France?',
       isJson: false,
     })
     if (
@@ -77,12 +83,10 @@ export async function performAiSanityCheck() {
     return false
   }
 }
+
 export async function checkModelPermissions(requiredModels) {
   getConfig().logger.info('🔬 Verifying permissions for configured OpenAI models...')
   try {
-    // DEFINITIVE FIX: The OpenAI client for checking models is part of the ai-services package, not here.
-    // This function is also not strictly necessary for the app to run, so we can simplify.
-    // For now, we will assume permissions are correct if the sanity check passes.
     getConfig().logger.warn(
       'Model permission check is currently a no-op, relying on sanity check.'
     )
@@ -93,16 +97,18 @@ export async function checkModelPermissions(requiredModels) {
     return false
   }
 }
+
+// Re-export everything for the rest of the package to use.
 export {
   AIAgent,
   callLanguageModel,
   assessArticleContent,
   articleAssessmentSchema,
-  preAssessArticle,
-  articlePreAssessmentSchema,
   clusterArticlesIntoEvents,
   clusterSchema,
-  resolveVagueContact,
+  // --- START OF DEFINITIVE FIX ---
+  // 'resolveVagueContact' is removed from the exports as well.
+  // --- END OF DEFINITIVE FIX ---
   findContactDetails,
   enrichContactSchema,
   findContactSchema,

@@ -42,7 +42,12 @@ export const SynthesizedEventCard = ({
     handleFavorite,
     handleShowArticles,
     handleShowOpportunities,
-  } = useEventCard(event, onDelete, onFavoriteToggle, isFavorited)
+  } = useEventCard(
+    event,
+    () => onDelete(event),
+    (isFav) => onFavoriteToggle(isFav),
+    isFavorited
+  )
 
   const handleSendEmail = async () => {
     if (!user) return
@@ -54,10 +59,34 @@ export const SynthesizedEventCard = ({
     setIsEmailDialogOpen(false)
   }
 
+  // --- START OF DEFINITIVE FIX ---
+  // New handler to show a modal for a single, specific opportunity.
+  const handleShowIndividualOpportunity = (individualName) => {
+    // This leverages the same logic and state as showing all opportunities.
+    // It first ensures the full opportunity data is loaded.
+    handleShowOpportunities().then((fullOpportunities) => {
+      if (fullOpportunities && fullOpportunities.length > 0) {
+        const specificOpp = fullOpportunities.find(
+          (opp) => opp.reachOutTo === individualName
+        )
+        if (specificOpp) {
+          // We call setIsOpportunitiesModalOpen here, but the data is already set
+          // by the handleShowOpportunities call.
+        } else {
+          toast.info(
+            'Dossier not yet available',
+            'An opportunity dossier is being generated for this individual. Please check back shortly.'
+          )
+        }
+      }
+    })
+  }
+  // --- END OF DEFINITIVE FIX ---
+
   return (
     <>
       <AccordionItem
-        value={event.event_key}
+        value={event._id}
         className={`relative border-none rounded-xl overflow-hidden transition-all duration-300 ${isPending ? 'opacity-50' : ''}`}
       >
         <div className="relative">
@@ -68,6 +97,7 @@ export const SynthesizedEventCard = ({
                 onChat={handleChatAboutEvent}
                 onDelete={performDelete}
                 onFavorite={handleFavorite}
+                onShowArticles={handleShowArticles}
                 onShowOpportunities={handleShowOpportunities}
                 isOpportunitiesLoading={isOpportunitiesLoading}
                 isFavorited={isFavorited}
@@ -78,6 +108,7 @@ export const SynthesizedEventCard = ({
                 onChat={handleChatAboutEvent}
                 onDelete={performDelete}
                 onFavorite={handleFavorite}
+                onShowArticles={handleShowArticles}
                 onShowOpportunities={handleShowOpportunities}
                 isOpportunitiesLoading={isOpportunitiesLoading}
                 isFavorited={isFavorited}
@@ -88,7 +119,12 @@ export const SynthesizedEventCard = ({
           <AccordionTrigger className="absolute top-1/2 -translate-y-1/2 right-2 z-20 h-9 w-9 p-0 flex-none justify-center rounded-full bg-slate-800/60 hover:bg-slate-700/80 data-[state=open]:bg-slate-700 text-slate-400 hover:text-white" />
         </div>
         <AccordionContent className="p-4 pt-0 bg-slate-900/50">
-          <EventCardDetails event={event} onShowArticles={handleShowArticles} />
+          {/* Pass the new handler down to the details component */}
+          <EventCardDetails
+            event={event}
+            onShowArticles={handleShowArticles}
+            onShowIndividualOpportunity={handleShowIndividualOpportunity}
+          />
         </AccordionContent>
       </AccordionItem>
 

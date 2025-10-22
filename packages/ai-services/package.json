@@ -16,7 +16,7 @@
     "@headlines/prompts": "workspace:*",
     "@headlines/utils-server": "workspace:*",
     "@headlines/utils-shared": "workspace:*",
-    "@langchain/community": "*",
+    "@langchain/community": "^0.3.57",
     "@langchain/core": "*",
     "@langchain/openai": "*",
     "@langchain/pinecone": "*",

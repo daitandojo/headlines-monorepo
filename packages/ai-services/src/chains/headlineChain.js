@@ -1,42 +1,21 @@
-import {
-  ChatPromptTemplate,
-  HumanMessagePromptTemplate,
-  SystemMessagePromptTemplate,
-} from '@langchain/core/prompts'
-import { AIMessage, HumanMessage } from '@langchain/core/messages'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
-import { RunnableSequence } from '@langchain/core/runnables'
+// packages/ai-services/src/chains/headlineChain.js
+import { AIAgent } from '../lib/AIAgent.js'
+import { headlineAssessmentSchema } from '@headlines/models/schemas'
+import { settings } from '@headlines/config'
 import {
   instructionHeadlines,
   shotsInputHeadlines,
   shotsOutputHeadlines,
-} from '@headlines/prompts' // Correct: Import from the monorepo package
-import { getHighPowerModel } from '../lib/langchain.js'
-import { safeInvoke } from '../lib/safeInvoke.js'
-import { headlineAssessmentSchema } from '@headlines/models/schemas'
-import { settings } from '@headlines/config/node' // Correct: Import from the /node entry point
+} from '@headlines/prompts'
 
-const systemPrompt = [
-  instructionHeadlines.whoYouAre,
-  instructionHeadlines.whatYouDo,
-  instructionHeadlines.primaryMandate,
-  instructionHeadlines.analyticalFramework,
-  instructionHeadlines.outputFormatDescription,
-].join('\n\n')
-
-const messages = [
-  SystemMessagePromptTemplate.fromTemplate(systemPrompt),
-  ...shotsInputHeadlines.flatMap((input, i) => [
-    new HumanMessage(input),
-    new AIMessage(shotsOutputHeadlines[i]),
-  ]),
-  HumanMessagePromptTemplate.fromTemplate('{headlineWithContext}'),
-]
-
-const prompt = ChatPromptTemplate.fromMessages(messages)
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
-const chain = RunnableSequence.from([prompt, getHighPowerModel()])
+const getAgent = () =>
+  new AIAgent({
+    model: settings.LLM_MODEL_HEADLINE_ASSESSMENT,
+    systemPrompt: instructionHeadlines,
+    fewShotInputs: shotsInputHeadlines,
+    fewShotOutputs: shotsOutputHeadlines,
+    zodSchema: headlineAssessmentSchema,
+  })
 
 function prepareInput({ article, hits }) {
   let headlineWithContext = `[COUNTRY CONTEXT: ${article.country}] ${article.headline}`
@@ -52,34 +31,35 @@ function prepareInput({ article, hits }) {
 }
 
 async function invoke({ article, hits }) {
-  const input = prepareInput({ article, hits })
-  const result = await safeInvoke(chain, input, 'headlineChain', headlineAssessmentSchema)
+  const agent = getAgent()
+  const { headlineWithContext } = prepareInput({ article, hits })
 
-  if (result.error) {
-    return {
-      relevance_headline: 0,
-      assessment_headline: 'AI assessment failed.',
-      headline_en: article.headline,
+  // The agent expects a single string of user content
+  const response = await agent.execute(headlineWithContext)
+
+  // Default response in case of total failure
+  const fallbackAssessment = {
+    relevance_headline: 0,
+    assessment_headline: 'AI assessment failed.',
+    headline_en: article.headline,
+  }
+
+  if (response.error || !response.assessment || response.assessment.length === 0) {
+    return fallbackAssessment
+  }
+
+  // The schema ensures assessment is an array, but we only sent one headline
+  const assessment = response.assessment[0]
+
+  if (hits.length > 0) {
+    const boost = settings.WATCHLIST_SCORE_BOOST
+    if (boost > 0) {
+      assessment.relevance_headline = Math.min(100, assessment.relevance_headline + boost)
+      assessment.assessment_headline = `Watchlist boost (+${boost}). ${assessment.assessment_headline}`
     }
   }
 
-  const assessment = result.assessment?.[0]
-  if (assessment && hits.length > 0) {
-    let score = assessment.relevance_headline
-    if (settings.WATCHLIST_SCORE_BOOST > 0) {
-      score = Math.min(100, score + settings.WATCHLIST_SCORE_BOOST)
-      assessment.assessment_headline = `Watchlist boost (+${settings.WATCHLIST_SCORE_BOOST}). ${assessment.assessment_headline}`
-    }
-    assessment.relevance_headline = score
-  }
-
-  return (
-    assessment || {
-      relevance_headline: 0,
-      assessment_headline: 'AI assessment failed.',
-      headline_en: article.headline,
-    }
-  )
+  return assessment || fallbackAssessment
 }
 
 export const headlineChain = { invoke }

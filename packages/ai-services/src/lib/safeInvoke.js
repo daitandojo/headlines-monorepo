@@ -1,7 +1,7 @@
+// packages/ai-services/src/lib/safeInvoke.js
 import { logger } from '@headlines/utils-shared'
 import { getRedisClient } from '@headlines/utils-server/node'
 import { createHash } from 'crypto'
-import { StringOutputParser } from '@langchain/core/output_parsers'
 
 const MAX_RETRIES = 1
 const CACHE_TTL_SECONDS = 60 * 60 * 24
@@ -34,24 +34,37 @@ export async function safeInvoke(chain, input, agentName, zodSchema) {
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      // --- START OF THE DEFINITIVE FIX ---
-      // The chain now outputs a raw BaseMessage. We pipe it to a StringOutputParser
-      // here to get the raw string content from the AI.
-      const stringParser = new StringOutputParser()
-      const stringResult = await chain.pipe(stringParser).invoke(input)
+      let result = await chain.invoke(input)
 
-      // This is more robust because it finds the JSON even if the AI adds extra text.
-      const jsonMatch = stringResult.match(/\{[\s\S]*\}/)
+      // --- START OF DEFINITIVE, FINAL FIX ---
+      // The old logic relied on LangChain's strict JsonOutputParser. This new logic is more robust.
+      // 1. Unwrap the AIMessage object to get the raw string content.
+      if (result && typeof result.content === 'string' && result.id) {
+        result = result.content
+      }
+
+      if (typeof result !== 'string') {
+        throw new Error('AI response was not a string after unwrapping.')
+      }
+
+      // 2. Use a regex to find the JSON block, ignoring any conversational text from the AI.
+      const jsonMatch = result.match(/\{[\s\S]*\}/)
       if (!jsonMatch) {
         throw new Error("No valid JSON object found in the LLM's string response.")
       }
-      const result = JSON.parse(jsonMatch[0])
-      // --- END OF THE DEFINITIVE FIX ---
 
-      const validation = zodSchema.safeParse(result)
+      // 3. Parse only the extracted JSON block.
+      const parsedResult = JSON.parse(jsonMatch[0])
+      // --- END OF DEFINITIVE, FINAL FIX ---
+
+      const validation = zodSchema.safeParse(parsedResult)
       if (!validation.success) {
         logger.error(
-          { details: validation.error.flatten(), agent: agentName, output: result },
+          {
+            agent: agentName,
+            zodErrorSummary: validation.error.flatten(),
+            rawAIDataThatFailedValidation: parsedResult,
+          },
           `Zod validation failed for ${agentName}.`
         )
         throw new Error('Zod validation failed')
@@ -77,11 +90,12 @@ export async function safeInvoke(chain, input, agentName, zodSchema) {
           { agent: agentName, attempt: attempt + 1, error: error.message },
           `Invocation failed for ${agentName}. Retrying...`
         )
+        await new Promise((res) => setTimeout(res, 1500 * (attempt + 1)))
         continue
       }
       logger.error(
         { err: error, agent: agentName },
-        `LangChain invocation failed for ${agentName}.`
+        `Chain invocation failed for ${agentName} after all retries.`
       )
       return { error: `Agent ${agentName} failed: ${error.message}` }
     }

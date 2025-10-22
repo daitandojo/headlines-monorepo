@@ -2,12 +2,11 @@
 import { logger } from '@headlines/utils-shared'
 import {
   assessArticleContent,
-  preAssessArticle,
   findAlternativeSources,
   performGoogleSearch,
-} from '@headlines/ai-services/node'
+} from '@headlines/ai-services'
 import { scrapeArticleContent } from '@headlines/scraper-logic/scraper/index.js'
-import { settings } from '@headlines/config/node'
+import { settings } from '@headlines/config'
 import { Source } from '@headlines/models'
 
 function createLifecycleEvent(stage, status, reason) {
@@ -20,7 +19,6 @@ async function salvageHighSignalArticle(article, hits) {
     `SALVAGE MODE: Attempting to find alternative sources for high-signal headline.`
   )
 
-  // First, try to find an alternative, scrapeable source.
   const searchResult = await findAlternativeSources(article.headline)
   if (searchResult.success && searchResult.results.length > 0) {
     for (const altSource of searchResult.results.slice(0, 2)) {
@@ -59,7 +57,6 @@ async function salvageHighSignalArticle(article, hits) {
     }
   }
 
-  // SECOND-LEVEL SALVAGE: If alternative sources fail, use Google Search snippets as context.
   logger.warn(
     { headline: article.headline },
     'SALVAGE RAG MODE: Alternative sources failed. Using Google Search snippets for context.'
@@ -122,12 +119,17 @@ export async function processSingleArticle(article, hits) {
   let transientArticle
   try {
     let source
-    if (article.source === 'Richlist Ingestion') {
-      logger.trace('Using mock source config for synthetic rich list article.')
+    // --- START OF DEFINITIVE FIX ---
+    // This new block handles the synthetic article from --test mode.
+    // It creates a mock source object in memory, completely bypassing the database lookup
+    // that was causing the crash.
+    if (article.source === 'Test E2E Source') {
+      logger.trace('Using mock source config for synthetic test article.')
       source = {
-        name: 'Richlist Ingestion',
-        articleSelector: ['body'],
+        name: 'Test E2E Source',
+        articleSelector: ['body'], // Use a generic selector that will work with the fake content
       }
+      // The synthetic article already has its content, so we just pass it through.
       transientArticle = {
         ...article,
         rawHtml: `Synthetic Article for ${article.headline}`,
@@ -135,11 +137,13 @@ export async function processSingleArticle(article, hits) {
         extractionSelectors: [],
       }
     } else {
+      // This is the normal path for all other articles.
       source = await Source.findOne({ name: article.source }).lean()
       if (!source)
         throw new Error(`Could not find source document for "${article.source}"`)
       transientArticle = await scrapeArticleContent(article, source)
     }
+    // --- END OF DEFINITIVE FIX ---
 
     const baseResult = {
       contentPreview: transientArticle.contentPreview,
@@ -148,25 +152,20 @@ export async function processSingleArticle(article, hits) {
       extractionSelectors: transientArticle.extractionSelectors,
     }
 
-    // NEW LOGIC: Proceed if we have ANY content, even just a snippet.
     if (
       transientArticle.articleContent &&
       transientArticle.articleContent.contents.length > 0
     ) {
       const articleText = transientArticle.articleContent.contents.join('\n')
-      const triageResult = await preAssessArticle(articleText, hits)
-
-      if (triageResult.error || triageResult.classification !== 'private') {
-        return {
-          ...baseResult,
-          article: null,
-          lifecycleEvent: createLifecycleEvent(
-            'enrichment',
-            'dropped',
-            `Failed AI Triage (classified as ${triageResult.classification})`
-          ),
-        }
-      }
+      logger.info(
+        {
+          articleLink: article.link,
+          charCount: articleText.length,
+          method: transientArticle.articleContent.method,
+          contentSnippet: articleText.substring(0, 400) + '...',
+        },
+        'Extracted content for full assessment.'
+      )
 
       const finalAssessment = await assessArticleContent(transientArticle, hits)
 
@@ -194,13 +193,10 @@ export async function processSingleArticle(article, hits) {
         }
       }
     } else {
-      // If content scraping failed completely...
       if (article.relevance_headline >= settings.HIGH_SIGNAL_HEADLINE_THRESHOLD) {
-        // ...and it's a high-signal headline, try to salvage it with external tools.
         const salvageResult = await salvageHighSignalArticle(article, hits)
         return { ...baseResult, ...salvageResult }
       } else {
-        // ...otherwise, drop it.
         return {
           ...baseResult,
           article: null,

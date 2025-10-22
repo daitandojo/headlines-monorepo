@@ -44,7 +44,7 @@ headlines-monorepo/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-10T00:11:02.006Z
+**Generated**: 2025-10-21T18:41:07.004Z
 **Repository Path**: /home/mark/Repos/projects/headlines-monorepo/packages/scraper-logic
 **Total Files**: 29
 **Package**: @headlines/scraper-logic@2.0.0
@@ -56,7 +56,7 @@ headlines-monorepo/
 
 
 ## 📄 package.json
-*Lines: 42, Size: 1.21 KB*
+*Lines: 44, Size: 1.25 KB*
 
 ```json
 {
@@ -69,6 +69,7 @@ headlines-monorepo/
     ".": "./src/node.js",
     "./node": "./src/node.js",
     "./next": "./src/next.js",
+    "./config": "./src/config.js",
     "./config.js": "./src/config.js",
     "./browser.js": "./src/browser.js",
     "./browserManager.js": "./src/browserManager.js",
@@ -101,62 +102,69 @@ headlines-monorepo/
     "playwright": "^1.45.1"
   }
 }
+
 ```
 
 ## 📄 src/ai/index.js
-*Lines: 136, Size: 5.32 KB*
+*Lines: 142, Size: 3.8 KB*
 
 ```javascript
-// packages/scraper-logic/src/ai/index.js (version 6.1.0)
+// packages/scraper-logic/src/ai/index.js
 import { getConfig } from '../config.js'
-import { callLanguageModel } from '../../../ai-services/src/index.js'
-import { AIAgent } from './AIAgent.js'
-import { assessArticleContent } from './agents/articleAgent.js'
-import { articleAssessmentSchema } from './schemas/articleAssessmentSchema.js'
-import { preAssessArticle } from './agents/articlePreAssessmentAgent.js'
-import { articlePreAssessmentSchema } from './schemas/articlePreAssessmentSchema.js'
-import { clusterArticlesIntoEvents } from './agents/clusteringAgent.js'
-import { clusterSchema } from './schemas/clusterSchema.js'
-import { resolveVagueContact, findContactDetails } from './agents/contactAgent.js'
-import { enrichContactSchema } from './schemas/enrichContactSchema.js'
-import { findContactSchema } from './schemas/findContactSchema.js'
+
 import {
+  articleAssessmentSchema,
+  batchArticleAssessmentSchema,
+  batchHeadlineAssessmentSchema,
+  canonicalizerSchema,
+  clusterSchema,
+  disambiguationSchema,
+  emailIntroSchema,
+  emailSubjectSchema,
+  enrichContactSchema,
+  entitySchema,
+  findContactSchema,
+  headlineAssessmentSchema,
+  judgeSchema,
+  opportunitySchema,
+  sectionClassifierSchema,
+  selectorRepairSchema,
+  synthesisSchema,
+  watchlistSuggestionSchema,
+} from '@headlines/models/schemas'
+
+import {
+  callLanguageModel,
+  AIAgent,
+  assessArticleContent,
+  clusterArticlesIntoEvents,
+  // --- START OF DEFINITIVE FIX ---
+  // 'resolveVagueContact' was removed as it is no longer exported by ai-services
+  // --- END OF DEFINITIVE FIX ---
+  findContactDetails,
   generateEmailSubjectLine,
   generatePersonalizedIntro,
-} from './agents/emailAgents.js'
-import { emailSubjectSchema } from './schemas/emailSubjectSchema.js'
-import { emailIntroSchema } from './schemas/emailIntroSchema.js'
-import {
   extractEntities,
   entityCanonicalizerAgent as getEntityCanonicalizerAgent,
-} from './agents/entityAgent.js'
-import { entitySchema } from './schemas/entitySchema.js'
-import { canonicalizerSchema } from './schemas/canonicalizerSchema.js'
-import { assessHeadlinesInBatches } from './agents/headlineAgent.js'
-import { headlineAssessmentSchema } from './schemas/headlineAssessmentSchema.js'
-import { judgePipelineOutput } from './agents/judgeAgent.js'
-import { judgeSchema } from './schemas/judgeSchema.js'
-import { generateOpportunitiesFromEvent } from './agents/opportunityAgent.js'
-import { opportunitySchema } from './schemas/opportunitySchema.js'
-import { suggestNewSelector } from './agents/selectorRepairAgent.js'
-import { selectorRepairSchema } from './schemas/selectorRepairSchema.js'
-import { synthesizeEvent, synthesizeFromHeadline } from './agents/synthesisAgent.js'
-import { synthesisSchema } from './schemas/synthesisSchema.js'
-import { generateWatchlistSuggestions } from './agents/watchlistAgent.js'
-import { watchlistSuggestionSchema } from './schemas/watchlistSuggestionSchema.js'
-import { disambiguationSchema } from './schemas/disambiguationSchema.js'
-import { batchAssessArticles } from './agents/batchArticleAgent.js'
-import { batchArticleAssessmentSchema } from './schemas/batchArticleAssessmentSchema.js'
-import { classifyLinks as sectionClassifierAgent } from './agents/sectionClassifierAgent.js'
-import { generateExecutiveSummary } from './agents/executiveSummaryAgent.js'
+  assessHeadlinesInBatches,
+  judgePipelineOutput,
+  generateOpportunitiesFromEvent,
+  suggestNewSelector,
+  synthesizeEvent,
+  synthesizeFromHeadline,
+  generateWatchlistSuggestions,
+  batchAssessArticles,
+  classifyLinks as sectionClassifierAgent,
+  generateExecutiveSummary,
+} from '@headlines/ai-services'
 
 let isApiKeyInvalid = false
 export async function performAiSanityCheck() {
   try {
     getConfig().logger.info('🔬 Performing AI service sanity check (OpenAI)...')
     const answer = await callLanguageModel({
-      modelName: 'gpt-3.5-turbo', // Use a standard, widely available model for the check
-      prompt: 'What is in one word the name of the capital of France',
+      modelName: 'gpt-5-nano',
+      userContent: 'In one word, what is the capital of France?',
       isJson: false,
     })
     if (
@@ -186,12 +194,10 @@ export async function performAiSanityCheck() {
     return false
   }
 }
+
 export async function checkModelPermissions(requiredModels) {
   getConfig().logger.info('🔬 Verifying permissions for configured OpenAI models...')
   try {
-    // DEFINITIVE FIX: The OpenAI client for checking models is part of the ai-services package, not here.
-    // This function is also not strictly necessary for the app to run, so we can simplify.
-    // For now, we will assume permissions are correct if the sanity check passes.
     getConfig().logger.warn(
       'Model permission check is currently a no-op, relying on sanity check.'
     )
@@ -202,16 +208,18 @@ export async function checkModelPermissions(requiredModels) {
     return false
   }
 }
+
+// Re-export everything for the rest of the package to use.
 export {
   AIAgent,
   callLanguageModel,
   assessArticleContent,
   articleAssessmentSchema,
-  preAssessArticle,
-  articlePreAssessmentSchema,
   clusterArticlesIntoEvents,
   clusterSchema,
-  resolveVagueContact,
+  // --- START OF DEFINITIVE FIX ---
+  // 'resolveVagueContact' is removed from the exports as well.
+  // --- END OF DEFINITIVE FIX ---
   findContactDetails,
   enrichContactSchema,
   findContactSchema,
@@ -415,21 +423,18 @@ export async function fetchPageContentFromPopup(pageUrl, buttonSelector) {
 ```
 
 ## 📄 src/browserManager.js
-*Lines: 62, Size: 1.87 KB*
+*Lines: 72, Size: 2.27 KB*
 
 ```javascript
 // packages/scraper-logic/src/browserManager.js
 import playwright from 'playwright'
 import { getConfig } from './config.js'
+import { env } from '@headlines/config/node'
 
-const BROWSER_HEADERS = {
-  Accept:
-    'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-  'Accept-Encoding': 'gzip, deflate, br',
-  'Accept-Language': 'en-US,en;q=0.9,nl-NL;q=0.8,nl;q=0.7',
-  'User-Agent':
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-}
+const GOOGLEBOT_USER_AGENT =
+  'Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.96 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+const DEFAULT_USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 
 class BrowserManager {
   constructor() {
@@ -443,14 +448,27 @@ class BrowserManager {
     }
     const { logger } = getConfig()
     logger.info('[BrowserManager] Initializing persistent browser instance...')
+
+    const isSpoofing = env.DEV_SPOOF_GOOGLEBOT === 'true'
+    if (isSpoofing) {
+      logger.warn(
+        '⚠️ [BrowserManager] DEVELOPMENT MODE: Spoofing Googlebot User-Agent to bypass paywalls.'
+      )
+    }
+
     try {
       this.browser = await playwright.chromium.launch({
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
       })
       this.context = await this.browser.newContext({
-        userAgent: BROWSER_HEADERS['User-Agent'],
-        extraHTTPHeaders: BROWSER_HEADERS,
+        userAgent: isSpoofing ? GOOGLEBOT_USER_AGENT : DEFAULT_USER_AGENT,
+        // Remove other headers that could reveal our identity when spoofing
+        extraHTTPHeaders: isSpoofing
+          ? {}
+          : {
+              'Accept-Language': 'en-US,en;q=0.9',
+            },
         viewport: { width: 1920, height: 1080 },
       })
       logger.info('[BrowserManager] ✅ Browser instance ready.')
@@ -483,7 +501,7 @@ export const browserManager = new BrowserManager()
 ```
 
 ## 📄 src/config.js
-*Lines: 23, Size: 567 Bytes*
+*Lines: 23, Size: 564 Bytes*
 
 ```javascript
 // packages/scraper-logic/src/config.js (version 1.0.0)
@@ -498,15 +516,15 @@ let _config = {
   },
   configStore: null,
   utilityFunctions: null,
-};
+}
 
 export function configure(appConfig) {
   // Merge the provided app config with the existing config.
-  _config = { ..._config, ...appConfig };
+  _config = { ..._config, ...appConfig }
 }
 
 export function getConfig() {
-  return _config;
+  return _config
 }
 
 ```
@@ -620,355 +638,131 @@ export const BROWSER_HEADERS = {
 ```
 
 ## 📄 src/scraper/contentScraper.js
-*Lines: 397, Size: 11.94 KB*
+*Lines: 157, Size: 5.11 KB*
 
 ```javascript
 // packages/scraper-logic/src/scraper/contentScraper.js
-import * as cheerio from 'cheerio'
-import fs from 'fs/promises'
-import path from 'path'
 import { JSDOM, VirtualConsole } from 'jsdom'
 import { Readability } from '@mozilla/readability'
-
+import * as cheerio from 'cheerio'
 import { getConfig } from '../config.js'
 import { fetchPageWithPlaywright } from '../browser.js'
 import { contentExtractorRegistry } from './extractors/index.js'
 import { settings } from '@headlines/config/node'
 
 /**
- * Content quality metrics for scoring extracted content
- * These weights can be tuned per-source or globally based on performance
- */
-const QUALITY_WEIGHTS = {
-  length: 0.3,
-  paragraphs: 0.2,
-  linkDensity: 0.15,
-  punctuation: 0.15,
-  wordVariety: 0.2,
-}
-
-/**
- * Get quality weights for a specific source (allows per-source tuning)
- * @param {Object} source - Source configuration
- * @returns {Object} Quality weights
- */
-function getQualityWeights(source) {
-  return source.qualityWeights || QUALITY_WEIGHTS
-}
-
-/**
- * Saves HTML to debug directory for troubleshooting
- * @param {string} filename - Name of the file to save
- * @param {string} html - HTML content to save
- * @returns {Promise<string|null>} Path to saved file or null
- */
-async function saveDebugHtml(filename, html) {
-  const config = getConfig()
-  const debugDir = config.paths?.debugHtmlDir
-  if (!debugDir) return null
-
-  try {
-    await fs.mkdir(debugDir, { recursive: true })
-    const filePath = path.join(debugDir, filename)
-    await fs.writeFile(filePath, html)
-    return filePath
-  } catch (error) {
-    config.logger.error({ err: error, file: filename }, 'Failed to save debug HTML.')
-    return null
-  }
-}
-
-/**
- * Cleans extracted text by normalizing whitespace and removing artifacts
- * @param {string} text - Raw extracted text
- * @returns {string} Cleaned text
+ * Cleans and formats text extracted by Readability or other methods.
+ * @param {string} text - The raw text content.
+ * @returns {string} The cleaned text.
  */
 function cleanText(text) {
   if (!text) return ''
-
+  // Normalize whitespace and ensure meaningful paragraph breaks.
   return text
-    .replace(/\s+/g, ' ') // Normalize whitespace
-    .replace(/\n{3,}/g, '\n\n') // Limit consecutive newlines
-    .replace(/[^\S\n]+/g, ' ') // Remove non-newline whitespace duplicates
+    .replace(/\s\s+/g, ' ')
+    .replace(/\n\s*\n/g, '\n\n')
     .trim()
 }
 
 /**
- * Calculates quality score for extracted content
- * @param {string} content - Extracted content
- * @param {cheerio.CheerioAPI} $ - Cheerio instance (for link density calculation)
- * @param {Object} weights - Quality weight configuration
- * @returns {number} Quality score between 0 and 1
+ * A fallback text extractor used only when Readability fails, to provide a snippet for logging.
+ * @param {string} html - The raw HTML of the page.
+ * @returns {string} A raw text snippet from the body.
  */
-function calculateContentQuality(content, $, weights = QUALITY_WEIGHTS) {
-  if (!content) return 0
-
-  const words = content.split(/\s+/)
-  const wordCount = words.length
-
-  // Length score (optimal range: 500-5000 words)
-  const lengthScore = Math.min(wordCount / 500, 5000 / Math.max(wordCount, 1)) / 5
-
-  // Paragraph structure (looking for proper formatting)
-  const paragraphs = content.split(/\n\n+/).filter((p) => p.trim().length > 50)
-  const paragraphScore = Math.min(paragraphs.length / 10, 1)
-
-  // Link density (lower is better for article content)
-  // Reuse existing Cheerio instance to avoid re-parsing
-  const linkTextLength = $('a').text().length
-  const totalTextLength = $.text().length
-  const linkDensity = totalTextLength > 0 ? linkTextLength / totalTextLength : 0
-  const linkScore = Math.max(0, 1 - linkDensity * 2)
-
-  // Punctuation (indicates proper sentences)
-  const punctuationCount = (content.match(/[.!?]/g) || []).length
-  const punctuationScore = Math.min(punctuationCount / (wordCount / 20), 1)
-
-  // Word variety (unique words / total words)
-  const uniqueWords = new Set(words.map((w) => w.toLowerCase()))
-  const varietyScore = wordCount > 0 ? uniqueWords.size / wordCount : 0
-
-  const totalScore =
-    lengthScore * weights.length +
-    paragraphScore * weights.paragraphs +
-    linkScore * weights.linkDensity +
-    punctuationScore * weights.punctuation +
-    varietyScore * weights.wordVariety
-
-  return totalScore
+function extractFallbackSnippet(html) {
+  if (!html) return ''
+  const $ = cheerio.load(html)
+  $('script, style, nav, footer, header, aside, form, button').remove()
+  return $('body').text().replace(/\s+/g, ' ').trim()
 }
 
 /**
- * Extracts content using Mozilla Readability.js
- * @param {string} url - Article URL
- * @param {string} html - Page HTML
- * @returns {Object|null} Extracted content with metadata
- */
-function extractWithReadability(url, html) {
-  try {
-    const virtualConsole = new VirtualConsole()
-    virtualConsole.on('cssParseError', () => {}) // Suppress CSS errors
-    virtualConsole.on('jsdomError', () => {}) // Suppress JSDOM errors
-
-    const doc = new JSDOM(html, {
-      url,
-      virtualConsole,
-      resources: 'usable',
-    })
-
-    const reader = new Readability(doc.window.document, {
-      charThreshold: settings.MIN_ARTICLE_CHARS || 500,
-      classesToPreserve: ['caption', 'credit'],
-    })
-
-    const article = reader.parse()
-
-    if (!article?.textContent) return null
-
-    return {
-      content: cleanText(article.textContent),
-      title: article.title,
-      excerpt: article.excerpt,
-      byline: article.byline,
-      length: article.length,
-    }
-  } catch (error) {
-    getConfig().logger.warn(
-      { err: error, url },
-      'Readability.js failed to parse article.'
-    )
-    return null
-  }
-}
-
-/**
- * Extracts content using CSS selectors with element deduplication
- * @param {cheerio.CheerioAPI} $ - Cheerio instance
- * @param {string|string[]} selectors - CSS selector(s)
- * @returns {Object} Extracted content with metadata
- */
-function extractWithSelectors($, selectors) {
-  const selectorArray = Array.isArray(selectors) ? selectors : [selectors].filter(Boolean)
-
-  if (selectorArray.length === 0) {
-    return { content: '', selectors: [] }
-  }
-
-  const usedSelectors = []
-  const processedElements = new Set()
-  const contentParts = []
-
-  for (const selector of selectorArray) {
-    try {
-      const elements = $(selector)
-
-      if (elements.length > 0) {
-        usedSelectors.push(selector)
-
-        elements.each((_, el) => {
-          // Skip if we've already processed this element
-          // This prevents duplicate content when selectors overlap
-          if (processedElements.has(el)) {
-            return
-          }
-          processedElements.add(el)
-
-          // Clone the element to avoid modifying the original DOM
-          const $el = $(el).clone()
-
-          // Remove script, style, and navigation elements
-          $el.find('script, style, nav, aside, footer, header').remove()
-
-          const text = $el.text().replace(/\s+/g, ' ').trim()
-
-          if (text && text.length > 50) {
-            contentParts.push(text)
-          }
-        })
-      }
-    } catch (error) {
-      getConfig().logger.warn({ selector, err: error }, 'Selector extraction failed')
-    }
-  }
-
-  // Content parts are already deduplicated via element tracking
-  const finalContent = contentParts.join('\n\n')
-
-  return {
-    content: cleanText(finalContent),
-    selectors: usedSelectors,
-  }
-}
-
-/**
- * Detects common content blockers (paywalls, cookie notices, etc.)
- * @param {cheerio.CheerioAPI} $ - Cheerio instance
- * @returns {Object} Blocker detection results
- */
-function detectContentBlockers($) {
-  const blockers = {
-    paywall: false,
-    subscription: false,
-    cookieNotice: false,
-    loginRequired: false,
-  }
-
-  const paywallIndicators = [
-    '[class*="paywall"]',
-    '[id*="paywall"]',
-    '[class*="subscription"]',
-    '[class*="premium"]',
-    '[class*="subscriber"]',
-    'meta[name="article:paywall"]',
-  ]
-
-  const loginIndicators = [
-    '[class*="login-required"]',
-    '[class*="sign-in"]',
-    '*:contains("sign in to continue")',
-  ]
-
-  blockers.paywall = paywallIndicators.some((selector) => $(selector).length > 0)
-  blockers.loginRequired = loginIndicators.some((selector) => $(selector).length > 0)
-  blockers.cookieNotice = $('[class*="cookie"], [id*="cookie"]').length > 0
-
-  return blockers
-}
-
-/**
- * Main content scraping function with intelligent extraction
- * @param {Object} article - Article metadata
- * @param {Object} source - Source configuration
- * @returns {Promise<Object>} Enriched article object
+ * The new universal content extractor. It uses a prioritized, multi-strategy approach.
+ * 1. Custom Extractor (if defined)
+ * 2. RSS Content (if available)
+ * 3. Mozilla's Readability (primary method)
+ * @param {object} article - The article object with a 'link' property.
+ * @param {object} source - The source document.
+ * @returns {Promise<object>} The article object, enriched with content or an error.
  */
 export async function scrapeArticleContent(article, source) {
   const logger = getConfig().logger
   const startTime = Date.now()
 
-  // 1. Try custom extractor first (highest priority)
+  // Strategy 1: Custom Extractor (for special cases like popups)
   if (
     source.extractionMethod === 'custom' &&
     contentExtractorRegistry[source.extractorKey]
   ) {
     try {
-      logger.trace({ extractorKey: source.extractorKey }, 'Using custom extractor')
+      logger.trace(
+        { extractorKey: source.extractorKey },
+        'Using custom content extractor.'
+      )
       return await contentExtractorRegistry[source.extractorKey](article, source)
     } catch (error) {
       logger.error(
         { err: error, extractorKey: source.extractorKey },
-        'Custom extractor failed'
+        'Custom content extractor failed. Falling back to standard methods.'
       )
-      // Continue to fallback methods
     }
   }
 
-  // 2. Check RSS content (if sufficient quality)
+  // Strategy 2: RSS Content (fast and reliable if available)
   if (article.rssContent && article.rssContent.length >= settings.MIN_ARTICLE_CHARS) {
+    // --- START OF DEFINITIVE FIX ---
+    // The function was named `cleanReadabilityText` in a previous version. It is now `cleanText`.
     const cleanedRss = cleanText(article.rssContent)
+    // --- END OF DEFINITIVE FIX ---
     if (cleanedRss.length >= settings.MIN_ARTICLE_CHARS) {
-      article.articleContent = {
-        contents: [cleanedRss],
-        method: 'RSS Feed',
-        quality: 'medium',
+      logger.trace(
+        { headline: article.headline },
+        'Using high-quality content from RSS feed.'
+      )
+      return {
+        ...article,
+        articleContent: { contents: [cleanedRss], method: 'RSS Feed' },
+        rawHtml: `RSS Content for ${article.headline}`,
+        extractionMethod: 'RSS',
       }
-      logger.trace({ headline: article.headline }, 'Using RSS content')
-      return article
     }
   }
 
-  // 3. Fetch full page HTML
-  const html = await fetchPageWithPlaywright(article.link, 'ContentScraper')
+  // Strategy 3: Readability (The Universal Default)
+  const html = await fetchPageWithPlaywright(article.link, 'UniversalContentScraper')
+
   if (!html) {
     return {
       ...article,
       enrichment_error: 'Playwright failed to fetch page HTML',
       contentPreview: '',
+      rawHtml: null,
+      extractionMethod: 'Readability',
     }
   }
 
-  const $ = cheerio.load(html)
+  try {
+    const virtualConsole = new VirtualConsole()
+    virtualConsole.on('cssParseError', () => {})
+    const doc = new JSDOM(html, { url: article.link, virtualConsole })
+    const reader = new Readability(doc.window.document, {
+      charThreshold: settings.MIN_ARTICLE_CHARS,
+    })
+    const readabilityArticle = reader.parse()
 
-  // 4. Detect content blockers
-  const blockers = detectContentBlockers($)
+    if (!readabilityArticle || !readabilityArticle.textContent) {
+      throw new Error('Readability failed to extract a main article body.')
+    }
 
-  // 5. Extract using multiple methods
-  const selectorResult = extractWithSelectors($, source.articleSelector)
-  const readabilityResult = extractWithReadability(article.link, html)
+    // --- START OF DEFINITIVE FIX ---
+    // The function was named `cleanReadabilityText` in a previous version. It is now `cleanText`.
+    const content = cleanText(readabilityArticle.textContent)
+    // --- END OF DEFINITIVE FIX ---
 
-  // 6. Get quality weights (allows per-source tuning)
-  const weights = getQualityWeights(source)
-
-  // 7. Calculate quality scores (reuse $ instance for efficiency)
-  const candidates = [
-    {
-      content: selectorResult.content,
-      method: 'CSS Selectors',
-      quality: calculateContentQuality(selectorResult.content, $, weights),
-      metadata: { selectors: selectorResult.selectors },
-    },
-    {
-      content: readabilityResult?.content || '',
-      method: 'Readability.js',
-      quality: calculateContentQuality(readabilityResult?.content || '', $, weights),
-      metadata: {
-        title: readabilityResult?.title,
-        byline: readabilityResult?.byline,
-      },
-    },
-  ].filter((c) => c.content.length >= settings.MIN_ARTICLE_CHARS)
-
-  // 8. Select best extraction result
-  candidates.sort((a, b) => b.quality - a.quality)
-  const bestResult = candidates[0]
-
-  // 9. Process results
-  if (bestResult) {
-    article.articleContent = {
-      contents: [bestResult.content],
-      method: bestResult.method,
-      quality:
-        bestResult.quality > 0.7 ? 'high' : bestResult.quality > 0.4 ? 'medium' : 'low',
-      metadata: bestResult.metadata,
+    if (content.length < settings.MIN_ARTICLE_CHARS) {
+      throw new Error(
+        `Extracted content is too short (${content.length} chars). Likely a paywall or error page.`
+      )
     }
 
     const duration = Date.now() - startTime
@@ -976,48 +770,32 @@ export async function scrapeArticleContent(article, source) {
       {
         article: {
           headline: article.headline,
-          chars: bestResult.content.length,
-          method: bestResult.method,
-          quality: bestResult.quality.toFixed(2),
+          chars: content.length,
           duration: `${duration}ms`,
         },
       },
-      '✅ Content enrichment successful'
+      '✅ Universal content extraction successful'
     )
-  } else {
-    // 10. Handle extraction failure
-    let errorReason = 'All extraction methods failed'
-    const previewContent = selectorResult.content || readabilityResult?.content || ''
 
-    if (blockers.paywall) {
-      errorReason = `Paywall detected. Extracted only ${previewContent.length} chars.`
-    } else if (blockers.loginRequired) {
-      errorReason = `Login required. Content inaccessible.`
-    } else if (
-      previewContent.length > 0 &&
-      previewContent.length < settings.MIN_ARTICLE_CHARS
-    ) {
-      errorReason = `Content too short (${previewContent.length} chars, minimum ${settings.MIN_ARTICLE_CHARS}).`
+    return {
+      ...article,
+      articleContent: { contents: [content], method: 'Readability.js' },
+      rawHtml: html,
+      extractionMethod: 'Readability',
     }
-
-    article.enrichment_error = errorReason
-    article.contentPreview = previewContent ? previewContent.substring(0, 200) : ''
-
-    // Save debug HTML for troubleshooting
-    const filename = `${source.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}_fail.html`
-    await saveDebugHtml(filename, html)
-
+  } catch (error) {
     logger.warn(
-      {
-        article: { headline: article.headline, link: article.link },
-        reason: errorReason,
-        blockers,
-      },
-      '❌ Content enrichment failed'
+      { article: { headline: article.headline, link: article.link }, err: error.message },
+      '❌ Universal content extraction failed'
     )
+    return {
+      ...article,
+      enrichment_error: `Readability Failed: ${error.message}`,
+      contentPreview: extractFallbackSnippet(html).substring(0, 300),
+      rawHtml: html,
+      extractionMethod: 'Readability',
+    }
   }
-
-  return article
 }
 
 ```
@@ -1297,7 +1075,7 @@ export const verdaneExtractor = ($, el, site) => {
 ```
 
 ## 📄 src/scraper/headlineScraper.js
-*Lines: 608, Size: 15.59 KB*
+*Lines: 607, Size: 15.57 KB*
 
 ```javascript
 // packages/scraper-logic/src/scraper/headlineScraper.js (version 6.0.0)
@@ -1881,7 +1659,6 @@ export async function scrapeSiteForHeadlines(source) {
       articles: [],
       success: false,
       error: 'Extracted 0 headlines.',
-      debugHtml: html,
       method: fetcherName,
       duration,
     }

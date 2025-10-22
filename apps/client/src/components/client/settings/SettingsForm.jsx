@@ -1,5 +1,4 @@
-// File: apps/client/src/components/client/SettingsForm.jsx (Unabridged and Corrected)
-
+// apps/client/src/components/client/settings/SettingsForm.jsx
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
@@ -19,7 +18,16 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/shared'
-import { Save, Loader2, Trash2, User, Settings as SettingsIcon } from 'lucide-react'
+import { CountrySubscriptionEditor } from '../countries/CountrySubscriptionEditor'
+import { SectorSubscriptionEditor } from './SectorSubscriptionEditor'
+import {
+  Save,
+  Loader2,
+  Trash2,
+  User,
+  Settings as SettingsIcon,
+  Filter,
+} from 'lucide-react'
 import { toast } from 'sonner'
 
 async function clearDiscardedItems() {
@@ -31,7 +39,7 @@ async function clearDiscardedItems() {
   return res.json()
 }
 
-export function SettingsForm() {
+export function SettingsForm({ allCountries, allSectors }) {
   const { user, updateUserPreferences } = useAuth()
   const router = useRouter()
   const [formData, setFormData] = useState({
@@ -40,25 +48,13 @@ export function SettingsForm() {
     email: '',
     password: '',
     confirmPassword: '',
+    countries: [],
+    sectors: [],
   })
   const [isSaving, setIsSaving] = useState(false)
   const [isClearing, setIsClearing] = useState(false)
-
   const tabsListRef = useRef(null)
   const [contentWidth, setContentWidth] = useState(0)
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (tabsListRef.current) {
-        setContentWidth(tabsListRef.current.offsetWidth)
-      }
-    }
-
-    handleResize()
-
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
 
   useEffect(() => {
     if (user) {
@@ -68,9 +64,22 @@ export function SettingsForm() {
         email: user.email || '',
         password: '',
         confirmPassword: '',
+        countries: (user.countries || []).map((c) => c.name),
+        sectors: user.sectors || [],
       })
     }
   }, [user])
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (tabsListRef.current) {
+        setContentWidth(tabsListRef.current.offsetWidth)
+      }
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const handleChange = (e) => {
     const { id, value } = e.target
@@ -86,9 +95,12 @@ export function SettingsForm() {
 
     setIsSaving(true)
 
+    // MODIFIED: Include sectors and correctly format countries for the API
     const updateData = {
       firstName: formData.firstName,
       lastName: formData.lastName,
+      countries: formData.countries.map((name) => ({ name, active: true })),
+      sectors: formData.sectors,
     }
     if (formData.password) {
       updateData.password = formData.password
@@ -96,8 +108,8 @@ export function SettingsForm() {
 
     await updateUserPreferences(updateData)
     setFormData((prev) => ({ ...prev, password: '', confirmPassword: '' }))
-
     setIsSaving(false)
+    router.refresh()
   }
 
   const handleClearDiscarded = async () => {
@@ -124,14 +136,18 @@ export function SettingsForm() {
         className="w-full"
         style={{ maxWidth: contentWidth > 0 ? `${contentWidth}px` : '100%' }}
       >
-        <TabsList ref={tabsListRef} className="grid w-full grid-cols-2">
+        <TabsList ref={tabsListRef} className="grid w-full grid-cols-3">
           <TabsTrigger value="profile">
             <User className="w-4 h-4 mr-2" />
-            Profile Information
+            Profile
+          </TabsTrigger>
+          <TabsTrigger value="preferences">
+            <Filter className="w-4 h-4 mr-2" />
+            Feed Preferences
           </TabsTrigger>
           <TabsTrigger value="advanced">
             <SettingsIcon className="w-4 h-4 mr-2" />
-            Advanced Settings
+            Advanced
           </TabsTrigger>
         </TabsList>
 
@@ -172,7 +188,7 @@ export function SettingsForm() {
                   <Input
                     id="password"
                     type="password"
-                    placeholder="Leave blank to keep current password"
+                    placeholder="Leave blank to keep current"
                     value={formData.password}
                     onChange={handleChange}
                   />
@@ -183,7 +199,7 @@ export function SettingsForm() {
                     <Input
                       id="confirmPassword"
                       type="password"
-                      placeholder="Confirm your new password"
+                      placeholder="Confirm new password"
                       value={formData.confirmPassword}
                       onChange={handleChange}
                     />
@@ -198,6 +214,52 @@ export function SettingsForm() {
                     <Save className="mr-2 h-4 w-4" />
                   )}
                   Save Changes
+                </Button>
+              </CardFooter>
+            </Card>
+          </form>
+        </TabsContent>
+
+        <TabsContent value="preferences">
+          <form onSubmit={handleSaveChanges}>
+            <Card className="bg-slate-900/50 border-slate-700/80">
+              <CardHeader>
+                <CardTitle>Feed Preferences</CardTitle>
+                <CardDescription>
+                  Curate your intelligence feed by selecting countries and sectors of
+                  interest.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label>Country Subscriptions</Label>
+                  <CountrySubscriptionEditor
+                    allCountries={allCountries}
+                    selectedCountries={formData.countries}
+                    onSelectionChange={(newCountries) =>
+                      setFormData((prev) => ({ ...prev, countries: newCountries }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Sector Subscriptions</Label>
+                  <SectorSubscriptionEditor
+                    allSectors={allSectors}
+                    selectedSectors={formData.sectors}
+                    onSelectionChange={(newSectors) =>
+                      setFormData((prev) => ({ ...prev, sectors: newSectors }))
+                    }
+                  />
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button type="submit" disabled={isSaving}>
+                  {isSaving ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  Save Preferences
                 </Button>
               </CardFooter>
             </Card>

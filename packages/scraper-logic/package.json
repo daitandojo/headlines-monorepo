@@ -8,6 +8,7 @@
     ".": "./src/node.js",
     "./node": "./src/node.js",
     "./next": "./src/next.js",
+    "./config": "./src/config.js",
     "./config.js": "./src/config.js",
     "./browser.js": "./src/browser.js",
     "./browserManager.js": "./src/browserManager.js",

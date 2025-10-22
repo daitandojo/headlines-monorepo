@@ -1,5 +1,4 @@
-// File: apps/client/src/components/client/articles/ArticleModal.jsx
-
+// apps/client/src/components/client/articles/ArticleModal.jsx
 'use client'
 
 import {
@@ -17,7 +16,12 @@ import { getCountryFlag } from '@headlines/utils-shared'
 function ArticleDetail({ article }) {
   if (!article) return null
 
-  const flags = (article.country || []).map((c) => getCountryFlag(c)).join(' ')
+  // BACKWARD COMPATIBILITY FIX: Ensure 'country' is always treated as an array.
+  const countryArray = Array.isArray(article.country)
+    ? article.country
+    : [article.country].filter(Boolean)
+  const flags = countryArray.map(getCountryFlag).join(' ')
+
   const score = article.relevance_article || article.relevance_headline || 0
 
   const getRelevanceBadgeClass = (score) => {

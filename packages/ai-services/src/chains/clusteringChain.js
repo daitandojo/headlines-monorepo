@@ -1,28 +1,34 @@
-// packages/ai-services/src/chains/clusteringChain.js (version 3.2 - Final)
-import { ChatPromptTemplate } from '@langchain/core/prompts'
-import { JsonOutputParser } from '@langchain/core/output_parsers'
-import { RunnableSequence } from '@langchain/core/runnables'
+// packages/ai-services/src/chains/clusteringChain.js
+import { z } from 'zod'
+import { AIAgent } from '../lib/AIAgent.js'
 import { instructionCluster } from '@headlines/prompts'
-import { getHighPowerModel } from '../lib/langchain.js'
-import { safeInvoke } from '../lib/safeInvoke.js'
-import { clusterSchema } from '@headlines/models/schemas'
+import { settings } from '@headlines/config'
+import { logger } from '@headlines/utils-shared'
 
-const systemPrompt = [
-  instructionCluster.whoYouAre,
-  instructionCluster.whatYouDo,
-  ...instructionCluster.guidelines,
-  instructionCluster.outputFormatDescription,
-].join('\n\n')
+// This schema correctly matches the detailed prompt's output requirement.
+const clusterSchema = z.object({
+  events: z.array(
+    z.object({
+      event_key: z.string(),
+      article_ids: z.array(z.string()),
+    })
+  ),
+})
 
-const prompt = ChatPromptTemplate.fromMessages([
-  ['system', systemPrompt],
-  ['human', '{articles_json_string}'],
-])
+const getAgent = () =>
+  new AIAgent({
+    model: settings.LLM_MODEL_SYNTHESIS, // Clustering is a complex task
+    systemPrompt: instructionCluster,
+    zodSchema: clusterSchema,
+  })
 
-// --- DEFINITIVE FIX ---
-// The chain now ends with the model. The JsonOutputParser is removed.
-const chain = RunnableSequence.from([prompt, getHighPowerModel()])
+async function invoke(input) {
+  const agent = getAgent()
+  const result = await agent.execute(input.articles_json_string)
 
-export const clusteringChain = {
-  invoke: (input) => safeInvoke(chain, input, 'clusteringChain', clusterSchema),
+  // The AIAgent's execute method already handles retries, validation, and error logging.
+  // The output will either be the successfully validated data or an object with an `error` key.
+  return result
 }
+
+export const clusteringChain = { invoke }
