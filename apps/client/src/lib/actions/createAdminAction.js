@@ -1,6 +1,4 @@
 // apps/client/src/lib/actions/createAdminAction.js
-'use server'
-
 import dbConnect from '@headlines/data-access/dbConnect/next'
 import { revalidatePath } from 'next/cache'
 

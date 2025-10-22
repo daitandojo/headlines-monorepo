@@ -1,8 +1,9 @@
+// apps/client/src/app/api/user/profile/route.js
 'use server'
 
 import { NextResponse } from 'next/server'
-import { updateUserProfile } from '@headlines/data-access'
-import { createClientApiHandler } from '@/lib/api-handler' // Use the new client handler
+import { updateUserProfile } from '@headlines/data-access/next'
+import { createApiHandler } from '@/lib/api-handler'
 
 const handlePatch = async (request, { user }) => {
   const updateData = await request.json()
@@ -15,4 +16,4 @@ const handlePatch = async (request, { user }) => {
   return NextResponse.json(result.user)
 }
 
-export const PATCH = createClientApiHandler(handlePatch)
+export const PATCH = createApiHandler(handlePatch)

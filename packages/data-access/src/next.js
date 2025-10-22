@@ -117,6 +117,7 @@ export const processWatchlistSuggestion = core.processWatchlistSuggestion
 export const deleteAllSince = core.deleteAllSince
 export const resetAllSourceAnalytics = core.resetAllSourceAnalytics
 export const resetEventsEmailedStatusSince = core.resetEventsEmailedStatusSince
+export const sendItemByEmail = core.sendItemByEmail
 
 // Special wrapper for updateSettings to include revalidation
 export const updateSettings = async (...args) => {

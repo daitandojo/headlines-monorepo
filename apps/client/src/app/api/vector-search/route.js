@@ -65,5 +65,5 @@ const handlePost = async (request) => {
   return NextResponse.json({ data: typedItems })
 }
 
-export const POST = createApiHandler(handleGet)
+export const POST = createApiHandler(handlePost)
 export const dynamic = 'force-dynamic'

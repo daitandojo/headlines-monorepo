@@ -175,6 +175,9 @@ importers:
       remark-gfm:
         specifier: ^4.0.0
         version: 4.0.1
+      stripe:
+        specifier: ^16.2.0
+        version: 16.12.0
       tailwind-merge:
         specifier: ^2.3.0
         version: 2.6.0
@@ -5578,6 +5581,10 @@ packages:
   strip-json-comments@3.1.1:
     resolution: {integrity: sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==}
     engines: {node: '>=8'}
+
+  stripe@16.12.0:
+    resolution: {integrity: sha512-H7eFVLDxeTNNSn4JTRfL2//LzCbDrMSZ+2q1c7CanVWgK2qIW5TwS+0V7N9KcKZZNpYh/uCqK0PyZh/2UsaAtQ==}
+    engines: {node: '>=12.*'}
 
   strtok3@6.3.0:
     resolution: {integrity: sha512-fZtbhtvI9I48xDSywd/somNqgUHl2L2cstmXCCif0itOf96jeW18MBSyrLuNicYQVkvpOxkZtkzujiTJ9LW5Jw==}
@@ -11636,6 +11643,11 @@ snapshots:
   strip-final-newline@2.0.0: {}
 
   strip-json-comments@3.1.1: {}
+
+  stripe@16.12.0:
+    dependencies:
+      '@types/node': 24.7.1
+      qs: 6.13.0
 
   strtok3@6.3.0:
     dependencies:

@@ -1,6 +1,4 @@
 // apps/client/src/lib/utils/parse-admin-list-params.js
-'use server'
-
 /**
  * Parses common list-view search parameters for admin pages.
  * @param {object} searchParams - The searchParams object from a Next.js page component.

@@ -95,7 +95,6 @@ export function SettingsForm({ allCountries, allSectors }) {
 
     setIsSaving(true)
 
-    // MODIFIED: Include sectors and correctly format countries for the API
     const updateData = {
       firstName: formData.firstName,
       lastName: formData.lastName,
