@@ -1,4 +1,4 @@
-// apps/pipeline/scripts/tools/oppFactory.js (v2 - Resilient Search Strategy)
+// apps/pipeline/scripts/tools/oppFactory.js
 /**
  * @command tools:opp-factory
  * @group Tools
@@ -12,14 +12,11 @@ import { hideBin } from 'yargs/helpers'
 import { initializeScriptEnv } from '../seed/lib/script-init.js'
 import { logger } from '@headlines/utils-shared'
 import { performGoogleSearch, oppFactoryChain } from '@headlines/ai-services'
-import { fetchPageWithPlaywright, browserManager } from '@headlines/scraper-logic'
+import { browserManager } from '@headlines/scraper-logic'
 import { JSDOM } from 'jsdom'
 import { Readability } from '@mozilla/readability'
 import colors from 'ansi-colors'
-// --- START OF DEFINITIVE FIX ---
-// Add the missing import for chromium from the playwright package.
 import { chromium } from 'playwright'
-// --- END OF DEFINITIVE FIX ---
 
 const SEED_DIR = path.resolve(process.cwd(), 'apps/pipeline/opportunity_seeds')
 
