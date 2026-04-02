@@ -9,6 +9,7 @@
     "test": "jest",
     "test:upserter": "./run.sh test:upserter --",
     "db:seed:all": "./run.sh scripts/seed/seed-settings.js && ./run.sh scripts/seed/seed-countries.js && ./run.sh scripts/seed/seed-admin-user.js",
+    "db:seed:api-sources": "./run.sh scripts/seed/seed-sources-api.js",
     "seed:ingest-opportunities": "./run.sh scripts/seed/ingest-opportunity-files.js --",
     "db:seed:settings": "./run.sh scripts/seed/seed-settings.js",
     "db:seed:countries": "./run.sh scripts/seed/seed-countries.js",

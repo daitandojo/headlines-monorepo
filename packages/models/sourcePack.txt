@@ -57,13 +57,12 @@ headlines-monorepo/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-21T18:41:06.993Z
+**Generated**: 2025-11-28T09:26:58.561Z
 **Repository Path**: /home/mark/Repos/projects/headlines-monorepo/packages/models
 **Total Files**: 47
+**Workspace**: models
 **Package**: @headlines/models@2.0.0
 **Description**: Shared Mongoose models and Zod validation schemas for the Headlines monorepo.
-
-
 
 ---
 
@@ -96,7 +95,7 @@ headlines-monorepo/
 ```
 
 ## 📄 src/Article.js
-*Lines: 90, Size: 2.75 KB*
+*Lines: 92, Size: 2.88 KB*
 
 ```javascript
 // packages/models/src/Article.js
@@ -126,6 +125,10 @@ const ArticleSchema = new Schema(
     imageUrl: { type: String, trim: true },
     relevance_headline: { type: Number, required: true, min: 0, max: 100 },
     assessment_headline: { type: String, required: true, trim: true },
+    // --- START OF DEFINITIVE FIX ---
+    // Add the new field to persist the concise summary generated in Stage 3.
+    one_line_summary: { type: String, trim: true },
+    // --- END OF DEFINITIVE FIX ---
     articleContent: {
       type: { contents: { type: [String], default: [] } },
       required: false,
@@ -155,7 +158,6 @@ const ArticleSchema = new Schema(
     },
     status: { type: String, enum: ARTICLE_STATUSES, default: 'scraped', index: true },
     pipelineTrace: { type: [LifecycleEventSchema], default: [], select: false },
-    // --- START OF MODIFICATION ---
     watchlistHits: [
       {
         type: Schema.Types.ObjectId,
@@ -163,7 +165,6 @@ const ArticleSchema = new Schema(
         index: true,
       },
     ],
-    // --- END OF MODIFICATION ---
   },
   {
     timestamps: true,
@@ -682,7 +683,7 @@ export default models.Subscriber || model('Subscriber', SubscriberSchema)
 ```
 
 ## 📄 src/SynthesizedEvent.js
-*Lines: 138, Size: 4.26 KB*
+*Lines: 136, Size: 4.08 KB*
 
 ```javascript
 // packages/models/src/SynthesizedEvent.js
@@ -695,7 +696,10 @@ const SourceArticleSchema = new Schema(
     link: { type: String, required: true, trim: true },
     newspaper: { type: String, required: true, trim: true },
     imageUrl: { type: String, trim: true },
-    country: { type: String, trim: true },
+    // --- START OF DEFINITIVE FIX ---
+    // The country field must be an array of strings to match the main Article schema.
+    country: { type: [String], trim: true },
+    // --- END OF DEFINITIVE FIX ---
   },
   { _id: false }
 )
@@ -753,12 +757,7 @@ const JudgeVerdictSchema = new Schema(
 
 const SynthesizedEventSchema = new Schema(
   {
-    // --- START OF DEFINITIVE FIX ---
-    // The `event_key` is used for lookups in the commit stage fallback logic.
-    // Without an index, this query is extremely slow on a large collection and times out.
-    // Adding `index: true` is the critical performance fix that resolves the cascade of failures.
     event_key: { type: String, required: true, unique: true, trim: true, index: true },
-    // --- END OF DEFINITIVE FIX ---
     synthesized_headline: { type: String, required: true, trim: true },
     synthesized_summary: { type: String, required: true, trim: true },
     advisorSummary: { type: String, trim: true },
@@ -1069,7 +1068,7 @@ export const loginSchema = z.object({
 ```
 
 ## 📄 src/schemas/articleAssessmentSchema.js
-*Lines: 53, Size: 1.53 KB*
+*Lines: 58, Size: 1.63 KB*
 
 ```javascript
 // packages/models/src/schemas/articleAssessmentSchema.js
@@ -1081,6 +1080,13 @@ export const articleAssessmentSchema = z.object({
     is_liquidity_event: z.boolean(),
     beneficiary: z.string(),
   }),
+  // --- START OF DEFINITIVE FIX ---
+  // Add the new field to the Zod schema to ensure it's validated and not stripped out.
+  one_line_summary: z
+    .string()
+    .min(1)
+    .describe('A single, concise sentence summarizing the core event for clustering.'),
+  // --- END OF DEFINITIVE FIX ---
   transactionType: z
     .enum([
       'Leadership Succession',
@@ -1107,8 +1113,6 @@ export const articleAssessmentSchema = z.object({
     })
     .optional(),
 
-  // DEFINITIVE FIX: Add a .transform() to automatically filter out invalid entries from the AI's output.
-  // This will remove any objects where 'name' is null, undefined, or an empty string.
   key_individuals: z
     .array(
       z.object({

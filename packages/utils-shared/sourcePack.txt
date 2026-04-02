@@ -22,13 +22,12 @@ headlines-monorepo/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-21T18:41:07.011Z
+**Generated**: 2025-11-28T09:26:58.575Z
 **Repository Path**: /home/mark/Repos/projects/headlines-monorepo/packages/utils-shared
 **Total Files**: 11
+**Workspace**: utils-shared
 **Package**: @headlines/utils-shared@2.0.0
 **Description**: Isomorphic (client and server safe) utilities and hooks.
-
-
 
 ---
 

@@ -1,9 +1,9 @@
 // apps/client/src/components/shared/screen/ViewHeader.jsx
-'use client'
+"use client";
 
-import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-import { useState, useEffect } from 'react'
-import { useDebounce } from '@/hooks'
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useDebounce } from "@/hooks";
 import {
   Input,
   Button,
@@ -16,74 +16,84 @@ import {
   DropdownMenuContent,
   DropdownMenuCheckboxItem,
   DropdownMenuSeparator,
-} from '../elements'
+} from "../elements";
 import {
   Search,
   Clock,
   BarChart,
   ArrowDownUp,
   Filter,
-  Star, // NEW ICON
+  Star,
   X,
-} from 'lucide-react'
-import { cn } from '@headlines/utils-shared'
+  Download,
+} from "lucide-react";
+import { cn } from "@headlines/utils-shared";
 
-const iconMap = { clock: Clock, relevance: BarChart, size: ArrowDownUp }
+const iconMap = { clock: Clock, relevance: BarChart, size: ArrowDownUp };
 
 const filterOptions = [
-  { value: 'M&A', label: 'M&A', group: 'Transaction' },
-  { value: 'IPO', label: 'IPO', group: 'Transaction' },
-  { value: 'Divestment', label: 'Divestment', group: 'Transaction' },
-  { value: 'Leadership Succession', label: 'Succession', group: 'Transaction' },
-  { value: 'New Wealth', label: 'New Wealth', group: 'Classification' },
-  { value: 'Wealth Profile', label: 'Wealth Profile', group: 'Classification' },
-  { value: 'Future Wealth', label: 'Future Wealth', group: 'Classification' },
-]
+  { value: "M&A", label: "M&A", group: "Transaction" },
+  { value: "IPO", label: "IPO", group: "Transaction" },
+  { value: "Divestment", label: "Divestment", group: "Transaction" },
+  { value: "Leadership Succession", label: "Succession", group: "Transaction" },
+  { value: "New Wealth", label: "New Wealth", group: "Classification" },
+  { value: "Wealth Profile", label: "Wealth Profile", group: "Classification" },
+  { value: "Future Wealth", label: "Future Wealth", group: "Classification" },
+];
 
 export function ViewHeader({ title, sortOptions }) {
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  const currentSort = searchParams.get('sort') || 'date_desc'
-  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '')
-  const debouncedSearchTerm = useDebounce(searchTerm, 500)
-  const activeCategories = searchParams.get('category')?.split(',') || []
-  const favoritesOnly = searchParams.get('favorites') === 'true' // NEW: Read favorites status
+  const currentSort = searchParams.get("sort") || "date_desc";
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || "");
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  const activeCategories = searchParams.get("category")?.split(",") || [];
+  const favoritesOnly = searchParams.get("favorites") === "true"; // NEW: Read favorites status
 
   useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (debouncedSearchTerm) params.set('q', debouncedSearchTerm)
-    else params.delete('q')
+    const params = new URLSearchParams(searchParams.toString());
+    if (debouncedSearchTerm) params.set("q", debouncedSearchTerm);
+    else params.delete("q");
     // Reset to page 1 on new search
-    if (params.has('q') || debouncedSearchTerm) {
-      params.set('page', '1')
+    if (params.has("q") || debouncedSearchTerm) {
+      params.set("page", "1");
     }
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-  }, [debouncedSearchTerm, router, pathname, searchParams])
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [debouncedSearchTerm, router, pathname, searchParams]);
 
   const handleUrlParamChange = (key, value) => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (!value || value === 'all' || value === false) params.delete(key)
-    else params.set(key, value)
-    params.set('page', '1')
-    router.push(`${pathname}?${params.toString()}`, { scroll: false })
-  }
+    const params = new URLSearchParams(searchParams.toString());
+    if (!value || value === "all" || value === false) params.delete(key);
+    else params.set(key, value);
+    params.set("page", "1");
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   const handleCategoryChange = (categoryValue) => {
     const newCategories = activeCategories.includes(categoryValue)
       ? activeCategories.filter((c) => c !== categoryValue)
-      : [...activeCategories, categoryValue]
+      : [...activeCategories, categoryValue];
 
-    handleUrlParamChange('category', newCategories.join(','))
-  }
+    handleUrlParamChange("category", newCategories.join(","));
+  };
 
-  const handleClearSearch = () => setSearchTerm('')
+  const handleClearSearch = () => setSearchTerm("");
+
+  const handleExport = async () => {
+    const endpoint = pathname.includes("events")
+      ? "/api/events/export"
+      : "/api/opportunities/export";
+    window.location.href = endpoint;
+  };
 
   return (
     <div className="flex flex-col items-center justify-center text-center mb-8 space-y-6 max-w-5xl mx-auto">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight text-slate-100">{title}</h2>
+        <h2 className="text-3xl font-bold tracking-tight text-slate-100">
+          {title}
+        </h2>
       </div>
       <div className="w-full flex flex-col sm:flex-row items-center gap-4">
         <div className="relative flex-grow w-full">
@@ -112,8 +122,8 @@ export function ViewHeader({ title, sortOptions }) {
               <Button
                 variant="outline"
                 className={cn(
-                  'h-12 w-12',
-                  activeCategories.length > 0 && 'bg-blue-500/20 text-blue-300'
+                  "h-12 w-12",
+                  activeCategories.length > 0 && "bg-blue-500/20 text-blue-300",
                 )}
                 aria-label="Filter events"
               >
@@ -134,7 +144,7 @@ export function ViewHeader({ title, sortOptions }) {
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuCheckboxItem
-                    onSelect={() => handleUrlParamChange('category', null)}
+                    onSelect={() => handleUrlParamChange("category", null)}
                   >
                     Clear Filters
                   </DropdownMenuCheckboxItem>
@@ -150,22 +160,45 @@ export function ViewHeader({ title, sortOptions }) {
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => handleUrlParamChange('favorites', !favoritesOnly)}
+                  onClick={() =>
+                    handleUrlParamChange("favorites", !favoritesOnly)
+                  }
                   className={cn(
-                    'h-12 w-12',
-                    favoritesOnly && 'bg-yellow-500/20 text-yellow-300'
+                    "h-12 w-12",
+                    favoritesOnly && "bg-yellow-500/20 text-yellow-300",
                   )}
                   aria-label="Show Favorites"
                 >
-                  <Star className={cn('h-5 w-5', favoritesOnly && 'fill-current')} />
+                  <Star
+                    className={cn("h-5 w-5", favoritesOnly && "fill-current")}
+                  />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
                 <p>Show Favorites Only</p>
               </TooltipContent>
             </Tooltip>
+            {/* Export Button */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleExport}
+                    className="h-12 w-12"
+                    aria-label="Export to CSV"
+                  >
+                    <Download className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Export to CSV</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             {sortOptions.map((option) => {
-              const IconComponent = iconMap[option.icon] || Clock
+              const IconComponent = iconMap[option.icon] || Clock;
               return (
                 <Tooltip key={option.value}>
                   <TooltipTrigger asChild>
@@ -174,13 +207,14 @@ export function ViewHeader({ title, sortOptions }) {
                       size="icon"
                       onClick={() =>
                         handleUrlParamChange(
-                          'sort',
-                          option.value === 'date_desc' ? null : option.value
+                          "sort",
+                          option.value === "date_desc" ? null : option.value,
                         )
                       }
                       className={cn(
-                        'h-12 w-12',
-                        currentSort === option.value && 'bg-blue-500/20 text-blue-300'
+                        "h-12 w-12",
+                        currentSort === option.value &&
+                          "bg-blue-500/20 text-blue-300",
                       )}
                       aria-label={option.tooltip}
                     >
@@ -189,11 +223,11 @@ export function ViewHeader({ title, sortOptions }) {
                   </TooltipTrigger>
                   <TooltipContent>{option.tooltip}</TooltipContent>
                 </Tooltip>
-              )
+              );
             })}
           </TooltipProvider>
         </div>
       </div>
     </div>
-  )
+  );
 }

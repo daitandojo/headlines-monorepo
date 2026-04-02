@@ -76,13 +76,12 @@ headlines-monorepo/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-21T18:41:06.979Z
+**Generated**: 2025-11-28T09:26:58.551Z
 **Repository Path**: /home/mark/Repos/projects/headlines-monorepo/packages/ai-services
 **Total Files**: 58
+**Workspace**: ai-services
 **Package**: @headlines/ai-services@1.0.0
 **Description**: Centralized, LangChain-powered AI and external service logic.
-
-
 
 ---
 
@@ -788,14 +787,16 @@ export const judgeChain = {
 ```
 
 ## 📄 src/chains/oppFactoryChain.js
-*Lines: 41, Size: 1.33 KB*
+*Lines: 44, Size: 1.49 KB*
 
 ```javascript
 // packages/ai-services/src/chains/oppFactoryChain.js
 import { AIAgent } from '../lib/AIAgent.js'
 import { instructionOppFactory } from '@headlines/prompts'
 import { settings } from '@headlines/config'
-import { opportunitySchema } from '@headlines/models/schemas' // This is the rich, unified schema
+import { opportunitySchema } from '@headlines/models/schemas'
+import { logger } from '@headlines/utils-shared'
+import { performGoogleSearch } from '../search/search.js'
 
 const getAgent = () =>
   new AIAgent({
@@ -804,14 +805,16 @@ const getAgent = () =>
     zodSchema: opportunitySchema,
   })
 
+// --- START OF DEFINITIVE FIX: Re-architecting the OppFactory ---
 async function invoke(input) {
   const agent = getAgent()
-  const userContent = `Target Name: ${input.name}\n\n--- Scraped Articles ---\n${input.articles_text}`
+
+  // The agent now simply receives the name and the pre-scraped text.
+  // The orchestration of scraping is handled by the calling script in the `pipeline` app.
+  const userContent = `Target Name: ${input.name}\n\n--- Scraped Research ---\n${input.articles_text}`
   const result = await agent.execute(userContent)
 
-  // --- START OF HARDENING ---
-  // If the AI successfully generates a dossier but fails to provide a 'whyContact' reason,
-  // inject a generic fallback to prevent Zod validation failure.
+  // Add the fallback for 'whyContact' as a hardening measure.
   if (
     result &&
     !result.error &&
@@ -821,17 +824,16 @@ async function invoke(input) {
     const opp = result.opportunities[0]
     if (!opp.whyContact || opp.whyContact.length === 0) {
       opp.whyContact = [
-        `Identified as a high-value individual (${input.name}) based on recent intelligence signals warranting further research and potential outreach.`,
+        `Identified as a high-value entity (${input.name}) based on proactive research, warranting further investigation and potential outreach.`,
       ]
     }
   }
-  // --- END OF HARDENING ---
 
   return result
 }
+// --- END OF DEFINITIVE FIX ---
 
 export const oppFactoryChain = { invoke }
-
 ```
 
 ## 📄 src/chains/opportunityChain.js
@@ -2286,7 +2288,7 @@ export async function batchAssessArticles(articles) {
 ```
 
 ## 📄 src/node/agents/clusteringAgent.js
-*Lines: 75, Size: 2.3 KB*
+*Lines: 75, Size: 2.28 KB*
 
 ```javascript
 // packages/ai-services/src/node/agents/clusteringAgent.js
@@ -2326,7 +2328,7 @@ export async function clusterArticlesIntoEvents(articles) {
       id: a._id.toString(),
       headline: a.headline,
       source: a.newspaper,
-      summary: (a.assessment_article || a.assessment_headline || '').substring(0, 400),
+      summary: a.one_line_summary || a.assessment_headline || '',
     }))
     const userContent = JSON.stringify(articlePayload)
     const response = await articleClusterAgent.execute(userContent)

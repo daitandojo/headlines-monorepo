@@ -32,7 +32,7 @@ export async function getUserIdFromSession() {
 export async function verifyAdmin() {
   const { user, error } = await verifySession()
 
-  if (process.env.NODE_ENV === 'development' && user?.email === 'dev@headlines.dev') {
+  if (process.env['NODE_ENV'] === 'development' && user?.email === 'dev@headlines.dev') {
     return { isAdmin: true, user, error: null }
   }
 

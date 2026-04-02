@@ -15,13 +15,11 @@ headlines-monorepo/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-21T18:41:06.973Z
+**Generated**: 2025-11-28T09:26:58.547Z
 **Repository Path**: /home/mark/Repos/projects/headlines-monorepo/apps/server
 **Total Files**: 4
+**Workspace**: server
 **Package**: @headlines/server@1.0.0
-
-
-
 
 ---
 

@@ -41,13 +41,12 @@ headlines-monorepo/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-21T18:41:06.988Z
+**Generated**: 2025-11-28T09:26:58.557Z
 **Repository Path**: /home/mark/Repos/projects/headlines-monorepo/packages/data-access
 **Total Files**: 30
+**Workspace**: data-access
 **Package**: @headlines/data-access@1.0.0
 **Description**: Shared, server-only data access logic for the Headlines monorepo.
-
-
 
 ---
 
@@ -2209,7 +2208,7 @@ export { buildQuery }
 ```
 
 ## 📄 src/next.js
-*Lines: 141, Size: 6.55 KB*
+*Lines: 142, Size: 6.6 KB*
 
 ```javascript
 // packages/data-access/src/next.js
@@ -2331,6 +2330,7 @@ export const processWatchlistSuggestion = core.processWatchlistSuggestion
 export const deleteAllSince = core.deleteAllSince
 export const resetAllSourceAnalytics = core.resetAllSourceAnalytics
 export const resetEventsEmailedStatusSince = core.resetEventsEmailedStatusSince
+export const sendItemByEmail = core.sendItemByEmail
 
 // Special wrapper for updateSettings to include revalidation
 export const updateSettings = async (...args) => {

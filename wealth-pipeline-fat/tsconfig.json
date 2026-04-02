@@ -1,0 +1,26 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "noEmit": false,
+    "tsBuildInfoFile": "./tsconfig.tsbuildinfo",
+    // We remove rootDir to allow references to resolve correctly
+    // "rootDir": "src",
+    "paths": {
+      "@wealth/domain": ["../../packages/verticals/wealth/domain/src/index.ts"],
+      "@wealth/access": ["../../packages/verticals/wealth/access/src/index.ts"],
+      "@shared/server": ["../../packages/shared/server/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"],
+  "references": [
+    { "path": "../../packages/platform/core" },
+    { "path": "../../packages/platform/client-provider" },
+    { "path": "../../packages/platform/worker" },
+    { "path": "../../packages/platform/scrapers" },
+    { "path": "../../packages/verticals/wealth/domain" }
+  ]
+}

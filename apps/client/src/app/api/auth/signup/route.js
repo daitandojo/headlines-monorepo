@@ -57,7 +57,7 @@ export async function POST(request) {
       name: JWT_COOKIE_NAME,
       value: token,
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env['NODE_ENV'] === 'production',
       path: '/',
       maxAge: 60 * 60 * 24 * 30, // 30 days
     })

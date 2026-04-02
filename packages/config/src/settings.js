@@ -17,16 +17,16 @@ const DEFAULTS = {
   WATCHLIST_SCORE_BOOST: 35,
   SUGGESTION_GENERATION_THRESHOLD: 80,
   MIN_ARTICLE_CHARS: 100,
-  LLM_MODEL_HEADLINE_ASSESSMENT: 'gpt-5-mini',
-  LLM_MODEL_ARTICLE_ASSESSMENT: 'gpt-5-mini',
-  LLM_MODEL_SYNTHESIS: 'gpt-5-mini',
-  LLM_MODEL_UTILITY: 'gpt-5-nano',
-  LLM_MODEL_PRO: 'gpt-5'
-}
+  LLM_MODEL_HEADLINE_ASSESSMENT: "xiaomi/mimo-v2-flash",
+  LLM_MODEL_ARTICLE_ASSESSMENT: "xiaomi/mimo-v2-flash",
+  LLM_MODEL_SYNTHESIS: "xiaomi/mimo-v2-flash",
+  LLM_MODEL_UTILITY: "xiaomi/mimo-v2-flash",
+  LLM_MODEL_PRO: "xiaomi/mimo-v2-flash",
+};
 
-export const settings = { ...DEFAULTS }
+export const settings = { ...DEFAULTS };
 
-let isInitialized = false
+let isInitialized = false;
 
 /**
  * Populates the exported `settings` object with values from the database.
@@ -34,20 +34,20 @@ let isInitialized = false
  * @param {Array<object>} dbSettings - An array of setting objects from the database.
  */
 export function populateSettings(dbSettings) {
-  if (isInitialized) return
+  if (isInitialized) return;
   if (!dbSettings || dbSettings.length === 0) {
     console.warn(
-      '[Config] No settings provided from database. The application will run on default values.'
-    )
+      "[Config] No settings provided from database. The application will run on default values.",
+    );
   } else {
     dbSettings.forEach((setting) => {
       if (setting.key in settings) {
-        settings[setting.key] = setting.value
+        settings[setting.key] = setting.value;
       }
-    })
+    });
     console.log(
-      `[Config] Successfully populated ${dbSettings.length} settings from the database.`
-    )
+      `[Config] Successfully populated ${dbSettings.length} settings from the database.`,
+    );
   }
-  isInitialized = true
+  isInitialized = true;
 }

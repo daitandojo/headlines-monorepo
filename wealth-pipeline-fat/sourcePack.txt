@@ -1,0 +1,1236 @@
+# 📁 PROJECT DIRECTORY STRUCTURE
+
+Total: 22 files, 6 directories
+
+```
+cogniti-monorepo/
+├── 📁 src/
+│   ├── 📁 scraper/
+│   │   ├── 📁 extractors/
+│   │   │   ├── 📄 cvc.ts
+│   │   │   ├── 📄 finansDk.ts
+│   │   │   ├── 📄 index.ts
+│   │   │   ├── 📄 jyllandsPosten.ts
+│   │   │   ├── 📄 okonomiskUgebrev.ts
+│   │   │   ├── 📄 politiken.ts
+│   │   │   └── 📄 verdane.ts
+│   │   ├── 📄 discovery.ts
+│   │   └── 📄 index.ts
+│   ├── 📁 services/
+│   │   └── 📄 graph.ts
+│   ├── 📁 stages/
+│   │   ├── 📄 clustering.ts
+│   │   ├── 📄 deep-dive.ts
+│   │   ├── 📄 resolution.ts
+│   │   └── 📄 triage.ts
+│   ├── 📁 utils/
+│   │   └── 📄 run-stats.ts
+│   ├── 📄 index.ts
+│   ├── 📄 orchestrator.ts
+│   ├── 📄 types.d.ts
+│   └── 📄 worker.ts
+├── 📄 .env.example
+├── 📄 package.json
+└── 📄 tsconfig.json
+```
+
+# 📋 PROJECT METADATA
+
+**Generated**: 2025-12-08T22:12:46.254Z
+**Repository Path**: /home/mark/Repos/projects/cogniti-monorepo/apps/wealth-pipeline-fat
+**Total Files**: 22
+**Workspace**: wealth-pipeline-fat
+**Package**: @cogniti/wealth-pipeline-fat@1.0.0
+
+---
+
+
+## 📄 .env.example
+*Lines: 18, Size: 419 Bytes*
+
+```
+# Database
+MONGO_URI="mongodb://localhost:27017/headlines"
+
+# Cogniti Brain
+COGNITI_API_URL="http://localhost:4000"
+COGNITI_API_KEY="dev-secret-key"
+
+# Email (Optional - logs to console if missing)
+SMTP_HOST="smtp.postmarkapp.com"
+SMTP_PORT=587
+SMTP_SECURE=true
+SMTP_USER="apikey"
+SMTP_PASS="your-postmark-key"
+SMTP_FROM_ADDRESS="intel@headlines.dev"
+TEST_EMAIL_RECIPIENT="admin@example.com"
+
+# Logging
+LOG_LEVEL="info"
+```
+
+## 📄 package.json
+*Lines: 41, Size: 1.13 KB*
+
+```json
+{
+  "name": "@cogniti/wealth-pipeline-fat",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "rm -rf dist tsconfig.tsbuildinfo && tsc --build",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "worker": "tsx src/worker.ts",
+    "clean": "rm -rf dist .turbo tsconfig.tsbuildinfo"
+  },
+  "dependencies": {
+    "@wealth/access": "workspace:*",
+    "@wealth/domain": "workspace:*",
+    "@wealth/data": "workspace:*",
+    "@shared/server": "workspace:*",
+    "@shared/utils": "workspace:*",
+    "@cogniti/sdk": "workspace:*",
+    "@cogniti/core": "workspace:*",
+    "@cogniti/client-provider": "workspace:*",
+    "@cogniti/worker": "workspace:*",
+    "@cogniti/scrapers": "workspace:*",
+    "axios": "^1.7.2",
+    "bullmq": "5.34.4",
+    "cheerio": "^1.0.0",
+    "dotenv": "^16.4.5",
+    "mongoose": "^8.4.1",
+    "nodemailer": "^6.9.13",
+    "p-limit": "^5.0.0",
+    "pino": "^9.2.0",
+    "zod": "^3.23.8",
+    "zod-to-json-schema": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/nodemailer": "^6.4.15",
+    "tsx": "^4.19.2",
+    "typescript": "5.7.2"
+  }
+}
+```
+
+## 📄 src/index.ts
+*Lines: 64, Size: 1.98 KB*
+
+```typescript
+// apps/wealth-pipeline/src/index.ts
+// File 1 of 1
+// One-line rationale: Fixing type errors by safely exposing dependencies and handling undefined arguments.
+
+import 'dotenv/config'
+import { getCognitiClient } from '@cogniti/client-provider'
+import type { StepDependencies } from '@cogniti/core'
+import { PipelineOrchestrator } from './orchestrator.js'
+import path from 'node:path'
+
+let initializedOrchestrator: {
+  instance: PipelineOrchestrator
+  dependencies: StepDependencies
+} | null = null
+
+async function getInitializedOrchestrator() {
+  if (initializedOrchestrator) return initializedOrchestrator
+
+  const client = await getCognitiClient()
+  const baseDeps = await client.getDependencies('headlines-system')
+  const dependencies: StepDependencies = {
+    ...baseDeps,
+    userId: 'headlines-system',
+    statusCallback: () => {},
+    streamCallback: () => {},
+    updateUserPersona: async () => {},
+  }
+
+  const instance = new PipelineOrchestrator(dependencies)
+  initializedOrchestrator = { instance, dependencies }
+  return initializedOrchestrator
+}
+
+export const orchestrator = {
+  run: async (dependencies: StepDependencies, params?: Record<string, any>) => {
+    const { instance } = await getInitializedOrchestrator()
+    return instance.run(dependencies, params)
+  },
+}
+
+async function main() {
+  const { instance, dependencies } = await getInitializedOrchestrator()
+  await instance.run(dependencies)
+}
+
+// This logic ensures `main()` only runs when the script is executed directly
+const entryPoint = process.argv[1]
+if (entryPoint) {
+  try {
+    const currentFileUrl = import.meta.url
+    const processFileUrl = path.resolve(process.cwd(), entryPoint)
+    // A more robust check might be needed depending on how tsx/node resolve paths
+    if (
+      currentFileUrl.endsWith(path.basename(processFileUrl)) ||
+      processFileUrl.endsWith('dist/index.js')
+    ) {
+      main().catch(console.error)
+    }
+  } catch (e) {
+    // Fallback for different execution environments
+    main().catch(console.error)
+  }
+}
+
+```
+
+## 📄 src/orchestrator.ts
+*Lines: 99, Size: 3.47 KB*
+
+```typescript
+// apps/wealth-pipeline/src/orchestrator.ts
+// File 4 of 4
+// One-line rationale: Full unabridged orchestrator with corrected stage method calls and RunStatsManager usage.
+
+import { HeadlinesScraper } from './scraper/index.js'
+import { dbConnect } from '@wealth/access'
+import { EmailService } from '@wealth/domain'
+import { TriageStage } from './stages/triage.js'
+import { ClusteringStage } from './stages/clustering.js'
+import { DeepDiveStage } from './stages/deep-dive.js'
+import { ResolutionStage } from './stages/resolution.js'
+import { RunStatsManager } from './utils/run-stats.js'
+import type { StepDependencies, IPipelineRunnable } from '@cogniti/core'
+
+export class PipelineOrchestrator implements IPipelineRunnable {
+  private scraper: HeadlinesScraper
+  private emailer: EmailService
+  private stats: RunStatsManager
+  private resolution: ResolutionStage
+  private triage: TriageStage
+  private clustering: ClusteringStage
+  private deepDive: DeepDiveStage
+
+  constructor(dependencies: StepDependencies) {
+    this.scraper = new HeadlinesScraper()
+    this.emailer = new EmailService()
+    this.stats = new RunStatsManager()
+
+    this.triage = new TriageStage(this.stats)
+    this.clustering = new ClusteringStage(this.stats)
+    this.deepDive = new DeepDiveStage(this.scraper, this.stats)
+    this.resolution = new ResolutionStage(dependencies)
+  }
+
+  async run(dependencies: StepDependencies, params: { ghostMode?: boolean } = {}) {
+    console.log('🚀 [Wealth Pipeline] Starting run...')
+    const ghostMode = params.ghostMode ?? true
+
+    try {
+      await dbConnect()
+      await this.scraper.init()
+
+      const freshArticles = await this.triage.run()
+      if (freshArticles.length === 0) {
+        console.log('No new articles to process. Ending run early.')
+        return this.stats.getSummary()
+      }
+
+      const newEvents = await this.clustering.run(freshArticles)
+      if (newEvents.length === 0) {
+        console.log('No new events created from clusters. Ending run.')
+        return this.stats.getSummary()
+      }
+
+      const { opportunities, events: enrichedEvents } = await this.deepDive.run(newEvents)
+      await this.resolution.run(enrichedEvents)
+
+      console.log(
+        `\n--- STAGE 5: NOTIFICATION (${ghostMode ? 'Ghost Mode' : 'Live Mode'}) ---`
+      )
+      if (ghostMode) {
+        console.log(
+          `👻  Ghost Mode: ${opportunities.length} new opportunities and ${enrichedEvents.length} new events were saved.`
+        )
+      } else if (opportunities.length > 0 || enrichedEvents.length > 0) {
+        const sentCount = await this.emailer.dispatchNotifications(
+          enrichedEvents,
+          opportunities
+        )
+        this.stats.incrementBy('eventsEmailed', sentCount)
+        console.log(
+          `📧  Live Mode: Dispatched notifications to ${sentCount} subscribers.`
+        )
+      } else {
+        console.log('No new actionable intelligence to report.')
+      }
+    } catch (err: any) {
+      console.error('🔥 [Wealth Pipeline] Fatal error:', err)
+      this.stats.addError(`Orchestrator_Fatal: ${err.message}`)
+    } finally {
+      await this.scraper.close()
+
+      const summary = this.stats.getSummary()
+      console.log(summary)
+
+      if (dependencies?.operation?.addJob) {
+        await dependencies.operation.addJob('send-supervisor-report', {
+          statsSummary: summary,
+        })
+      }
+
+      console.log('🏁 [Wealth Pipeline] Run complete.')
+      return summary
+    }
+  }
+}
+
+export const orchestrator = new PipelineOrchestrator(undefined as any)
+
+```
+
+## 📄 src/scraper/discovery.ts
+*Lines: 107, Size: 2.88 KB*
+
+```typescript
+// apps/headlines-pipeline/src/scraper/discovery.ts
+// File 5 of 10
+// One-line rationale: Fixing import from @wealth/access.
+
+import { HeadlinesScraper } from './index.js'
+import { load } from 'cheerio'
+import { getActiveSources, bulkUpsertArticles } from '@wealth/access' // Fixed import
+
+interface DiscoveredHeadline {
+  headline: string
+  link: string
+  sourceName: string
+}
+
+export class SourceDiscovery {
+  private scraper: HeadlinesScraper
+
+  constructor(scraper: HeadlinesScraper) {
+    this.scraper = scraper
+  }
+
+  async run(): Promise<DiscoveredHeadline[]> {
+    console.log('🔎 [Discovery] Fetching active sources...')
+
+    const sources = await getActiveSources()
+
+    if (sources.length === 0) {
+      console.warn('⚠️ [Discovery] No active sources found in DB.')
+      return []
+    }
+
+    console.log(`🔎 [Discovery] Processing ${sources.length} sources...`)
+    const allHeadlines: DiscoveredHeadline[] = []
+
+    for (const source of sources) {
+      try {
+        const headlines = await this.processSource(source)
+        console.log(`  -> ${source.name}: Found ${headlines.length} headlines.`)
+        allHeadlines.push(...headlines)
+      } catch (e: any) {
+        console.error(`❌ [Discovery] Failed source ${source.name}:`, e.message)
+      }
+    }
+
+    return allHeadlines
+  }
+
+  private async processSource(source: any): Promise<DiscoveredHeadline[]> {
+    const { sectionUrl, headlineSelector } = source
+
+    const { rawHtml } = await this.scraper.scrapeArticle(sectionUrl)
+
+    const $ = load(rawHtml)
+    const headlines: DiscoveredHeadline[] = []
+    const seenLinks = new Set<string>()
+
+    const selector =
+      Array.isArray(headlineSelector) && headlineSelector.length > 0
+        ? headlineSelector[0]
+        : 'a h2, h2 a, h3 a, .headline a'
+
+    $(selector).each((_, el) => {
+      const $el = $(el)
+      let $link = $el.is('a') ? $el : $el.closest('a')
+      if ($link.length === 0) $link = $el.find('a').first()
+
+      if ($link.length > 0) {
+        const href = $link.attr('href')
+        const text = $el.text().trim().replace(/\s+/g, ' ')
+
+        if (href && text.length > 15) {
+          try {
+            const absoluteUrl = new URL(href, sectionUrl).href
+
+            if (!seenLinks.has(absoluteUrl)) {
+              headlines.push({
+                headline: text,
+                link: absoluteUrl,
+                sourceName: source.name,
+              })
+              seenLinks.add(absoluteUrl)
+            }
+          } catch (e) {
+            /* ignore */
+          }
+        }
+      }
+    })
+
+    if (headlines.length > 0) {
+      const articlesToUpsert = headlines.map((h) => ({
+        link: h.link,
+        headline: h.headline,
+        newspaper: h.sourceName,
+        source: 'Discovery',
+        status: 'scraped',
+        relevance_headline: 0,
+        createdAt: new Date(),
+      }))
+
+      await bulkUpsertArticles(articlesToUpsert)
+    }
+
+    return headlines
+  }
+}
+
+```
+
+## 📄 src/scraper/extractors/cvc.ts
+*Lines: 26, Size: 799 Bytes*
+
+```typescript
+// apps/headlines-pipeline/src/scraper/extractors/cvc.ts
+import * as cheerio from 'cheerio'
+
+export const cvcPortfolioExtractor = (html: string) => {
+  const $ = cheerio.load(html)
+  const articles: any[] = []
+
+  $('.portfolio__card-holder').each((_, el) => {
+    const $el = $(el)
+    if ($el.hasClass('portfolio__card-holder--spotlight')) return
+
+    const companyName = $el.find('h2.portfolio__card-heading').text().trim()
+    const button = $el.find('button.js-portfolio-card')
+
+    if (companyName && button.length) {
+      articles.push({
+        headline: 'CVC Portfolio Company: ' + companyName,
+        link: '#', // CVC uses modals, so we might need a synthetic link or handled differently
+        customData: { dataKey: button.attr('data-key') },
+      })
+    }
+  })
+
+  return articles
+}
+
+```
+
+## 📄 src/scraper/extractors/finansDk.ts
+*Lines: 19, Size: 456 Bytes*
+
+```typescript
+import * as cheerio from 'cheerio'
+
+export const finansDkExtractor = (html: string) => {
+  const $ = cheerio.load(html)
+  const articles: any[] = []
+
+  // Example selector logic based on legacy code
+  $('.article-teaser').each((_, el) => {
+    const $el = $(el)
+    const headline = $el.find('h2').text().trim()
+    const link = $el.find('a').attr('href')
+
+    if (headline && link) {
+      articles.push({ headline, link })
+    }
+  })
+  return articles
+}
+
+```
+
+## 📄 src/scraper/extractors/index.ts
+*Lines: 16, Size: 707 Bytes*
+
+```typescript
+// apps/headlines-pipeline/src/scraper/extractors/index.ts
+import { cvcPortfolioExtractor } from './cvc.js';
+import { finansDkExtractor } from './finansDk.js';
+import { jyllandsPostenExtractor } from './jyllandsPosten.js';
+import { okonomiskUgebrevExtractor } from './okonomiskUgebrev.js';
+import { politikenExtractor } from './politiken.js';
+import { verdaneExtractor } from './verdane.js';
+
+export const customExtractors: Record<string, (html: string) => any[]> = {
+  'cvc_portfolio': cvcPortfolioExtractor,
+  'finans_dk': finansDkExtractor,
+  'jyllands_posten': jyllandsPostenExtractor,
+  'okonomisk_ugebrev': okonomiskUgebrevExtractor,
+  'politiken': politikenExtractor,
+  'verdane': verdaneExtractor
+};
+```
+
+## 📄 src/scraper/extractors/jyllandsPosten.ts
+*Lines: 18, Size: 439 Bytes*
+
+```typescript
+import * as cheerio from 'cheerio'
+
+export const jyllandsPostenExtractor = (html: string) => {
+  const $ = cheerio.load(html)
+  const articles: any[] = []
+
+  $('article.teaser').each((_, el) => {
+    const $el = $(el)
+    const headline = $el.find('h2.teaser__title').text().trim()
+    const link = $el.find('a.teaser__link').attr('href')
+
+    if (headline && link) {
+      articles.push({ headline, link })
+    }
+  })
+  return articles
+}
+
+```
+
+## 📄 src/scraper/extractors/okonomiskUgebrev.ts
+*Lines: 18, Size: 439 Bytes*
+
+```typescript
+import * as cheerio from 'cheerio'
+
+export const okonomiskUgebrevExtractor = (html: string) => {
+  const $ = cheerio.load(html)
+  const articles: any[] = []
+
+  $('.post-item').each((_, el) => {
+    const $el = $(el)
+    const headline = $el.find('h3.entry-title').text().trim()
+    const link = $el.find('a.entry-title-link').attr('href')
+
+    if (headline && link) {
+      articles.push({ headline, link })
+    }
+  })
+  return articles
+}
+
+```
+
+## 📄 src/scraper/extractors/politiken.ts
+*Lines: 18, Size: 415 Bytes*
+
+```typescript
+import * as cheerio from 'cheerio'
+
+export const politikenExtractor = (html: string) => {
+  const $ = cheerio.load(html)
+  const articles: any[] = []
+
+  $('.article-teaser').each((_, el) => {
+    const $el = $(el)
+    const headline = $el.find('.headline').text().trim()
+    const link = $el.find('a').attr('href')
+
+    if (headline && link) {
+      articles.push({ headline, link })
+    }
+  })
+  return articles
+}
+
+```
+
+## 📄 src/scraper/extractors/verdane.ts
+*Lines: 18, Size: 401 Bytes*
+
+```typescript
+import * as cheerio from 'cheerio'
+
+export const verdaneExtractor = (html: string) => {
+  const $ = cheerio.load(html)
+  const articles: any[] = []
+
+  $('.news-item').each((_, el) => {
+    const $el = $(el)
+    const headline = $el.find('h3').text().trim()
+    const link = $el.find('a').attr('href')
+
+    if (headline && link) {
+      articles.push({ headline, link })
+    }
+  })
+  return articles
+}
+
+```
+
+## 📄 src/scraper/index.ts
+*Lines: 75, Size: 1.88 KB*
+
+```typescript
+// apps/headlines-pipeline/src/scraper/index.ts
+// File 4 of 5
+// One-line rationale: Removing unused parameter.
+
+import { BrowserManager, HtmlProcessor } from '@cogniti/scrapers'
+import { customExtractors } from './extractors/index.js'
+
+export interface ScrapeResult {
+  url: string
+  title: string
+  content: string
+  rawHtml: string
+}
+
+export class HeadlinesScraper {
+  private browser: BrowserManager
+
+  constructor() {
+    this.browser = new BrowserManager()
+  }
+
+  async init() {
+    await this.browser.init()
+  }
+
+  async close() {
+    await this.browser.close()
+  }
+
+  async scrapeArticle(url: string): Promise<ScrapeResult> {
+    // Removed extractorKey
+    const page = await this.browser.newPage()
+
+    try {
+      console.log(`[Scraper] Navigating to ${url}...`)
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 })
+      await this.browser.handleConsent(page)
+
+      const rawHtml = await page.content()
+      const extracted = HtmlProcessor.extractContent(rawHtml, url)
+
+      if (!extracted.textContent || extracted.textContent.length < 100) {
+        throw new Error('Extracted content too short/empty')
+      }
+
+      return {
+        url,
+        title: extracted.title,
+        content: extracted.textContent,
+        rawHtml,
+      }
+    } catch (error: any) {
+      console.error(`[Scraper] Failed to scrape ${url}:`, error.message)
+      throw error
+    } finally {
+      await page.close()
+    }
+  }
+
+  async scrapeHeadlines(url: string, extractorKey?: string): Promise<any[]> {
+    if (extractorKey && customExtractors[extractorKey]) {
+      const page = await this.browser.newPage()
+      try {
+        await page.goto(url, { waitUntil: 'domcontentloaded' })
+        await this.browser.handleConsent(page)
+        const html = await page.content()
+        return customExtractors[extractorKey](html)
+      } finally {
+        await page.close()
+      }
+    }
+    return []
+  }
+}
+
+```
+
+## 📄 src/services/graph.ts
+*Lines: 55, Size: 1.36 KB*
+
+```typescript
+// apps/headlines-pipeline/src/services/graph.ts
+// File 10 of 10
+// One-line rationale: Fixing imports for IOpportunity.
+
+import type { IOpportunity } from '@wealth/data' // Fixed
+import axios from 'axios'
+
+const API_URL = process.env.COGNITI_API_URL || 'http://localhost:4000'
+const API_KEY = process.env.COGNITI_API_KEY
+
+export async function updateGraphFromOpportunity(opp: IOpportunity) {
+  const triples = []
+
+  if (opp.contactDetails?.company) {
+    triples.push({
+      subject: opp.reachOutTo,
+      subjectType: 'Person',
+      predicate: opp.contactDetails.role || 'AFFILIATED_WITH',
+      object: opp.contactDetails.company,
+      objectType: 'Company',
+    })
+  }
+
+  if (opp.basedIn && opp.basedIn.length > 0) {
+    for (const location of opp.basedIn) {
+      triples.push({
+        subject: opp.reachOutTo,
+        subjectType: 'Person',
+        predicate: 'LOCATED_IN',
+        object: location,
+        objectType: 'Location',
+      })
+    }
+  }
+
+  if (triples.length === 0) return
+
+  try {
+    console.log(`🕸️ [Graph] Sending ${triples.length} relationships to Cogniti Core...`)
+
+    await axios.post(
+      `${API_URL}/graph/triples`,
+      {
+        userId: 'headlines-system',
+        triples,
+      },
+      {
+        headers: { Authorization: `Bearer ${API_KEY}` },
+      }
+    )
+  } catch (e: any) {
+    console.error(`❌ [Graph] Sync failed:`, e.message)
+  }
+}
+
+```
+
+## 📄 src/stages/clustering.ts
+*Lines: 50, Size: 1.75 KB*
+
+```typescript
+// apps/wealth-pipeline/src/stages/clustering.ts
+// File 3 of 4
+// One-line rationale: Correcting the `run` method signature to accept articles and return created events.
+
+import { createEvent } from '@wealth/access'
+import { ClusterAgent } from '@wealth/domain'
+import { Types } from 'mongoose'
+import type { RunStatsManager } from '../utils/run-stats.js'
+
+export class ClusteringStage {
+  constructor(private stats: RunStatsManager) {}
+
+  async run(articles: any[]): Promise<any[]> {
+    // CORRECTED: Accepts and returns data
+    console.log('\n--- STAGE 3: CLUSTERING ---')
+    if (articles.length === 0) {
+      console.log('No relevant articles pending clustering.')
+      return []
+    }
+    return this.processBatch(articles)
+  }
+
+  private async processBatch(articles: any[]): Promise<any[]> {
+    console.log(`Clustering ${articles.length} articles...`)
+    const newEvents = []
+    try {
+      const clusteredEvents = await ClusterAgent.cluster(articles)
+
+      for (const evt of clusteredEvents) {
+        const eventKey = `evt-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`
+        const newEvent = await createEvent({
+          event_key: eventKey,
+          synthesized_headline: evt.headline,
+          synthesized_summary: evt.summary,
+          articles: evt.article_ids.map((id: string) => new Types.ObjectId(id)),
+          highest_relevance_score: evt.score,
+          country: ['Global'], // Placeholder
+        })
+        newEvents.push(newEvent)
+      }
+      this.stats.incrementBy('eventsSynthesized', newEvents.length)
+      console.log(`🔗 Created ${clusteredEvents.length} clusters.`)
+    } catch (e: any) {
+      console.error('Clustering failed:', e.message)
+      this.stats.addError(`Clustering error: ${e.message}`)
+    }
+    return newEvents
+  }
+}
+
+```
+
+## 📄 src/stages/deep-dive.ts
+*Lines: 149, Size: 4.85 KB*
+
+```typescript
+// apps/wealth-pipeline/src/stages/deep-dive.ts
+// File 1 of 2
+// One-line rationale: Correcting the `run` method signature to accept the `newEvents` array from the clustering stage.
+
+import {
+  updateArticleStatus,
+  upsertOpportunity,
+  linkOpportunityToEvent,
+} from '@wealth/access'
+import { apiClient, opportunitySchema } from '@wealth/domain'
+import { updateGraphFromOpportunity } from '../services/graph.js'
+import type { HeadlinesScraper } from '../scraper/index.js'
+import type { RunStatsManager } from '../utils/run-stats.js'
+import { zodToJsonSchema } from 'zod-to-json-schema'
+import { getInstructionOpportunities } from '@wealth/domain'
+
+export class DeepDiveStage {
+  private scraper: HeadlinesScraper
+  private stats: RunStatsManager
+
+  constructor(scraper: HeadlinesScraper, stats: RunStatsManager) {
+    this.scraper = scraper
+    this.stats = stats
+  }
+
+  // CORRECTED: The `run` method now accepts the events from the previous stage.
+  async run(newEvents: any[]): Promise<{ opportunities: any[]; events: any[] }> {
+    console.log('\n--- STAGE 4: EVENT DEEP DIVE (Powered by Kimi) ---')
+
+    if (!newEvents || newEvents.length === 0) {
+      console.log('No new events to deep-dive into.')
+      return { opportunities: [], events: [] }
+    }
+
+    const allNewOpportunities: any[] = []
+    const allNewEvents: any[] = []
+
+    for (const event of newEvents) {
+      if ((event as any).opportunities?.length > 0) continue
+
+      console.log(`\n🌊 Analyzing Event: "${event.synthesized_headline}"`)
+
+      const context = await this.gatherContext(event)
+      if (!context) continue
+
+      const opps = await this.extractWithKimi(event, context)
+
+      if (opps.length > 0) {
+        for (const oppData of opps) {
+          const savedOpp = await this.handleSaveOpportunity(oppData, event._id)
+          if (savedOpp) {
+            allNewOpportunities.push(savedOpp)
+            this.stats.increment('opportunitiesSaved')
+          }
+        }
+
+        const enrichedEvent = { ...event, relatedOpportunities: opps }
+        allNewEvents.push(enrichedEvent)
+      }
+    }
+    return { opportunities: allNewOpportunities, events: allNewEvents }
+  }
+
+  private async gatherContext(event: any): Promise<string> {
+    const articles = event.articles || []
+    let combinedContent = ''
+
+    for (const article of articles) {
+      try {
+        const scrapeResult = await this.scraper.scrapeArticle(article.link)
+        await updateArticleStatus(article._id, 'enriched', {
+          articleContent: { contents: [scrapeResult.content], method: 'Readability' },
+        })
+        combinedContent += `\n=== SOURCE: ${article.newspaper} ===\n${scrapeResult.content}\n`
+        this.stats.increment('articlesEnriched')
+      } catch (e) {
+        combinedContent += `\n=== SOURCE (Metadata Only): ${article.newspaper} ===\n${article.headline}\n`
+      }
+    }
+    return combinedContent
+  }
+
+  private async extractWithKimi(event: any, context: string): Promise<any[]> {
+    const instructions = getInstructionOpportunities()
+
+    const prompt = `
+      ${instructions.systemRole}
+      ${instructions.task}
+      ${instructions.opportunityCriteria.join('\n')}
+      ${instructions.exclusionRules.join('\n')}
+      ${instructions.dataSourceHierarchy.join('\n')}
+      
+      **EVENT CONTEXT:**
+      Headline: ${event.synthesized_headline}
+      Event Key: ${event.event_key}
+      
+      **FULL SOURCE CONTENT:**
+      ${context}
+      `
+
+    const toolDef = {
+      name: 'extract_opportunities',
+      description: 'Extract high-value wealth opportunities.',
+      parameters: zodToJsonSchema(opportunitySchema),
+    }
+
+    const opportunities: any[] = []
+    try {
+      const options: any = {
+        userId: 'headlines-deep-dive',
+        prompt,
+        remoteTools: [toolDef],
+        executionMode: 'deep',
+      }
+      const stream = apiClient.think(options)
+
+      for await (const e of stream) {
+        if (e.type === 'tool_call' && e.toolCall?.name === 'extract_opportunities') {
+          if (e.toolCall.arguments.opportunities) {
+            opportunities.push(...e.toolCall.arguments.opportunities)
+          }
+        }
+      }
+    } catch (e: any) {
+      console.error(`[DeepDive] Kimi extraction failed:`, e.message)
+      this.stats.addError(`Kimi extraction failed: ${e.message}`)
+    }
+    return opportunities
+  }
+
+  private async handleSaveOpportunity(args: any, eventId: any) {
+    try {
+      const opportunity = await upsertOpportunity(args.reachOutTo, args, eventId)
+      if (opportunity) {
+        await linkOpportunityToEvent(eventId, opportunity._id.toString())
+        await updateGraphFromOpportunity(opportunity as any)
+        console.log(
+          `  💰 Opportunity: ${opportunity.reachOutTo} ($${opportunity.lastKnownEventLiquidityMM}M)`
+        )
+        return opportunity
+      }
+      return null
+    } catch (e: any) {
+      console.error('Failed to save opportunity:', e.message)
+      return null
+    }
+  }
+}
+
+```
+
+## 📄 src/stages/resolution.ts
+*Lines: 55, Size: 1.89 KB*
+
+```typescript
+// apps/wealth-pipeline/src/stages/resolution.ts
+// File 1 of 1
+// One-line rationale: Removing the unused `dependencies` class property to fix the linter error.
+
+import { apiClient, GraphAgent } from '@wealth/domain'
+import type { StepDependencies } from '@cogniti/core'
+
+export class ResolutionStage {
+  // The constructor still accepts dependencies, as it might be needed for other methods in the future,
+  // but we won't store it if it's not used in this specific implementation.
+  constructor(_dependencies: StepDependencies) {
+    // this.dependencies = dependencies // REMOVED
+  }
+
+  async run(enrichedEvents: any[]) {
+    console.log('\n--- STAGE 5: ENTITY RESOLUTION & GRAPH LINKING ---')
+
+    if (enrichedEvents.length === 0) {
+      console.log('No high-value events to process for graph linking.')
+      return
+    }
+
+    let triplesCount = 0
+
+    for (const event of enrichedEvents) {
+      console.log(`  -> Linking entities for event: ${event.event_key}`)
+
+      const textContext = `Headline: ${event.synthesized_headline}\nSummary: ${event.synthesized_summary}`
+      const result = await GraphAgent.extractTriples(textContext)
+
+      if (result && result.relationships && result.relationships.length > 0) {
+        const triples = result.relationships.map((r: string[]) => ({
+          subject: r[0],
+          predicate: r[1],
+          object: r[2],
+        }))
+
+        try {
+          // This API call is self-contained and doesn't need the `dependencies` object.
+          await apiClient.executeSystemTool({
+            toolName: 'ingest-triples',
+            params: { userId: 'headlines-system', triples },
+          })
+          triplesCount += triples.length
+        } catch (e: any) {
+          console.warn(`Graph ingest failed for ${event.event_key}:`, e.message)
+        }
+      }
+    }
+    console.log(
+      `🔗 Graph Update: Extracted and queued ${triplesCount} new relationships.`
+    )
+  }
+}
+
+```
+
+## 📄 src/stages/triage.ts
+*Lines: 66, Size: 2.26 KB*
+
+```typescript
+// apps/wealth-pipeline/src/stages/triage.ts
+// File 2 of 4
+// One-line rationale: Correcting the `run` method to return the triaged articles for the next stage.
+
+import { getArticles, updateArticleStatus } from '@wealth/access'
+import { HeadlineAgent } from '@wealth/domain'
+import type { RunStatsManager } from '../utils/run-stats.js'
+import { getActiveWatchlist } from '@wealth/access'
+
+export class TriageStage {
+  constructor(private stats: RunStatsManager) {}
+
+  async run(): Promise<any[]> {
+    // CORRECTED: Returns an array of articles
+    console.log('\n--- STAGE 2: TRIAGE (High Fidelity) ---')
+    const candidates = await getArticles({ status: 'scraped' }, 200)
+
+    if (candidates.length === 0) {
+      console.log('No new articles to triage.')
+      return []
+    }
+
+    await this.processBatch(candidates as any[])
+    this.stats.incrementBy('headlinesAssessed', candidates.length)
+
+    // Return only the relevant articles for the next stage
+    return candidates.filter((a) => (a.relevance_headline || 0) > 50)
+  }
+
+  private async processBatch(articles: any[]) {
+    const watchlist = await getActiveWatchlist()
+    const watchlistNames = watchlist.map((w) => w.name).join(', ')
+
+    try {
+      const assessments = await HeadlineAgent.assessBatch(articles, watchlistNames)
+      let relevantCount = 0
+
+      for (const assessment of assessments) {
+        if (assessment.id) {
+          await updateArticleStatus(assessment.id, 'assessed', {
+            relevance_headline: assessment.relevance_headline,
+            assessment_headline: assessment.assessment_headline,
+          })
+
+          // Update in-memory object for immediate use in the return value
+          const article = articles.find((a) => a._id.toString() === assessment.id)
+          if (article) {
+            article.relevance_headline = assessment.relevance_headline
+          }
+
+          if (assessment.relevance_headline > 50) {
+            relevantCount++
+          }
+        }
+      }
+      this.stats.incrementBy('relevantHeadlines', relevantCount)
+      console.log(
+        `✅ Triage processed ${assessments.length} headlines, found ${relevantCount} relevant.`
+      )
+    } catch (e: any) {
+      console.error('Triage failed:', e.message)
+      this.stats.addError(`Triage failure: ${e.message}`)
+    }
+  }
+}
+
+```
+
+## 📄 src/types.d.ts
+*Lines: 37, Size: 879 Bytes*
+
+```typescript
+// apps/headlines-pipeline/src/types.d.ts
+// File 2 of 5
+// One-line rationale: Shim for legacy models package types to fix TS7016 errors.
+
+declare module '@wealth/data' {
+  export interface IOpportunity {
+    [key: string]: any
+  }
+  export interface ISynthesizedEvent {
+    [key: string]: any
+  }
+  export const headlineAssessmentSchema: any
+  export const articleAssessmentSchema: any
+  export const clusteringSchema: any
+  export const emailIntroSchema: any
+  export const dbConnect: any
+}
+
+declare module '@wealth/data/node' {
+  export const settings: {
+    SIGNIFICANT_PRIVATE_BENEFICIARY_USD_MM: number
+    HIGH_VALUE_DEAL_USD_MM: number
+  }
+}
+
+declare module '@headlines/data-access' {
+  export * from '@wealth/access'
+}
+
+declare module '@headlines/models' {
+  export * from '@wealth/data'
+}
+
+declare module '@headlines/utils-server' {
+  export * from '@shared/server'
+}
+
+```
+
+## 📄 src/utils/run-stats.ts
+*Lines: 61, Size: 1.64 KB*
+
+```typescript
+// apps/wealth-pipeline/src/utils/run-stats.ts
+// File 1 of 4
+// One-line rationale: Adding `incrementBy` method and fixing key types for robust metric tracking.
+
+import { sendErrorAlert } from '@shared/server'
+
+// Define the precise keys for type safety
+export type StatKey =
+  | 'headlinesScraped'
+  | 'headlinesAssessed'
+  | 'relevantHeadlines'
+  | 'articlesEnriched'
+  | 'eventsSynthesized'
+  | 'opportunitiesSaved'
+  | 'eventsEmailed'
+
+export class RunStatsManager {
+  public stats: Record<StatKey | 'errors', any> = {
+    headlinesScraped: 0,
+    headlinesAssessed: 0,
+    relevantHeadlines: 0,
+    articlesEnriched: 0,
+    eventsSynthesized: 0,
+    opportunitiesSaved: 0,
+    eventsEmailed: 0,
+    errors: [] as string[],
+  }
+
+  increment(key: StatKey) {
+    if (typeof this.stats[key] === 'number') {
+      ;(this.stats[key] as number)++
+    }
+  }
+
+  incrementBy(key: StatKey, amount: number) {
+    if (typeof this.stats[key] === 'number') {
+      ;(this.stats[key] as number) += amount
+    }
+  }
+
+  addError(msg: string) {
+    this.stats.errors.push(msg)
+    sendErrorAlert(new Error(msg), { origin: 'RunStatsManager' })
+  }
+
+  getSummary() {
+    return `
+    --- RUN SUMMARY ---
+    Headlines Scraped:    ${this.stats.headlinesScraped}
+    Headlines Assessed:   ${this.stats.headlinesAssessed}
+    Relevant Signals:     ${this.stats.relevantHeadlines}
+    Articles Enriched:    ${this.stats.articlesEnriched}
+    Events Created:       ${this.stats.eventsSynthesized}
+    Opportunities Found:  ${this.stats.opportunitiesSaved}
+    Notifications Sent:   ${this.stats.eventsEmailed}
+    Errors:               ${this.stats.errors.length}
+    -------------------
+    `
+  }
+}
+
+```
+
+## 📄 src/worker.ts
+*Lines: 21, Size: 640 Bytes*
+
+```typescript
+// apps/headlines-pipeline/src/worker.ts
+// File 4 of 4
+// One-line rationale: Importing createdWorker from @cogniti/worker correctly now that it is exported.
+
+import 'dotenv/config'
+import { createWorker } from '@cogniti/worker'
+import { headlinesJobHandlers } from './jobs/handlers.js'
+
+const ALL_JOBS = 'all'
+const QUEUE_NAME = 'cogniti-tasks-reasoning'
+
+console.log('[Headlines-Worker] Starting dedicated worker...')
+
+createWorker(QUEUE_NAME, ALL_JOBS, headlinesJobHandlers)
+
+const shutdown = () => {
+  console.log('[Headlines-Worker] Shutting down...')
+  process.exit(0)
+}
+process.on('SIGTERM', shutdown)
+process.on('SIGINT', shutdown)
+```
+
+## 📄 tsconfig.json
+*Lines: 27, Size: 928 Bytes*
+
+```json
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "noEmit": false,
+    "tsBuildInfoFile": "./tsconfig.tsbuildinfo",
+    // We remove rootDir to allow references to resolve correctly
+    // "rootDir": "src",
+    "paths": {
+      "@wealth/domain": ["../../packages/verticals/wealth/domain/src/index.ts"],
+      "@wealth/access": ["../../packages/verticals/wealth/access/src/index.ts"],
+      "@shared/server": ["../../packages/shared/server/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"],
+  "references": [
+    { "path": "../../packages/platform/core" },
+    { "path": "../../packages/platform/client-provider" },
+    { "path": "../../packages/platform/worker" },
+    { "path": "../../packages/platform/scrapers" },
+    { "path": "../../packages/verticals/wealth/domain" }
+  ]
+}
+
+```

@@ -1,9 +1,9 @@
 // apps/pipeline/src/modules/email/components/emailBodyBuilder.js
-import { logger } from '@headlines/utils-shared'
-import { EMAIL_CONFIG } from '../../../config/index.js'
-import { formatEventForEmail } from './eventFormatter.js'
-import { formatOpportunityForEmail } from './opportunityFormatter.js' // IMPORTED
-import { getCountryFlag } from '@headlines/utils-shared'
+import { logger } from "@headlines/utils-shared";
+import { EMAIL_CONFIG } from "../../../config/index.js";
+import { formatEventForEmail } from "./eventFormatter.js";
+import { formatOpportunityForEmail } from "./opportunityFormatter.js"; // IMPORTED
+import { getCountryFlag } from "@headlines/utils-shared";
 
 function createEmailWrapper(bodyContent, subject) {
   return `
@@ -37,7 +37,7 @@ function createEmailWrapper(bodyContent, subject) {
             </table>
         </body>
     </html>
-  `
+  `;
 }
 
 export async function createPersonalizedEmailBody(
@@ -45,66 +45,72 @@ export async function createPersonalizedEmailBody(
   eventsByCountry,
   opportunitiesByCountry, // ADDED
   subject,
-  intro
+  intro,
 ) {
   logger.info(
     { user: user.email, countries: Object.keys(eventsByCountry) },
-    'Initiating email body generation.'
-  )
+    "Initiating email body generation.",
+  );
 
-  const hasEvents = eventsByCountry && Object.keys(eventsByCountry).length > 0
-  const hasOpps = opportunitiesByCountry && Object.keys(opportunitiesByCountry).length > 0
+  const hasEvents = eventsByCountry && Object.keys(eventsByCountry).length > 0;
+  const hasOpps =
+    opportunitiesByCountry && Object.keys(opportunitiesByCountry).length > 0;
 
   if (!user || (!hasEvents && !hasOpps)) {
-    logger.warn('createPersonalizedEmailBody: Missing user or content data.')
-    return null
+    logger.warn("createPersonalizedEmailBody: Missing user or content data.");
+    return null;
   }
 
   const bulletsHtml = intro.bullets
     .map((b) => `<li style="margin-bottom: 10px;">${b}</li>`)
-    .join('')
+    .join("");
 
   const signoffHtml = Array.isArray(intro.signoff)
-    ? intro.signoff.join('<br>')
-    : intro.signoff
+    ? intro.signoff.join("<br>")
+    : intro.signoff;
 
   const introHtml = `
     <h1 class="main-heading" style="margin:0 0 20px 0; font-size: 24px; font-weight: bold;">${intro.greeting}</h1>
     <p class="paragraph" style="margin:0 0 25px 0; font-size: 15px;">${intro.body}</p>
     <ul class="paragraph" style="margin:0 0 25px 0; font-size: 15px; padding-left: 20px;">${bulletsHtml}</ul>
     <p class="paragraph" style="margin:0 0 25px 0; font-size: 15px;">${signoffHtml}</p>
-  `
+  `;
 
   // --- START OF MODIFICATION ---
-  let formattedContentHtml = ''
+  let formattedContentHtml = "";
   const allCountries = [
-    ...new Set([...Object.keys(eventsByCountry), ...Object.keys(opportunitiesByCountry)]),
-  ].sort()
+    ...new Set([
+      ...Object.keys(eventsByCountry),
+      ...Object.keys(opportunitiesByCountry),
+    ]),
+  ].sort();
 
   for (const country of allCountries) {
-    const flag = getCountryFlag(country)
-    formattedContentHtml += `<tr><td style="padding: 30px 0 10px 0;"><h2 style="margin:0; font-size: 24px; font-weight: 500; color: #EAEAEA;">${flag} ${country}</h2></td></tr>`
+    const flag = getCountryFlag(country);
+    formattedContentHtml += `<tr><td style="padding: 30px 0 10px 0;"><h2 style="margin:0; font-size: 24px; font-weight: 500; color: #EAEAEA;">${flag} ${country}</h2></td></tr>`;
 
     if (opportunitiesByCountry[country]) {
-      formattedContentHtml += `<tr><td><h3 style="margin:10px 0; font-size: 18px; color: #4CAF50;">Actionable Opportunities</h3></td></tr>`
-      const oppPromises = opportunitiesByCountry[country].map(formatOpportunityForEmail)
-      const oppResults = await Promise.allSettled(oppPromises)
+      formattedContentHtml += `<tr><td><h3 style="margin:10px 0; font-size: 18px; color: #4CAF50;">👤 Who to Contact</h3></td></tr>`;
+      const oppPromises = opportunitiesByCountry[country].map(
+        formatOpportunityForEmail,
+      );
+      const oppResults = await Promise.allSettled(oppPromises);
       oppResults.forEach((result) => {
-        if (result.status === 'fulfilled') {
-          formattedContentHtml += `<tr><td>${result.value}</td></tr>`
+        if (result.status === "fulfilled") {
+          formattedContentHtml += `<tr><td>${result.value}</td></tr>`;
         }
-      })
+      });
     }
 
     if (eventsByCountry[country]) {
-      formattedContentHtml += `<tr><td><h3 style="margin:10px 0; font-size: 18px; color: #58a6ff;">Synthesized Events</h3></td></tr>`
-      const eventPromises = eventsByCountry[country].map(formatEventForEmail)
-      const eventResults = await Promise.allSettled(eventPromises)
+      formattedContentHtml += `<tr><td><h3 style="margin:10px 0; font-size: 18px; color: #58a6ff;">Synthesized Events</h3></td></tr>`;
+      const eventPromises = eventsByCountry[country].map(formatEventForEmail);
+      const eventResults = await Promise.allSettled(eventPromises);
       eventResults.forEach((result) => {
-        if (result.status === 'fulfilled') {
-          formattedContentHtml += `<tr><td>${result.value}</td></tr>`
+        if (result.status === "fulfilled") {
+          formattedContentHtml += `<tr><td>${result.value}</td></tr>`;
         }
-      })
+      });
     }
   }
   // --- END OF MODIFICATION ---
@@ -135,8 +141,8 @@ export async function createPersonalizedEmailBody(
               </td>
           </tr>
       </table>
-    </div>`
+    </div>`;
 
-  logger.info(`Successfully generated email body for ${user.email}.`)
-  return createEmailWrapper(mainContent, subject)
+  logger.info(`Successfully generated email body for ${user.email}.`);
+  return createEmailWrapper(mainContent, subject);
 }

@@ -174,13 +174,11 @@ headlines-monorepo/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-21T18:41:06.959Z
+**Generated**: 2025-11-28T09:26:58.535Z
 **Repository Path**: /home/mark/Repos/projects/headlines-monorepo/apps/pipeline
 **Total Files**: 135
+**Workspace**: pipeline
 **Package**: @headlines/pipeline@1.0.0
-
-
-
 
 ---
 
@@ -6589,7 +6587,7 @@ export default config;
     "maintenance:backfill-assessed": "./run.sh scripts/maintenance/backfill-assessed-articles.js",
     "maintenance:delete-today": "./run.sh scripts/maintenance/delete-today.js --",
     "maintenance:reprocess-specific": "./run.sh scripts/maintenance/reprocess-specific-articles.js --",
-    "maintenance:reprocess": "./run.sh scripts/maintenance/reprocess-lost-articles.js",
+    "maintenance:reprocess-failed": "./run.sh scripts/maintenance/reprocess-failed.js",
     "maintenance:fix-countries": "./run.sh scripts/maintenance/fix-event-countries.js",
     "maintenance:backfill-countries": "./run.sh scripts/maintenance/backfill-event-article-countries.js",
     "maintenance:recover-opps": "./run.sh scripts/maintenance/recover-opportunities.js --",
@@ -8569,7 +8567,7 @@ main()
 ```
 
 ## 📄 scripts/maintenance/reprocess-failed.js
-*Lines: 120, Size: 3.71 KB*
+*Lines: 120, Size: 3.75 KB*
 
 ```javascript
 // apps/pipeline/scripts/maintenance/reprocess-failed.js
@@ -8650,8 +8648,6 @@ async function main() {
 
     logger.info(`Proceeding with cleanup and re-processing...`)
 
-    // --- START OF DEFINITIVE FIX ---
-    // Clean up any orphaned outputs from the failed run to prevent unique key collisions.
     const [eventDeletion, verdictDeletion] = await Promise.all([
       SynthesizedEvent.deleteMany({ createdAt: { $gte: cutoffDate } }),
       RunVerdict.deleteMany({ createdAt: { $gte: cutoffDate } }),
@@ -8659,7 +8655,6 @@ async function main() {
     logger.info(
       `Cleanup: Deleted ${eventDeletion.deletedCount} events and ${verdictDeletion.deletedCount} run verdicts from the time window.`
     )
-    // --- END OF DEFINITIVE FIX ---
 
     const articleIdsToReset = articlesToReprocess.map((a) => a._id)
     const update = {
@@ -8681,10 +8676,13 @@ async function main() {
 
     logger.info(colors.cyan('\n--- INITIATING REPROCESS PIPELINE RUN ---'))
 
+    // --- START OF DEFINITIVE FIX ---
+    // The `useTestPayload` flag is incorrect. The presence of the `articlesForPipeline`
+    // array is the correct signal for an injected payload run.
     await runPipeline({
-      useTestPayload: true,
       articlesForPipeline: articlesToReprocess,
     })
+    // --- END OF DEFINITIVE FIX ---
   } catch (error) {
     logger.error({ err: error }, 'A critical error occurred during the reprocess script.')
   }
@@ -16208,10 +16206,10 @@ getStats()
 ```
 
 ## 📄 scripts/tools/oppFactory.js
-*Lines: 180, Size: 6.29 KB*
+*Lines: 177, Size: 6.1 KB*
 
 ```javascript
-// apps/pipeline/scripts/tools/oppFactory.js (v2 - Resilient Search Strategy)
+// apps/pipeline/scripts/tools/oppFactory.js
 /**
  * @command tools:opp-factory
  * @group Tools
@@ -16225,14 +16223,11 @@ import { hideBin } from 'yargs/helpers'
 import { initializeScriptEnv } from '../seed/lib/script-init.js'
 import { logger } from '@headlines/utils-shared'
 import { performGoogleSearch, oppFactoryChain } from '@headlines/ai-services'
-import { fetchPageWithPlaywright, browserManager } from '@headlines/scraper-logic'
+import { browserManager } from '@headlines/scraper-logic'
 import { JSDOM } from 'jsdom'
 import { Readability } from '@mozilla/readability'
 import colors from 'ansi-colors'
-// --- START OF DEFINITIVE FIX ---
-// Add the missing import for chromium from the playwright package.
 import { chromium } from 'playwright'
-// --- END OF DEFINITIVE FIX ---
 
 const SEED_DIR = path.resolve(process.cwd(), 'apps/pipeline/opportunity_seeds')
 
@@ -18955,7 +18950,7 @@ export async function sendBulkPushNotifications(pushQueue) {
 ```
 
 ## 📄 src/orchestrator.js
-*Lines: 225, Size: 8.49 KB*
+*Lines: 237, Size: 9.02 KB*
 
 ```javascript
 // apps/pipeline/src/orchestrator.js
@@ -19124,10 +19119,22 @@ export async function runPipeline(options) {
     await initializeResources()
 
     // --- START OF DEFINITIVE FIX ---
-    if (context.test) {
+    // This logic now correctly handles three distinct modes:
+    // 1. Injected Payload Mode (e.g., from a recovery script)
+    // 2. Test Mode (using the --test flag)
+    // 3. Standard Mode (scraping live data)
+    if (context.articlesForPipeline && context.articlesForPipeline.length > 0) {
+      logger.warn('--- INJECTED PAYLOAD MODE ACTIVATED ---')
+      logger.warn(
+        `Bypassing scrape. Processing ${context.articlesForPipeline.length} articles provided directly to the orchestrator.`
+      )
+      context.runStatsManager.set(
+        'freshHeadlinesFound',
+        context.articlesForPipeline.length
+      )
+    } else if (context.test) {
       logger.warn('--- TEST MODE ACTIVATED ---')
       logger.warn('Performing pre-run cleanup for test data...')
-      // Clean up any artifacts from previous failed test runs to ensure a clean slate.
       await Promise.all([
         Article.deleteMany({ source: 'Test E2E Source' }),
         SynthesizedEvent.deleteMany({ event_key: /sale-moller-jensen-navisoft/ }),
@@ -19355,7 +19362,7 @@ export async function runPreFlightChecks(pipelinePayload) {
 ```
 
 ## 📄 src/pipeline/2_scrapeAndFilter.js
-*Lines: 140, Size: 5.04 KB*
+*Lines: 138, Size: 4.93 KB*
 
 ```javascript
 // apps/pipeline/src/pipeline/2_scrapeAndFilter.js
@@ -19427,6 +19434,8 @@ export async function runScrapeAndFilter(pipelinePayload) {
       }
     )
     logger.info(`Reset ${articleIdsToReset.length} articles to 'scraped' status.`)
+    // Correctly populate the payload for the next stage in refresh mode
+    pipelinePayload.articlesForPipeline = articlesToReprocess
     return { success: true, payload: pipelinePayload }
   }
 
@@ -19462,9 +19471,6 @@ export async function runScrapeAndFilter(pipelinePayload) {
 
   runStatsManager.set('freshHeadlinesFound', freshArticles.length)
 
-  // --- START OF DEFINITIVE FIX ---
-  // The previous implementation was missing the logic to save the fresh articles
-  // to the database with the initial 'scraped' status. This fix adds that crucial step.
   if (freshArticles.length > 0) {
     const articlesToSave = freshArticles.map((article) => ({
       ...article,
@@ -19484,16 +19490,15 @@ export async function runScrapeAndFilter(pipelinePayload) {
     if (!result.success) {
       throw new Error(`Failed to save fresh articles: ${result.error}`)
     }
-    // Correctly log the number of upserted documents.
     logger.info(
-      `Successfully saved ${result.upsertedCount} new articles to the database with status 'scraped'.`
+      `Successfully saved ${result.result.upsertedCount} new articles to the database with status 'scraped'.`
     )
+    // Pass the newly saved, full article objects to the next stage
+    pipelinePayload.articlesForPipeline = articlesToSave
   } else {
     logger.info('No new articles to process. Ending run early.')
+    pipelinePayload.articlesForPipeline = []
   }
-  // This payload is no longer used by the next stage, but we clear it for safety.
-  pipelinePayload.articlesForPipeline = []
-  // --- END OF DEFINITIVE FIX ---
 
   return { success: true, payload: pipelinePayload }
 }
@@ -19679,7 +19684,7 @@ export async function runEntityResolution(pipelinePayload) {
 ```
 
 ## 📄 src/pipeline/3_assessAndEnrich.js
-*Lines: 168, Size: 5.81 KB*
+*Lines: 134, Size: 4.74 KB*
 
 ```javascript
 // apps/pipeline/src/pipeline/3_assessAndEnrich.js
@@ -19696,42 +19701,8 @@ export async function runAssessAndEnrich(pipelinePayload) {
     articleTraceLogger,
     isRefreshMode,
     lean: isLeanMode,
-    sourceFilter,
+    articlesForPipeline, // Use the data passed from the previous stage
   } = pipelinePayload
-
-  let articlesForPipeline = []
-
-  // --- START OF DEFINITIVE FIX ---
-  // The previous logic passed the payload directly, causing a data flow bug.
-  // This new logic ensures that in --test mode, we use the injected payload,
-  // and in all other modes, we correctly query the database using the provided sourceFilter.
-  if (
-    pipelinePayload.articlesForPipeline &&
-    pipelinePayload.articlesForPipeline.length > 0
-  ) {
-    logger.info(
-      `Processing ${pipelinePayload.articlesForPipeline.length} articles passed directly from a previous stage (e.g., --test or --refresh mode).`
-    )
-    articlesForPipeline = pipelinePayload.articlesForPipeline
-  } else {
-    const filter = { status: 'scraped' }
-    if (sourceFilter) {
-      filter.source = sourceFilter
-    }
-
-    const articlesToAssessResult = await findArticles({
-      filter,
-      select: '+articleContent',
-    })
-
-    if (!articlesToAssessResult.success) {
-      throw new Error(
-        `Failed to fetch articles for assessment: ${articlesToAssessResult.error}`
-      )
-    }
-    articlesForPipeline = articlesToAssessResult.data
-  }
-  // --- END OF DEFINITIVE FIX ---
 
   if (!articlesForPipeline || articlesForPipeline.length === 0) {
     logger.info(
@@ -19853,7 +19824,7 @@ export async function runAssessAndEnrich(pipelinePayload) {
 ```
 
 ## 📄 src/pipeline/4_5_opportunityDeepDive.js
-*Lines: 305, Size: 9.96 KB*
+*Lines: 307, Size: 10.07 KB*
 
 ```javascript
 // packages/pipeline/src/pipeline/4_5_opportunityDeepDive.js
@@ -19941,22 +19912,10 @@ async function researchIndividual(individual, event) {
   }
 }
 
-// --- START OF MODIFICATION ---
-/**
- * Builds a more constrained summarization prompt to prevent timeouts.
- * @param {string} name - Individual name
- * @returns {string} System prompt
- */
 function buildSummarizationPrompt(name) {
   return `You are an intelligence analyst. Read the following raw text about "${name}" and synthesize it into a concise, fact-based brief of NO MORE THAN 250 WORDS. Focus ONLY on career history, wealth, investments, company ownership, and key relationships. Discard all irrelevant noise. The output will be used to generate a structured dossier.`
 }
 
-/**
- * Summarizes raw context into a structured brief for dossier generation, now with enhanced logging.
- * @param {string} context - Raw context text
- * @param {string} name - Individual name
- * @returns {Promise<string>} Summarized context or original on failure
- */
 async function summarizeContextForDossier(context, name) {
   const startTime = Date.now()
   logger.info(
@@ -19965,7 +19924,6 @@ async function summarizeContextForDossier(context, name) {
 
   const prompt = buildSummarizationPrompt(name)
 
-  // Black Box Logging: Log the exact payload being sent to the AI.
   auditLogger.info(
     {
       context: {
@@ -20009,25 +19967,9 @@ async function summarizeContextForDossier(context, name) {
     return context
   }
 }
-// --- END OF MODIFICATION ---
 
-function meetsRelevanceThreshold(event) {
-  return event.highest_relevance_score >= settings.EVENT_RELEVANCE_THRESHOLD
-}
-
-function extractUniqueIndividuals(events) {
-  const individualsMap = new Map()
-  for (const event of events) {
-    if (!meetsRelevanceThreshold(event)) continue
-    for (const individual of event.key_individuals || []) {
-      const normalizedName = individual.name?.toLowerCase()
-      if (normalizedName && !individualsMap.has(normalizedName)) {
-        individualsMap.set(normalizedName, { individual, event })
-      }
-    }
-  }
-  return individualsMap
-}
+// THIS FUNCTION IS NO LONGER NEEDED AND WILL BE REMOVED.
+// function extractUniqueIndividuals(events) { ... }
 
 function isValidResearchResult(result) {
   return (
@@ -20134,18 +20076,49 @@ function hasEventsToProcess(payload) {
 
 export async function runOpportunityDeepDive(pipelinePayload) {
   logger.info('--- STAGE 4.5: OPPORTUNITY DEEP DIVE (with Knowledge Graph) ---')
-  const { synthesizedEvents, opportunitiesToSave } = pipelinePayload
+  // --- START OF DEFINITIVE FIX ---
+  // Read the pre-vetted targets from Stage 3.5 instead of re-extracting.
+  const { synthesizedEvents, opportunitiesToSave, highPotentialTargets } = pipelinePayload
+
   if (!hasEventsToProcess(pipelinePayload)) {
     logger.info('[Deep Dive] No new events to process. Skipping deep dive.')
     return { success: true, payload: pipelinePayload }
   }
-  const individualsToResearch = extractUniqueIndividuals(synthesizedEvents)
-  if (individualsToResearch.size === 0) {
-    logger.info('[Deep Dive] No key individuals from high-value events found. Skipping.')
+
+  // Use the highPotentialTargets from the previous stage as the source of truth.
+  if (!highPotentialTargets || highPotentialTargets.size === 0) {
+    logger.info(
+      '[Deep Dive] No new high-potential individuals identified by Entity Resolution. Skipping.'
+    )
     return { success: true, payload: pipelinePayload }
   }
+
+  // Convert the Set of names into the Map structure needed for research tasks.
+  const individualsToResearch = new Map()
+  for (const name of highPotentialTargets) {
+    // Find the first event that mentions this individual to provide context.
+    const relevantEvent = synthesizedEvents.find((e) =>
+      (e.key_individuals || []).some((i) => i.name.toLowerCase() === name.toLowerCase())
+    )
+    if (relevantEvent) {
+      const individualObject = relevantEvent.key_individuals.find(
+        (i) => i.name.toLowerCase() === name.toLowerCase()
+      )
+      individualsToResearch.set(name.toLowerCase(), {
+        individual: individualObject,
+        event: relevantEvent,
+      })
+    }
+  }
+
+  if (individualsToResearch.size === 0) {
+    logger.info('[Deep Dive] Could not match high-potential targets to events. Skipping.')
+    return { success: true, payload: pipelinePayload }
+  }
+  // --- END OF DEFINITIVE FIX ---
+
   logger.info(
-    `[Deep Dive] Identified ${individualsToResearch.size} unique individuals for deep dive research`
+    `[Deep Dive] Identified ${individualsToResearch.size} unique, high-potential individuals for deep dive research.`
   )
   const researchTasks = createResearchTasks(individualsToResearch, CONCURRENCY_LIMIT)
   const researchResults = await Promise.all(researchTasks)
@@ -21417,7 +21390,7 @@ export async function judgeAndFilterOutput(pipelinePayload, fatalQualities) {
 ```
 
 ## 📄 src/pipeline/submodules/commit/2_saveResults.js
-*Lines: 195, Size: 5.51 KB*
+*Lines: 190, Size: 5.19 KB*
 
 ```javascript
 // apps/pipeline/src/pipeline/submodules/commit/2_saveResults.js
@@ -21458,7 +21431,7 @@ function filterArticlesToSave(allArticles, approvedLinks) {
 
 function identifyArticlesToSave(enrichedArticles, approvedEvents) {
   const approvedArticleLinks = extractApprovedArticleLinks(approvedEvents)
-  return filterArticlesToSave(enrichedArticles, approvedArticles)
+  return filterArticlesToSave(enrichedArticles, approvedArticleLinks)
 }
 
 async function commitEventsAndArticles(articles, events) {
@@ -21492,10 +21465,6 @@ function handleCommitFailure(runStatsManager) {
   }
 }
 
-// --- START OF DEFINITIVE FIX ---
-// This function is now dramatically simplified. It no longer needs complex fallback logic
-// because the new `savePipelineResults` implementation guarantees that `commitResult.savedEvents`
-// will contain the full documents, whether they were inserted or updated.
 async function handleCommitSuccess(commitResult, opportunities, runStatsManager) {
   const savedEvents = commitResult.savedEvents || []
 
@@ -21529,7 +21498,6 @@ async function handleCommitSuccess(commitResult, opportunities, runStatsManager)
     savedOpportunities,
   }
 }
-// --- END OF DEFINITIVE FIX ---
 
 async function executeRealSave(pipelinePayload, approvedEvents, opportunities) {
   const { runStatsManager, enrichedArticles } = pipelinePayload
@@ -21910,7 +21878,7 @@ export async function enrichArticles(
 *Lines: 520, Size: 16.73 KB*
 
 ```javascript
-// apps/pipeline/src/pipeline/submodules/opportunityUpserter.js
+// packages/pipeline/src/pipeline/submodules/opportunityUpserter.js
 import { Opportunity, SynthesizedEvent, WatchlistEntity } from '@headlines/models'
 import { logger } from '@headlines/utils-shared'
 import {

@@ -51,6 +51,8 @@
     "tools:backfill-graph": "pnpm --filter @headlines/pipeline tools:backfill-graph"
   },
   "dependencies": {
+    "otplib": "^13.4.0",
+    "qrcode": "^1.5.4",
     "react": "18.3.1",
     "react-dom": "18.3.1"
   },

@@ -22,13 +22,12 @@ headlines-monorepo/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-21T18:41:07.008Z
+**Generated**: 2025-11-28T09:26:58.574Z
 **Repository Path**: /home/mark/Repos/projects/headlines-monorepo/packages/utils-server
 **Total Files**: 13
+**Workspace**: utils-server
 **Package**: @headlines/utils-server@5.0.0
 **Description**: Server-only utilities for the Headlines monorepo.
-
-
 
 ---
 

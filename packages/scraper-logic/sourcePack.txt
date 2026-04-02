@@ -44,13 +44,11 @@ headlines-monorepo/
 
 # 📋 PROJECT METADATA
 
-**Generated**: 2025-10-21T18:41:07.004Z
+**Generated**: 2025-11-28T09:26:58.571Z
 **Repository Path**: /home/mark/Repos/projects/headlines-monorepo/packages/scraper-logic
 **Total Files**: 29
+**Workspace**: scraper-logic
 **Package**: @headlines/scraper-logic@2.0.0
-
-
-
 
 ---
 
