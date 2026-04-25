@@ -18,7 +18,7 @@
 ## Phase 4: Email Upgrade
 - [x] 4.1: Deal summary card with visual dashboard (War Room)
 - [x] 4.2: Visual confidence meter + transaction flow diagrams
-- [ ] 4.3: Personalization from user engagement history
+- [ ] 4.3: Personalization from user engagement history (deferred - requires UI tracking)
 
 ## Phase 5: Client App
 - [ ] 5.1: Deal flow visualization (timeline + sectors + geography)
