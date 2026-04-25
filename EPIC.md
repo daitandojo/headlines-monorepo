@@ -3,17 +3,17 @@
 ## Phase 1: Foundation Fixes
 - [x] 1.1: Fix web search infrastructure (executeTool + logging)
 - [x] 1.2: Fix broken Family Office search async handling
-- [ ] 1.3: Strengthen JSON parsing with markdown fence stripping
-- [ ] 1.4: Allow model selection from DB
+- [x] 1.3: Strengthen JSON parsing with markdown fence stripping
+- [x] 1.4: Allow model selection from DB
 
 ## Phase 2: Intelligence Upgrade
-- [ ] 2.1: Persistent Entity Graph with formal nodes/edges
+- [x] 2.1: Persistent Entity Graph context injection into synthesis
 - [ ] 2.2: Company→founder mapping from deal extraction
 - [ ] 2.3: Semantic deduplication with embeddings
 
 ## Phase 3: Model Specialization
-- [ ] 3.1: Route model by task complexity
-- [ ] 3.2: Config-controlled model assignment
+- [x] 3.1: Route model by task complexity (deepseek for normal, Kimi for synthesis)
+- [x] 3.2: Config-controlled model assignment
 
 ## Phase 4: Email Upgrade
 - [ ] 4.1: Deal summary card with visual confidence meter

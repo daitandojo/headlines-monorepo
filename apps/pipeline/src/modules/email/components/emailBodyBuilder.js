@@ -1,9 +1,50 @@
 // apps/pipeline/src/modules/email/components/emailBodyBuilder.js
-import { logger } from "@headlines/utils-shared";
+import { logger, getCountryFlag } from "@headlines/utils-shared";
 import { EMAIL_CONFIG } from "../../../config/index.js";
 import { formatEventForEmail } from "./eventFormatter.js";
 import { formatOpportunityForEmail } from "./opportunityFormatter.js"; // IMPORTED
-import { getCountryFlag } from "@headlines/utils-shared";
+
+function createWarRoomDashboard(events, opportunities, pending) {
+  const eventCount = events.reduce((acc, arr) => acc + (arr?.length || 0), 0);
+  const oppCount = opportunities.reduce((acc, arr) => acc + (arr?.length || 0), 0);
+  const pendingCount = pending.reduce((acc, arr) => acc + (arr?.length || 0), 0);
+
+  const totalLiquidity = opportunities.reduce((acc, arr) => {
+    return acc + (arr || []).reduce((sum, o) => {
+      return sum + (o.lastKnownEventLiquidityMM || o.profile?.estimatedNetWorthMM || 0);
+    }, 0);
+  }, 0);
+
+  const formatLiquidity = (val) => {
+    if (val >= 1000) return `$${(val / 1000).toFixed(1)}B`;
+    return `$${val.toFixed(0)}M`;
+  };
+
+  const dashboardCard = (emoji, label, value, sublabel, color) => `
+    <div style="flex: 1; min-width: 120px; text-align: center; padding: 16px 12px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
+      <div style="font-size: 28px; margin-bottom: 8px;">${emoji}</div>
+      <div style="font-size: 24px; font-weight: 700; color: ${color || '#EAEAEA'};">${value}</div>
+      <div style="font-size: 12px; color: #888; margin-top: 4px;">${label}</div>
+      ${sublabel ? `<div style="font-size: 11px; color: #666; margin-top: 2px;">${sublabel}</div>` : ''}
+    </div>
+  `;
+
+  return `
+    <div style="background: linear-gradient(135deg, #1a1f2e 0%, #0d1117 100%); border-radius: 16px; padding: 24px; margin-bottom: 28px; border: 1px solid #2a3a50; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+      <div style="display: flex; align-items: center; margin-bottom: 16px;">
+        <div style="font-size: 20px; margin-right: 10px;">🎯</div>
+        <div style="font-size: 16px; font-weight: 600; color: #D4AF37; letter-spacing: 0.5px;">TODAY'S DEAL WAR ROOM</div>
+        <div style="margin-left: auto; font-size: 12px; color: #666;">${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</div>
+      </div>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: space-between;">
+        ${dashboardCard('📰', 'Events Detected', eventCount, null, '#58a6ff')}
+        ${dashboardCard('💎', 'Opportunities', oppCount, null, '#4CAF50')}
+        ${dashboardCard('⏳', 'Pending Deals', pendingCount, null, '#FFC107')}
+        ${dashboardCard('💰', 'Est. Liquidity', formatLiquidity(totalLiquidity), totalLiquidity > 0 ? '#D4AF37' : '#666')}
+      </div>
+    </div>
+  `;
+}
 
 function createEmailWrapper(bodyContent, subject) {
   return `
@@ -82,7 +123,18 @@ if (!user || (!hasEvents && !hasOpps && !hasPending)) {
   const greeting = intro?.greeting || "Dear Client,";
   const body = intro?.body || "Here are the latest relevant wealth events we have identified for your review.";
 
+  // War Room Dashboard - aggregates all deal metrics
+  const allEventsArr = Object.values(eventsByCountry || {}).flat();
+  const allOppsArr = Object.values(opportunitiesByCountry || {}).flat();
+  const allPendingArr = Object.values(pendingTransactionsByCountry || {}).flat();
+  const warRoomDashboard = createWarRoomDashboard(
+    Object.values(eventsByCountry || {}),
+    Object.values(opportunitiesByCountry || {}),
+    Object.values(pendingTransactionsByCountry || {})
+  );
+
   const introHtml = `
+    ${warRoomDashboard}
     <h1 class="main-heading" style="margin:0 0 20px 0; font-size: 24px; font-weight: bold;">${greeting}</h1>
     <p class="paragraph" style="margin:0 0 25px 0; font-size: 15px;">${body}</p>
     <ul class="paragraph" style="margin:0 0 25px 0; font-size: 15px; padding-left: 20px;">${bulletsHtml}</ul>
