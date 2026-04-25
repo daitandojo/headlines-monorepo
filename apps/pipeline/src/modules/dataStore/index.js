@@ -1,7 +1,7 @@
 // apps/pipeline/src/modules/dataStore/index.js
 import { Pinecone } from "@pinecone-database/pinecone";
 import { logger } from "@headlines/utils-shared";
-import { generateEmbedding } from "@headlines/ai-services";
+import { generateEmbedding, findSimilarArticles } from "@headlines/ai-services";
 import { env } from "@headlines/config";
 import { Opportunity, SynthesizedEvent } from "@headlines/models";
 import {
@@ -265,4 +265,33 @@ export async function filterFreshArticles(
     `Filtering complete. Found ${existingLinks.size} existing articles, ${freshArticles.length} are fresh.`,
   );
   return freshArticles;
+}
+
+const SEMANTIC_DEDUP_THRESHOLD = 0.85;
+
+export async function findSemanticDuplicates(newArticles) {
+  if (!newArticles || newArticles.length === 0) return newArticles;
+  if (newArticles.length === 1) return newArticles;
+  
+  try {
+    for (let i = 0; i < newArticles.length; i++) {
+      const article = newArticles[i];
+      if (!article.headline) continue;
+      
+      const similar = await findSimilarArticles(article.headline, { limit: 5, threshold: SEMANTIC_DEDUP_THRESHOLD });
+      if (similar.success && similar.data && similar.data.length > 0) {
+        logger.info({ headline: article.headline.substring(0, 50), similarTo: similar.data.length }, '[Semantic Dedup] Found similar');
+        article._semanticDuplicate = similar.data[0]._id;
+      }
+    }
+    
+    const duplicates = newArticles.filter(a => a._semanticDuplicate);
+    const uniqueArticles = newArticles.filter(a => !a._semanticDuplicate);
+    
+    logger.info({ original: newArticles.length, duplicates: duplicates.length, unique: uniqueArticles.length }, '[Semantic Dedup] Complete');
+    return uniqueArticles;
+  } catch (err) {
+    logger.warn({ err: err.message }, '[Semantic Dedup] Failed, returning original');
+    return newArticles;
+  }
 }

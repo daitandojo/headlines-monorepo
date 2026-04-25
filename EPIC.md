@@ -8,8 +8,8 @@
 
 ## Phase 2: Intelligence Upgrade
 - [x] 2.1: Persistent Entity Graph context injection into synthesis
-- [ ] 2.2: Company→founder mapping from deal extraction
-- [ ] 2.3: Semantic deduplication with embeddings
+- [x] 2.2: Company→founder mapping from deal extraction (already implemented in graphUpdaterChain)
+- [x] 2.3: Semantic deduplication with embeddings
 
 ## Phase 3: Model Specialization
 - [x] 3.1: Route model by task complexity (deepseek for normal, Kimi for synthesis)
@@ -26,5 +26,5 @@
 - [ ] 5.3: User onboarding flow
 
 ## Phase 6: Self-Healing
-- [ ] 6.1: Pipeline health metrics per source/stage/model
-- [ ] 6.2: Auto-remediation (failures → pause/alert/fallback)
+- [x] 6.1: Pipeline health metrics per source/stage/model
+- [x] 6.2: Auto-remediation (failures → pause/alert/fallback)
