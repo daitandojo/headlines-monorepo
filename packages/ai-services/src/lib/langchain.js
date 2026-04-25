@@ -58,14 +58,23 @@ export const getProModel = () =>
       apiKey: env.OPENROUTER_API_KEY || env.OPENAI_API_KEY,
     },
   }).bind(modelConfig);
+
 export const getFallbackModel = () =>
   new ChatOpenAI({
-    modelName: settings.LLM_MODEL_FALLBACK,
+    modelName: settings.LLM_MODEL_FALLBACK || "xiaomi/mimo-v2-flash",
     configuration: {
       baseURL: "https://openrouter.ai/api/v1",
       apiKey: env.OPENROUTER_API_KEY || env.OPENAI_API_KEY,
     },
   }).bind(modelConfig);
+
+export function getModelWithFallback(primaryModelName) {
+  const fallbackModel = settings.LLM_MODEL_FALLBACK || "xiaomi/mimo-v2-flash";
+  return {
+    primary: primaryModelName,
+    fallback: fallbackModel,
+  };
+}
 
 // Kimi K2 client for extensive contact enrichment
 export const getKimiClient = () => {
@@ -149,9 +158,8 @@ async function executeTool(fnName, fnArgs) {
   if (fnName === "fetch") {
     logger.info(`[Fetch] URL: "${query}"`);
     try {
-      const response = await axios.get(query, { timeout: 15000 });
-      const text = typeof response.data === "string" ? response.data : JSON.stringify(response.data);
-      return text.substring(0, 4000);
+      const result = await webfetch({ url: query, format: "text" });
+      return result?.substring(0, 4000) || "No content";
     } catch (e) {
       logger.error({ err: e, url: query }, "[Fetch] Failed");
       return `Fetch failed for: ${query}`;
@@ -177,122 +185,19 @@ const baseClient = new OpenAI({
   },
 });
 
-function extractJSON(text) {
-  // Strip markdown code fences first
-  let cleaned = text.replace(/```(?:json)?\s*\n?/gi, "").trim();
-  // Then try to extract JSON object
-  let jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) return null;
-  
-  let parsed = null;
-  let attempts = 0;
-  let jsonStr = jsonMatch[0];
-
-  while (attempts < 5) {
-    try {
-      parsed = JSON.parse(jsonStr);
-      break;
-    } catch (e) {
-      attempts++;
-      if (jsonStr.startsWith("{") && jsonStr.endsWith("}")) {
-        jsonStr = jsonStr.slice(1, -1);
-      } else if (jsonStr.startsWith("{{") && jsonStr.endsWith("}}")) {
-        jsonStr = "{" + jsonStr.slice(2, -2) + "}";
-      } else {
-        throw e;
-      }
-    }
-  }
-  return parsed;
-}
-
 export async function callLanguageModel({
   modelName,
-  ...rest
+  systemPrompt,
+  userContent,
+  isJson = true,
+  fewShotInputs = [],
+  fewShotOutputs = [],
+  maxTokens = 2000,
 }) {
-  let currentModelName = modelName
-  
-  // Try primary model first
-  try {
-    const result = await callLanguageModelInternal(currentModelName, rest)
-    return result
-  } catch (error) {
-    if (error.message.includes('429') || error.message.includes('rate-limited')) {
-      logger.warn({ model: currentModelName, error: error.message }, '[LangChain] Primary model rate-limited, trying fallback')
-      currentModelName = settings.LLM_MODEL_FALLBACK
-      
-      const result = await callLanguageModelInternal(currentModelName, rest)
-      logger.info({ model: currentModelName }, '[LangChain] Fallback model used successfully')
-      return result
-    }
-    throw error
+  const messages = [];
+  if (systemPrompt) {
+    messages.push({ role: "system", content: systemPrompt });
   }
-}
-
-async function callLanguageModelInternal(modelName, params) {
-  const messages = []
-  if (params.systemPrompt) {
-    messages.push({ role: "system", content: params.systemPrompt })
-  }
-  params.fewShotInputs?.forEach((input, i) => {
-    const shotContent =
-      typeof input === "string" ? input : JSON.stringify(input)
-    if (shotContent) {
-      messages.push({ role: "user", content: shotContent })
-      messages.push({ role: "assistant", content: params.fewShotOutputs[i] })
-    }
-  })
-  messages.push({ role: "user", content: params.userContent })
-
-  const apiPayload = { model: modelName, messages }
-  if (params.isJson) {
-    apiPayload.response_format = { type: "json_object" }
-  }
-  if (params.maxTokens) {
-    apiPayload.max_tokens = params.maxTokens
-  }
-
-  const result = await safeExecute(
-    () => baseClient.chat.completions.create(apiPayload),
-    {
-      timeout: 85000,
-    },
-  )
-
-  if (!result) return { error: "API call failed or timed out" }
-  if (!result.choices || result.choices.length === 0) {
-    logger.error({ response: result }, `LLM response for model ${modelName} had no choices.`)
-    return { error: "LLM response had no choices." }
-  }
-
-  if (result.usage) tokenTracker.recordUsage(modelName, result.usage)
-
-  const responseContent = result.choices[0]?.message?.content
-
-  if (typeof responseContent !== "string") {
-    logger.error(
-      { response: result },
-      `LLM response for model ${modelName} was empty or in an unexpected format.`,
-    )
-    return { error: "LLM response was empty or invalid." }
-  }
-
-  if (params.isJson) {
-    try {
-      const parsed = extractJSON(responseContent)
-      if (parsed === null)
-        throw new Error("No valid JSON object found in the LLM's string response.")
-      return parsed
-    } catch (parseError) {
-      logger.error(
-        { err: parseError, rawContent: responseContent },
-        `LLM response JSON Parse Error for model ${modelName}`,
-      )
-      return { error: "JSON Parsing Error" }
-    }
-  }
-  return responseContent
-}
   fewShotInputs.forEach((input, i) => {
     const shotContent =
       typeof input === "string" ? input : JSON.stringify(input);
@@ -311,46 +216,93 @@ async function callLanguageModelInternal(modelName, params) {
     apiPayload.max_tokens = maxTokens;
   }
 
-  // --- START OF DEFINITIVE FIX ---
-  // The timeout wrapper is now placed around the direct API call,
-  // not the entire agent's logic.
-  const result = await safeExecute(
-    () => baseClient.chat.completions.create(apiPayload),
-    {
-      timeout: 85000,
-    },
-  );
+  const fallbackModel = settings.LLM_MODEL_FALLBACK || "xiaomi/mimo-v2-flash";
+  
+  const tryCall = async (model) => {
+    const payloadWithModel = { ...apiPayload, model };
+    try {
+      const result = await safeExecute(
+        () => baseClient.chat.completions.create(payloadWithModel),
+        { timeout: 85000 },
+      );
+      return { success: true, result, usedModel: model };
+    } catch (error) {
+      const isRateLimit = error.message && (
+        error.message.includes('429') || 
+        error.message.includes('rate-limited') ||
+        error.status === 429
+      );
+      return { success: false, error, isRateLimit, usedModel: model };
+    }
+  };
 
-  if (!result) return { error: "API call failed or timed out" };
+  let callResult = await tryCall(modelName);
+  
+  if (!callResult.success && callResult.isRateLimit) {
+    logger.warn({ model: modelName, error: callResult.error.message }, '[LangChain] Rate limited, trying fallback');
+    callResult = await tryCall(fallbackModel);
+    if (callResult.success) {
+      logger.info({ model: fallbackModel }, '[LangChain] Using fallback model');
+    }
+  }
+
+  if (!callResult.success) {
+    return { error: callResult.error.message || "API call failed" };
+  }
+
+  const result = callResult.result;
+
   if (!result.choices || result.choices.length === 0) {
-    logger.error({ response: result }, `LLM response for model ${modelName} had no choices.`);
+    logger.error({ response: result }, `LLM response for model ${callResult.usedModel} had no choices.`);
     return { error: "LLM response had no choices." };
   }
-  // --- END OF DEFINITIVE FIX ---
 
-  if (result.usage) tokenTracker.recordUsage(modelName, result.usage);
+  if (result.usage) tokenTracker.recordUsage(callResult.usedModel, result.usage);
 
   const responseContent = result.choices[0]?.message?.content;
 
   if (typeof responseContent !== "string") {
     logger.error(
       { response: result },
-      `LLM response for model ${modelName} was empty or in an unexpected format.`,
+      `LLM response for model ${callResult.usedModel} was empty or in an unexpected format.`,
     );
     return { error: "LLM response was empty or invalid." };
   }
 
   if (isJson) {
     try {
-      const parsed = extractJSON(responseContent);
+      let jsonMatch = responseContent.match(/\{[\s\S]*\}/);
+      if (!jsonMatch)
+        throw new Error(
+          "No valid JSON object found in the LLM's string response.",
+        );
+
+      let parsed = null;
+      let attempts = 0;
+      let text = jsonMatch[0];
+
+      while (attempts < 5) {
+        try {
+          parsed = JSON.parse(text);
+          break;
+        } catch (e) {
+          attempts++;
+          if (text.startsWith("{") && text.endsWith("}")) {
+            text = text.slice(1, -1);
+          } else if (text.startsWith("{{") && text.endsWith("}}")) {
+            text = "{" + text.slice(2, -2) + "}";
+          } else {
+            throw e;
+          }
+        }
+      }
       if (parsed === null)
-        throw new Error("No valid JSON object found in the LLM's string response.");
-      return parsed;
+        throw new Error("Could not parse JSON after 5 attempts");
       return parsed;
     } catch (parseError) {
       logger.error(
         { err: parseError, rawContent: responseContent },
-        `LLM response JSON Parse Error for model ${modelName}`,
+        `LLM response JSON Parse Error for model ${callResult.usedModel}`,
       );
       return { error: "JSON Parsing Error" };
     }
