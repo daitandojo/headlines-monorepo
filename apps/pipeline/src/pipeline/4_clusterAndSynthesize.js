@@ -276,6 +276,7 @@ async function synthesizeEventsFromCluster(
   addSynthesisTrace(uniqueArticles, clusterKey, synthesisInput, articleTraceLogger)
   const synthesisResult = await synthesisChain({
     context_json_string: JSON.stringify(synthesisInput),
+    fallbackModel: settings.LLM_MODEL_FALLBACK,
   })
   addLlmOutputTrace(uniqueArticles, synthesisResult, articleTraceLogger)
 

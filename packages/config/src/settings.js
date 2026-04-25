@@ -22,6 +22,7 @@ const DEFAULTS = {
   LLM_MODEL_SYNTHESIS: "deepseek/deepseek-v4-flash",
   LLM_MODEL_UTILITY: "deepseek/deepseek-v4-flash",
   LLM_MODEL_PRO: "deepseek/deepseek-v4-flash",
+  LLM_MODEL_FALLBACK: "xiaomi/mimo-v2-flash", // Fallback model for rate limiting
 };
 
 export const settings = { ...DEFAULTS };

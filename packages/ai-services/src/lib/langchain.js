@@ -58,6 +58,14 @@ export const getProModel = () =>
       apiKey: env.OPENROUTER_API_KEY || env.OPENAI_API_KEY,
     },
   }).bind(modelConfig);
+export const getFallbackModel = () =>
+  new ChatOpenAI({
+    modelName: settings.LLM_MODEL_FALLBACK,
+    configuration: {
+      baseURL: "https://openrouter.ai/api/v1",
+      apiKey: env.OPENROUTER_API_KEY || env.OPENAI_API_KEY,
+    },
+  }).bind(modelConfig);
 
 // Kimi K2 client for extensive contact enrichment
 export const getKimiClient = () => {
@@ -200,17 +208,91 @@ function extractJSON(text) {
 
 export async function callLanguageModel({
   modelName,
-  systemPrompt,
-  userContent,
-  isJson = true,
-  fewShotInputs = [],
-  fewShotOutputs = [],
-  maxTokens = 2000,
+  ...rest
 }) {
-  const messages = [];
-  if (systemPrompt) {
-    messages.push({ role: "system", content: systemPrompt });
+  let currentModelName = modelName
+  
+  // Try primary model first
+  try {
+    const result = await callLanguageModelInternal(currentModelName, rest)
+    return result
+  } catch (error) {
+    if (error.message.includes('429') || error.message.includes('rate-limited')) {
+      logger.warn({ model: currentModelName, error: error.message }, '[LangChain] Primary model rate-limited, trying fallback')
+      currentModelName = settings.LLM_MODEL_FALLBACK
+      
+      const result = await callLanguageModelInternal(currentModelName, rest)
+      logger.info({ model: currentModelName }, '[LangChain] Fallback model used successfully')
+      return result
+    }
+    throw error
   }
+}
+
+async function callLanguageModelInternal(modelName, params) {
+  const messages = []
+  if (params.systemPrompt) {
+    messages.push({ role: "system", content: params.systemPrompt })
+  }
+  params.fewShotInputs?.forEach((input, i) => {
+    const shotContent =
+      typeof input === "string" ? input : JSON.stringify(input)
+    if (shotContent) {
+      messages.push({ role: "user", content: shotContent })
+      messages.push({ role: "assistant", content: params.fewShotOutputs[i] })
+    }
+  })
+  messages.push({ role: "user", content: params.userContent })
+
+  const apiPayload = { model: modelName, messages }
+  if (params.isJson) {
+    apiPayload.response_format = { type: "json_object" }
+  }
+  if (params.maxTokens) {
+    apiPayload.max_tokens = params.maxTokens
+  }
+
+  const result = await safeExecute(
+    () => baseClient.chat.completions.create(apiPayload),
+    {
+      timeout: 85000,
+    },
+  )
+
+  if (!result) return { error: "API call failed or timed out" }
+  if (!result.choices || result.choices.length === 0) {
+    logger.error({ response: result }, `LLM response for model ${modelName} had no choices.`)
+    return { error: "LLM response had no choices." }
+  }
+
+  if (result.usage) tokenTracker.recordUsage(modelName, result.usage)
+
+  const responseContent = result.choices[0]?.message?.content
+
+  if (typeof responseContent !== "string") {
+    logger.error(
+      { response: result },
+      `LLM response for model ${modelName} was empty or in an unexpected format.`,
+    )
+    return { error: "LLM response was empty or invalid." }
+  }
+
+  if (params.isJson) {
+    try {
+      const parsed = extractJSON(responseContent)
+      if (parsed === null)
+        throw new Error("No valid JSON object found in the LLM's string response.")
+      return parsed
+    } catch (parseError) {
+      logger.error(
+        { err: parseError, rawContent: responseContent },
+        `LLM response JSON Parse Error for model ${modelName}`,
+      )
+      return { error: "JSON Parsing Error" }
+    }
+  }
+  return responseContent
+}
   fewShotInputs.forEach((input, i) => {
     const shotContent =
       typeof input === "string" ? input : JSON.stringify(input);
