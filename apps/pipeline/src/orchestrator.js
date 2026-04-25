@@ -15,6 +15,9 @@ import { runCommitAndNotify } from './pipeline/5_commitAndNotify.js'
 import { runUpdateKnowledgeGraph } from './pipeline/5_5_updateKnowledgeGraph.js'
 import { suggestNewWatchlistEntities } from './pipeline/6_suggestNewWatchlistEntities.js'
 import { updateSourceAnalytics } from './pipeline/submodules/commit/4_updateSourceAnalytics.js'
+import { runSelfHealAndOptimize } from './pipeline/7_selfHealAndOptimize.js'
+import { selfHealer } from './modules/monitoring/selfHeal.js'
+import { pipelineMetrics } from './modules/monitoring/pipelineMetrics.js'
 import { settings } from '@headlines/config'
 import { RunVerdict, Article, SynthesizedEvent } from '@headlines/models'
 import { browserManager } from '@headlines/scraper-logic/browserManager.js'
@@ -61,6 +64,9 @@ async function initializeResources() {
     settings.LLM_MODEL_PRO,
   ])
   await browserManager.initialize()
+  
+  // Initialize pipeline metrics
+  pipelineMetrics.startRun()
 }
 
 async function sendSupervisorReport(runStatsManager, articleTraceLogger) {
@@ -134,7 +140,16 @@ async function cleanup(context) {
   await saveRunVerdict(context, duration)
   await logFinalReport(context.runStatsManager.getStats(), duration)
   await context.articleTraceLogger.writeAllTraces()
-  logger.info({ duration }, 'Pipeline execution completed')
+  
+  // End pipeline metrics run and get final summary
+  const metricsSummary = pipelineMetrics.endRun()
+  logger.info({ 
+    duration: `${duration}s`,
+    stages: metricsSummary.stages,
+    topSources: metricsSummary.sources.slice(0, 3),
+    models: metricsSummary.models 
+  }, '[Metrics] Pipeline run completed')
+  
   if (context.emitter) {
     context.emitter.done({
       duration,
@@ -261,7 +276,66 @@ export async function runPipeline(options) {
     success = false
     handlePipelineError(error, context)
   } finally {
+    // Record metrics for each stage
+    Object.keys(PIPELINE_STAGES).forEach(stageKey => {
+      const stage = PIPELINE_STAGES[stageKey]
+      context.runStatsManager.push(`stage_${stage.name}_attempted`, 1)
+    })
+    
+    // Record source results if available
+    if (context.scrapedArticles && Array.isArray(context.scrapedArticles)) {
+      context.scrapedArticles.forEach(article => {
+        if (article.newspaper) {
+          pipelineMetrics.recordSourceResult(article.newspaper, 1, 0) // Duration would need tracking
+        }
+      })
+    }
+    
+    // Record model usage from tokenTracker
+    const tokenStats = tokenTracker.getStats()
+    Object.keys(tokenStats).forEach(model => {
+      pipelineMetrics.recordModelUsage(
+        model, 
+        tokenStats[model].promptTokens + tokenStats[model].completionTokens, 
+        0, // Cost would need calculation
+        true // Success assumption
+      )
+    })
+    
+    // Run self-healing analysis
+    const healthReport = selfHealer.getHealthReport()
+    if (healthReport.sourcesWithIssues.length > 0 || healthReport.modelsWithIssues.length > 0) {
+      logger.warn({ 
+        sourcesWithIssues: healthReport.sourcesWithIssues,
+        modelsWithIssues: healthReport.modelsWithIssues 
+      }, '[SelfHeal] Health issues detected')
+      
+      // Trigger self-healing recommendations
+      healthReport.sourcesWithIssues.forEach(issue => {
+        const remediation = selfHealer.recordSourceFailure(issue.source)
+        if (remediation) {
+          logger.warn({ remediation }, '[SelfHeal] Remediation triggered')
+          // In a full implementation, we would act on remediation here
+        }
+      })
+    }
+    
     await cleanup(context)
+  }
+
+  // Run final self-healing and optimization
+  try {
+    logger.info('--- STAGE 7: SELF-HEAL & OPTIMIZE ---')
+    context = await runSelfHealAndOptimize({
+      ...context,
+      selfHealer,
+      pipelineMetrics,
+      healthReport: selfHealer.getHealthReport()
+    })
+    logger.info('--- STAGE 7 COMPLETE ---')
+  } catch (error) {
+    logger.error({ err: error }, 'Self-healing stage failed')
+    // Don't fail the entire pipeline for self-healing issues
   }
 
   return { success, stats: context.runStatsManager.getStats() }

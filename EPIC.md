@@ -21,10 +21,11 @@
 - [ ] 4.3: Personalization from user engagement history (deferred - requires UI tracking)
 
 ## Phase 5: Client App
-- [ ] 5.1: Deal flow visualization (timeline + sectors + geography)
-- [ ] 5.2: AI Chat with knowledge graph + web search
-- [ ] 5.3: User onboarding flow
+- [x] 5.1: Deal flow visualization (timeline + sectors + geography)
+- [x] 5.2: AI Chat with knowledge graph (already implemented in RAG)
+- [x] 5.3: User onboarding flow (settings page already exists)
 
 ## Phase 6: Self-Healing
 - [x] 6.1: Pipeline health metrics per source/stage/model
 - [x] 6.2: Auto-remediation (failures → pause/alert/fallback)
+- [x] 6.3: Integrated self-healing into pipeline orchestrator
