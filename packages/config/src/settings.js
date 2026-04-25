@@ -44,7 +44,11 @@ export function populateSettings(dbSettings) {
 } else {
     dbSettings.forEach((setting) => {
       if (setting.key.startsWith("LLM_MODEL_")) {
-        // Models are controlled by code, not database - silent ignore
+        // Allow LLM model selection from DB if model is whitelisted
+        if (MODEL_WHITELIST.includes(setting.value)) {
+          settings[setting.key] = setting.value;
+          console.log(`[Config] Model override: ${setting.key} = ${setting.value}`);
+        }
         return;
       }
       if (setting.key in settings) {

@@ -141,8 +141,9 @@ async function executeTool(fnName, fnArgs) {
   if (fnName === "fetch") {
     logger.info(`[Fetch] URL: "${query}"`);
     try {
-      const result = await webfetch({ url: query, format: "text" });
-      return result?.substring(0, 4000) || "No content";
+      const response = await axios.get(query, { timeout: 15000 });
+      const text = typeof response.data === "string" ? response.data : JSON.stringify(response.data);
+      return text.substring(0, 4000);
     } catch (e) {
       logger.error({ err: e, url: query }, "[Fetch] Failed");
       return `Fetch failed for: ${query}`;
@@ -167,6 +168,35 @@ const baseClient = new OpenAI({
     "X-Title": "Headlines Pipeline",
   },
 });
+
+function extractJSON(text) {
+  // Strip markdown code fences first
+  let cleaned = text.replace(/```(?:json)?\s*\n?/gi, "").trim();
+  // Then try to extract JSON object
+  let jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) return null;
+  
+  let parsed = null;
+  let attempts = 0;
+  let jsonStr = jsonMatch[0];
+
+  while (attempts < 5) {
+    try {
+      parsed = JSON.parse(jsonStr);
+      break;
+    } catch (e) {
+      attempts++;
+      if (jsonStr.startsWith("{") && jsonStr.endsWith("}")) {
+        jsonStr = jsonStr.slice(1, -1);
+      } else if (jsonStr.startsWith("{{") && jsonStr.endsWith("}}")) {
+        jsonStr = "{" + jsonStr.slice(2, -2) + "}";
+      } else {
+        throw e;
+      }
+    }
+  }
+  return parsed;
+}
 
 export async function callLanguageModel({
   modelName,
@@ -230,33 +260,10 @@ export async function callLanguageModel({
 
   if (isJson) {
     try {
-      let jsonMatch = responseContent.match(/\{[\s\S]*\}/);
-      if (!jsonMatch)
-        throw new Error(
-          "No valid JSON object found in the LLM's string response.",
-        );
-
-      let parsed = null;
-      let attempts = 0;
-      let text = jsonMatch[0];
-
-      while (attempts < 5) {
-        try {
-          parsed = JSON.parse(text);
-          break;
-        } catch (e) {
-          attempts++;
-          if (text.startsWith("{") && text.endsWith("}")) {
-            text = text.slice(1, -1);
-          } else if (text.startsWith("{{") && text.endsWith("}}")) {
-            text = "{" + text.slice(2, -2) + "}";
-          } else {
-            throw e;
-          }
-        }
-      }
+      const parsed = extractJSON(responseContent);
       if (parsed === null)
-        throw new Error("Could not parse JSON after 5 attempts");
+        throw new Error("No valid JSON object found in the LLM's string response.");
+      return parsed;
       return parsed;
     } catch (parseError) {
       logger.error(

@@ -11,7 +11,7 @@ import {
 } from '@headlines/ai-services'
 import { settings } from '@headlines/config'
 import { getConfig } from '@headlines/scraper-logic/config.js'
-import { SynthesizedEvent } from '@headlines/models'
+import { SynthesizedEvent, EntityGraph } from '@headlines/models'
 import mongoose from 'mongoose'
 
 const SIMILARITY_THRESHOLD = 0.9
@@ -27,6 +27,26 @@ function generateUniqueEventKey(baseKey) {
 
 function deduplicateArticles(articles) {
   return Array.from(new Map(articles.map((article) => [article.link, article])).values())
+}
+
+async function enrichWithEntityGraph(entities) {
+  if (!entities || entities.length === 0) return []
+  try {
+    const entityRecords = await EntityGraph.find({
+      name: { $in: entities.map(e => new RegExp(e.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')) }
+    }).lean().limit(10)
+    
+    if (!entityRecords || entityRecords.length === 0) return []
+    
+    return entityRecords.map(e => ({
+      name: e.name,
+      type: e.type,
+      relationships: (e.relationships || []).slice(0, 5).map(r => `${e.name} → [${r.type}] → ${r.targetName}`)
+    }))
+  } catch (err) {
+    logger.warn({ err: err.message }, '[EntityGraph] Lookup failed')
+    return []
+  }
 }
 
 function extractUniqueWatchlistHits(articles) {
@@ -75,6 +95,7 @@ function buildSynthesisContext({
   historicalContext,
   wikipediaContext,
   newsApiContext,
+  entityGraphContext,
 }) {
   return {
     SOURCE_COUNTRY_CONTEXT: `The source newspaper for this event is from ${primaryCountry}. Prioritize this as the event's country unless the text explicitly states otherwise.`,
@@ -85,6 +106,7 @@ function buildSynthesisContext({
       key_individuals: article.key_individuals || [],
     })),
     '[ HISTORICAL CONTEXT (Internal Database) ]': historicalContext,
+    '[ KNOWLEDGE GRAPH (Known Entity Relationships) ]': entityGraphContext,
     '[ PUBLIC WIKIPEDIA CONTEXT ]': wikipediaContext,
     '[ LATEST NEWS CONTEXT (NewsAPI) ]': newsApiContext,
   }
@@ -163,20 +185,15 @@ function createEventObject({
   if (sellerUBOs.length > 0) {
     for (const seller of sellerUBOs) {
       if (seller.name && seller.name.length > 2) {
-        const foResult = searchFamilyOfficeForUBO(seller.name, country).catch(err => {
-          logger.warn({ err: err.message, seller: seller.name }, '[FamilyOffice] Search failed')
-          return null
-        })
-        
-        if (foResult && foResult.then) {
-          foResult.then(fo => {
+        searchFamilyOfficeForUBO(seller.name, country)
+          .then(fo => {
             if (fo && fo.name) {
               logger.info(`[FamilyOffice] Found for ${seller.name}: ${fo.name} (confidence: ${fo.confidence})`)
-              // Add family office data to event - for downstream use
-              eventObj._familyOfficeFound = fo
             }
           })
-        }
+          .catch(err => {
+            logger.warn({ err: err.message, seller: seller.name }, '[FamilyOffice] Search failed')
+          })
       }
     }
   }
@@ -225,6 +242,7 @@ async function synthesizeEventsFromCluster(
   let historicalContext = []
   let wikiEnrichment = { results: [], context: 'Not available.' }
   let newsApiResult = { success: false, snippets: 'Not available.' }
+  let entityGraphContext = 'Not available.'
   let enrichmentSources = []
 
   if (isLeanMode) {
@@ -233,15 +251,17 @@ async function synthesizeEventsFromCluster(
     const entityResult = await entityExtractorChain({ article_text: combinedText })
     const entities = entityResult.entities || []
     historicalContext = await findSimilarArticles(entities.join(', '))
-    ;[wikiEnrichment, newsApiResult] = await Promise.all([
+    ;[wikiEnrichment, newsApiResult, entityGraphContext] = await Promise.all([
       enrichWithWikipedia(entities, config.utilityFunctions),
       enrichWithNewsApi(primaryHeadline, config.utilityFunctions),
+      enrichWithEntityGraph(entities),
     ])
     enrichmentSources = determineEnrichmentSources(
       historicalContext,
       wikiEnrichment.results,
       newsApiResult
     )
+    if (entityGraphContext.length > 0) enrichmentSources.push('knowledge_graph')
   }
 
   const synthesisInput = buildSynthesisContext({
@@ -250,6 +270,7 @@ async function synthesizeEventsFromCluster(
     historicalContext,
     wikipediaContext: wikiEnrichment.context,
     newsApiContext: newsApiResult.snippets,
+    entityGraphContext,
   })
 
   addSynthesisTrace(uniqueArticles, clusterKey, synthesisInput, articleTraceLogger)

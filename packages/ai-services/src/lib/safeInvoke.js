@@ -47,8 +47,9 @@ export async function safeInvoke(chain, input, agentName, zodSchema) {
         throw new Error('AI response was not a string after unwrapping.')
       }
 
-      // 2. Use a regex to find the JSON block, ignoring any conversational text from the AI.
-      const jsonMatch = result.match(/\{[\s\S]*\}/)
+      // Strip markdown code fences before extracting JSON
+      const cleaned = result.replace(/```(?:json)?\s*\n?/gi, "").trim()
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
       if (!jsonMatch) {
         throw new Error("No valid JSON object found in the LLM's string response.")
       }

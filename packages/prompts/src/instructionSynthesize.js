@@ -41,6 +41,8 @@ export const instructionSynthesize = {
     `**Step 3: Apply Knowledge-Based Enrichment**`,
     `For each private entity, ask: "Who ultimately benefits?"`,
     ``,
+    `• **IMPORTANT: The input data includes a "[KNOWLEDGE GRAPH]" section with known entity relationships. USE THIS as your primary source before running web search.** If the knowledge graph shows "Company X → [Founder Of] → Person Y", use Person Y as the key individual.`,
+    ``,
     `• **For companies being sold:** Identify founders, major shareholders, family owners`,
     `  - Example: "Trackunit sold" → Research founders (e.g., Søren Brogaard)`,
     ``,
