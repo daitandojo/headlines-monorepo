@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "dev": "pnpm --filter @headlines/client dev",
+    "dev:all": "concurrently \"pnpm --filter @headlines/server dev\" \"pnpm --filter @headlines/client dev\"",
     "build": "pnpm --filter \"./apps/**\" build",
     "build:local": "pnpm --filter @headlines/client build:local",
     "pipeline": "pnpm --filter @headlines/pipeline pipeline --",
@@ -51,6 +52,9 @@
     "tools:backfill-graph": "pnpm --filter @headlines/pipeline tools:backfill-graph"
   },
   "dependencies": {
+    "@upstash/redis": "^1.35.4",
+    "axios": "^1.7.2",
+    "nodemailer": "^6.9.14",
     "otplib": "^13.4.0",
     "qrcode": "^1.5.4",
     "react": "18.3.1",
@@ -60,6 +64,7 @@
     "@eslint/eslintrc": "^3.1.0",
     "@tailwindcss/typography": "^0.5.13",
     "autoprefixer": "^10.4.19",
+    "concurrently": "^8.2.2",
     "dotenv-cli": "^7.4.2",
     "eslint": "^8.57.0",
     "eslint-config-next": "14.2.4",

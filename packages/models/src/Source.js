@@ -68,10 +68,16 @@ const SourceSchema = new Schema(
     linkSelector: { type: String, required: false, trim: true },
     headlineTextSelector: { type: String, required: false, trim: true },
     articleSelector: { type: [String], required: false, default: [] },
+    contentSelectors: { type: [String], required: false, default: [] },
+    fallbackSelectors: { type: [String], required: false, default: [] },
     lastScrapedAt: { type: Date, required: false, index: true },
     lastSuccessAt: { type: Date, required: false },
     notes: { type: String, required: false, trim: true },
     analytics: { type: SourceAnalyticsSchema, default: () => ({}) },
+    // Healing-related fields for auto-repair
+    lastHealedAt: { type: Date, required: false },
+    consecutiveFailures: { type: Number, default: 0 },
+    healContentSelectors: { type: Boolean, default: false },
   },
   { timestamps: true, collection: "sources" },
 );

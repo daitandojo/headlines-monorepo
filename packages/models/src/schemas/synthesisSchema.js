@@ -23,11 +23,56 @@ const transactionDetailsSchema = z.object({
       .describe('Approximate liquid amount transferred in millions USD, or null.'),
     nature: z.string().nullable().describe('A brief description of the flow.'),
   }),
+  // PHASE 1: UBO drill-down
+  sellerUBOs: z
+    .array(
+      z.object({
+        name: z.string().describe('Name of the beneficial owner receiving liquidity.'),
+        role: z.string().nullable().optional().describe('Their role (e.g., "Founder", "PE Partner").'),
+        company: z.string().nullable().optional().describe('Their primary company.'),
+        estimatedProceedsMM: z
+          .number()
+          .nullable()
+          .optional()
+          .describe('Estimated proceeds in USD millions.'),
+      })
+    )
+    .default([]),
+  buyerUBOs: z
+    .array(
+      z.object({
+        name: z.string().describe('Name of the beneficial owner / fund partner on buyer side.'),
+        role: z.string().nullable().optional().describe('Their role (e.g., "Managing Partner", "CEO").'),
+        firm: z.string().nullable().optional().describe('PE firm or acquiring entity.'),
+      })
+    )
+    .default([]),
 })
 
 const primarySubjectSchema = z.object({
   name: z.string().min(0).describe('The primary person or family name for this event.'),
   role: z.string().min(0).describe('Their role in the event (e.g., "Founder and CEO").'),
+})
+
+const triggerClassSchema = z.enum([
+  'TC1_FAMILY_FOUNDER',
+  'TC2_MA_BUYER',
+  'TC3_MA_SELLER',
+  'TC4_PRIVATE_EQUITY',
+  'TC5_LISTED_COMPANY',
+  'TC6_REAL_ESTATE',
+  'TC7_PHILANTHROPY',
+  'TC8_SUCCESSION',
+  'TC9_IPO',
+  'TC10_LUXURY_ASSET',
+]).describe('Trigger class driving this opportunity (audit #1-10).')
+
+const successionSignalsSchema = z.object({
+  founderAgeOver65: z.boolean().nullable().optional(),
+  externalCEOAppointed: z.boolean().nullable().optional(),
+  peMinorityStake: z.boolean().nullable().optional(),
+  namedHeirApparent: z.string().nullable().optional(),
+  score: z.number().min(0).max(3).default(0),
 })
 
 export const synthesisSchema = z.object({
@@ -43,13 +88,18 @@ export const synthesisSchema = z.object({
       country: z.array(z.string()).min(1, 'Country array cannot be empty.'),
       key_individuals: z.array(
         z.object({
-          name: z.string(),
-          role_in_event: z.string(),
+          name: z
+            .union([z.string(), z.null(), z.undefined()])
+            .transform((val) => (val === null || val === undefined ? null : val))
+            .pipe(z.string().nullable()),
+          role_in_event: z
+            .union([z.string(), z.null(), z.undefined()])
+            .transform((val) => (val === null || val === undefined ? null : val))
+            .pipe(z.string().nullable()),
           company: z.string().nullable(),
           email_suggestion: z.string().nullable(),
         })
       ),
-      // NEW: Adding all the new fields to the Zod schema for the AI to populate.
       transactionDetails: transactionDetailsSchema,
       primarySubject: primarySubjectSchema,
       relatedCompanies: z
@@ -59,6 +109,12 @@ export const synthesisSchema = z.object({
       eventStatus: z
         .enum(['Completed', 'Pending', 'Rumored'])
         .describe('The current status of the event.'),
+      // PHASE 1: Trigger classification
+      triggerClass: triggerClassSchema,
+      // PHASE 1: Succession signals
+      successionSignals: successionSignalsSchema,
+      // PHASE 1: Liquidity event timing
+      dealCloseDate: z.string().nullable().optional(),
     })
   ),
 })

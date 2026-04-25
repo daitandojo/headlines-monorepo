@@ -13,6 +13,7 @@ export * from './shared/agents/contactAgent.js'
 export * from './shared/agents/entityAgent.js'
 export * from './shared/agents/emailAgents.js'
 export * from './shared/agents/executiveSummaryAgent.js'
+export * from './enrichment/priorityAndTiming.js'
 
 import {
   generateChatTitle as coreGenTitle,

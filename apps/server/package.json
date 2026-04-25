@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "node --watch src/index.js"
+    "start": "npx dotenv-cli -e ../client/.env -- node src/index.js",
+    "dev": "npx dotenv-cli -e ../client/.env -- node --watch src/index.js"
   },
   "dependencies": {
     "@headlines/config": "workspace:*",
@@ -13,9 +13,12 @@
     "@headlines/models": "workspace:*",
     "@headlines/scraper-logic": "workspace:*",
     "@headlines/utils-server": "workspace:*",
+    "@headlines/utils-shared": "workspace:*",
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "jose": "^5.6.3",
+    "multer": "^1.4.5-lts.1",
+    "pino": "^9.2.0",
     "playwright": "^1.45.1"
   }
 }

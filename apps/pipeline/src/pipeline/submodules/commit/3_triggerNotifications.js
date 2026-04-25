@@ -1,15 +1,19 @@
 // apps/pipeline/src/pipeline/submodules/commit/3_triggerNotifications.js
-import { logger } from '@headlines/utils-shared'
-import { triggerRealtimeEvent } from '@headlines/utils-server'
-import { REALTIME_CHANNELS, REALTIME_EVENTS } from '@headlines/utils-shared'
-import { SynthesizedEvent, Article } from '@headlines/models'
-import { settings } from '@headlines/config'
-import { sendNotifications } from '../../../modules/notifications/index.js'
+import { logger } from "@headlines/utils-shared";
+import { triggerRealtimeEvent } from "@headlines/utils-server";
+import { REALTIME_CHANNELS, REALTIME_EVENTS } from "@headlines/utils-shared";
+import {
+  SynthesizedEvent,
+  Article,
+  PendingTransaction,
+} from "@headlines/models";
+import { settings } from "@headlines/config";
+import { sendNotifications } from "../../../modules/notifications/index.js";
 
 export async function triggerNotifications(
   pipelinePayload,
   savedEvents,
-  savedOpportunities
+  savedOpportunities,
 ) {
   // --- START OF DEFINITIVE FIX ---
   // The isTestMode flag was not being correctly passed through.
@@ -19,27 +23,29 @@ export async function triggerNotifications(
     isDryRun,
     runStatsManager,
     test: isTestMode,
-  } = pipelinePayload
+  } = pipelinePayload;
   // --- END OF DEFINITIVE FIX ---
 
-  const eventIds = savedEvents.map((e) => e._id)
+  const eventIds = savedEvents.map((e) => e._id);
 
   if (!isDryRun) {
     if (assessedCandidates?.length > 0) {
       const relevantArticleLinks = assessedCandidates
-        .filter((a) => a.relevance_article >= settings.ARTICLES_RELEVANCE_THRESHOLD)
-        .map((a) => a.link)
+        .filter(
+          (a) => a.relevance_article >= settings.ARTICLES_RELEVANCE_THRESHOLD,
+        )
+        .map((a) => a.link);
 
       if (relevantArticleLinks.length > 0) {
         const relevantArticleDocs = await Article.find({
           link: { $in: relevantArticleLinks },
-        })
+        });
         for (const articleDoc of relevantArticleDocs) {
           await triggerRealtimeEvent(
             REALTIME_CHANNELS.ARTICLES,
             REALTIME_EVENTS.NEW_ARTICLE,
-            articleDoc.toRealtimePayload()
-          )
+            articleDoc.toRealtimePayload(),
+          );
         }
       }
     }
@@ -47,34 +53,68 @@ export async function triggerNotifications(
     if (eventIds.length > 0) {
       const eventDocsForStreaming = await SynthesizedEvent.find({
         _id: { $in: eventIds },
-      })
+      });
       for (const eventDoc of eventDocsForStreaming) {
         await triggerRealtimeEvent(
           REALTIME_CHANNELS.EVENTS,
           REALTIME_EVENTS.NEW_EVENT,
-          eventDoc.toRealtimePayload()
-        )
+          eventDoc.toRealtimePayload(),
+        );
       }
     }
   }
 
-  const eventsForNotification = savedEvents
+  const eventsForNotification = savedEvents;
+
+  // Fetch recent pending transactions (last 7 days)
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const pendingTransactions = await PendingTransaction.find({
+    createdAt: { $gte: sevenDaysAgo },
+  }).lean();
+
+  // Group pending transactions by country (derived from relatedTo)
+  const pendingByCountry = {};
+  for (const tx of pendingTransactions) {
+    // Try to infer country from related opportunity
+    if (tx.relatedTo) {
+      const relatedOpp = savedOpportunities.find(
+        (o) => o.reachOutTo?.toLowerCase() === tx.relatedTo?.toLowerCase(),
+      );
+      if (relatedOpp?.basedIn) {
+        const countries = Array.isArray(relatedOpp.basedIn)
+          ? relatedOpp.basedIn
+          : [relatedOpp.basedIn];
+        for (const c of countries) {
+          if (c && typeof c === "string") {
+            const countryName = c.replace(/[^a-zA-Z]/g, "").trim();
+            if (countryName && !pendingByCountry[countryName]) {
+              pendingByCountry[countryName] = [];
+            }
+            if (countryName) {
+              pendingByCountry[countryName].push(tx);
+            }
+          }
+        }
+      }
+    }
+  }
 
   // --- START OF DEFINITIVE FIX ---
   // The isTestMode flag is now correctly passed to sendNotifications.
   const { emailSentCount } = await sendNotifications(
     eventsForNotification,
     savedOpportunities,
-    isTestMode // Pass the flag
-  )
+    isTestMode, // Pass the flag
+    pendingTransactions, // Pass pending transactions
+  );
   // --- END OF DEFINITIVE FIX ---
 
-  runStatsManager.set('eventsEmailed', emailSentCount)
+  runStatsManager.set("eventsEmailed", emailSentCount);
 
   if (emailSentCount > 0 && !isDryRun) {
     await SynthesizedEvent.updateMany(
       { _id: { $in: eventIds } },
-      { $set: { emailed: true, email_sent_at: new Date() } }
-    )
+      { $set: { emailed: true, email_sent_at: new Date() } },
+    );
   }
 }

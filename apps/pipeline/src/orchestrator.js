@@ -4,6 +4,7 @@ import { tokenTracker, apiCallTracker } from '@headlines/utils-server'
 import { logFinalReport } from './utils/pipelineLogger.js'
 import { RunStatsManager } from './utils/runStatsManager.js'
 import { ArticleTraceLogger } from './utils/articleTraceLogger.js'
+import { pipelineEmitter } from './utils/pipelineEmitter.js'
 import { runPreFlightChecks } from './pipeline/1_preflight.js'
 import { runScrapeAndFilter } from './pipeline/2_scrapeAndFilter.js'
 import { runAssessAndEnrich } from './pipeline/3_assessAndEnrich.js'
@@ -37,11 +38,15 @@ function initializePipelineContext(options) {
   tokenTracker.reset()
   const runStatsManager = new RunStatsManager()
   const articleTraceLogger = new ArticleTraceLogger()
+  const runId = `run_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+  const emitter = pipelineEmitter(runId)
   return {
     ...options,
     isRefreshMode: options.refresh === true,
     runStatsManager,
     articleTraceLogger,
+    emitter,
+    runId,
     dbConnection: false,
     startTime: Date.now(),
   }
@@ -130,6 +135,13 @@ async function cleanup(context) {
   await logFinalReport(context.runStatsManager.getStats(), duration)
   await context.articleTraceLogger.writeAllTraces()
   logger.info({ duration }, 'Pipeline execution completed')
+  if (context.emitter) {
+    context.emitter.done({
+      duration,
+      stats: context.runStatsManager.getStats(),
+    })
+    await context.emitter.close()
+  }
 }
 
 function createSyntheticTestArticle() {
@@ -160,7 +172,10 @@ export async function runPipeline(options) {
     logger.info('--- ARCHITECTURE: Running in Staged, Resumable Mode ---')
 
     context.currentStage = PIPELINE_STAGES.PREFLIGHT.name
+    context.emitter.stageStart('preflight')
     context = (await runPreFlightChecks(context)).payload
+    context.emitter.stageEnd('preflight')
+    context.emitter.setMeta({ runId: context.runId })
     await initializeResources()
 
     // --- START OF DEFINITIVE FIX ---
@@ -177,6 +192,7 @@ export async function runPipeline(options) {
         'freshHeadlinesFound',
         context.articlesForPipeline.length
       )
+      context.emitter.headlineFound(context.articlesForPipeline.length)
     } else if (context.test) {
       logger.warn('--- TEST MODE ACTIVATED ---')
       logger.warn('Performing pre-run cleanup for test data...')
@@ -192,18 +208,26 @@ export async function runPipeline(options) {
       context.skipdeepdive = true
     } else {
       context.currentStage = PIPELINE_STAGES.SCRAPE.name
+      context.emitter.stageStart('scrape')
       context = (await runScrapeAndFilter(context)).payload
+      context.emitter.stageEnd('scrape')
     }
     // --- END OF DEFINITIVE FIX ---
 
     context.currentStage = PIPELINE_STAGES.ASSESS.name
+    context.emitter.stageStart('assess')
     context = (await runAssessAndEnrich(context)).payload
+    context.emitter.stageEnd('assess')
 
     context.currentStage = PIPELINE_STAGES.RESOLVE.name
+    context.emitter.stageStart('entityResolution')
     context = (await runEntityResolution(context)).payload
+    context.emitter.stageEnd('entityResolution')
 
     context.currentStage = PIPELINE_STAGES.SYNTHESIZE.name
+    context.emitter.stageStart('synthesize')
     context = (await runClusterAndSynthesize(context)).payload
+    context.emitter.stageEnd('synthesize')
 
     context.currentStage = PIPELINE_STAGES.DEEP_DIVE.name
     if (context.skipdeepdive) {
@@ -211,20 +235,28 @@ export async function runPipeline(options) {
         '--- SKIPPING STAGE 4.5: OPPORTUNITY DEEP DIVE (as requested by flag) ---'
       )
     } else {
+      context.emitter.stageStart('opportunityDeepDive')
       context = (await runOpportunityDeepDive(context)).payload
+      context.emitter.stageEnd('opportunityDeepDive')
     }
 
     updateTrackingStats(context)
     await updateSourceAnalytics(context)
 
     context.currentStage = PIPELINE_STAGES.COMMIT.name
+    context.emitter.stageStart('commit')
     context = (await runCommitAndNotify(context)).payload
+    context.emitter.stageEnd('commit')
 
     context.currentStage = PIPELINE_STAGES.KNOWLEDGE_GRAPH.name
+    context.emitter.stageStart('knowledgeGraph')
     context = (await runUpdateKnowledgeGraph(context)).payload
+    context.emitter.stageEnd('knowledgeGraph')
 
     context.currentStage = PIPELINE_STAGES.WATCHLIST.name
+    context.emitter.stageStart('watchlist')
     await suggestNewWatchlistEntities(context)
+    context.emitter.stageEnd('watchlist')
   } catch (error) {
     success = false
     handlePipelineError(error, context)

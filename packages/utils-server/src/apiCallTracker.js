@@ -1,10 +1,11 @@
 import { logger } from '@headlines/utils-shared' // CORRECTED IMPORT PATH
 
 const servicePricing = {
-  serper_news: 2.5,
-  serper_search: 2.5,
+  serper_news: 5.0,
+  serper_search: 5.0,
   newsapi_search: 0,
   wikipedia: 0,
+  pinecone: 0,
 }
 class ApiCallTracker {
   constructor() {

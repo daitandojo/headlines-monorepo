@@ -4,6 +4,12 @@ const modelPricing = {
   'gpt-5-nano': { input: 0.15, output: 0.4 },
   'gpt-5-mini': { input: 0.5, output: 2.5 },
   'gpt-4o-mini': { input: 0.15, output: 0.6 },
+  'gpt-4o': { input: 2.5, output: 10.0 },
+  'xiaomi/mimo-v2-flash': { input: 0.0, output: 0.0 },
+  'mimo-v2-flash': { input: 0.0, output: 0.0 },
+  'kimi-k2-turbo-preview': { input: 0.0, output: 0.0 },
+  'kimi-k2': { input: 0.0, output: 0.0 },
+  'openai/gpt-4o-mini': { input: 0.15, output: 0.6 },
 }
 
 class TokenTracker {

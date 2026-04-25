@@ -7,6 +7,7 @@ import {
   entityExtractorChain,
   opportunityChain,
   findSimilarArticles,
+  searchFamilyOfficeForUBO,
 } from '@headlines/ai-services'
 import { settings } from '@headlines/config'
 import { getConfig } from '@headlines/scraper-logic/config.js'
@@ -135,7 +136,7 @@ function createEventObject({
   uniqueWatchlistHits,
   existingEvent,
 }) {
-  return {
+  const eventObj = {
     ...eventData,
     event_key: existingEvent ? existingEvent.event_key : clusterKey,
     synthesized_headline: eventData.headline,
@@ -154,6 +155,33 @@ function createEventObject({
       },
     ],
   }
+  
+  // GAP 2: Search for family office for each seller UBO
+  const sellerUBOs = eventData.transactionDetails?.sellerUBOs || []
+  const country = eventObj.country?.[0] || 'Denmark'
+  
+  if (sellerUBOs.length > 0) {
+    for (const seller of sellerUBOs) {
+      if (seller.name && seller.name.length > 2) {
+        const foResult = searchFamilyOfficeForUBO(seller.name, country).catch(err => {
+          logger.warn({ err: err.message, seller: seller.name }, '[FamilyOffice] Search failed')
+          return null
+        })
+        
+        if (foResult && foResult.then) {
+          foResult.then(fo => {
+            if (fo && fo.name) {
+              logger.info(`[FamilyOffice] Found for ${seller.name}: ${fo.name} (confidence: ${fo.confidence})`)
+              // Add family office data to event - for downstream use
+              eventObj._familyOfficeFound = fo
+            }
+          })
+        }
+      }
+    }
+  }
+  
+  return eventObj
 }
 
 function buildOpportunityContext(eventObject, combinedText) {
@@ -376,13 +404,16 @@ async function synthesizeAllClusters(
   return results.flat()
 }
 
-function separateEventsAndOpportunities(results) {
+function separateEventsAndOpportunities(results, emitter) {
   const events = []
   const opportunities = []
   for (const result of results) {
     if (result) {
       events.push(result.event)
       opportunities.push(...result.opportunities)
+      if (emitter && result.event) {
+        emitter.eventCreated(result.event)
+      }
     }
   }
   return { events, opportunities }
@@ -396,6 +427,7 @@ export async function runClusterAndSynthesize(pipelinePayload) {
     enrichedArticles,
     articleTraceLogger,
     lean: isLeanMode,
+    emitter,
   } = pipelinePayload
 
   const articlesForProcessing = (enrichedArticles || []).filter(

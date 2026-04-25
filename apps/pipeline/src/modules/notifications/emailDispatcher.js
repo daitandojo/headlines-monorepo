@@ -95,7 +95,8 @@ export async function sendBulkEmails(emailQueue) {
       const htmlBody = await createPersonalizedEmailBody(
         user,
         eventsByCountry,
-        opportunitiesByCountry, // Pass opportunities to the body builder
+        opportunitiesByCountry,
+        null, // pendingTransactionsByCountry - not used in this flow
         subject,
         aiIntro
       )

@@ -43,12 +43,12 @@ async function commitEventsAndArticles(articles, events) {
   return savePipelineResults(articles, events)
 }
 
-async function processOpportunities(opportunities, savedEvents, runStatsManager) {
+async function processOpportunities(opportunities, savedEvents, runStatsManager, emitter) {
   try {
     logger.info(
       `[Opportunity Linking] Processing ${opportunities.length} opportunities with ${savedEvents.length} saved events`
     )
-    return await enrichAndLinkOpportunities(opportunities, savedEvents)
+    return await enrichAndLinkOpportunities(opportunities, savedEvents, { emitter })
   } catch (error) {
     logger.error(
       { err: error },
@@ -70,7 +70,7 @@ function handleCommitFailure(runStatsManager) {
   }
 }
 
-async function handleCommitSuccess(commitResult, opportunities, runStatsManager) {
+async function handleCommitSuccess(commitResult, opportunities, runStatsManager, approvedEvents, emitter) {
   const savedEvents = commitResult.savedEvents || []
 
   logger.info(
@@ -80,7 +80,8 @@ async function handleCommitSuccess(commitResult, opportunities, runStatsManager)
   const savedOpportunities = await processOpportunities(
     opportunities,
     savedEvents,
-    runStatsManager
+    runStatsManager,
+    emitter
   )
 
   logger.info(
@@ -105,7 +106,7 @@ async function handleCommitSuccess(commitResult, opportunities, runStatsManager)
 }
 
 async function executeRealSave(pipelinePayload, approvedEvents, opportunities) {
-  const { runStatsManager, enrichedArticles } = pipelinePayload
+  const { runStatsManager, enrichedArticles, emitter } = pipelinePayload
 
   const articlesToSave = identifyArticlesToSave(enrichedArticles, approvedEvents)
 
@@ -124,7 +125,8 @@ async function executeRealSave(pipelinePayload, approvedEvents, opportunities) {
       commitResult,
       opportunities,
       runStatsManager,
-      approvedEvents
+      approvedEvents,
+      emitter
     )
   } else {
     return handleCommitFailure(runStatsManager)

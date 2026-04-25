@@ -135,6 +135,26 @@ export const unlinkOpportunityFromEventClient = (eventId, opportunityId) =>
     body: { eventId, opportunityId },
   });
 
+export const runFileIngestion = async (file, options = {}) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  if (options.dryRun) formData.append('dryRun', 'true')
+  if (options.force) formData.append('force', 'true')
+  if (options.limit) formData.append('limit', String(options.limit))
+
+  const response = await fetch('/api/file-ingestion', {
+    method: 'POST',
+    body: formData,
+  })
+
+  const result = await response.json()
+  if (!response.ok) {
+    toast.error('File Ingestion Failed', { description: result.error })
+    return { success: false, error: result.error }
+  }
+  return { success: true, ...result }
+}
+
 export async function handleExport(entity, fileType, filters, sort) {
   try {
     const response = await fetch("/api-admin/export", {

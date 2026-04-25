@@ -37,6 +37,39 @@ const TransactionDetailsSchema = new Schema(
       approxAmountUSD: { type: Number },
       nature: { type: String, trim: true },
     },
+    // PHASE 1: UBO drill-down
+    sellerUBOs: {
+      type: [
+        {
+          name: { type: String, required: true },
+          role: { type: String, trim: true },
+          company: { type: String, trim: true },
+          estimatedProceedsMM: { type: Number },
+        },
+      ],
+      default: [],
+    },
+    buyerUBOs: {
+      type: [
+        {
+          name: { type: String, required: true },
+          role: { type: String, trim: true },
+          firm: { type: String, trim: true },
+        },
+      ],
+      default: [],
+    },
+  },
+  { _id: false }
+)
+
+const SuccessionSignalsSchema = new Schema(
+  {
+    founderAgeOver65: { type: Boolean },
+    externalCEOAppointed: { type: Boolean },
+    peMinorityStake: { type: Boolean },
+    namedHeirApparent: { type: String, trim: true },
+    score: { type: Number, default: 0 },
   },
   { _id: false }
 )
@@ -98,6 +131,17 @@ const SynthesizedEventSchema = new Schema(
       enum: ['Completed', 'Pending', 'Rumored'],
       default: 'Completed',
     },
+    // PHASE 1: Trigger classification + succession signals
+    triggerClass: {
+      type: String,
+      enum: [
+        'TC1_FAMILY_FOUNDER', 'TC2_MA_BUYER', 'TC3_MA_SELLER',
+        'TC4_PRIVATE_EQUITY', 'TC5_LISTED_COMPANY', 'TC6_REAL_ESTATE',
+        'TC7_PHILANTHROPY', 'TC8_SUCCESSION', 'TC9_IPO', 'TC10_LUXURY_ASSET',
+      ],
+    },
+    successionSignals: { type: SuccessionSignalsSchema },
+    dealCloseDate: { type: String, trim: true },
     judgeVerdict: { type: JudgeVerdictSchema, required: false, select: false },
     pipelineTrace: { type: [LifecycleEventSchema], default: [], select: false },
     watchlistHits: [

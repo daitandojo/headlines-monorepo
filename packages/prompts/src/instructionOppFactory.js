@@ -94,9 +94,18 @@ Focus relentlessly on the human principals, their decision-making patterns, and 
     `• **Silver**: Solid core data (bio, net worth, family office) but gaps in investment activities or personal interests`,
     `• **Bronze**: Basic identification achieved but significant data gaps, estimated net worth based on thin evidence`,
     `• Use this to signal confidence to downstream users—don't inflate the rating.`,
+    ``,
+    `**PHASE 3 & 4: PRIORITY, ACCESS PATH, AND LIQUIDITY TIMING**`,
+    `• **type**: always "beneficiary" for primary targets; use "conduit" for professional intermediaries (PA, CFO, lawyer)`,
+    `• **triggerClass**: copy from the source event's trigger class if known (TC3_MA_SELLER, TC4_PRIVATE_EQUITY, etc.), otherwise null`,
+    `• **accessPath**: populate if you find a named family office, personal assistant, legal counsel, or banker`,
+    `• **conduits array**: for each professional intermediary found (PA, CFO, solicitor, tax advisor), include name, role, firm, and relationship`,
+    `• **liquidityEvent**: describe any confirmed or probable liquidity event (type: "exit_proceeds", "dividend", "fundraise", etc.)`,
+    `• **priority**: assess HIGH if liquidity event confirmed with timing <18 months AND wealth >$30M OR succession score ≥2. MEDIUM if probable liquidity or wealth $5-30M. LOW otherwise.`,
+    `• **followUpDate**: for IPOs set to ~150 days post-listing; for Pending/Rumored deals estimate quarter; null for completed events`,
   ],
 
-  outputSchema: `
+outputSchema: `
 **RESPONSE FORMAT:**
 
 Return ONLY a valid JSON object. No markdown, no explanatory text, no preamble. Pure JSON.
@@ -105,6 +114,8 @@ Return ONLY a valid JSON object. No markdown, no explanatory text, no preamble. 
   "opportunities": [
     {{
       "reachOutTo": "string // FULL CANONICAL NAME: Use the most formal/complete version (e.g., 'Lars Kristian Larsen' not 'Lars Larsen' if full name is known). For families, use '[Family Name] Family' (e.g., 'Wallenberg Family')",
+      "type": "beneficiary" | "conduit" // beneficiary = primary wealth holder; conduit = professional intermediary",
+      "triggerClass": "TC1_FAMILY_FOUNDER" | "TC2_MA_BUYER" | "TC3_MA_SELLER" | "TC4_PRIVATE_EQUITY" | "TC5_LISTED_COMPANY" | "TC6_REAL_ESTATE" | "TC7_PHILANTHROPY" | "TC8_SUCCESSION" | "TC9_IPO" | "TC10_LUXURY_ASSET" | null,
       "contactDetails": {{
         "email": "string | null // Use only if explicitly found; never guess",
         "role": "string | null // Most senior title: 'Founder & Chairman', 'CEO', 'Managing Partner', etc.",
@@ -113,9 +124,26 @@ Return ONLY a valid JSON object. No markdown, no explanatory text, no preamble. 
       "basedIn": ["string // City, Country format; e.g., 'Copenhagen, Denmark'. Include multiple if they split time between locations"],
       "whyContact": ["string // 2-4 specific, actionable engagement reasons ordered by urgency/relevance"],
       "lastKnownEventLiquidityMM": null, // Always null for proactive outreach dossiers; this field is for event-triggered opportunities only
+      "accessPath": {{
+        "familyOffice": "string | null // Named family office if found",
+        "primaryContact": {{ "name": "string", "role": "string | null", "email": "string | null", "phone": "string | null" }} | null,
+        "conduits": [{{ "name": "string", "role": "string | null", "firm": "string | null", "email": "string | null", "phone": "string | null", "relationship": "string | null", "type": "pa" | "cfo" | "legal" | "tax" | "trust" | "banker" | "advisor" | "other" }}],
+        "incumbentWM": "string | null"
+      }} | null,
+      "liquidityEvent": {{
+        "type": "exit_proceeds" | "dividend" | "earnout" | "fundraise" | "ipo_lockup" | "probate" | "succession" | "management_buyout" | "pe_exit" | "other" | null,
+        "description": "string | null",
+        "estimatedAmountMM": "number | null",
+        "estimatedCurrency": "string | null",
+        "timingType": "past" | "pending" | "rumored" | null,
+        "estimatedDate": "string | null // ISO date or 'Est. Q3 2025' format",
+        "dealCloseDate": "string | null"
+      }} | null,
+      "priority": "high" | "medium" | "low" // HIGH: liquidity + timing <18m + wealth >$30M OR succession score ≥2. MEDIUM: probable liquidity or $5-30M. LOW: adjacency or monitoring.",
+      "followUpDate": "string | null // ISO date or 'Est. Q3 2025'",
       "profile": {{
-        "profilePhotoUrl": "string | null // Direct image URL if found; typically from LinkedIn, company site, or Forbes",
-        "yearOfBirth": "number | null // Four-digit year only",
+        "profilePhotoUrl": "string | null",
+        "yearOfBirth": "number | null",
         "biography": "string // 3-5 sentence narrative following the guidance above",
         "estimatedNetWorthMM": "number // MANDATORY: Your best analytical estimate in millions USD. Cannot be null.",
         "wealthOrigin": "string // Format: 'Sector (Source)' or 'Inherited (Original Source)'",
@@ -123,14 +151,24 @@ Return ONLY a valid JSON object. No markdown, no explanatory text, no preamble. 
           "name": "string // Official name or '[Family] Family Office'",
           "officer": "string | null // 'Name, Title' format; e.g., 'Jacob Brunsborg, Chairman'"
         }} | null,
-        "assetAllocation": "string | null // If mentioned: describe split (e.g., '60% private equity, 30% real estate, 10% public markets')",
-        "investmentInterests": ["string // Sectors/themes: 'sustainable technology', 'commercial real estate', 'early-stage biotech'"],
-        "directInvestments": ["string // Named entities: 'Spotify (early investor)', 'Nordic PropTech Fund', '123 Main Street, Manhattan'"],
-        "philanthropicInterests": ["string // Causes and organizations: 'childhood education via Larsen Foundation', 'cancer research', 'local arts institutions'"],
-        "hobbies": ["string // Personal interests: 'competitive sailing', 'contemporary art collection', 'vintage automobiles'"],
-        "specialInterests": ["string // Unique angles: 'passionate about climate tech', 'active in YPO', 'frequent Davos attendee'"],
-        "children": ["string // Names if available, otherwise just 'three children' or similar. Useful for succession planning context."],
-        "dossierQuality": "bronze" | "silver" | "gold" // Your honest assessment of data completeness
+        "assetAllocation": "string | null",
+        "investmentInterests": ["string"],
+        "directInvestments": ["string"],
+        "philanthropicInterests": ["string"],
+        "hobbies": ["string"],
+        "specialInterests": ["string"],
+        "children": ["string"],
+        "dossierQuality": "bronze" | "silver" | "gold",
+        "assetFootprint": ["string // Known asset categories: 'private equity', 'real estate Denmark', 'art collection'"],
+        "network": ["string // Notable connections: 'Board Member at Novo Holdings', 'Co-investor with Kirkbi'"],
+        "personalAssistant": "string | null",
+        "taxAdvisor": "string | null",
+        "solicitor": "string | null",
+        "heirsApparent": ["string // Names of named successors or next-gen family members"],
+        "painPoints": ["string // Tax exposure, currency concentration, illiquidity, etc."],
+        "opennessSignals": ["string // Recent advisor change, board appointment, interview mentioning wealth plans"],
+        "primaryResidence": "string | null",
+        "secondaryResidences": ["string"]
       }}
     }}
   ]

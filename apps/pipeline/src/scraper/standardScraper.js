@@ -6,24 +6,32 @@ import { scrapeApiSource } from "./apiScraper.js";
 import { updateSourceAnalyticsBatch } from "@headlines/data-access";
 import { env } from "@headlines/config";
 
-export async function performStandardScraping(sourcesToScrape) {
+export async function performStandardScraping(sourcesToScrape, pipelinePayload) {
   if (sourcesToScrape.length === 0) {
     return { scrapedArticles: [], scraperHealth: [] };
   }
 
   const limit = pLimit(env.CONCURRENCY_LIMIT || 3);
+  const emitter = pipelinePayload?.emitter
   logger.info(
     `Pipeline will now scrape ${sourcesToScrape.length} active standard sources.`,
-  );
+  )
+
+  if (emitter) {
+    emitter.setSourcesTotal(sourcesToScrape.length)
+    emitter.stageStart('scrape')
+  }
 
   let allArticles = [];
   const scraperHealthMap = new Map();
+  let sourceIndex = 0
 
   const promises = sourcesToScrape.map((source) =>
     limit(async () => {
+      sourceIndex++
+      if (emitter) emitter.sourceStart(source.name, sourceIndex, sourcesToScrape.length)
       logger.info(`[Scraping] -> Starting scrape for "${source.name}"...`);
 
-      // Route based on extraction method
       let result;
       if (source.extractionMethod === "api") {
         result = await scrapeApiSource(source);
@@ -36,6 +44,14 @@ export async function performStandardScraping(sourcesToScrape) {
       logger.info(
         `[Scraping] <- Finished scrape for "${source.name}". Success: ${result.success}, Found: ${foundCount}`,
       );
+
+      if (emitter) {
+        emitter.sourceDone(source.name, {
+          headlineCount: foundCount,
+          freshCount: foundCount,
+          error: result.error || null,
+        })
+      }
       return { source, result };
     }),
   );
@@ -67,7 +83,11 @@ export async function performStandardScraping(sourcesToScrape) {
         updateOne: {
           filter: { _id: source._id },
           update: {
-            $set: { lastScrapedAt: new Date(), lastSuccessAt: new Date() },
+            $set: {
+              lastScrapedAt: new Date(),
+              lastSuccessAt: new Date(),
+              consecutiveFailures: 0,
+            },
           },
         },
       });

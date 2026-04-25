@@ -36,5 +36,6 @@ export const envSchema = z.object({
   PUSHER_CLUSTER: z.string().min(1),
   GROQ_API_KEY: z.string().startsWith("gsk_").optional(),
   SERPER_API_KEY: z.string().min(1).optional(),
-  NEWSAPI_API_KEY: z.string().min(1),
+  NEWSAPI_API_KEY: z.string().min(1).optional(),
+  KIMI_API_KEY: z.string().startsWith("sk-").optional(),
 });

@@ -11,6 +11,59 @@ const ContactDetailsSchema = new Schema(
   { _id: false }
 )
 
+const ConduitSchema = new Schema(
+  {
+    name: { type: String, trim: true },
+    role: { type: String, trim: true },
+    firm: { type: String, trim: true },
+    email: { type: String, trim: true },
+    phone: { type: String, trim: true },
+    relationship: { type: String, trim: true },
+    type: {
+      type: String,
+      enum: ['pa', 'cfo', 'legal', 'tax', 'trust', 'banker', 'advisor', 'other'],
+      trim: true,
+    },
+  },
+  { _id: false }
+)
+
+const AccessPathSchema = new Schema(
+  {
+    familyOffice: { type: String, trim: true },
+    primaryContact: {
+      name: { type: String, trim: true },
+      role: { type: String, trim: true },
+      email: { type: String, trim: true },
+      phone: { type: String, trim: true },
+    },
+    conduits: { type: [ConduitSchema], default: [] },
+    incumbentWM: { type: String, trim: true },
+  },
+  { _id: false }
+)
+
+const LiquidityEventSchema = new Schema(
+  {
+    type: {
+      type: String,
+      enum: [
+        'exit_proceeds', 'dividend', 'earnout', 'fundraise', 'ipo_lockup',
+        'probate', 'succession', 'management_buyout', 'pe_exit',
+        'asset_sale', 'other',
+      ],
+    },
+    description: { type: String, trim: true },
+    estimatedAmountMM: { type: Number },
+    estimatedCurrency: { type: String, trim: true },
+    timingType: { type: String, enum: ['past', 'pending', 'rumored'] },
+    estimatedDate: { type: String, trim: true },
+    dealCloseDate: { type: String, trim: true },
+    source: { type: String, trim: true },
+  },
+  { _id: false }
+)
+
 const ProfileSchema = new Schema(
   {
     profilePhotoUrl: { type: String, trim: true },
@@ -29,12 +82,26 @@ const ProfileSchema = new Schema(
     hobbies: { type: [String], default: [] },
     specialInterests: { type: [String], default: [] },
     children: { type: [String], default: [] },
-    // ADDED: Field for AI-assessed dossier quality.
     dossierQuality: {
       type: String,
       enum: ['bronze', 'silver', 'gold'],
       default: 'bronze',
     },
+    // PHASE 1: Deep profiling
+    assetFootprint: { type: [String], default: [] },
+    network: { type: [String], default: [] },
+    personalAssistant: { type: String, trim: true },
+    taxAdvisor: { type: String, trim: true },
+    solicitor: { type: String, trim: true },
+    trustCompany: { type: String, trim: true },
+    heirsApparent: { type: [String], default: [] },
+    liquidityCalendar: { type: String, trim: true },
+    painPoints: { type: [String], default: [] },
+    opennessSignals: { type: [String], default: [] },
+    incumbentBank: { type: String, trim: true },
+    primaryResidence: { type: String, trim: true },
+    secondaryResidences: { type: [String], default: [] },
+    recentRelocation: { type: Boolean },
   },
   { _id: false }
 )
@@ -42,11 +109,28 @@ const ProfileSchema = new Schema(
 const OpportunitySchema = new Schema(
   {
     reachOutTo: { type: String, required: true, trim: true, unique: true, index: true },
+    type: { type: String, enum: ['beneficiary', 'conduit'], default: 'beneficiary', index: true },
+    triggerClass: {
+      type: String,
+      enum: [
+        'TC1_FAMILY_FOUNDER', 'TC2_MA_BUYER', 'TC3_MA_SELLER',
+        'TC4_PRIVATE_EQUITY', 'TC5_LISTED_COMPANY', 'TC6_REAL_ESTATE',
+        'TC7_PHILANTHROPY', 'TC8_SUCCESSION', 'TC9_IPO', 'TC10_LUXURY_ASSET',
+      ],
+    },
+    triggerSummary: { type: String, trim: true },
+    wealthEstimate: { type: String, trim: true },
     contactDetails: { type: ContactDetailsSchema },
     basedIn: { type: [String], trim: true, index: true },
     city: { type: String, trim: true, required: false },
     whyContact: { type: [String], required: true },
     lastKnownEventLiquidityMM: { type: Number, required: true, default: 0 },
+    accessPath: { type: AccessPathSchema },
+    liquidityEvent: { type: LiquidityEventSchema },
+    priority: { type: String, enum: ['high', 'medium', 'low'], default: 'medium', index: true },
+    priorityScore: { type: Number, index: true },
+    followUpDate: { type: String, trim: true, index: true },
+    followUpReason: { type: String, trim: true },
     profile: { type: ProfileSchema, required: false },
     embedding: { type: [Number] },
     events: [{ type: Schema.Types.ObjectId, ref: 'SynthesizedEvent', index: true }],

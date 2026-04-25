@@ -13,7 +13,8 @@ import { politikenExtractor } from './source-specific/politiken.js';
 import { verdaneExtractor } from './source-specific/verdane.js';
 
 // Source-Specific Content Extractors
-import { cvcPortfolioContentExtractor } from './source-specific/cvcPortfolioContent.js';
+import { cvcPortfolioContentExtractor } from './source-specific/cvcPortfolioContent.js'
+import { berlingskeExtractor } from './source-specific/berlingske.js';
 
 // --- Build Registries ---
 

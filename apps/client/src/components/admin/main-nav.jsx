@@ -17,6 +17,8 @@ import {
   ArrowLeftCircle,
   BarChart,
   Activity, // ADDED ICON
+  Play, // ADDED ICON
+  UserPlus, // ADDED ICON
 } from 'lucide-react'
 import { cn } from '@headlines/utils-shared'
 import { Separator } from '@/components/shared'
@@ -46,6 +48,8 @@ const navSections = [
       { name: 'Events', href: '/admin/events', icon: Zap },
       { name: 'Articles', href: '/admin/articles', icon: FileText },
       { name: 'Opportunities', href: '/admin/opportunities', icon: Target },
+      { name: 'Add Individual', href: '/admin/individuals/add', icon: UserPlus },
+      { name: 'Pipeline', href: '/admin/pipeline', icon: Play },
     ],
   },
   {

@@ -22,11 +22,13 @@ import {
   MessageSquare,
   ArrowRight,
   Trash2,
-  BookOpen,
   Heart,
   Shield,
-  Layers, // ADDED ICON
+  Layers,
+  TrendingUp,
+  Globe,
 } from 'lucide-react'
+import { LinkedIndividualModal, ConnectionsRow } from './LinkedIndividualModal'
 import { SwipeToDelete } from '../shared/SwipeToDelete'
 import { cn, getCountryFlag } from '@headlines/utils-shared'
 import { EventModal } from '../events/EventModal'
@@ -35,19 +37,48 @@ import Link from 'next/link'
 import useAppStore from '@/lib/store/use-app-store'
 import { format } from 'date-fns'
 
+const TRIGGER_CLASS_LABELS = {
+  TC1_FAMILY_FOUNDER: { label: 'Family / Founder', color: 'text-amber-300 border-amber-500/50' },
+  TC2_MA_BUYER: { label: 'M&A Buyer', color: 'text-blue-300 border-blue-500/50' },
+  TC3_MA_SELLER: { label: 'M&A Seller', color: 'text-green-300 border-green-500/50' },
+  TC4_PRIVATE_EQUITY: { label: 'Private Equity', color: 'text-purple-300 border-purple-500/50' },
+  TC5_LISTED_COMPANY: { label: 'Listed Company', color: 'text-slate-400 border-slate-500/50' },
+  TC6_REAL_ESTATE: { label: 'Real Estate', color: 'text-orange-300 border-orange-500/50' },
+  TC7_PHILANTHROPY: { label: 'Philanthropy', color: 'text-pink-300 border-pink-500/50' },
+  TC8_SUCCESSION: { label: 'Succession', color: 'text-teal-300 border-teal-500/50' },
+  TC9_IPO: { label: 'IPO', color: 'text-cyan-300 border-cyan-500/50' },
+  TC10_LUXURY_ASSET: { label: 'Luxury Asset', color: 'text-yellow-300 border-yellow-500/50' },
+  TC11_RICH_LIST: { label: 'Rich List', color: 'text-indigo-300 border-indigo-500/50' },
+  TC12_INDIVIDUAL_LIST: { label: 'Individual List', color: 'text-rose-300 border-rose-500/50' },
+}
+
+const LIQUIDITY_TYPE_LABELS = {
+  exit_proceeds: 'Exit',
+  dividend: 'Dividend',
+  earnout: 'Earnout',
+  fundraise: 'Fundraise',
+  ipo_lockup: 'IPO Lockup',
+  probate: 'Probate',
+  succession: 'Succession',
+  management_buyout: 'MBO',
+  pe_exit: 'PE Exit',
+  asset_sale: 'Asset Sale',
+  other: 'Other',
+}
+
 const DossierQualityBadge = ({ quality }) => {
   const qualityMap = {
     gold: {
       icon: <Shield className="h-4 w-4 text-amber-300" />,
-      tooltip: 'Gold Dossier: Comprehensive intelligence available.',
+      tooltip: 'Gold Dossier: Comprehensive intelligence.',
     },
     silver: {
       icon: <Shield className="h-4 w-4 text-slate-300" />,
-      tooltip: 'Silver Dossier: Key details available.',
+      tooltip: 'Silver Dossier: Key details.',
     },
     bronze: {
       icon: <Shield className="h-4 w-4 text-amber-800" />,
-      tooltip: 'Bronze Dossier: Basic intelligence available.',
+      tooltip: 'Bronze Dossier: Basic intelligence.',
     },
   }
   const { icon, tooltip } = qualityMap[quality] || qualityMap.bronze
@@ -69,63 +100,38 @@ export function OpportunityCard({
   opportunity,
   onDelete,
   onFavoriteToggle,
-  onShowSimilar, // ADDED PROP
+  onShowSimilar,
   isFavorited,
 }) {
   const [isEventModalOpen, setIsEventModalOpen] = useState(false)
   const [isDraftModalOpen, setIsDraftModalOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const [linkedModalOpen, setLinkedModalOpen] = useState(false)
+  const [selectedLink, setSelectedLink] = useState(null)
+
+  const relatedIndividuals = opportunity.relatedIndividuals || []
   const skipConfirmation = useAppStore(
-    (state) => state.deletePreferences.skipOpportunityConfirmation
+    (state) => state.deletePreferences.skipOpportunityConfirmation,
   )
 
   const handleDelete = () => {
-    startTransition(() => {
-      onDelete(opportunity._id)
-    })
-  }
-  const handleDeleteRequest = () => {
-    if (skipConfirmation) {
-      handleDelete()
-    } else {
-      setIsConfirmOpen(true)
-    }
+    startTransition(() => onDelete(opportunity._id))
   }
 
-  const handleFavoriteClick = (e) => {
-    e.stopPropagation()
-    onFavoriteToggle(opportunity._id, !isFavorited)
-  }
-  const handleSwipeRight = () => {
-    onFavoriteToggle(opportunity._id, !isFavorited)
-  }
-
-  const handleDraftClick = (e) => {
-    e.stopPropagation()
-    setIsDraftModalOpen(true)
-  }
-
-  const handleShowSimilar = (e) => {
-    // ADDED HANDLER
-    e.stopPropagation()
-    if (onShowSimilar) onShowSimilar()
-  }
-
-  const hasEvents = opportunity.events && opportunity.events.length > 0
-  const { contactDetails, profile } = opportunity
+  const { contactDetails, profile, liquidityEvent } = opportunity
   const totalNetWorth = profile?.estimatedNetWorthMM || 0
   const eventLiquidity = opportunity.lastKnownEventLiquidityMM || 0
   const isPremiumOpportunity = totalNetWorth > 49 || eventLiquidity > 49
-  const reasonsToContact = Array.isArray(opportunity.whyContact)
-    ? opportunity.whyContact
-    : [opportunity.whyContact]
   const basedInArray = Array.isArray(opportunity.basedIn)
     ? opportunity.basedIn
     : [opportunity.basedIn].filter(Boolean)
   const flags = basedInArray.map(getCountryFlag).join(' ')
-  const mostRecentEventDate = hasEvents ? new Date(opportunity.events[0].createdAt) : null
+  const hasEvents = opportunity.events && opportunity.events.length > 0
   const dossierQuality = profile?.dossierQuality || 'bronze'
+  const triggerInfo = TRIGGER_CLASS_LABELS[opportunity.triggerClass]
+  const liquidityType = liquidityEvent?.type || opportunity.liquidityEvent?.type
+  const liquidityTypeLabel = LIQUIDITY_TYPE_LABELS[liquidityType]
 
   return (
     <>
@@ -134,27 +140,18 @@ export function OpportunityCard({
           'bg-slate-900/50 border border-slate-700 transition-all duration-300 ease-out overflow-hidden hover:border-blue-500/50 hover:bg-slate-900',
           isPending ? 'opacity-50' : 'opacity-100',
           isPremiumOpportunity && 'card-glow',
-          isFavorited && 'border-red-500/50'
+          isFavorited && 'border-red-500/50',
         )}
       >
-        <SwipeToDelete onDelete={handleDeleteRequest} onSwipeRight={handleSwipeRight}>
+        <SwipeToDelete onDelete={() => setIsConfirmOpen(true)} onSwipeRight={() => onFavoriteToggle(opportunity._id, !isFavorited)}>
           <div className="p-4 space-y-3 bg-slate-900/50 relative z-10">
             <div className="flex justify-between items-start gap-3">
-              <Link
-                href={`/opportunities/${opportunity._id}`}
-                className="block group flex-grow min-w-0"
-              >
+              <Link href={`/opportunities/${opportunity._id}`} className="block group flex-grow min-w-0">
                 <div className="flex justify-between items-start gap-3">
                   <div className="flex items-center gap-3 flex-1">
                     {profile?.profilePhotoUrl ? (
                       <div className="relative h-10 w-10 rounded-full overflow-hidden flex-shrink-0">
-                        <Image
-                          src={profile.profilePhotoUrl}
-                          alt={opportunity.reachOutTo}
-                          fill
-                          unoptimized
-                          className="object-cover"
-                        />
+                        <Image src={profile.profilePhotoUrl} alt={opportunity.reachOutTo} fill unoptimized className="object-cover" />
                       </div>
                     ) : (
                       <div className="h-10 w-10 rounded-full bg-slate-800 flex items-center justify-center flex-shrink-0">
@@ -173,13 +170,20 @@ export function OpportunityCard({
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
                     {(totalNetWorth > 0 || eventLiquidity > 0) && (
-                      <Badge
-                        variant="outline"
-                        className="border-green-500/50 text-green-300"
-                      >
+                      <Badge variant="outline" className="border-green-500/50 text-green-300">
                         ${totalNetWorth > 0 ? totalNetWorth : eventLiquidity}M
+                      </Badge>
+                    )}
+                    {triggerInfo && (
+                      <Badge variant="outline" className={cn('text-xs', triggerInfo.color)}>
+                        {triggerInfo.label}
+                      </Badge>
+                    )}
+                    {liquidityTypeLabel && (
+                      <Badge variant="outline" className="border-slate-600 text-slate-400 text-xs">
+                        {liquidityTypeLabel}
                       </Badge>
                     )}
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity">
@@ -195,61 +199,48 @@ export function OpportunityCard({
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={handleDraftClick}
+                        onClick={() => setIsDraftModalOpen(true)}
                         disabled={isPending}
                         className="h-8 w-8 text-slate-500 hover:bg-purple-500/10 hover:text-purple-400"
                       >
                         <Mail className="h-4 w-4" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Draft Outreach Email</p>
-                    </TooltipContent>
+                    <TooltipContent><p>Draft Outreach Email</p></TooltipContent>
                   </Tooltip>
-                  {/* --- START OF MODIFICATION --- */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={handleShowSimilar}
+                        onClick={() => onShowSimilar && onShowSimilar()}
                         disabled={isPending}
                         className="h-8 w-8 text-slate-500 hover:bg-teal-500/10 hover:text-teal-400"
                       >
                         <Layers className="h-4 w-4" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Show Similar Opportunities</p>
-                    </TooltipContent>
+                    <TooltipContent><p>Show Similar</p></TooltipContent>
                   </Tooltip>
-                  {/* --- END OF MODIFICATION --- */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={handleFavoriteClick}
+                        onClick={() => onFavoriteToggle(opportunity._id, !isFavorited)}
                         disabled={isPending}
                         className="h-8 w-8 text-slate-500 hover:bg-red-500/10 hover:text-red-500"
                       >
-                        <Heart
-                          className={cn(
-                            'h-4 w-4',
-                            isFavorited && 'fill-current text-red-500'
-                          )}
-                        />
+                        <Heart className={cn('h-4 w-4', isFavorited && 'fill-current text-red-500')} />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{isFavorited ? 'Remove from Favorites' : 'Add to Favorites'}</p>
-                    </TooltipContent>
+                    <TooltipContent><p>{isFavorited ? 'Remove from Favorites' : 'Add to Favorites'}</p></TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={handleDeleteRequest}
+                  onClick={() => setIsConfirmOpen(true)}
                   disabled={isPending}
                   className="h-8 w-8 text-slate-500 hover:bg-red-500/10 hover:text-red-400"
                 >
@@ -257,91 +248,88 @@ export function OpportunityCard({
                 </Button>
               </div>
             </div>
-            <div className="pl-4 border-l-2 border-slate-700 space-y-3">
+
+            <div className="pl-4 border-l-2 border-slate-700 space-y-2">
               <div className="text-sm text-slate-400 space-y-1">
                 {contactDetails?.role && contactDetails?.company && (
                   <p className="flex items-center gap-2">
                     <Briefcase className="h-4 w-4 text-slate-500 flex-shrink-0" />
-                    <span>
-                      {contactDetails.role} at <strong>{contactDetails.company}</strong>
-                    </span>
+                    <span>{contactDetails.role} at <strong>{contactDetails.company}</strong></span>
                   </p>
                 )}
                 {contactDetails?.email && (
-                  <a
-                    href={`mailto:${contactDetails.email}`}
-                    className="flex items-center gap-2 text-blue-400 hover:underline"
-                  >
-                    <Mail className="h-4 w-4 text-slate-500 flex-shrink-0" />{' '}
+                  <a href={`mailto:${contactDetails.email}`} className="flex items-center gap-2 text-blue-400 hover:underline">
+                    <Mail className="h-4 w-4 text-slate-500 flex-shrink-0" />
                     {contactDetails.email}
                   </a>
                 )}
                 {profile?.wealthOrigin && (
                   <p className="flex items-center gap-2">
-                    <BookOpen className="h-4 w-4 text-slate-500 flex-shrink-0" />
-                    <span>
-                      Wealth Origin: <strong>{profile.wealthOrigin}</strong>
-                    </span>
+                    <TrendingUp className="h-4 w-4 text-slate-500 flex-shrink-0" />
+                    <span>Origin: <strong>{profile.wealthOrigin}</strong></span>
+                  </p>
+                )}
+                {profile?.sector && (
+                  <p className="flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-slate-500 flex-shrink-0" />
+                    <span>Sector: <strong>{profile.sector}</strong></span>
                   </p>
                 )}
               </div>
-              <div className="space-y-2 pt-2 border-t border-slate-800">
-                {reasonsToContact.slice(0, 1).map((reason, index) => (
-                  <div
-                    key={index}
-                    className="flex items-start gap-2 text-sm text-slate-300 italic"
-                  >
-                    <MessageSquare className="h-4 w-4 mt-0.5 text-slate-500 flex-shrink-0" />
-                    <p className="line-clamp-2">“{reason}”</p>
-                  </div>
-                ))}
-              </div>
+
+              {Array.isArray(opportunity.whyContact) && opportunity.whyContact[0] && (
+                <div className="flex items-start gap-2 text-sm text-slate-300 italic">
+                  <MessageSquare className="h-4 w-4 mt-0.5 text-slate-500 flex-shrink-0" />
+                  <p className="line-clamp-2">"{opportunity.whyContact[0]}"</p>
+                </div>
+              )}
             </div>
+
             {hasEvents && (
               <div className="pt-3 mt-3 border-t border-slate-700/50">
                 <Button
                   variant="ghost"
                   className="w-full h-auto text-left justify-start p-2 hover:bg-slate-800/50"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    setIsEventModalOpen(true)
-                  }}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsEventModalOpen(true) }}
                 >
                   <Zap className="h-4 w-4 mr-3 text-blue-400 flex-shrink-0" />
                   <div className="min-w-0">
                     <p className="text-xs text-slate-400">
-                      View {opportunity.events.length} Related Event
-                      {opportunity.events.length > 1 ? 's' : ''}:
+                      {opportunity.events.length} Related Event{opportunity.events.length > 1 ? 's' : ''}:
                     </p>
-                    <div className="flex items-center gap-2 text-sm mt-1">
-                      {mostRecentEventDate && (
-                        <span className="text-slate-500 font-medium whitespace-nowrap">
-                          {format(mostRecentEventDate, 'd MMM yyyy')} -
-                        </span>
-                      )}
-                      <span className="text-slate-200 font-semibold truncate">
-                        {opportunity.events[0].synthesized_headline}
-                      </span>
-                    </div>
+                    <p className="text-sm text-slate-200 font-semibold truncate">
+                      {opportunity.events[0]?.synthesized_headline}
+                    </p>
                   </div>
                 </Button>
               </div>
             )}
+
+            {relatedIndividuals.length > 0 && (
+              <ConnectionsRow
+                individuals={relatedIndividuals}
+                onViewDetails={(rel) => {
+                  if (rel.linkedOppId) {
+                    window.location.href = `/opportunities/${rel.linkedOppId}`
+                  } else {
+                    setSelectedLink(rel)
+                    setLinkedModalOpen(true)
+                  }
+                }}
+              />
+            )}
           </div>
         </SwipeToDelete>
       </Card>
+
       {hasEvents && (
-        <EventModal
-          events={opportunity.events}
-          open={isEventModalOpen}
-          onOpenChange={setIsEventModalOpen}
-        />
+        <EventModal events={opportunity.events} open={isEventModalOpen} onOpenChange={setIsEventModalOpen} />
       )}
-      <OutreachDraftModal
-        opportunity={opportunity}
-        open={isDraftModalOpen}
-        onOpenChange={setIsDraftModalOpen}
+      <OutreachDraftModal opportunity={opportunity} open={isDraftModalOpen} onOpenChange={setIsDraftModalOpen} />
+      <LinkedIndividualModal
+        individuals={relatedIndividuals}
+        open={linkedModalOpen}
+        onOpenChange={setLinkedModalOpen}
       />
       <ConfirmationDialog
         open={isConfirmOpen}

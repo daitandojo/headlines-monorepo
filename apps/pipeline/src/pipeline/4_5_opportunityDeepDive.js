@@ -7,6 +7,8 @@ import {
   opportunityChain,
   dossierUpdateChain,
   callLanguageModel,
+  enrichOpportunityWithPriority,
+  detectConduitsFromText,
 } from '@headlines/ai-services'
 import { Opportunity, EntityGraph } from '@headlines/models'
 import { settings } from '@headlines/config'
@@ -189,10 +191,32 @@ async function synthesizeOpportunity(researchResult) {
     const result = await opportunityChain(opportunityInput)
     const opportunity = extractLinkedOpportunity(result, event.event_key)
     if (opportunity) {
+      // PHASE 3: Detect conduits from raw research text
+      const conduits = detectConduitsFromText(combinedContext, individual.name)
+      if (conduits.length > 0) {
+        opportunity.accessPath = opportunity.accessPath || {}
+        opportunity.accessPath.conduits = [
+          ...(opportunity.accessPath.conduits || []),
+          ...conduits.map((c) => ({
+            name: c.name,
+            role: c.role || null,
+            firm: c.firm || null,
+            email: null,
+            phone: null,
+            relationship: `Proximity to ${individual.name}`,
+            type: c.type || 'other',
+          })),
+        ]
+        logger.info(
+          `[Deep Dive]   - Detected ${conduits.length} conduit(s) for ${individual.name}`
+        )
+      }
+      // PHASE 4: Apply priority, timing, and liquidity event enrichment
+      const enriched = await enrichOpportunityWithPriority(opportunity, event)
       logger.info(
-        `[Deep Dive]   - ✅ Successfully generated rich profile for ${individual.name}`
+        `[Deep Dive]   - ✅ Successfully generated rich profile for ${individual.name} (priority: ${enriched.priority})`
       )
-      return opportunity
+      return enriched
     } else {
       logger.warn(
         `[Deep Dive]   - ⚠️ Failed to generate a rich profile for ${individual.name}. AI Result: ${JSON.stringify(

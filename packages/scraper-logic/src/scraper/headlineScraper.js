@@ -317,50 +317,150 @@ function extractFromJsonLd($, source) {
   const articles = []
   const processedUrls = new Set()
 
-  $('script[type="application/ld+json"]').each((_, el) => {
-    try {
-      const jsonData = JSON.parse($(el).html())
+  const extractArticlesFromData = (jsonData) => {
+    const potentialLists = [jsonData, ...(jsonData['@graph'] || [])]
 
-      // Handle both direct objects and @graph arrays
-      const potentialLists = [jsonData, ...(jsonData['@graph'] || [])]
+    potentialLists.forEach((item) => {
+      if (!item || typeof item !== 'object') return
 
-      potentialLists.forEach((item) => {
-        // Handle ItemList structures
-        const items = item?.itemListElement || (Array.isArray(item) ? item : [item])
-        const itemArray = Array.isArray(items) ? items : [items]
+      // Handle ItemList structures
+      const items = item?.itemListElement || (Array.isArray(item) ? item : [item])
+      const itemArray = Array.isArray(items) ? items : [items]
 
-        itemArray.forEach((element) => {
-          // Support multiple JSON-LD structures
-          const headline =
-            element.name ||
-            element.headline ||
-            element.item?.name ||
-            element.item?.headline
+      itemArray.forEach((element) => {
+        if (!element || typeof element !== 'object') return
 
-          const url = element.url || element.item?.url || element['@id']
+        // Support multiple JSON-LD structures
+        const headline =
+          element.name ||
+          element.headline ||
+          element.item?.name ||
+          element.item?.headline
 
-          if (headline && url) {
-            const normalizedUrl = normalizeUrl(url, source.baseUrl)
-
-            // Deduplicate by URL
-            if (normalizedUrl && !processedUrls.has(normalizedUrl)) {
-              processedUrls.add(normalizedUrl)
-              articles.push({
-                headline: headline.trim(),
-                link: normalizedUrl,
-                description: element.description || element.item?.description || null,
-              })
+        // Resolve headline from structured node (TextNode, etc.)
+        let headlineText = ''
+        if (headline) {
+          if (typeof headline === 'string') headlineText = headline
+          else if (Array.isArray(headline)) {
+            for (const h of headline) {
+              if (h?.value) { headlineText = h.value; break }
             }
           }
-        })
+        }
+
+        let url = element.url || element.item?.url || element['@id']
+
+        // Resolve URL from publications paths (Next.js sites like Berlingske)
+        if (!url && element.publications?.length > 0) {
+          const path = element.publications[0]?.paths?.[0]
+          if (path) {
+            try { url = new URL(path, source.baseUrl).href } catch (e) { /* ignore */ }
+          }
+        }
+
+        if (headlineText && url) {
+          const normalizedUrl = normalizeUrl(url, source.baseUrl)
+
+          if (normalizedUrl && !processedUrls.has(normalizedUrl)) {
+            processedUrls.add(normalizedUrl)
+            articles.push({
+              headline: headlineText.trim(),
+              link: normalizedUrl,
+              description: element.description || element.item?.description || null,
+            })
+          }
+        }
       })
+    })
+  }
+
+  // 1. Standard JSON-LD script tags
+  $('script[type="application/ld+json"]').each((_, el) => {
+    try {
+      extractArticlesFromData(JSON.parse($(el).html()))
     } catch (error) {
-      getConfig().logger.debug(
-        { err: error.message },
-        'JSON-LD parsing error (non-critical)'
-      )
+      getConfig().logger.debug({ err: error.message }, 'JSON-LD parse error (non-critical)')
     }
   })
+
+  // 2. __NEXT_DATA__ (Next.js embedded data - used by Berlingske, Politikken, etc.)
+  const nextDataEl = $('script[id="__NEXT_DATA__"]')
+  if (nextDataEl.length) {
+    try {
+      const nextData = JSON.parse(nextDataEl.html())
+      const props = nextData.props?.pageProps || {}
+
+      // Try direct data
+      const data = props.data || {}
+      extractArticlesFromData(data)
+
+      // Try pageProps.category.articles (Berlingske, Politiken etc.)
+      const category = props.category || {}
+      const articlesObj = category.articles || {}
+      const articleIndices = Object.keys(articlesObj).filter(k => !isNaN(Number(k)))
+
+      for (const idx of articleIndices) {
+        const item = articlesObj[idx]
+        if (!item || typeof item !== 'object') continue
+
+        let headline = item.headline || item.name || ''
+        if (Array.isArray(headline)) {
+          for (const h of headline) {
+            if (h?.value) { headline = h.value; break }
+          }
+        }
+        if (typeof headline !== 'string') headline = ''
+
+        // URL from @id or publications paths
+        let url = item['@id'] || ''
+        if (!url && item.publications?.length > 0) {
+          const path = item.publications[0]?.paths?.[0]
+          if (path) {
+            try { url = new URL(path, source.baseUrl).href } catch (e) { /* ignore */ }
+          }
+        }
+
+        if (headline && url && !processedUrls.has(url)) {
+          processedUrls.add(url)
+          articles.push({ headline: headline.trim(), link: url, description: null })
+        }
+      }
+    } catch (error) {
+      getConfig().logger.debug({ err: error.message }, '__NEXT_DATA__ parse error (non-critical)')
+    }
+  }
+
+  // 3. __APOLLO_STATE__ (Apollo client state - used by some GraphQL Next.js sites)
+  if (articles.length === 0) {
+    const apolloEl = $('script[id="__APOLLO_STATE__"]')
+    if (apolloEl.length) {
+      try {
+        const apollo = JSON.parse(apolloEl.html())
+        for (const [key, value] of Object.entries(apollo)) {
+          if (
+            value?.__typename === 'NewsArticle' &&
+            value.headline &&
+            value.publications?.[0]?.paths?.[0]
+          ) {
+            let headline = value.headline
+            if (Array.isArray(headline)) {
+              for (const h of headline) {
+                if (h?.value) { headline = h.value; break }
+              }
+            }
+            const path = value.publications[0].paths[0]
+            const url = new URL(path, source.baseUrl).href
+            if (headline && !processedUrls.has(url)) {
+              processedUrls.add(url)
+              articles.push({ headline, link: url, description: null })
+            }
+          }
+        }
+      } catch (error) {
+        getConfig().logger.debug({ err: error.message }, '__APOLLO_STATE__ parse error (non-critical)')
+      }
+    }
+  }
 
   return articles
 }

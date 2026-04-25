@@ -7,6 +7,9 @@ import { env } from '@headlines/config/node'
 import { setLogger } from '@headlines/utils-shared'
 import dbConnect from '@headlines/data-access/dbConnect/node'
 import { scrapeTestRoute } from './routes/scrapeTest.js'
+import { fileIngestionRoute } from './routes/fileIngestion.js'
+import { pipelineLiveRoute } from './routes/pipelineLive.js'
+import { pipelineRunRoute } from './routes/pipelineRun.js'
 
 const require = createRequire(import.meta.url)
 const pinoPrettyPath = require.resolve('pino-pretty')
@@ -34,6 +37,9 @@ async function startServer() {
   app.use(express.json())
 
   app.use('/api/scrape-test', scrapeTestRoute)
+  app.use('/api/file-ingestion', fileIngestionRoute)
+  app.use('/api/pipeline/live', pipelineLiveRoute)
+  app.use('/api/pipeline/run', pipelineRunRoute)
   app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() })
   })

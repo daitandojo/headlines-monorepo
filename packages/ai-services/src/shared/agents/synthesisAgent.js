@@ -8,12 +8,9 @@ import { instructionSynthesize } from '@headlines/prompts'
 const getAgent = () =>
   new AIAgent({
     model: settings.LLM_MODEL_SYNTHESIS,
-    systemPrompt: [
-      instructionSynthesize.whoYouAre,
-      instructionSynthesize.whatYouDo,
-      ...instructionSynthesize.guidelines,
-      instructionSynthesize.outputFormatDescription,
-    ].join('\n\n'),
+    systemPrompt: Object.values(instructionSynthesize)
+      .filter((v) => typeof v === 'string')
+      .join('\n\n'),
     zodSchema: synthesisSchema,
   })
 

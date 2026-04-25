@@ -24,10 +24,24 @@ export const articleAssessmentSchema = z.object({
       'Wealth Profile',
       'Legal/Dispute',
       'Operational News',
+      'Public Market Transaction',
+      'Secondary Offering',
+      'Share Buyback',
       'Other',
     ])
     .describe('The specific type of financial or business transaction.'),
-  relevance_article: z.number().min(0).max(100),
+  relevance_article: z
+    .union([z.number(), z.string(), z.null(), z.undefined()])
+    .transform((val) => {
+      if (val === null || val === undefined) return 0;
+      if (typeof val === "number") return val;
+      if (typeof val === "string") {
+        const parsed = parseFloat(val);
+        return isNaN(parsed) ? 0 : Math.min(100, Math.max(0, parsed));
+      }
+      return 0;
+    })
+    .pipe(z.number().min(0).max(100)),
   assessment_article: z.string().min(1),
 
   amount: z

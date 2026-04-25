@@ -14,6 +14,7 @@
     "./browserManager.js": "./src/browserManager.js",
     "./scraper/index.js": "./src/scraper/index.js",
     "./scraper/selectorOptimizer.js": "./src/scraper/selectorOptimizer.js",
+    "./scraper/healSourceSelectors.js": "./src/scraper/healSourceSelectors.js",
     "./push/client.js": "./src/push/client.js",
     "./ai/index.js": "./src/ai/index.js",
     "./test-orchestrator": "./src/test-orchestrator.js"

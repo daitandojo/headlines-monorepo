@@ -17,11 +17,11 @@ const DEFAULTS = {
   WATCHLIST_SCORE_BOOST: 35,
   SUGGESTION_GENERATION_THRESHOLD: 80,
   MIN_ARTICLE_CHARS: 100,
-  LLM_MODEL_HEADLINE_ASSESSMENT: "xiaomi/mimo-v2-flash",
-  LLM_MODEL_ARTICLE_ASSESSMENT: "xiaomi/mimo-v2-flash",
-  LLM_MODEL_SYNTHESIS: "xiaomi/mimo-v2-flash",
-  LLM_MODEL_UTILITY: "xiaomi/mimo-v2-flash",
-  LLM_MODEL_PRO: "xiaomi/mimo-v2-flash",
+  LLM_MODEL_HEADLINE_ASSESSMENT: "deepseek/deepseek-v4-flash",
+  LLM_MODEL_ARTICLE_ASSESSMENT: "deepseek/deepseek-v4-flash",
+  LLM_MODEL_SYNTHESIS: "deepseek/deepseek-v4-flash",
+  LLM_MODEL_UTILITY: "deepseek/deepseek-v4-flash",
+  LLM_MODEL_PRO: "deepseek/deepseek-v4-flash",
 };
 
 export const settings = { ...DEFAULTS };
@@ -33,14 +33,20 @@ let isInitialized = false;
  * This function is intended to be called by the application layer at startup.
  * @param {Array<object>} dbSettings - An array of setting objects from the database.
  */
+const MODEL_WHITELIST = ["deepseek/deepseek-v4-flash", "xiaomi/mimo-v2-flash", "kimi-k2-turbo-preview"];
+
 export function populateSettings(dbSettings) {
   if (isInitialized) return;
   if (!dbSettings || dbSettings.length === 0) {
     console.warn(
       "[Config] No settings provided from database. The application will run on default values.",
     );
-  } else {
+} else {
     dbSettings.forEach((setting) => {
+      if (setting.key.startsWith("LLM_MODEL_")) {
+        // Models are controlled by code, not database - silent ignore
+        return;
+      }
       if (setting.key in settings) {
         settings[setting.key] = setting.value;
       }

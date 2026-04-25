@@ -43,7 +43,8 @@ function createEmailWrapper(bodyContent, subject) {
 export async function createPersonalizedEmailBody(
   user,
   eventsByCountry,
-  opportunitiesByCountry, // ADDED
+  opportunitiesByCountry,
+  pendingTransactionsByCountry,
   subject,
   intro,
 ) {
@@ -55,23 +56,35 @@ export async function createPersonalizedEmailBody(
   const hasEvents = eventsByCountry && Object.keys(eventsByCountry).length > 0;
   const hasOpps =
     opportunitiesByCountry && Object.keys(opportunitiesByCountry).length > 0;
+  const hasPending =
+    pendingTransactionsByCountry &&
+    Object.keys(pendingTransactionsByCountry).length > 0;
 
-  if (!user || (!hasEvents && !hasOpps)) {
+if (!user || (!hasEvents && !hasOpps && !hasPending)) {
     logger.warn("createPersonalizedEmailBody: Missing user or content data.");
     return null;
   }
 
-  const bulletsHtml = intro.bullets
-    .map((b) => `<li style="margin-bottom: 10px;">${b}</li>`)
-    .join("");
+  if (!intro || !intro.bullets) {
+    logger.warn("createPersonalizedEmailBody: Missing intro bullets, using fallback.");
+    // Return a minimal email body
+  }
 
-  const signoffHtml = Array.isArray(intro.signoff)
+  const introBullets = intro?.bullets || [];
+  const bulletsHtml = introBullets.length > 0
+    ? introBullets.map((b) => `<li style="margin-bottom: 10px;">${b}</li>`).join("")
+    : "";
+
+  const signoffHtml = Array.isArray(intro?.signoff)
     ? intro.signoff.join("<br>")
-    : intro.signoff;
+    : intro?.signoff || "";
+
+  const greeting = intro?.greeting || "Dear Client,";
+  const body = intro?.body || "Here are the latest relevant wealth events we have identified for your review.";
 
   const introHtml = `
-    <h1 class="main-heading" style="margin:0 0 20px 0; font-size: 24px; font-weight: bold;">${intro.greeting}</h1>
-    <p class="paragraph" style="margin:0 0 25px 0; font-size: 15px;">${intro.body}</p>
+    <h1 class="main-heading" style="margin:0 0 20px 0; font-size: 24px; font-weight: bold;">${greeting}</h1>
+    <p class="paragraph" style="margin:0 0 25px 0; font-size: 15px;">${body}</p>
     <ul class="paragraph" style="margin:0 0 25px 0; font-size: 15px; padding-left: 20px;">${bulletsHtml}</ul>
     <p class="paragraph" style="margin:0 0 25px 0; font-size: 15px;">${signoffHtml}</p>
   `;
@@ -80,8 +93,9 @@ export async function createPersonalizedEmailBody(
   let formattedContentHtml = "";
   const allCountries = [
     ...new Set([
-      ...Object.keys(eventsByCountry),
-      ...Object.keys(opportunitiesByCountry),
+      ...Object.keys(eventsByCountry || {}),
+      ...Object.keys(opportunitiesByCountry || {}),
+      ...Object.keys(pendingTransactionsByCountry || {}),
     ]),
   ].sort();
 
@@ -89,7 +103,22 @@ export async function createPersonalizedEmailBody(
     const flag = getCountryFlag(country);
     formattedContentHtml += `<tr><td style="padding: 30px 0 10px 0;"><h2 style="margin:0; font-size: 24px; font-weight: 500; color: #EAEAEA;">${flag} ${country}</h2></td></tr>`;
 
-    if (opportunitiesByCountry[country]) {
+    // Pending Transactions (early signals) - show FIRST
+    if (pendingTransactionsByCountry?.[country]?.length > 0) {
+      formattedContentHtml += `<tr><td><h3 style="margin:10px 0; font-size: 18px; color: #F59E0B;">🔔 Pending Transactions (Early Signals)</h3></td></tr>`;
+      for (const tx of pendingTransactionsByCountry[country]) {
+        formattedContentHtml += `
+          <tr><td style="padding: 15px; background: #2d2518; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #F59E0B;">
+            <p style="margin:0; font-size: 16px; font-weight: 600; color: #EAEAEA;">${tx.company}</p>
+            <p style="margin: 6px 0 0; font-size: 14px; color: #F59E0B; font-weight: 500;">Status: ${tx.status || "In discussions"}</p>
+            ${tx.estimatedValue ? `<p style="margin: 4px 0 0; font-size: 13px; color: #aaa;">Est. Value: ${tx.estimatedValue}</p>` : ""}
+            ${tx.parties ? `<p style="margin: 4px 0 0; font-size: 13px; color: #aaa;">Parties: ${tx.parties}</p>` : ""}
+          </td></tr>
+        `;
+      }
+    }
+
+    if (opportunitiesByCountry?.[country]) {
       formattedContentHtml += `<tr><td><h3 style="margin:10px 0; font-size: 18px; color: #4CAF50;">👤 Who to Contact</h3></td></tr>`;
       const oppPromises = opportunitiesByCountry[country].map(
         formatOpportunityForEmail,
@@ -102,12 +131,12 @@ export async function createPersonalizedEmailBody(
       });
     }
 
-    if (eventsByCountry[country]) {
-      formattedContentHtml += `<tr><td><h3 style="margin:10px 0; font-size: 18px; color: #58a6ff;">Synthesized Events</h3></td></tr>`;
+    if (eventsByCountry?.[country]) {
+      formattedContentHtml += `<tr><td><h3 style="margin:10px 0; font-size: 18px; color: #58a6ff;">📰 Completed Transactions</h3></td></tr>`;
       const eventPromises = eventsByCountry[country].map(formatEventForEmail);
       const eventResults = await Promise.allSettled(eventPromises);
       eventResults.forEach((result) => {
-        if (result.status === "fulfilled") {
+        if (result.status === "fulfilled" && result.value) {
           formattedContentHtml += `<tr><td>${result.value}</td></tr>`;
         }
       });

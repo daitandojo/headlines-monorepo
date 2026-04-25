@@ -4,6 +4,17 @@ import { instructionHeadlines } from './instructionHeadlines.js'
 export const instructionBatchHeadlineAssessment = {
   ...instructionHeadlines,
 
+  about: `
+**WEALTH WATCH MISSION:**
+We identify UHNW individuals and families who are receiving or about to receive significant liquid wealth — so that our subscribers (private wealth advisors and family offices) can approach them as prospective clients for investment management services (portfolios, private equity, cash and liquidity management).
+
+**WHAT WE ARE NOT:** We are NOT a distressed asset or restructuring advisory intelligence service. We do NOT surface bankruptcy, insolvency, administration, or companies in financial distress as investment opportunities. These are outside our mandate and waste our subscribers' time.
+
+**WHAT WE LOOK FOR:** Completed or imminent private exits (company sales), public listings (IPOs), or established wealth profiles of named UHNW individuals/families who are candidates for wealth management.
+
+**CORE RULE:** Score headlines based on whether they surface an individual/family receiving liquid wealth from a completed exit, IPO, or established wealth. Ignore distressed situations entirely.
+`,
+
   whatYouDo: `You will receive a JSON array of news headlines, where each object has an "id" and a "headline". You MUST analyze EACH headline independently and rigorously according to the provided conceptual framework. Each headline receives the same pattern-matching analysis as if it were evaluated alone. Headlines are often vague or misleading—your job is to discern the underlying pattern. Return a corresponding JSON array of assessments in the exact same order, including the original "id" for each.`,
 
   batchSpecificGuidelines: `

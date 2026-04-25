@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "pipeline": "./run.sh src/app.js --",
+    "pipeline:file": "./run.sh src/file-ingestion/index.js --",
     "cli:help": "./run.sh scripts/scripts/list.js",
     "test": "jest",
     "test:upserter": "./run.sh test:upserter --",
@@ -68,12 +69,13 @@
     "moment": "^2.30.1",
     "moment-duration-format": "^2.3.2",
     "mongoose": "^8.18.2",
+    "openai": "^5.22.0",
     "p-limit": "^5.0.0",
     "pino": "^9.2.0",
-    "playwright": "^1.45.1",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
+    "playwright": "^1.56.0",
     "sinon": "^18.0.0"
   }
 }
