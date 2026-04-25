@@ -51,12 +51,43 @@ function formatTransactionDetails(details) {
         ? flow.nature
         : "";
 
+  // Visual transaction flow diagram
+  let transactionFlowDiagram = "";
+  if (details.buyer || details.seller || details.target) {
+    const flowArrow = `<span style="color: #D4AF37; font-size: 16px; margin: 0 8px;">→</span>`;
+    const entityBox = (name, role) => name ? `
+      <div style="display: inline-block; padding: 6px 12px; background: #2a2a2a; border-radius: 6px; border: 1px solid ${role === 'target' ? '#D4AF37' : '#444'};">
+        <span style="font-size: 13px; color: #EAEAEA;">${name}</span>
+        <div style="font-size: 10px; color: ${role === 'target' ? '#D4AF37' : '#888'}; text-transform: uppercase;">${role}</div>
+      </div>
+    ` : "";
+    const parts = [
+      entityBox(details.seller, 'seller'),
+      details.seller ? flowArrow : "",
+      entityBox(details.target, 'target'),
+      details.target && details.buyer ? flowArrow : "",
+      entityBox(details.buyer, 'buyer'),
+    ].filter(Boolean).join("");
+    
+    if (parts) {
+      transactionFlowDiagram = `
+        <tr>
+          <td style="padding: 16px 0 12px; border-top: 1px solid #444444;">
+            <p style="margin:0 0 12px; font-size: 12px; color: #888; font-weight: 600;">TRANSACTION FLOW</p>
+            <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">${parts}</div>
+          </td>
+        </tr>
+      `;
+    }
+  }
+
   return `
     <tr>
         <td style="padding: 16px 0 8px; border-top: 1px solid #444444;">
             <p style="margin:0; font-size: 14px; color: #D4AF37; font-weight: 600;">Transaction Details</p>
         </td>
     </tr>
+    ${transactionFlowDiagram}
     <tr>
         <td>
             ${detailRow("Type", details.transactionType)}
@@ -90,6 +121,18 @@ async function createEventBriefCard(event) {
         ? "#FFC107"
         : "#F44336";
   const scoreTextShadow = `0 0 8px ${scoreColor}40`;
+
+  // Confidence meter visualization
+  const confidenceMeter = `
+    <div style="margin-top: 12px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="flex: 1; height: 6px; background: #333; border-radius: 3px; overflow: hidden;">
+          <div style="width: ${highest_relevance_score}%; height: 100%; background: ${scoreColor}; border-radius: 3px; box-shadow: 0 0 8px ${scoreColor}60;"></div>
+        </div>
+        <span style="font-size: 12px; color: ${scoreColor}; font-weight: 600;">${highest_relevance_score}%</span>
+      </div>
+    </div>
+  `;
 
   const classificationHtml = eventClassification
     ? `<div style="margin-top: 8px; display: inline-block; padding: 3px 10px; background-color: rgba(212, 175, 55, 0.1); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 99px; font-size: 11px; font-weight: 600; color: #D4AF37; text-transform: uppercase; letter-spacing: 0.5px;">${eventClassification}</div>`
@@ -158,6 +201,7 @@ async function createEventBriefCard(event) {
                             <td style="width: 70px; vertical-align: top;" valign="top">
                                 <p style="font-size: 28px; font-weight: 700; color: ${scoreColor}; margin: 0; text-shadow: ${scoreTextShadow};">${highest_relevance_score}</p>
                                 <p style="font-size: 12px; color: #a0a0a0; margin: 0;">Score</p>
+                                ${confidenceMeter}
                                 ${classificationHtml}
                                 ${tagsHtml}
                             </td>

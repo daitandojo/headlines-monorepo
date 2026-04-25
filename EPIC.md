@@ -16,8 +16,8 @@
 - [x] 3.2: Config-controlled model assignment
 
 ## Phase 4: Email Upgrade
-- [ ] 4.1: Deal summary card with visual confidence meter
-- [ ] 4.2: Daily digest with deal volume, total liquidity created
+- [x] 4.1: Deal summary card with visual dashboard (War Room)
+- [ ] 4.2: Visual confidence meter + transaction flow diagrams
 - [ ] 4.3: Personalization from user engagement history
 
 ## Phase 5: Client App
