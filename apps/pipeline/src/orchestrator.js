@@ -15,10 +15,8 @@ import { runCommitAndNotify } from './pipeline/5_commitAndNotify.js'
 import { runUpdateKnowledgeGraph } from './pipeline/5_5_updateKnowledgeGraph.js'
 import { suggestNewWatchlistEntities } from './pipeline/6_suggestNewWatchlistEntities.js'
 import { updateSourceAnalytics } from './pipeline/submodules/commit/4_updateSourceAnalytics.js'
-import { runSelfHealAndOptimize } from './pipeline/7_selfHealAndOptimize.js'
-import { selfHealer } from './modules/monitoring/selfHeal.js'
-import { pipelineMetrics } from './modules/monitoring/pipelineMetrics.js'
-import { settings } from '@headlines/config'
+import { settings, getFallbackModel } from '@headlines/config'
+import { getFallbackModel as getFallbackKimiModel } from '@headlines/ai-services'
 import { RunVerdict, Article, SynthesizedEvent } from '@headlines/models'
 import { browserManager } from '@headlines/scraper-logic/browserManager.js'
 import { sendErrorAlert } from '@headlines/utils-server'
@@ -291,11 +289,12 @@ export async function runPipeline(options) {
       })
     }
     
-    // Record model usage from tokenTracker
+     // Record model usage from tokenTracker
     const tokenStats = tokenTracker.getStats()
     Object.keys(tokenStats).forEach(model => {
+      const modelName = model === 'deepseek/deepseek-v4-flash' ? getFallbackModel() : model
       pipelineMetrics.recordModelUsage(
-        model, 
+        modelName, 
         tokenStats[model].promptTokens + tokenStats[model].completionTokens, 
         0, // Cost would need calculation
         true // Success assumption
@@ -317,6 +316,13 @@ export async function runPipeline(options) {
           logger.warn({ remediation }, '[SelfHeal] Remediation triggered')
           // In a full implementation, we would act on remediation here
         }
+      })
+      
+      // Replace failing models with fallback
+      healthReport.modelsWithIssues.forEach(issue => {
+        const fallback = getFallbackModel()
+        logger.warn({ model: issue.modelKey, fallback }, '[SelfHeal] Model fallback configured')
+        settings[`LLM_MODEL_${issue.modelKey.split(':')[1].toUpperCase()}`] = fallback
       })
     }
     
