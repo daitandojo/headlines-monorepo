@@ -7,7 +7,7 @@ function getSettings() {
   try {
     return require('@headlines/config')
   } catch (e) {
-    return { settings: { LLM_MODEL_UTILITY: 'xiaomi/mimo-v2-flash' } }
+    return { settings: { LLM_MODEL_UTILITY: 'deepseek/deepseek-v4-flash' } }
   }
 }
 
@@ -51,7 +51,7 @@ Extract all conduits. Return valid JSON.`
   try {
     const cfg = getSettings()
     const result = await callLanguageModel({
-      modelName: cfg.settings?.LLM_MODEL_UTILITY || 'xiaomi/mimo-v2-flash',
+      modelName: cfg.settings?.LLM_MODEL_UTILITY || 'deepseek/deepseek-v4-flash',
       systemPrompt,
       userContent,
       isJson: true,

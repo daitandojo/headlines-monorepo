@@ -84,6 +84,22 @@ async function start() {
     })
     .help().argv;
 
+  // Write exit status to a well-known file so cron/scrip wrappers can check it
+  process.on("exit", (code) => {
+    const fs = require("fs");
+    try {
+      fs.writeFileSync(
+        "/tmp/pipeline_cron_status.txt",
+        [
+          `PIPELINE_EXIT_CODE=${code}`,
+          `RUN_COMPLETED_AT=${new Date().toISOString()}`,
+        ].join("\n") + "\n",
+      );
+    } catch (_) {
+      // Best-effort; non-critical
+    }
+  });
+
   const paths = {
     debugHtmlDir: path.join(logDirectory, "debug_html"),
   };
@@ -119,6 +135,7 @@ async function start() {
   } else {
     logger.info("Pipeline completed successfully. The process will now exit.");
   }
+  process.exit(0);
 }
 
 start();

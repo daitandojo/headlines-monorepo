@@ -101,13 +101,14 @@ export const ArticleCard = ({ article, onDelete }) => {
             <div
               className={cn(
                 'p-4 relative z-10 bg-cover bg-center',
-                article.imageUrl && 'min-h-[150px] flex flex-col justify-end'
+                (article.imageCachedPath || article.imageUrl) && 'min-h-[150px] flex flex-col justify-end'
               )}
-              style={
-                article.imageUrl ? { backgroundImage: `url(${article.imageUrl})` } : {}
+              style={(article.imageCachedPath || article.imageUrl)
+                ? { backgroundImage: `url(${article.imageCachedPath || article.imageUrl})` }
+                : {}
               }
             >
-              {article.imageUrl && (
+              {(article.imageCachedPath || article.imageUrl) && (
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent z-0" />
               )}
               <div className="relative z-10">

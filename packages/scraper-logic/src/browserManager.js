@@ -1,6 +1,11 @@
 // packages/scraper-logic/src/browserManager.js
 import playwright from 'playwright'
+import { execSync } from 'child_process'
+import { existsSync } from 'fs'
+import { createRequire } from 'module'
 import { getConfig } from './config.js'
+
+const _require = createRequire(import.meta.url)
 import { env } from '@headlines/config/node'
 
 const GOOGLEBOT_USER_AGENT =
@@ -14,12 +19,72 @@ class BrowserManager {
     this.context = null
   }
 
+  async _ensureBrowserInstalled(logger) {
+    const { chromium } = playwright
+    try {
+      const regularPath = chromium.executablePath()
+      // Derive headless shell path: Playwright 1.56+ uses a separate binary for headless mode
+      const headlessPath = regularPath
+        .replace('/chromium-', '/chromium_headless_shell-')
+        .replace('/chrome-linux/chrome', '/chrome-linux/headless_shell')
+
+      const regularExists = existsSync(regularPath)
+      const headlessExists = existsSync(headlessPath)
+
+      if (regularExists && headlessExists) {
+        logger.info(`[BrowserManager] ✅ Browser executables found (regular + headless shell)`)
+        return
+      }
+
+      const missing = []
+      if (!regularExists) missing.push(regularPath)
+      if (!headlessExists) missing.push(headlessPath)
+
+      logger.warn(`[BrowserManager] Browser executables missing: ${missing.join(', ')}`)
+      logger.info('[BrowserManager] Attempting to auto-install Playwright browsers...')
+
+      try {
+        execSync('npx playwright install chromium', {
+          stdio: 'pipe',
+          timeout: 180000, // 3 min timeout for download
+          cwd: process.cwd(),
+        })
+        logger.info('[BrowserManager] ✅ Playwright browsers auto-installed successfully.')
+      } catch (installErr) {
+        logger.error(
+          { err: installErr },
+          '[BrowserManager] "npx" approach failed. Trying direct CLI path from workspace...'
+        )
+        // Fallback: use the node_modules playwright CLI directly (matches exact workspace version)
+        const playwrightCliPath = _require.resolve('playwright/cli.js')
+        execSync(`node "${playwrightCliPath}" install chromium`, {
+          stdio: 'pipe',
+          timeout: 180000,
+        })
+        logger.info('[BrowserManager] ✅ Playwright browsers auto-installed via direct CLI path.')
+      }
+
+      // Verify installation succeeded
+      if (!existsSync(headlessPath)) {
+        logger.warn(`[BrowserManager] ⚠️ Headless shell still missing after install at: ${headlessPath}`)
+      }
+    } catch (checkErr) {
+      logger.warn(
+        { err: checkErr },
+        '[BrowserManager] Could not check/install browser. Proceeding with launch attempt.'
+      )
+    }
+  }
+
   async initialize() {
     if (this.browser) {
       return
     }
     const { logger } = getConfig()
     logger.info('[BrowserManager] Initializing persistent browser instance...')
+
+    // Self-heal: auto-install browser if missing (e.g., after Playwright update)
+    await this._ensureBrowserInstalled(logger)
 
     const isSpoofing = env.DEV_SPOOF_GOOGLEBOT === 'true'
     if (isSpoofing) {

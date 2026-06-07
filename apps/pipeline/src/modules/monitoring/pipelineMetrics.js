@@ -2,7 +2,7 @@
 import { logger } from '@headlines/utils-shared'
 import { settings } from '@headlines/config'
 
-const MODEL_WHITELIST = ["deepseek/deepseek-v4-flash", "xiaomi/mimo-v2-flash", "kimi-k2-turbo-preview"]
+const MODEL_WHITELIST = ["deepseek/deepseek-v4-flash", "kimi-latest", "deepseek-api:deepseek-chat"]
 
 export class PipelineMetrics {
   constructor() {
@@ -58,16 +58,18 @@ export class PipelineMetrics {
   }
 
   recordModelUsage(modelName, tokensUsed, costUSD, success) {
-    if (!this.modelMetrics.has(modelName)) {
-      this.modelMetrics.set(modelName, { calls: 0, totalTokens: 0, totalCost: 0, failures: 0 })
+    const cleanTokens = typeof tokensUsed === 'number' && !Number.isNaN(tokensUsed) ? tokensUsed : 0
+    const cleanName = typeof modelName === 'string' ? modelName : 'unknown'
+    if (!this.modelMetrics.has(cleanName)) {
+      this.modelMetrics.set(cleanName, { calls: 0, totalTokens: 0, totalCost: 0, failures: 0 })
     }
-    const stats = this.modelMetrics.get(modelName)
+    const stats = this.modelMetrics.get(cleanName)
     stats.calls++
-    stats.totalTokens += tokensUsed
-    stats.totalCost += costUSD
+    stats.totalTokens += cleanTokens
+    stats.totalCost += costUSD || 0
     if (!success) stats.failures++
 
-    logger.info({ model: modelName, tokens: tokensUsed, cost: `$${costUSD}` }, '[Metrics] Model usage')
+    logger.info(`[Metrics] ${cleanName}: ${cleanTokens} tokens, $${costUSD || 0}`)
   }
 
   endRun() {
@@ -101,8 +103,12 @@ export class PipelineMetrics {
 
     const modelSummary = []
     this.modelMetrics.forEach((stats, model) => {
+      const modelName = typeof model === 'string' ? model : 'unknown'
+      if (modelName === 'unknown') return
+      const tokens = stats.totalTokens || 0
+      if (tokens === 0) return
       modelSummary.push({
-        model,
+        model: modelName,
         calls: stats.calls,
         totalTokens: stats.totalTokens,
         totalCost: `$${stats.totalCost.toFixed(4)}`,

@@ -164,10 +164,15 @@ const profileSchema = z
   .passthrough(); // Use passthrough to be more robust against extra fields from the AI
 
 export const opportunitySchema = z.object({
-  opportunities: z.array(
+  opportunities: z.union([z.array(
     z
       .object({
-        reachOutTo: z.string().min(1, "reachOutTo cannot be empty"),
+        reachOutTo: z
+          .union([z.string().min(1), z.array(z.any())])
+          .transform((v) => {
+            if (Array.isArray(v)) return v[0] || 'Unknown Person'
+            return v
+          }),
         // PHASE 1: Type distinction
         type: z.enum(OPPORTUNITY_TYPES).default("beneficiary"),
         // PHASE 1: Trigger classification
@@ -177,26 +182,32 @@ export const opportunitySchema = z.object({
         wealthEstimate: z.string().nullable().optional(),
         // Contact
         contactDetails: z
-          .object({
-            email: z
-              .string()
-              .email()
-              .nullable()
-              .optional()
-              .or(z.literal(""))
-              .transform((val) => val || undefined),
-            role: z
-              .string()
-              .nullable()
-              .optional()
-              .transform((val) => val || undefined),
-            company: z
-              .string()
-              .nullable()
-              .optional()
-              .transform((val) => val || undefined),
-          })
-          .default({}),
+          .union([
+            z.object({
+              email: z
+                .union([z.string().email(), z.array(z.any()), z.literal(''), z.null(), z.undefined()])
+                .transform((val) => {
+                  if (Array.isArray(val)) return undefined
+                  if (!val) return undefined
+                  return val
+                }),
+              role: z
+                .union([z.string(), z.array(z.any()), z.null(), z.undefined()])
+                .transform((val) => {
+                  if (Array.isArray(val)) return undefined
+                  return val || undefined
+                }),
+              company: z
+                .union([z.string(), z.array(z.any()), z.null(), z.undefined()])
+                .transform((val) => {
+                  if (Array.isArray(val)) return undefined
+                  return val || undefined
+                }),
+            }),
+            z.null(),
+          ])
+          .default({})
+          .transform((val) => val || {}),
         basedIn: z
           .union([z.string(), z.array(z.string()), z.null(), z.undefined()])
           .transform((val) => {
@@ -206,13 +217,15 @@ export const opportunitySchema = z.object({
           })
           .default([]),
         whyContact: z
-          .union([z.string(), z.array(z.string())])
-          .nullable()
+          .union([z.string(), z.array(z.string()), z.array(z.any()), z.null(), z.undefined()])
           .transform((val) => {
-            if (val === null || val === undefined) return [];
-            if (Array.isArray(val)) return val;
-            if (typeof val === "string" && val.trim()) return [val];
-            return [];
+            if (val === null || val === undefined) return ['Potential wealth management opportunity']
+            if (Array.isArray(val)) {
+              const strings = val.filter(v => typeof v === 'string' && v.trim())
+              return strings.length > 0 ? strings : ['Potential wealth management opportunity']
+            }
+            if (typeof val === 'string' && val.trim()) return [val]
+            return ['Potential wealth management opportunity']
           })
           .pipe(
             z
@@ -241,6 +254,18 @@ export const opportunitySchema = z.object({
         followUpDate: z.string().nullable().optional(),
         event_key: z.string().optional(),
         profile: profileSchema.optional(),
+        // PHASE 2: Predictive scoring
+        likelyToTransactInMonths: z
+          .union([z.number(), z.string(), z.null(), z.undefined()])
+          .transform((val) => {
+            if (val === null || val === undefined) return null
+            if (typeof val === 'number') return val
+            const parsed = parseInt(val, 10)
+            return isNaN(parsed) ? null : parsed
+          })
+          .pipe(z.number().nullable().optional()),
+        transactionReadiness: z.enum(['cold', 'warm', 'hot', 'urgent']).nullable().optional(),
+        dealSignalSources: z.array(z.string()).default([]),
         relatedIndividuals: z
           .array(
             z.object({
@@ -256,5 +281,5 @@ export const opportunitySchema = z.object({
           .optional(),
       })
       .passthrough(),
-  ),
+  ), z.null()]).transform(val => val === null ? [] : val),
 });

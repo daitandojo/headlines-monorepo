@@ -20,6 +20,7 @@ const getAgent = () =>
     model: settings.LLM_MODEL_SYNTHESIS, // Clustering is a complex task
     systemPrompt: instructionCluster,
     zodSchema: clusterSchema,
+    maxTokens: 16384,
   })
 
 async function invoke(input) {

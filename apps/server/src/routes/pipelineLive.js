@@ -11,11 +11,8 @@ const router = Router()
 const activeStreams = new Map()
 const MAX_EVENTS = 200
 
-function getRunId(req) {
-  return req.query.runId || null
-}
-
-router.get('/stream', async (req, res) => {
+// SSE stream – admin only (exposes internal pipeline events)
+router.get('/stream', verifyAdmin, async (req, res) => {
   const runId = req.query.runId
   if (!runId) {
     return res.status(400).json({ error: 'runId is required.' })
@@ -113,7 +110,7 @@ router.post('/events', async (req, res) => {
   return res.status(200).json({ received: events.length })
 })
 
-router.get('/meta', async (req, res) => {
+router.get('/meta', verifyAdmin, async (req, res) => {
   const runId = req.query.runId
   if (!runId) {
     return res.status(400).json({ error: 'runId is required.' })
@@ -128,7 +125,7 @@ router.get('/meta', async (req, res) => {
   return res.status(200).json(lastMeta || {})
 })
 
-router.get('/status', async (req, res) => {
+router.get('/status', verifyAdmin, async (req, res) => {
   const active = Array.from(activeStreams.keys()).map((id) => ({
     runId: id,
     eventCount: activeStreams.get(id).events.length,

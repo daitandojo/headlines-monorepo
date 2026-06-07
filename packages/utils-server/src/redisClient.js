@@ -47,14 +47,43 @@ export async function testRedisConnection(env) {
   try {
     const client = await getRedisClient(env)
     if (client) {
-      const testKey = `test:${Date.now()}`
-      await client.set(testKey, 'test-value', { ex: 10 })
-      const testValue = await client.get(testKey)
-      await client.del(testKey)
-      if (testValue === 'test-value') {
-        logger.info('✅ Redis connection and read/write test successful.')
-        return true
+      // Retry the SET/GET test once to handle transient Upstash consistency issues
+      const maxAttempts = 2
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          const testKey = `test:${Date.now()}:${attempt}`
+          await client.set(testKey, 'test-value', { ex: 10 })
+          const testValue = await client.get(testKey)
+          await client.del(testKey)
+          if (testValue === 'test-value') {
+            logger.info('✅ Redis connection and read/write test successful.')
+            return true
+          }
+          // Log what we got back for diagnosis
+          logger.warn(
+            {
+              attempt,
+              expected: 'test-value',
+              receivedType: typeof testValue,
+              received: typeof testValue === 'string' ? testValue.substring(0, 50) : JSON.stringify(testValue),
+            },
+            `Redis read/write test mismatch (attempt ${attempt}/${maxAttempts})`
+          )
+          if (attempt < maxAttempts) {
+            // Wait 500ms before retry — allows Upstash consistency to settle
+            await new Promise((resolve) => setTimeout(resolve, 500))
+          }
+        } catch (attemptErr) {
+          logger.warn(
+            { attempt, err: attemptErr.message },
+            `Redis read/write test threw (attempt ${attempt}/${maxAttempts})`
+          )
+          if (attempt < maxAttempts) {
+            await new Promise((resolve) => setTimeout(resolve, 500))
+          }
+        }
       }
+      // All attempts failed — abort pipeline
       return false
     }
     return true

@@ -9,7 +9,10 @@ import {
   formatTokenUsage,
   formatApiUsage,
   formatContentScrapingFailures,
-  formatJudgeVerdictDetails, // IMPORT THE NEW FUNCTION
+  formatJudgeVerdictDetails,
+  formatPreDealSignals,
+  formatTransactionScores,
+  formatIntelligenceSummary,
 } from './reportSections.js'
 
 const colors = {
@@ -41,6 +44,10 @@ export async function logFinalReport(runStats, duration) {
 
   // ADD THE NEW SECTION HERE
   report += formatJudgeVerdictDetails(runStats)
+
+  report += formatPreDealSignals(runStats)
+  report += formatTransactionScores(runStats)
+  report += formatIntelligenceSummary(runStats)
 
   report += '\n' + formatRunFunnel(runStats)
   report += `${colors.cyan}=============================================================${colors.reset}\n`

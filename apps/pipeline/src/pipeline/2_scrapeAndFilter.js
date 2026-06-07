@@ -20,17 +20,15 @@ export async function runScrapeAndFilter(pipelinePayload) {
 
   if (isRefreshMode) {
     logger.warn(
-      "REFRESH MODE: Bypassing scraping. Finding and resetting relevant articles from the last 24 hours.",
+      "REFRESH MODE: Bypassing scraping. Finding ALL articles from the last 24h and resetting them for fresh processing.",
     );
     const cutoffDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const filter = {
-      createdAt: { $gte: cutoffDate },
-      relevance_headline: { $gte: settings.HEADLINES_RELEVANCE_THRESHOLD },
-      synthesizedEventId: { $exists: false },
-    };
+
+    // Find ALL articles from the last 24h — no threshold filter, no event filter
     const articlesResult = await findArticles({
-      filter,
+      filter: { createdAt: { $gte: cutoffDate } },
       select: "+articleContent",
+      limit: 500,
     });
     if (!articlesResult.success) {
       throw new Error(
@@ -38,48 +36,69 @@ export async function runScrapeAndFilter(pipelinePayload) {
       );
     }
     const articlesToReprocess = articlesResult.data;
-    const articleIdsToReset = articlesToReprocess.map((a) => a._id);
     if (articlesToReprocess.length === 0) {
-      logger.info("✅ No relevant articles found to refresh. Ending run.");
+      logger.info("✅ No articles found from the last 24h to refresh. Ending run.");
       pipelinePayload.articlesForPipeline = [];
       return { success: true, payload: pipelinePayload };
     }
-    logger.info(
-      colors.yellow(
-        `Found ${articlesToReprocess.length} relevant articles to refresh and re-process.`,
-      ),
-    );
-    const eventsToDelete = await SynthesizedEvent.find({
-      "source_articles.link": { $in: articlesToReprocess.map((a) => a.link) },
-    }).select("_id");
-    const eventIdsToDelete = eventsToDelete.map((e) => e._id);
-    const [eventDeletion, verdictDeletion] = await Promise.all([
-      eventIdsToDelete.length > 0
-        ? SynthesizedEvent.deleteMany({ _id: { $in: eventIdsToDelete } })
-        : { deletedCount: 0 },
+
+    // Delete associated synthesized events and run verdicts
+    const articleLinks = articlesToReprocess.map((a) => a.link);
+    const articleIdsToReset = articlesToReprocess.map((a) => a._id);
+    const [eventsToDelete, verdictDeletion] = await Promise.all([
+      SynthesizedEvent.find({
+        "source_articles.link": { $in: articleLinks },
+      }).select("_id"),
       RunVerdict.deleteMany({ createdAt: { $gte: cutoffDate } }),
     ]);
-    logger.info(
-      `Targeted Cleanup: Deleted ${eventDeletion.deletedCount} associated events and ${verdictDeletion.deletedCount} run verdicts.`,
-    );
+    const eventIdsToDelete = eventsToDelete.map((e) => e._id);
+    if (eventIdsToDelete.length > 0) {
+      await SynthesizedEvent.deleteMany({ _id: { $in: eventIdsToDelete } });
+    }
+
+    // Reset articles to scraped status, clearing all assessment/enrichment/event data
     await Article.updateMany(
       { _id: { $in: articleIdsToReset } },
       {
         $set: { status: "scraped" },
         $unset: {
+          relevance_headline: "",
+          assessment_headline: "",
           relevance_article: "",
           assessment_article: "",
           key_individuals: "",
           transactionType: "",
           tags: "",
           synthesizedEventId: "",
+          one_line_summary: "",
+          imageCachedPath: "",
+          enrichment_error: "",
         },
       },
     );
+
     logger.info(
-      `Reset ${articleIdsToReset.length} articles to 'scraped' status.`,
+      colors.yellow(
+        `Refresh prepared: ${articlesToReprocess.length} articles reset, ${eventIdsToDelete.length} events deleted, ${verdictDeletion.deletedCount} verdicts purged.`,
+      ),
     );
-    // Correctly populate the payload for the next stage in refresh mode
+
+    // Strip assessment/enrichment data from in-memory copies so Stage 3 re-processes them
+    for (const article of articlesToReprocess) {
+      delete article.relevance_headline
+      delete article.assessment_headline
+      delete article.relevance_article
+      delete article.assessment_article
+      delete article.key_individuals
+      delete article.transactionType
+      delete article.tags
+      delete article.synthesizedEventId
+      delete article.one_line_summary
+      delete article.imageCachedPath
+      delete article.enrichment_error
+      article.status = 'scraped'
+    }
+
     pipelinePayload.articlesForPipeline = articlesToReprocess;
     return { success: true, payload: pipelinePayload };
   }
@@ -120,12 +139,108 @@ export async function runScrapeAndFilter(pipelinePayload) {
 
   runStatsManager.set("freshHeadlinesFound", freshArticles.length);
 
+  // ═══════════════════════════════════════════════════
+  // CACHE & RETRY LOGIC - Find incomplete articles
+  // ═══════════════════════════════════════════════════
+  
+  const incompleteEnrichmentFilter = { 
+    status: { $in: ['failed_enrichment', 'pending_notification', 'failed_notification'] } 
+  }
+  const incompleteEnrichmentResult = await findArticles({
+    filter: incompleteEnrichmentFilter,
+    select: "+articleContent",
+  })
+  const incompleteEnrichmentArticles = incompleteEnrichmentResult.success ? incompleteEnrichmentResult.data.filter(a => {
+    const failedAttempts = (a.pipelineTrace || []).filter(t => t.stage === 'enrichment' && t.status === 'error').length
+    return failedAttempts < 3
+  }) : []
+  if (incompleteEnrichmentArticles.length > 0) {
+    logger.info(`\x1b[33m▸ Retrying failed enrichments:\x1b[0m ${incompleteEnrichmentArticles.length}`)
+    incompleteEnrichmentArticles.forEach(a => {
+      logger.info(`\x1b[33m  ↻ "${a.headline?.substring(0, 60)}"\x1b[0m`)
+    })
+  }
+
+  const incompleteHeadlineFilter = {
+    status: 'failed_headline',
+    relevance_headline: { $gte: 10 },
+    headline: { $not: /^\s*\S+\s*$/ },
+  }
+  const incompleteHeadlineResult = await findArticles({
+    filter: incompleteHeadlineFilter,
+    select: "+articleContent",
+  })
+  const incompleteHeadlineArticles = incompleteHeadlineResult.success
+    ? incompleteHeadlineResult.data.filter(a => {
+        const failedAttempts = (a.pipelineTrace || []).filter(t =>
+          t.stage === 'Headline Assessment' && (t.status === 'DROPPED' || t.status === 'failed' || t.status === 'error')
+        ).length
+        return failedAttempts < 3
+      })
+    : []
+  if (incompleteHeadlineArticles.length > 0) {
+    logger.info(`\x1b[33m▸ Retrying failed headlines:\x1b[0m ${incompleteHeadlineArticles.length}`)
+    incompleteHeadlineArticles.forEach(a => {
+      logger.info(`\x1b[33m  ↻ "${a.headline?.substring(0, 60)}"\x1b[0m`)
+    })
+  }
+  if (incompleteHeadlineArticles.length > 0) {
+    logger.info(`Found ${incompleteHeadlineArticles.length} failed_headline articles to retry (multi-word headlines).`)
+  }
+
+  // ═══════════════════════════════════════════════════
+  // ORPHANED SCRAPED ARTICLES - No assessment yet
+  // ═══════════════════════════════════════════════════
+  const orphanedScrapedFilter = {
+    status: 'scraped',
+    relevance_headline: { $exists: false }
+  }
+  const orphanedScrapedResult = await findArticles({
+    filter: orphanedScrapedFilter,
+    select: "+articleContent",
+    limit: 100,
+  })
+  const orphanedScrapedArticles = orphanedScrapedResult.success ? orphanedScrapedResult.data : []
+  if (orphanedScrapedArticles.length > 0) {
+    logger.info(`\x1b[33m▸ Processing ${orphanedScrapedArticles.length} orphaned scraped articles (never assessed):\x1b[0m`)
+  }
+
+  // ═══════════════════════════════════════════════════
+  // STUCK SCRAPED ARTICLES - Scored at headline but never enriched
+  // ═══════════════════════════════════════════════════
+  const stuckScrapedFilter = {
+    status: 'scraped',
+    relevance_headline: { $gte: settings.HEADLINES_RELEVANCE_THRESHOLD },
+    $or: [
+      { relevance_article: { $exists: false } },
+      { relevance_article: null }
+    ]
+  }
+  const stuckScrapedResult = await findArticles({
+    filter: stuckScrapedFilter,
+    select: "+articleContent",
+    limit: 100,
+  })
+  const stuckScrapedArticles = stuckScrapedResult.success ? stuckScrapedResult.data : []
+  if (stuckScrapedArticles.length > 0) {
+    logger.info(`\x1b[33m▸ Processing ${stuckScrapedArticles.length} stuck scraped articles (scored but never enriched):\x1b[0m`)
+  }
+
+  const allArticlesToProcess = [...freshArticles, ...incompleteEnrichmentArticles, ...incompleteHeadlineArticles, ...orphanedScrapedArticles, ...stuckScrapedArticles];
+
   if (freshArticles.length > 0) {
     const articlesToSave = freshArticles.map((article) => ({
       ...article,
       _id: new mongoose.Types.ObjectId(),
       status: "scraped",
     }));
+
+    // Replace raw freshArticles with id-bearing versions so assessHeadlines can track them
+    const savedLinks = new Map(articlesToSave.map(a => [a.link, a]))
+    for (let i = 0; i < allArticlesToProcess.length; i++) {
+      const saved = savedLinks.get(allArticlesToProcess[i].link)
+      if (saved) allArticlesToProcess[i] = saved
+    }
 
     const bulkOps = articlesToSave.map((article) => ({
       updateOne: {
@@ -142,8 +257,10 @@ export async function runScrapeAndFilter(pipelinePayload) {
     logger.info(
       `Successfully saved ${result.result.upsertedCount} new articles to the database with status 'scraped'.`,
     );
-    // Pass the newly saved, full article objects to the next stage
-    pipelinePayload.articlesForPipeline = articlesToSave;
+  }
+
+  if (allArticlesToProcess.length > 0) {
+    pipelinePayload.articlesForPipeline = allArticlesToProcess;
   } else {
     logger.info("No new articles to process. Ending run early.");
     pipelinePayload.articlesForPipeline = [];

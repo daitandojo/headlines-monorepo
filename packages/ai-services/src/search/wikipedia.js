@@ -132,6 +132,9 @@ async function fetchWithRetry(
       ])
 
       if (!response.ok) {
+        if (response.status === 429) {
+          throw new Error(`Wikipedia API rate limited (429)`)
+        }
         throw new Error(`Wikipedia API returned status ${response.status}`)
       }
 
@@ -141,6 +144,7 @@ async function fetchWithRetry(
       const isRetryable =
         error.message?.includes('timeout') ||
         error.message?.includes('network') ||
+        error.message?.includes('rate limited') ||
         error.code === 'ETIMEDOUT' ||
         error.code === 'ECONNRESET'
 
@@ -503,15 +507,25 @@ export async function fetchBatchWikipediaSummaries(queries, options = {}) {
 
   logger.info({ count: queries.length }, 'Starting batch Wikipedia fetch')
 
-  const promises = queries.map((query) =>
-    fetchWikipediaSummary(query, options).catch((error) => ({
-      success: false,
-      error: error.message,
-      query,
-    }))
-  )
-
-  const results = await Promise.all(promises)
+  // Limit concurrency to avoid Wikipedia rate limiting (429)
+  const CONCURRENCY = 3
+  const results = []
+  for (let i = 0; i < queries.length; i += CONCURRENCY) {
+    const batch = queries.slice(i, i + CONCURRENCY)
+    const batchPromises = batch.map((query) =>
+      fetchWikipediaSummary(query, options).catch((error) => ({
+        success: false,
+        error: error.message,
+        query,
+      }))
+    )
+    const batchResults = await Promise.all(batchPromises)
+    results.push(...batchResults)
+    // 200ms delay between batches to avoid rate limiting
+    if (i + CONCURRENCY < queries.length) {
+      await new Promise((r) => setTimeout(r, 200))
+    }
+  }
 
   const duration = Date.now() - startTime
   const successful = results.filter((r) => r.success).length

@@ -23,6 +23,9 @@ const ArticleSchema = new Schema(
     source: { type: String, required: true, trim: true },
     country: { type: [String], trim: true, index: true },
     imageUrl: { type: String, trim: true },
+    imageCachedPath: { type: String, trim: true },
+    scrapeMethod: { type: String, trim: true },
+    scrapeSelector: { type: String, trim: true },
     relevance_headline: { type: Number, required: true, min: 0, max: 100 },
     assessment_headline: { type: String, required: true, trim: true },
     // --- START OF DEFINITIVE FIX ---

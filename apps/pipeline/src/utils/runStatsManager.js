@@ -25,6 +25,26 @@ export class RunStatsManager {
       errors: [],
       tokenUsage: {},
       apiCalls: {},
+      // Stage tracking arrays
+      stage_preflight_attempted: [],
+      stage_scrape_attempted: [],
+      stage_assess_attempted: [],
+      stage_entityResolution_attempted: [],
+      stage_synthesize_attempted: [],
+      stage_opportunityDeepDive_attempted: [],
+      stage_intelligenceEnrichment_attempted: [],
+      stage_commit_attempted: [],
+      stage_knowledgeGraph_attempted: [],
+      stage_watchlist_attempted: [],
+      stage_cogniti_attempted: [],
+      preDealSignals: [],
+      transactionScores: [],
+      // Intelligence enrichment (Tier 1)
+      filingsFound: 0,
+      familyOfficesDiscovered: 0,
+      dealAdvisorsFound: 0,
+      wealthChainsResolved: 0,
+      sentimentUpdated: 0,
     }
     logger.info('[RunStatsManager] Initialized a new statistics object.')
   }
@@ -81,6 +101,15 @@ export class RunStatsManager {
         `[RunStatsManager] Attempted to concat non-array stat or values for key: '${key}'`
       )
     }
+  }
+
+  /**
+   * Returns the value of a specific stat.
+   * @param {string} key - The name of the stat.
+   * @returns {*} The current value, or undefined if not found.
+   */
+  get(key) {
+    return this.stats[key]
   }
 
   /**

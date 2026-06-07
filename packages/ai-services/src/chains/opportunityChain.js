@@ -26,14 +26,21 @@ const simpleOpportunitySchema = z.object({
             return val
           })
           .default({}),
-        lastKnownEventLiquidityMM: z.number().nullable(),
+        lastKnownEventLiquidityMM: z.union([z.number(), z.string()]).nullable().transform((val) => {
+          if (val === null || val === undefined) return null;
+          if (typeof val === 'string') {
+            const parsed = parseInt(val.replace(/[^0-9.-]/g, ''), 10);
+            return isNaN(parsed) ? 0 : parsed;
+          }
+          return val;
+        }),
         whyContact: z
           .union([z.string(), z.array(z.string())])
           .transform((val) => (Array.isArray(val) ? val : [val])),
         event_key: z.string().optional(),
       })
       .passthrough()
-  ),
+  ).nullish().default([]),
 })
 
 const simpleInstruction = {

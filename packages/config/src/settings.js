@@ -22,7 +22,7 @@ const DEFAULTS = {
   LLM_MODEL_SYNTHESIS: "deepseek/deepseek-v4-flash",
   LLM_MODEL_UTILITY: "deepseek/deepseek-v4-flash",
   LLM_MODEL_PRO: "deepseek/deepseek-v4-flash",
-  LLM_MODEL_FALLBACK: "xiaomi/mimo-v2-flash", // Fallback model for rate limiting
+  COGNITI_ENABLED: true,
 };
 
 export const settings = { ...DEFAULTS };
@@ -34,7 +34,7 @@ let isInitialized = false;
  * This function is intended to be called by the application layer at startup.
  * @param {Array<object>} dbSettings - An array of setting objects from the database.
  */
-const MODEL_WHITELIST = ["deepseek/deepseek-v4-flash", "xiaomi/mimo-v2-flash", "kimi-k2-turbo-preview"];
+const MODEL_WHITELIST = ["deepseek/deepseek-v4-flash", "kimi-latest"];
 
 export function populateSettings(dbSettings) {
   if (isInitialized) return;

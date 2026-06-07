@@ -51,7 +51,7 @@ We identify UHNW individuals and families who are receiving or about to receive 
     `• ✓ "Logistics company sold to US private equity for DKK 800M"`,
     `• ✓ "Family-owned manufacturer merges with German competitor"`,
     ``,
-    `**Score 90-100 when:** Deal is completed or highly credible, involves private entity, value >$50M equivalent`,
+    `**Score 90-100 when:** Deal is completed or highly credibly, involves private entity, value >$50M equivalent`,
     `**Score 75-89 when:** Deal is rumored/pending, or smaller scale but notable`,
     ``,
     `─────────────────────────────────────────────────────────`,
@@ -93,10 +93,13 @@ We identify UHNW individuals and families who are receiving or about to receive 
     `• "exploring IPO", "considering sale", "preparing to sell"`,
     `• "hires advisors for", "strategic review"`,
     `• Future tense + transaction language`,
+    `• Pre-IPO buzz: "investors rush to buy", "oversubscribed", "pre-IPO"`,
     ``,
     `**Examples:**`,
     `• ✓ "Private tech firm 3Shape explores IPO options"`,
     `• ✓ "Family-owned business hires Goldman Sachs to explore sale"`,
+    `• ✓ "Strong demand for upcoming Biomar IPO shares" (pre-IPO demand = future liquidity signal)`,
+
     `• ✗ "Public company considering acquisition" (not relevant)`,
     ``,
     `**Score 75-85 when:** Advanced stage ("has hired advisors", "preparing"), credible source`,
@@ -104,7 +107,33 @@ We identify UHNW individuals and families who are receiving or about to receive 
     ``,
     `─────────────────────────────────────────────────────────`,
     ``,
-    `**PATTERN 4: FOUNDER'S PUBLIC MARKET ACTIVITY (Score: 70-90)**`,
+    `**PATTERN 4: MASSIVE PRIVATE VALUATION EVENT (Score: 50-75)**`,
+    `🎯 **WEALTH-IMPLICIT SIGNAL**`,
+    ``,
+    `**What it is:**`,
+    `• A private company raises massive funding at a valuation that creates/increases UHNW status for founders and early investors`,
+    `• The valuation itself IS the wealth event — it establishes that founders are now worth hundreds of millions or billions`,
+    `• Exclude regular Series A/B/C venture rounds <$500M valuation`,
+    ``,
+
+    `**Headline indicators:**`,
+    `• Valuation >$10B for private company`,
+    `• "now worth $X billion", "valuation hits $X"`,
+    `• Major secondary sale component in funding round`,
+    ``,
+
+    `**Examples:**`,
+    `• ✓ "Anthropic valued at $965 billion in latest funding round" (founders are now ultra-high-net-worth)`,
+    `• ✓ "SpaceX valuation tops $500 billion" (Elon Musk's wealth tied up in SpaceX)`,
+    `• ✗ "Startup raises $50M Series B" (standard VC, not wealth-significant)`,
+
+    ``,
+    `**Score 70-75 when:** Valuation >$50B, unicorn-defining event`,
+    `**Score 50-69 when:** Significant valuation >$1B but below massive threshold`,
+    ``,
+    `─────────────────────────────────────────────────────────`,
+    ``,
+    `**PATTERN 5: FOUNDER'S PUBLIC MARKET ACTIVITY (Score: 70-90)**`,
     `🎯 **PERSONAL LIQUIDITY FROM PUBLIC HOLDINGS**`,
     ``,
     `**What it is:**`,
@@ -173,10 +202,13 @@ We identify UHNW individuals and families who are receiving or about to receive 
     `   • Public company M&A between two public entities`,
     `   • General market commentary or economic news`,
     ``,
-    `☠ **Fundraising ≠ Liquidity:**`,
+    `☠ **Fundraising — Distinguish Type:**`,
+    `   • Standard VC rounds (Series A/B/C), debt raises, bond offerings`,
     `   • "Raises Series A/B/C", "closes funding round", "secures capital"`,
-    `   • Score 0-15 UNLESS headline explicitly mentions "secondary sale" or "founders sell shares"`,
-    `   • Exception: Strategic investor (e.g., "Kirk Kapital invests") may score 40-60 as signal`,
+    `   • Score 0-14 UNLESS headline explicitly mentions "secondary sale" or "founders sell shares"`,
+    `   • Exception A: Strategic investor (e.g., "Kirk Kapital invests") may score 15-49 as wealth-adjacent`,
+    `   • Exception B: MASSIVE valuation event ($$1B+ unicorn round) — evaluate under Pattern 4: Massive Private Valuation Event. Do NOT auto-score 0-14 just because it's "fundraising." If the headline mentions a private company achieving valuation >$1B, especially >$10B, score according to Pattern 4 (50-75). Examples: Anthropic $965B = 70-75, SpaceX valuation increase = 60-70`,
+    `   • Rule of thumb: If you find yourself thinking "but this is clearly a wealth event for founders" when using the fundraising exclusion, you're probably looking at a Pattern 4 signal. Use it.`,
     ``,
     `☠ **Operational Business News:**`,
     `   • Product launches, new features, partnerships`,
@@ -220,17 +252,21 @@ We identify UHNW individuals and families who are receiving or about to receive 
     `• Founder's public share sale (large block)`,
     `• Wealth profile without specific figures`,
     `• Strong future liquidity signal (IPO prep, sale exploration)`,
+    `• Massive private valuation event ($50B+ unicorn)`,
     ``,
-    `**60-69: BRONZE SIGNAL**`,
+    `**50-69: BRONZE SIGNAL**`,
     `• Leadership succession at significant private company`,
     `• Early-stage sale exploration`,
+    `• Significant private valuation event (>$1B)`,
     `• Strategic investment with wealth implications`,
+    `• Pre-IPO buzz for notable private company`,
     ``,
-    `**50-59: MARGINAL**`,
-    `• Weak signals, borderline relevance`,
-    `• May warrant quick review but likely not actionable`,
+    `**15-49: LOW SIGNAL — Watchlist for enrichment`,
+    `• Wealth-adjacent news that needs article-level review`,
+    `• Corporate investment with potential PE ownership changes`,
+    `• Advisory firm movements (M&A advisors joining/leaving)`,
     ``,
-    `**0-49: NOISE**`,
+    `**0-14: NOISE**`,
     `• Fails all pattern tests`,
     `• Apply exclusion criteria rigorously`,
   ],
@@ -308,10 +344,11 @@ Return ONLY a valid JSON object with this structure:
   ]
 }}
 
-**REQUIREMENTS:**
+**REQUIREMENTS:
 • Process ALL provided headlines
 • Each gets: headline_en, relevance_headline (0-100), assessment_headline (short phrase)
-• Be ruthlessly conservative—most headlines should score <50
+• Be ruthlessly conservative with high scores (>70) — demand clear patterns 1-3 evidence
+• Scores 15-49 are legitimate "low signal" — use them for wealth-adjacent news
 • Use standard assessment phrases from guidance
 • Scores must reflect the calibration framework
 `,
@@ -321,9 +358,9 @@ Return ONLY a valid JSON object with this structure:
 
 ☐ Applied the 5 wealth pattern tests to each headline
 ☐ Verified private vs. public for any high scores
-☐ Distinguished between fundraising (low) and liquidity events (high)
+☐ Distinguished between fundraising (low), wealth-adjacent (moderate), and liquidity events (high)
 ☐ Checked if individuals are identifiable and notable
-☐ Applied all exclusion criteria rigorously
+☐ Applied all exclusion criteria rigorously, noting Pattern 4 exceptions for massive valuation events
 ☐ Used standard assessment phrases
 ☐ Scores calibrated correctly (most should be <50 unless clear signal)
 ☐ Asked verification questions for any score >70

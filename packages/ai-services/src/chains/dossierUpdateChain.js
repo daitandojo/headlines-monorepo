@@ -14,6 +14,7 @@ const getAgent = () =>
     model: settings.LLM_MODEL_SYNTHESIS, // Use the faster, more reliable synthesis model
     systemPrompt: instructionDossierUpdate,
     zodSchema: opportunitySchema,
+    maxTokens: 8192,
   })
 // --- END OF DEFINITIVE FIX ---
 

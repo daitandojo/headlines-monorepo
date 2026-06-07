@@ -8,10 +8,14 @@ import {
   opportunityChain,
   findSimilarArticles,
   searchFamilyOfficeForUBO,
+  fetchWikipediaSummary,
+  findNewsApiArticlesForEvent,
+  performGoogleSearch,
+  findAlternativeSources,
 } from '@headlines/ai-services'
 import { settings } from '@headlines/config'
-import { getConfig } from '@headlines/scraper-logic/config.js'
 import { SynthesizedEvent, EntityGraph } from '@headlines/models'
+import { trackDealLifecycle } from '../modules/dealTracker/index.js'
 import mongoose from 'mongoose'
 
 const SIMILARITY_THRESHOLD = 0.9
@@ -99,12 +103,17 @@ function buildSynthesisContext({
 }) {
   return {
     SOURCE_COUNTRY_CONTEXT: `The source newspaper for this event is from ${primaryCountry}. Prioritize this as the event's country unless the text explicitly states otherwise.`,
-    "[ TODAY'S NEWS ]": articles.map((article) => ({
-      headline: article.headline,
-      source: article.newspaper,
-      full_text: article.assessment_article,
-      key_individuals: article.key_individuals || [],
-    })),
+    "[ TODAY'S NEWS ]": articles.map((article) => {
+      const imageCaption = article.imageCaption || article.imageAlt || article.ogImageAlt || article.ogImageAltText || null
+      return {
+        headline: article.headline,
+        source: article.newspaper,
+        full_text: article.assessment_article,
+        key_individuals: article.key_individuals || [],
+        image_caption: imageCaption,
+        is_headline_only: article.richness_source === 'headline_only' || (article.assessment_article || '').startsWith('[HEADLINE ONLY]'),
+      }
+    }),
     '[ HISTORICAL CONTEXT (Internal Database) ]': historicalContext,
     '[ KNOWLEDGE GRAPH (Known Entity Relationships) ]': entityGraphContext,
     '[ PUBLIC WIKIPEDIA CONTEXT ]': wikipediaContext,
@@ -223,7 +232,7 @@ async function synthesizeEventsFromCluster(
   existingEvent = null,
   isLeanMode = false
 ) {
-  const config = getConfig()
+  const utilityFunctions = { fetchWikipediaSummary, findNewsApiArticlesForEvent, performGoogleSearch, findAlternativeSources }
   const allSourceArticles = existingEvent
     ? [...existingEvent.source_articles, ...articlesInCluster]
     : articlesInCluster
@@ -250,10 +259,46 @@ async function synthesizeEventsFromCluster(
   } else {
     const entityResult = await entityExtractorChain({ article_text: combinedText })
     const entities = entityResult.entities || []
+
+    // Phase 2: Resolve target company names to their human founders via Knowledge Graph
+    const entityGraphLookups = await Promise.all(
+      entities.map(async (name) => {
+        try {
+          const graphEntry = await EntityGraph.findOne({ name: { $regex: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } })
+            .select('relationships')
+            .lean()
+          if (graphEntry?.relationships?.length > 0) {
+            const founderRels = graphEntry.relationships.filter(r =>
+              r.type.toLowerCase().includes('founder') ||
+              r.type.toLowerCase().includes('owner') ||
+              r.type.toLowerCase().includes('ceo') ||
+              r.type.toLowerCase().includes('chairman')
+            )
+            if (founderRels.length > 0) {
+              return { company: name, relationships: founderRels }
+            }
+          }
+          return null
+        } catch { return null }
+      })
+    )
+    const foundRelationships = entityGraphLookups.filter(Boolean)
+    if (foundRelationships.length > 0) {
+      const entityGraphContextLines = [`Found ${foundRelationships.length} companies with known leadership:`]
+      for (const found of foundRelationships) {
+        entityGraphContextLines.push(`\n${found.company}:`)
+        for (const rel of found.relationships) {
+          entityGraphContextLines.push(`  - ${rel.targetName} (${rel.type})`)
+        }
+      }
+      entityGraphContext = entityGraphContextLines.join('\n')
+      logger.info(`[Synthesize] Knowledge Graph found ${foundRelationships.length} companies with leadership info`)
+    }
+
     historicalContext = await findSimilarArticles(entities.join(', '))
     ;[wikiEnrichment, newsApiResult, entityGraphContext] = await Promise.all([
-      enrichWithWikipedia(entities, config.utilityFunctions),
-      enrichWithNewsApi(primaryHeadline, config.utilityFunctions),
+      enrichWithWikipedia(entities, utilityFunctions),
+      enrichWithNewsApi(primaryHeadline, utilityFunctions),
       enrichWithEntityGraph(entities),
     ])
     enrichmentSources = determineEnrichmentSources(
@@ -450,11 +495,45 @@ export async function runClusterAndSynthesize(pipelinePayload) {
     articleTraceLogger,
     lean: isLeanMode,
     emitter,
+    dbConnection,
   } = pipelinePayload
 
-  const articlesForProcessing = (enrichedArticles || []).filter(
-    (article) => article.relevance_article >= settings.ARTICLES_RELEVANCE_THRESHOLD
-  )
+  // Fetch orphaned enriched articles from DB — articles enriched in a previous run
+  // but never clustered (no eventId). This prevents them from being permanently lost.
+  // RECENCY GUARD: Only articles created in the last 30 days. Old leaked orphans
+  // (from crash cycles without enrichedAt timestamps) silently produce PE-to-PE
+  // events that the judge always rejects as IRRELEVANT. This saves $0.10+/run
+  // and prevents stale articles from circling through clustering forever.
+  const orphanRecencyCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+  let orphanedEnrichedArticles = []
+  try {
+    const { Article } = await import('@headlines/models')
+    orphanedEnrichedArticles = await Article.find({
+      status: 'enriched',
+      eventId: { $exists: false },
+      relevance_article: { $gte: settings.ARTICLES_RELEVANCE_THRESHOLD },
+      createdAt: { $gte: orphanRecencyCutoff }
+    })
+      .select('+articleContent')
+      .lean()
+      .limit(100)
+      .catch(() => [])
+    if (orphanedEnrichedArticles.length > 0) {
+      logger.info(`▸ Found ${orphanedEnrichedArticles.length} orphaned enriched articles (no eventId) from database.`)
+    }
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Failed to fetch orphaned enriched articles')
+  }
+
+  const allEnriched = [...(enrichedArticles || []), ...orphanedEnrichedArticles]
+  // Deduplicate by _id
+  const seen = new Set()
+  const articlesForProcessing = allEnriched.filter((article) => {
+    const id = article._id?.toString()
+    if (seen.has(id)) return false
+    seen.add(id)
+    return article.relevance_article >= settings.ARTICLES_RELEVANCE_THRESHOLD
+  })
 
   if (articlesForProcessing.length === 0) {
     logger.info('No relevant articles were promoted for synthesis stage.')
@@ -463,7 +542,18 @@ export async function runClusterAndSynthesize(pipelinePayload) {
     return { success: true, payload: pipelinePayload }
   }
 
-  const articlePayload = prepareClusteringPayload(articlesForProcessing)
+  // Limit clustering batch to prevent DeepSeek v4-flash from exhausting
+  // its reasoning token budget. With >40 articles, the model spends all
+  // 8192 completion tokens on reasoning and returns empty content.
+  const MAX_CLUSTER_BATCH = 40
+  const batchForClustering = articlesForProcessing.length > MAX_CLUSTER_BATCH
+    ? articlesForProcessing.slice(0, MAX_CLUSTER_BATCH)
+    : articlesForProcessing
+  if (articlesForProcessing.length > MAX_CLUSTER_BATCH) {
+    logger.info(`▸ Clustering batch limited to ${MAX_CLUSTER_BATCH}/${articlesForProcessing.length} articles (remaining will queue for next run).`)
+  }
+
+  const articlePayload = prepareClusteringPayload(batchForClustering)
   const clusteringResult = await clusteringChain({
     articles_json_string: JSON.stringify(articlePayload),
   })
@@ -505,6 +595,13 @@ export async function runClusterAndSynthesize(pipelinePayload) {
 
   pipelinePayload.synthesizedEvents = events
   pipelinePayload.opportunitiesToSave = opportunities
+
+  // Deal lifecycle tracking
+  if (events.length > 0) {
+    for (const event of events) {
+      await trackDealLifecycle(event, event.relatedCompanies || [])
+    }
+  }
 
   return { success: true, payload: pipelinePayload }
 }

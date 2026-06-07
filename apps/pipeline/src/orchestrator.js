@@ -11,10 +11,14 @@ import { runAssessAndEnrich } from './pipeline/3_assessAndEnrich.js'
 import { runEntityResolution } from './pipeline/3_5_entityResolution.js'
 import { runClusterAndSynthesize } from './pipeline/4_clusterAndSynthesize.js'
 import { runOpportunityDeepDive } from './pipeline/4_5_opportunityDeepDive.js'
+import { runIntelligenceEnrichment } from './pipeline/4_75_intelligenceEnrichment.js'
+import { runCognitiIngest } from './pipeline/6_cognitiIngest.js'
 import { runCommitAndNotify } from './pipeline/5_commitAndNotify.js'
 import { runSelfHealAndOptimize } from './pipeline/7_selfHealAndOptimize.js'
 import { selfHealer } from './modules/monitoring/selfHeal.js'
+import { selfHealerV2 } from './modules/monitoring/selfHealV2.js'
 import { pipelineMetrics } from './modules/monitoring/pipelineMetrics.js'
+import { attemptSelectorRepair } from './modules/monitoring/selectorHealer.js'
 import { runUpdateKnowledgeGraph } from './pipeline/5_5_updateKnowledgeGraph.js'
 import { suggestNewWatchlistEntities } from './pipeline/6_suggestNewWatchlistEntities.js'
 import { updateSourceAnalytics } from './pipeline/submodules/commit/4_updateSourceAnalytics.js'
@@ -32,6 +36,8 @@ const PIPELINE_STAGES = {
   RESOLVE: { name: 'entityResolution', required: true },
   SYNTHESIZE: { name: 'synthesize', required: true },
   DEEP_DIVE: { name: 'opportunityDeepDive', required: true },
+  INTELLIGENCE_ENRICHMENT: { name: 'intelligenceEnrichment', required: true },
+  COGNITI: { name: 'cogniti', required: false },
   COMMIT: { name: 'commit', required: true },
   KNOWLEDGE_GRAPH: { name: 'knowledgeGraph', required: true },
   WATCHLIST: { name: 'watchlist', required: true },
@@ -42,7 +48,7 @@ function initializePipelineContext(options) {
   tokenTracker.reset()
   const runStatsManager = new RunStatsManager()
   const articleTraceLogger = new ArticleTraceLogger()
-  const runId = `run_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+  const runId = process.env.PIPELINE_RUN_ID || `run_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
   const emitter = pipelineEmitter(runId)
   return {
     ...options,
@@ -78,7 +84,7 @@ async function sendSupervisorReport(runStatsManager, articleTraceLogger) {
       articleTraceLogger.getAllTraces()
     )
   } catch (error) {
-    logger.error({ err: error }, 'Failed to send supervisor report')
+    logger.error('Failed to send supervisor report:', error.message?.substring(0, 80) || '')
   }
 }
 
@@ -93,6 +99,29 @@ async function saveRunVerdict(payload, duration) {
   }
   try {
     const runStats = payload.runStatsManager.getStats()
+    const judgeVerdict = runStats.judgeVerdict || {}
+    const eventVerdicts = (judgeVerdict.event_judgements || []).map((j) => {
+      const match = (payload.synthesizedEvents || []).find(
+        (e) => `Event: ${e.synthesized_headline}` === j.identifier
+      )
+      return {
+        eventId: match?._id,
+        headline: j.identifier,
+        quality: j.quality,
+        commentary: j.commentary,
+      }
+    })
+    const opportunityVerdicts = (judgeVerdict.opportunity_judgements || []).map((j) => {
+      const match = (payload.opportunitiesToSave || []).find(
+        (o) => `Opportunity: ${o.reachOutTo}` === j.identifier
+      )
+      return {
+        opportunityId: match?._id,
+        name: j.identifier,
+        quality: j.quality,
+        commentary: j.commentary,
+      }
+    })
     const runVerdict = new RunVerdict({
       runStats: runStats,
       judgeVerdict: runStats.judgeVerdict || {},
@@ -103,25 +132,21 @@ async function saveRunVerdict(payload, duration) {
         tokens: runStats.tokenUsage,
         apis: runStats.apiCalls,
       },
+      eventVerdicts,
+      opportunityVerdicts,
     })
     await runVerdict.save()
     logger.info({ verdictId: runVerdict._id }, 'Run verdict saved successfully')
   } catch (error) {
-    logger.error({ err: error }, 'Failed to save run verdict')
+    logger.error('Failed to save run verdict:', error.message?.substring(0, 80) || '')
     payload.runStatsManager.push('errors', `VERDICT_SAVE_FAILED: ${error.message}`)
   }
 }
 
 function handlePipelineError(error, context) {
-  context.runStatsManager.push('errors', `ORCHESTRATOR_FATAL: ${error.message}`)
-  logger.error(
-    {
-      err: error,
-      stage: context.currentStage,
-      stats: context.runStatsManager.getStats(),
-    },
-    'Pipeline execution failed'
-  )
+  const errSummary = error.message?.substring(0, 100) || "Unknown error";
+  context.runStatsManager.push('errors', `ORCHESTRATOR_FATAL: ${errSummary}`)
+  logger.error(`\x1b[31mPipeline failed at ${context.currentStage}:\x1b[0m ${errSummary}`)
   sendErrorAlert(error, {
     origin: 'PIPELINE_ORCHESTRATOR',
     stage: context.currentStage,
@@ -130,7 +155,7 @@ function handlePipelineError(error, context) {
       noCommitMode: context.noCommitMode,
       useTestPayload: context.useTestPayload,
     },
-    currentStats: context.runStatsManager.getStats(),
+    errorSummary: errSummary,
   })
 }
 
@@ -189,7 +214,11 @@ export async function runPipeline(options) {
 
     context.currentStage = PIPELINE_STAGES.PREFLIGHT.name
     context.emitter.stageStart('preflight')
-    context = (await runPreFlightChecks(context)).payload
+    const preflightResult = await runPreFlightChecks(context)
+    if (!preflightResult.success) {
+      throw new Error('Pre-flight checks failed — aborting pipeline.')
+    }
+    context = preflightResult.payload
     context.emitter.stageEnd('preflight')
     context.emitter.setMeta({ runId: context.runId })
     await initializeResources()
@@ -264,6 +293,21 @@ export async function runPipeline(options) {
     context = (await runCommitAndNotify(context)).payload
     context.emitter.stageEnd('commit')
 
+    // Cogniti Knowledge Ingestion (Stage 6)
+    // Runs after commit so events and opportunities are saved to MongoDB.
+    // Non-fatal: if Cogniti is down, the pipeline continues.
+    context.currentStage = PIPELINE_STAGES.COGNITI.name
+    context.emitter.stageStart('cogniti')
+    context = (await runCognitiIngest(context)).payload
+    context.emitter.stageEnd('cogniti')
+
+    // Intelligence Enrichment (Tier 1: filings, FO discovery, advisors, wealth chains, sentiment)
+    // Runs after commit so savedEvents and savedOpportunities are finalized
+    context.currentStage = PIPELINE_STAGES.INTELLIGENCE_ENRICHMENT.name
+    context.emitter.stageStart('intelligenceEnrichment')
+    context = (await runIntelligenceEnrichment(context)).payload
+    context.emitter.stageEnd('intelligenceEnrichment')
+
     context.currentStage = PIPELINE_STAGES.KNOWLEDGE_GRAPH.name
     context.emitter.stageStart('knowledgeGraph')
     context = (await runUpdateKnowledgeGraph(context)).payload
@@ -294,47 +338,72 @@ export async function runPipeline(options) {
     
      // Record model usage from tokenTracker
     const tokenStats = tokenTracker.getStats()
+    const fallbackModelName = settings.LLM_MODEL_SYNTHESIS || "deepseek/deepseek-v4-flash"
+    const WHITELIST = [
+      'deepseek-api:deepseek-chat', 'kimi-latest',
+      'deepseek/deepseek-v4-flash',
+      'deepseek-api:deepseek-v4-flash',
+    ]
+    const modelPricing = {
+      'deepseek-api:deepseek-chat': { input: 0.27, output: 1.10 },
+      'kimi-latest': { input: 0, output: 0 },
+      'deepseek/deepseek-v4-flash': { input: 0.27, output: 1.10 },
+      'deepseek-api:deepseek-v4-flash': { input: 0.27, output: 1.10 },
+    }
+
     Object.keys(tokenStats).forEach(model => {
-      const modelName = model === 'deepseek/deepseek-v4-flash' ? getFallbackModel() : model
-      pipelineMetrics.recordModelUsage(
-        modelName, 
-        tokenStats[model].promptTokens + tokenStats[model].completionTokens, 
-        0, // Cost would need calculation
-        true // Success assumption
-      )
+      const entry = tokenStats[model]
+      if (!entry || (entry.inputTokens === 0 && entry.outputTokens === 0)) return
+
+      const totalTokens = (entry.inputTokens || 0) + (entry.outputTokens || 0)
+      const pricing = modelPricing[model]
+      const cost = pricing
+        ? ((entry.inputTokens || 0) / 1e6) * pricing.input + ((entry.outputTokens || 0) / 1e6) * pricing.output
+        : 0
+
+      const recordName = WHITELIST.includes(model) ? model : fallbackModelName
+      pipelineMetrics.recordModelUsage(recordName, totalTokens, cost, true)
     })
     
-    // Run self-healing analysis
+    // Smart selector repair (DOM heuristics first, LLM fallback)
+    const scraperHealth = context.runStatsManager?.getStats()?.scraperHealth || []
+    const failedSources = scraperHealth.filter(h => !h.success && h.debugHtml)
+    if (failedSources.length > 0) {
+      logger.info(`\x1b[36m[SelectorHealer] Attempting repair for ${failedSources.length} failed sources\x1b[0m`)
+      for (const entry of failedSources) {
+        await attemptSelectorRepair(entry, context.runId)
+      }
+    }
+
+    // Run self-healing analysis (V2 - auto-remediation)
     const healthReport = selfHealer.getHealthReport()
     if (healthReport.sourcesWithIssues.length > 0 || healthReport.modelsWithIssues.length > 0) {
-      logger.warn({ 
-        sourcesWithIssues: healthReport.sourcesWithIssues,
-        modelsWithIssues: healthReport.modelsWithIssues 
-      }, '[SelfHeal] Health issues detected')
+      logger.info(`\x1b[33m[SelfHealV2] ${healthReport.sourcesWithIssues.length} sources, ${healthReport.modelsWithIssues.length} models with issues\x1b[0m`)
       
-      // Trigger self-healing recommendations
-      healthReport.sourcesWithIssues.forEach(issue => {
+      for (const issue of healthReport.sourcesWithIssues) {
         const remediation = selfHealer.recordSourceFailure(issue.source)
         if (remediation) {
-          logger.warn({ remediation }, '[SelfHeal] Remediation triggered')
-          // In a full implementation, we would act on remediation here
+          await selfHealerV2.recordSourceFailure(issue.source, context.runId)
+          logger.warn(`\x1b[33m[SelfHealV2] Source "${issue.source}" — auto-pause triggered\x1b[0m`)
+        }
+      }
+      
+      healthReport.modelsWithIssues.forEach(issue => {
+        const [modelName, errorType] = issue.modelKey?.split(':') || []
+        if (modelName) {
+          selfHealerV2.recordModelError(modelName, errorType || 'unknown', context.runId)
         }
       })
-      
-      // Replace failing models with fallback
-      healthReport.modelsWithIssues.forEach(issue => {
-        const fallback = getFallbackModel()
-        logger.warn({ model: issue.modelKey, fallback }, '[SelfHeal] Model fallback configured')
-        settings[`LLM_MODEL_${issue.modelKey.split(':')[1].toUpperCase()}`] = fallback
-      })
     }
+    
+    // Check for sources to reactivate
+    await selfHealerV2.checkAndHealSources(context.runId)
     
     await cleanup(context)
   }
 
   // Run final self-healing and optimization
   try {
-    logger.info('--- STAGE 7: SELF-HEAL & OPTIMIZE ---')
     context = await runSelfHealAndOptimize({
       ...context,
       selfHealer,
@@ -343,9 +412,9 @@ export async function runPipeline(options) {
     })
     logger.info('--- STAGE 7 COMPLETE ---')
   } catch (error) {
-    logger.error({ err: error }, 'Self-healing stage failed')
+    logger.error('Self-healing stage failed:', error.message?.substring(0, 80) || 'Unknown error')
     // Don't fail the entire pipeline for self-healing issues
   }
 
-  return { success, stats: context.runStatsManager.getStats() }
+  return { success, stats: context?.runStatsManager?.getStats() || {} }
 }

@@ -2,6 +2,62 @@
 import { logger } from '@headlines/utils-shared'
 import { auditLogger } from '@headlines/utils-server'
 import { judgeChain } from '@headlines/ai-services'
+import { Opportunity, EntityGraph } from '@headlines/models'
+import { configStore } from '../../../config/dynamicConfig.js'
+
+function buildEntityContext(event, opportunity) {
+  const entityName = event.primarySubject?.name || opportunity?.reachOutTo || ''
+  if (!entityName) return {}
+
+  const entityKey = entityName.toLowerCase().trim()
+  const watchlistMatch = configStore.watchlistEntities.get(entityKey)
+  const transactionScore = opportunity?.transactionReadinessScore
+
+  return {
+    entityContext: {
+      entityName,
+      isOnWatchlist: !!watchlistMatch,
+      watchlistPriority: watchlistMatch?.priority || null,
+      transactionReadinessScore: transactionScore || null,
+      wealthEstimateMM: opportunity?.estimatedTotalWealthUSD_MM || opportunity?.likelyMMDollarWealth || null,
+    },
+  }
+}
+
+function buildEnrichedEvents(initialEvents, initialOpportunities, transactionScores) {
+  const scoreMap = new Map()
+  for (const s of transactionScores || []) {
+    scoreMap.set(s.name, s)
+  }
+
+  return initialEvents.map((e) => {
+    const opportunity = (initialOpportunities || []).find(
+      (o) => o.event_key === e.event_key || o.reachOutTo === e.primarySubject?.name
+    )
+    const txScore = scoreMap.get(e.primarySubject?.name) || scoreMap.get(opportunity?.reachOutTo)
+    return {
+      identifier: `Event: ${e.synthesized_headline}`,
+      summary: e.synthesized_summary,
+      assessment: e.ai_assessment_reason,
+      score: e.highest_relevance_score,
+      ...buildEntityContext(e, opportunity),
+      transactionScore: txScore?.score || null,
+      transactionReadiness: txScore?.readiness || null,
+      keyIndividuals: e.key_individuals?.map((k) => k.name).filter(Boolean) || [],
+      dealValueMM: e.transactionDetails?.valuationAtEventUSD || null,
+    }
+  })
+}
+
+function buildEnrichedOpportunities(initialOpportunities) {
+  return initialOpportunities.map((o) => ({
+    identifier: `Opportunity: ${o.reachOutTo}`,
+    reason: o.whyContact,
+    wealth_estimate_mm: o.likelyMMDollarWealth,
+    isOnWatchlist: !!configStore.watchlistEntities.get((o.reachOutTo || '').toLowerCase().trim()),
+    priority: configStore.watchlistEntities.get((o.reachOutTo || '').toLowerCase().trim())?.priority || null,
+  }))
+}
 
 export async function judgeAndFilterOutput(pipelinePayload, fatalQualities) {
   const {
@@ -15,21 +71,13 @@ export async function judgeAndFilterOutput(pipelinePayload, fatalQualities) {
     `[Judge Agent] Received ${initialEvents.length} events and ${initialOpportunities.length} opportunities for final review.`
   )
 
-  const lightweightEvents = initialEvents.map((e) => ({
-    identifier: `Event: ${e.synthesized_headline}`,
-    summary: e.synthesized_summary,
-    assessment: e.ai_assessment_reason,
-    score: e.highest_relevance_score,
-  }))
-  const lightweightOpportunities = initialOpportunities.map((o) => ({
-    identifier: `Opportunity: ${o.reachOutTo}`,
-    reason: o.whyContact,
-    wealth_estimate_mm: o.likelyMMDollarWealth,
-  }))
+  const transactionScores = runStatsManager.get('transactionScores') || []
+  const enrichedEvents = buildEnrichedEvents(initialEvents, initialOpportunities, transactionScores)
+  const enrichedOpportunities = buildEnrichedOpportunities(initialOpportunities)
 
   const payloadForJudge = {
-    events: lightweightEvents,
-    opportunities: lightweightOpportunities,
+    events: enrichedEvents,
+    opportunities: enrichedOpportunities,
   }
 
   auditLogger.info({ context: { judge_input: payloadForJudge } }, 'Judge Agent Input')

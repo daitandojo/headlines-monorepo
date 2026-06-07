@@ -5,9 +5,14 @@ export const SOURCE_FREQUENCIES = ["high", "low"];
 export const EXTRACTION_METHODS = ["custom", "declarative", "json-ld", "api"];
 export const ARTICLE_STATUSES = [
   "scraped",
-  "assessed",
+  "headline_assessed",
   "enriched",
+  "article_assessed",
+  "pending_notification",
+  "completed",
+  "failed_headline",
   "failed_enrichment",
+  "failed_notification",
 ];
 export const SUGGESTION_STATUSES = ["pending", "approved", "rejected"];
 export const WATCHLIST_SUGGESTION_STATUSES = [

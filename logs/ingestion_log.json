@@ -1,0 +1,2360 @@
+{
+  "completedAt": "2026-05-27T19:53:54.963Z",
+  "total": 400,
+  "ingested": 348,
+  "skipped": 0,
+  "failures": 52,
+  "ingestedList": [
+    {
+      "id": "1257",
+      "name": "John Fredriksen —",
+      "rank": 1,
+      "bioChars": 234
+    },
+    {
+      "id": "830",
+      "name": "Torstein Hagen —",
+      "rank": 2,
+      "bioChars": 1985
+    },
+    {
+      "id": "695",
+      "name": "Ole Andreas Halvorsen —",
+      "rank": 3,
+      "bioChars": 2227
+    },
+    {
+      "id": "1039",
+      "name": "Johan Johannson —",
+      "rank": 5,
+      "bioChars": 2278
+    },
+    {
+      "id": "693",
+      "name": "Johan H. Andresen —",
+      "rank": 6,
+      "bioChars": 2661
+    },
+    {
+      "id": "528",
+      "name": "Gustav Witzøe —",
+      "rank": 7,
+      "bioChars": 2716
+    },
+    {
+      "id": "692",
+      "name": "Stein Erik Hagen —",
+      "rank": 9,
+      "bioChars": 3019
+    },
+    {
+      "id": "835",
+      "name": "Svein Støle —",
+      "rank": 13,
+      "bioChars": 2387
+    },
+    {
+      "id": "1035",
+      "name": "Petter Stordalen —",
+      "rank": 14,
+      "bioChars": 3020
+    },
+    {
+      "id": "1033",
+      "name": "Lars Wenaas —",
+      "rank": 15,
+      "bioChars": 2602
+    },
+    {
+      "id": "1232",
+      "name": "Torstein Ingvald Tvenge —",
+      "rank": 17,
+      "bioChars": 2383
+    },
+    {
+      "id": "1228",
+      "name": "Bjørn Rune Gjelsten —",
+      "rank": 19,
+      "bioChars": 2068
+    },
+    {
+      "id": "1204",
+      "name": "Ole Ertvaag —",
+      "rank": 20,
+      "bioChars": 2098
+    },
+    {
+      "id": "985",
+      "name": "Edgar Haugen —",
+      "rank": 21,
+      "bioChars": 1889
+    },
+    {
+      "id": "1397",
+      "name": "Bjørn Erik Borgen —",
+      "rank": 23,
+      "bioChars": 1620
+    },
+    {
+      "id": "852",
+      "name": "Erik Must —",
+      "rank": 23,
+      "bioChars": 1910
+    },
+    {
+      "id": "1222",
+      "name": "Niels G. Stolt-Nielsen —",
+      "rank": 25,
+      "bioChars": 1616
+    },
+    {
+      "id": "517",
+      "name": "Kristian Siem —",
+      "rank": 26,
+      "bioChars": 1999
+    },
+    {
+      "id": "505",
+      "name": "Peter T. Smedvig —",
+      "rank": 27,
+      "bioChars": 2186
+    },
+    {
+      "id": "858",
+      "name": "Inge Harald Berg —",
+      "rank": 30,
+      "bioChars": 1830
+    },
+    {
+      "id": "513",
+      "name": "Arne Blystad —",
+      "rank": 31,
+      "bioChars": 1584
+    },
+    {
+      "id": "679",
+      "name": "Helene Odfjell —",
+      "rank": 34,
+      "bioChars": 1697
+    },
+    {
+      "id": "1225",
+      "name": "Gerhard Meidell Alsaker —",
+      "rank": 35,
+      "bioChars": 1658
+    },
+    {
+      "id": "1175",
+      "name": "Christian Sinding —",
+      "rank": 36,
+      "bioChars": 1905
+    },
+    {
+      "id": "503",
+      "name": "Øystein Moan —",
+      "rank": 37,
+      "bioChars": 1879
+    },
+    {
+      "id": "1021",
+      "name": "Magne Jordanger —",
+      "rank": 38,
+      "bioChars": 2263
+    },
+    {
+      "id": "524",
+      "name": "Fred. Olsen —",
+      "rank": 39,
+      "bioChars": 3604
+    },
+    {
+      "id": "851",
+      "name": "Anders Christopher Garmann Wilhelmsen —",
+      "rank": 40,
+      "bioChars": 1920
+    },
+    {
+      "id": "512",
+      "name": "Morten Westye Høegh —",
+      "rank": 41,
+      "bioChars": 1691
+    },
+    {
+      "id": "847",
+      "name": "Leif Ovesøn Høegh —",
+      "rank": 41,
+      "bioChars": 1539
+    },
+    {
+      "id": "519",
+      "name": "Jørgen Dahl —",
+      "rank": 44,
+      "bioChars": 1962
+    },
+    {
+      "id": "526",
+      "name": "Knut Gustaf Aspelin —",
+      "rank": 45,
+      "bioChars": 1392
+    },
+    {
+      "id": "666",
+      "name": "Ola Braanaas —",
+      "rank": 46,
+      "bioChars": 2320
+    },
+    {
+      "id": "1025",
+      "name": "Tom Eide-Knudsen —",
+      "rank": 48,
+      "bioChars": 2421
+    },
+    {
+      "id": "1242",
+      "name": "Arne Fredly —",
+      "rank": 48,
+      "bioChars": 1676
+    },
+    {
+      "id": "647",
+      "name": "Iwan Eide Knudsen —",
+      "rank": 48,
+      "bioChars": 2876
+    },
+    {
+      "id": "506",
+      "name": "Egil Stenshagen —",
+      "rank": 48,
+      "bioChars": 2101
+    },
+    {
+      "id": "810",
+      "name": "Haakon Lorentzen —",
+      "rank": 52,
+      "bioChars": 793
+    },
+    {
+      "id": "1245",
+      "name": "Anders Misund —",
+      "rank": 53,
+      "bioChars": 1615
+    },
+    {
+      "id": "1001",
+      "name": "Ståle Kyllingstad —",
+      "rank": 55,
+      "bioChars": 773
+    },
+    {
+      "id": "510",
+      "name": "Tom Erik Klaveness —",
+      "rank": 58,
+      "bioChars": 1375
+    },
+    {
+      "id": "523",
+      "name": "Marit Mohn —",
+      "rank": 59,
+      "bioChars": 1723
+    },
+    {
+      "id": "1207",
+      "name": "Tom Rune Pedersen —",
+      "rank": 59,
+      "bioChars": 1650
+    },
+    {
+      "id": "663",
+      "name": "Kristian Arne Adolfsen —",
+      "rank": 61,
+      "bioChars": 2756
+    },
+    {
+      "id": "507",
+      "name": "Roger Adolfsen —",
+      "rank": 61,
+      "bioChars": 2319
+    },
+    {
+      "id": "1027",
+      "name": "Helge Arvid Møgster —",
+      "rank": 61,
+      "bioChars": 2009
+    },
+    {
+      "id": "854",
+      "name": "Jonas Ramm —",
+      "rank": 61,
+      "bioChars": 1468
+    },
+    {
+      "id": "824",
+      "name": "Øyvin Anders Brøymer —",
+      "rank": 65,
+      "bioChars": 800
+    },
+    {
+      "id": "673",
+      "name": "Ola Helge Holmøy —",
+      "rank": 65,
+      "bioChars": 1213
+    },
+    {
+      "id": "648",
+      "name": "Harald Høegh —",
+      "rank": 65,
+      "bioChars": 1361
+    },
+    {
+      "id": "1024",
+      "name": "Kjetil Holta —",
+      "rank": 68,
+      "bioChars": 1807
+    },
+    {
+      "id": "1174",
+      "name": "Trond Harald Klaveness —",
+      "rank": 68,
+      "bioChars": 1161
+    },
+    {
+      "id": "1005",
+      "name": "Kjell Christian Ulrichsen —",
+      "rank": 68,
+      "bioChars": 1033
+    },
+    {
+      "id": "1219",
+      "name": "Endre Røsjø —",
+      "rank": 72,
+      "bioChars": 1796
+    },
+    {
+      "id": "680",
+      "name": "Roy Gunnar Holth —",
+      "rank": 73,
+      "bioChars": 1195
+    },
+    {
+      "id": "839",
+      "name": "Øystein Stray Spetalen —",
+      "rank": 74,
+      "bioChars": 2863
+    },
+    {
+      "id": "516",
+      "name": "Tor Øivind Fjeld —",
+      "rank": 77,
+      "bioChars": 1157
+    },
+    {
+      "id": "514",
+      "name": "Jakob Hatteland —",
+      "rank": 77,
+      "bioChars": 1507
+    },
+    {
+      "id": "802",
+      "name": "Johan Bernt Michelsen —",
+      "rank": 77,
+      "bioChars": 1205
+    },
+    {
+      "id": "658",
+      "name": "Are Traasdahl —",
+      "rank": 77,
+      "bioChars": 1952
+    },
+    {
+      "id": "840",
+      "name": "Frode Teigen —",
+      "rank": 81,
+      "bioChars": 1881
+    },
+    {
+      "id": "1215",
+      "name": "Harald Møller —",
+      "rank": 84,
+      "bioChars": 3309
+    },
+    {
+      "id": "998",
+      "name": "Frederik Wilhelm Mohn —",
+      "rank": 85,
+      "bioChars": 1861
+    },
+    {
+      "id": "511",
+      "name": "Stein Førde —",
+      "rank": 86,
+      "bioChars": 1991
+    },
+    {
+      "id": "676",
+      "name": "Morten Møller —",
+      "rank": 86,
+      "bioChars": 1723
+    },
+    {
+      "id": "665",
+      "name": "Michael Steensland-Brun —",
+      "rank": 86,
+      "bioChars": 989
+    },
+    {
+      "id": "1019",
+      "name": "Christian Ringnes —",
+      "rank": 91,
+      "bioChars": 1778
+    },
+    {
+      "id": "837",
+      "name": "Olav Stangeland —",
+      "rank": 92,
+      "bioChars": 1775
+    },
+    {
+      "id": "518",
+      "name": "Børge Hald —",
+      "rank": 93,
+      "bioChars": 2234
+    },
+    {
+      "id": "1214",
+      "name": "Yuhong Jin Hermansen —",
+      "rank": 93,
+      "bioChars": 1721
+    },
+    {
+      "id": "822",
+      "name": "Knut Nikolai Tønnevold Ugland —",
+      "rank": 95,
+      "bioChars": 1718
+    },
+    {
+      "id": "494",
+      "name": "Menne Steensland —",
+      "rank": 96,
+      "bioChars": 807
+    },
+    {
+      "id": "1173",
+      "name": "Helge Gåsø —",
+      "rank": 98,
+      "bioChars": 1871
+    },
+    {
+      "id": "1198",
+      "name": "Laurence Ward Odfjell —",
+      "rank": 98,
+      "bioChars": 1054
+    },
+    {
+      "id": "1153",
+      "name": "Morten Simonsen —",
+      "rank": 98,
+      "bioChars": 1136
+    },
+    {
+      "id": "670",
+      "name": "Michael Stang Treschow",
+      "rank": null,
+      "bioChars": 1960
+    },
+    {
+      "id": "1184",
+      "name": "Endre Tarald Glastad",
+      "rank": null,
+      "bioChars": 1445
+    },
+    {
+      "id": "1213",
+      "name": "Petter Neslein",
+      "rank": null,
+      "bioChars": 1684
+    },
+    {
+      "id": "1176",
+      "name": "Hjordis Kluge Smedvig",
+      "rank": null,
+      "bioChars": 1047
+    },
+    {
+      "id": "635",
+      "name": "Karl Lodrup Kvalheim",
+      "rank": null,
+      "bioChars": 617
+    },
+    {
+      "id": "1010",
+      "name": "Tor Andenaes",
+      "rank": null,
+      "bioChars": 1012
+    },
+    {
+      "id": "1185",
+      "name": "Ove Ingvard Utkilen",
+      "rank": null,
+      "bioChars": 832
+    },
+    {
+      "id": "501",
+      "name": "Rune Stokke",
+      "rank": null,
+      "bioChars": 2257
+    },
+    {
+      "id": "1208",
+      "name": "Arthur Buchardt",
+      "rank": null,
+      "bioChars": 2362
+    },
+    {
+      "id": "1230",
+      "name": "Margaret Boel Garmann",
+      "rank": null,
+      "bioChars": 1572
+    },
+    {
+      "id": "812",
+      "name": "Thomas Wilhelmsen",
+      "rank": null,
+      "bioChars": 1690
+    },
+    {
+      "id": "1164",
+      "name": "Eivind Gunvaldsen",
+      "rank": null,
+      "bioChars": 1270
+    },
+    {
+      "id": "815",
+      "name": "Harald Moraeus Hanssen",
+      "rank": null,
+      "bioChars": 2057
+    },
+    {
+      "id": "1233",
+      "name": "Fritz Thorkil Rieber",
+      "rank": null,
+      "bioChars": 1309
+    },
+    {
+      "id": "1159",
+      "name": "Erling Braut Haaland",
+      "rank": null,
+      "bioChars": 2165
+    },
+    {
+      "id": "1182",
+      "name": "Brynjar Kristian Forbergskog",
+      "rank": null,
+      "bioChars": 1295
+    },
+    {
+      "id": "624",
+      "name": "Jacob Palmer Meland",
+      "rank": null,
+      "bioChars": 641
+    },
+    {
+      "id": "853",
+      "name": "Ole Gunnar Selvaag",
+      "rank": null,
+      "bioChars": 2116
+    },
+    {
+      "id": "1206",
+      "name": "Geir Hove",
+      "rank": null,
+      "bioChars": 1479
+    },
+    {
+      "id": "1226",
+      "name": "Ruth Katharina Mustad Bevreng",
+      "rank": null,
+      "bioChars": 1724
+    },
+    {
+      "id": "1022",
+      "name": "Kim Erla",
+      "rank": null,
+      "bioChars": 1141
+    },
+    {
+      "id": "1205",
+      "name": "Terje Tom Hoili",
+      "rank": null,
+      "bioChars": 2254
+    },
+    {
+      "id": "652",
+      "name": "Stein Sturla Steinsvik",
+      "rank": null,
+      "bioChars": 2269
+    },
+    {
+      "id": "825",
+      "name": "Edvard Bakkejord",
+      "rank": null,
+      "bioChars": 1067
+    },
+    {
+      "id": "869",
+      "name": "Espen Galtung Dosvig",
+      "rank": null,
+      "bioChars": 1945
+    },
+    {
+      "id": "662",
+      "name": "Ole Gunerius Ottersland",
+      "rank": null,
+      "bioChars": 1511
+    },
+    {
+      "id": "706",
+      "name": "Julia Smedvig Hagland",
+      "rank": null,
+      "bioChars": 983
+    },
+    {
+      "id": "834",
+      "name": "Odd Einar Sandoy",
+      "rank": null,
+      "bioChars": 913
+    },
+    {
+      "id": "828",
+      "name": "Ring Tore Teigen",
+      "rank": null,
+      "bioChars": 1036
+    },
+    {
+      "id": "850",
+      "name": "Tor Olav Troim",
+      "rank": null,
+      "bioChars": 1350
+    },
+    {
+      "id": "1008",
+      "name": "Knut Gregardson Heje",
+      "rank": null,
+      "bioChars": 1013
+    },
+    {
+      "id": "1004",
+      "name": "Jan Petter Collier",
+      "rank": null,
+      "bioChars": 1845
+    },
+    {
+      "id": "818",
+      "name": "Johannes Ostensjo",
+      "rank": null,
+      "bioChars": 587
+    },
+    {
+      "id": "1172",
+      "name": "Jan Henrik Jebsen",
+      "rank": null,
+      "bioChars": 1015
+    },
+    {
+      "id": "646",
+      "name": "Hans Jorgen Lorentzen",
+      "rank": null,
+      "bioChars": 924
+    },
+    {
+      "id": "644",
+      "name": "Sverre Lorentzen",
+      "rank": null,
+      "bioChars": 923
+    },
+    {
+      "id": "657",
+      "name": "Lars Loseth",
+      "rank": null,
+      "bioChars": 1034
+    },
+    {
+      "id": "859",
+      "name": "Atle Bergshaven",
+      "rank": null,
+      "bioChars": 608
+    },
+    {
+      "id": "1398",
+      "name": "Tone Synnove Heje",
+      "rank": null,
+      "bioChars": 645
+    },
+    {
+      "id": "1190",
+      "name": "Trygve Jacobsen",
+      "rank": null,
+      "bioChars": 1732
+    },
+    {
+      "id": "491",
+      "name": "Stig Rune Remoy",
+      "rank": null,
+      "bioChars": 919
+    },
+    {
+      "id": "667",
+      "name": "Trygve Hegnar",
+      "rank": null,
+      "bioChars": 3109
+    },
+    {
+      "id": "1002",
+      "name": "Kjell Haugland",
+      "rank": null,
+      "bioChars": 1340
+    },
+    {
+      "id": "1191",
+      "name": "Tore Odfjell",
+      "rank": null,
+      "bioChars": 1076
+    },
+    {
+      "id": "807",
+      "name": "Trond Eirik Paulsen",
+      "rank": null,
+      "bioChars": 1202
+    },
+    {
+      "id": "987",
+      "name": "Morten Eivindsson Astrup",
+      "rank": null,
+      "bioChars": 998
+    },
+    {
+      "id": "660",
+      "name": "Elisabeth Grieg",
+      "rank": null,
+      "bioChars": 1885
+    },
+    {
+      "id": "1015",
+      "name": "Elna Kathrine Grieg",
+      "rank": null,
+      "bioChars": 1115
+    },
+    {
+      "id": "1399",
+      "name": "Bernt Bodal",
+      "rank": null,
+      "bioChars": 2607
+    },
+    {
+      "id": "630",
+      "name": "Sverre Berger Brott",
+      "rank": null,
+      "bioChars": 618
+    },
+    {
+      "id": "674",
+      "name": "Didrik Eidsvig",
+      "rank": null,
+      "bioChars": 947
+    },
+    {
+      "id": "533",
+      "name": "Per Frost",
+      "rank": null,
+      "bioChars": 1098
+    },
+    {
+      "id": "697",
+      "name": "Arne Graee",
+      "rank": null,
+      "bioChars": 804
+    },
+    {
+      "id": "992",
+      "name": "Ole Peter Lorentzen",
+      "rank": null,
+      "bioChars": 1027
+    },
+    {
+      "id": "823",
+      "name": "June Mogster",
+      "rank": null,
+      "bioChars": 1979
+    },
+    {
+      "id": "1006",
+      "name": "Lill Maren Mogster",
+      "rank": null,
+      "bioChars": 2010
+    },
+    {
+      "id": "1007",
+      "name": "Finn Wilhelm Sinkaberg",
+      "rank": null,
+      "bioChars": 1417
+    },
+    {
+      "id": "664",
+      "name": "Bjarne Skeie",
+      "rank": null,
+      "bioChars": 1826
+    },
+    {
+      "id": "875",
+      "name": "Tom Hagen",
+      "rank": null,
+      "bioChars": 2224
+    },
+    {
+      "id": "1016",
+      "name": "Jan Haudemann Andersen",
+      "rank": null,
+      "bioChars": 1952
+    },
+    {
+      "id": "1231",
+      "name": "Kristian Jebsen",
+      "rank": null,
+      "bioChars": 1057
+    },
+    {
+      "id": "1012",
+      "name": "Marianne Odfjell",
+      "rank": null,
+      "bioChars": 1530
+    },
+    {
+      "id": "1197",
+      "name": "Jens Dag Ulltveit Moe",
+      "rank": null,
+      "bioChars": 1011
+    },
+    {
+      "id": "1187",
+      "name": "Knut Hage",
+      "rank": null,
+      "bioChars": 1035
+    },
+    {
+      "id": "495",
+      "name": "Bjorn Risa",
+      "rank": null,
+      "bioChars": 819
+    },
+    {
+      "id": "1009",
+      "name": "Tor Dagfinn Veen",
+      "rank": null,
+      "bioChars": 1988
+    },
+    {
+      "id": "493",
+      "name": "Egil Christen Dahl",
+      "rank": null,
+      "bioChars": 1008
+    },
+    {
+      "id": "653",
+      "name": "Bjorn Ole Gleditsch",
+      "rank": null,
+      "bioChars": 1102
+    },
+    {
+      "id": "690",
+      "name": "Lars Kristoffer Loe",
+      "rank": null,
+      "bioChars": 936
+    },
+    {
+      "id": "1000",
+      "name": "Geir Egil Roksvag",
+      "rank": null,
+      "bioChars": 763
+    },
+    {
+      "id": "637",
+      "name": "Helen Juell",
+      "rank": null,
+      "bioChars": 618
+    },
+    {
+      "id": "804",
+      "name": "Ingvar Hognaland",
+      "rank": null,
+      "bioChars": 826
+    },
+    {
+      "id": "1171",
+      "name": "Steinar Moe",
+      "rank": null,
+      "bioChars": 883
+    },
+    {
+      "id": "656",
+      "name": "Knut Axel Ugland",
+      "rank": null,
+      "bioChars": 985
+    },
+    {
+      "id": "1400",
+      "name": "Anne Dahl",
+      "rank": null,
+      "bioChars": 831
+    },
+    {
+      "id": "1250",
+      "name": "Carl Erik Krefting",
+      "rank": null,
+      "bioChars": 1894
+    },
+    {
+      "id": "686",
+      "name": "Dag Leo Martinsen",
+      "rank": null,
+      "bioChars": 1083
+    },
+    {
+      "id": "1251",
+      "name": "Karl Ragnar Rimfeldt",
+      "rank": null,
+      "bioChars": 1078
+    },
+    {
+      "id": "1401",
+      "name": "Andreas Rasmussen Olsen",
+      "rank": null,
+      "bioChars": 845
+    },
+    {
+      "id": "803",
+      "name": "Cecilie Paus",
+      "rank": null,
+      "bioChars": 618
+    },
+    {
+      "id": "1168",
+      "name": "Magnus Haug Wanberg",
+      "rank": null,
+      "bioChars": 807
+    },
+    {
+      "id": "687",
+      "name": "Rolf Westfal Larsen",
+      "rank": null,
+      "bioChars": 898
+    },
+    {
+      "id": "876",
+      "name": "John Arild Ertvaag",
+      "rank": null,
+      "bioChars": 2372
+    },
+    {
+      "id": "691",
+      "name": "Kjell Arild Lorentsen",
+      "rank": null,
+      "bioChars": 1058
+    },
+    {
+      "id": "1193",
+      "name": "Anders Opsahl",
+      "rank": null,
+      "bioChars": 2030
+    },
+    {
+      "id": "576",
+      "name": "Jim Roger Nordly",
+      "rank": null,
+      "bioChars": 896
+    },
+    {
+      "id": "1161",
+      "name": "Sigurd Steen Aase",
+      "rank": null,
+      "bioChars": 904
+    },
+    {
+      "id": "489",
+      "name": "Rune Isachsen",
+      "rank": null,
+      "bioChars": 826
+    },
+    {
+      "id": "990",
+      "name": "Karen Margrethe Westfal Larsen",
+      "rank": null,
+      "bioChars": 851
+    },
+    {
+      "id": "485",
+      "name": "Catharina Fiskerstrand Broch",
+      "rank": null,
+      "bioChars": 625
+    },
+    {
+      "id": "685",
+      "name": "Anne Cecilie Gleditsch",
+      "rank": null,
+      "bioChars": 860
+    },
+    {
+      "id": "521",
+      "name": "Odd Gleditsch D Y",
+      "rank": null,
+      "bioChars": 942
+    },
+    {
+      "id": "1003",
+      "name": "Roger Halsebakk",
+      "rank": null,
+      "bioChars": 1749
+    },
+    {
+      "id": "1158",
+      "name": "Ole Jacob Fiskerstrand Broch",
+      "rank": null,
+      "bioChars": 625
+    },
+    {
+      "id": "1162",
+      "name": "Per Audun Lillebo",
+      "rank": null,
+      "bioChars": 826
+    },
+    {
+      "id": "488",
+      "name": "Stig Otto Nilsen",
+      "rank": null,
+      "bioChars": 977
+    },
+    {
+      "id": "866",
+      "name": "Tom Christopher Steckmest",
+      "rank": null,
+      "bioChars": 1016
+    },
+    {
+      "id": "1403",
+      "name": "Finn Orjan Saele",
+      "rank": null,
+      "bioChars": 905
+    },
+    {
+      "id": "797",
+      "name": "Ola Volstad",
+      "rank": null,
+      "bioChars": 778
+    },
+    {
+      "id": "1030",
+      "name": "Svenn Kornelius Bekken",
+      "rank": null,
+      "bioChars": 923
+    },
+    {
+      "id": "816",
+      "name": "Leif H Bert D Y",
+      "rank": null,
+      "bioChars": 809
+    },
+    {
+      "id": "809",
+      "name": "Anders Kiaer",
+      "rank": null,
+      "bioChars": 765
+    },
+    {
+      "id": "1194",
+      "name": "Bjorn Nicolaisen",
+      "rank": null,
+      "bioChars": 1897
+    },
+    {
+      "id": "997",
+      "name": "Erik Bakkejord",
+      "rank": null,
+      "bioChars": 1009
+    },
+    {
+      "id": "981",
+      "name": "Elisabeth Eidsvig Vergara",
+      "rank": null,
+      "bioChars": 990
+    },
+    {
+      "id": "918",
+      "name": "Ole Morten Halvorsen",
+      "rank": null,
+      "bioChars": 737
+    },
+    {
+      "id": "856",
+      "name": "Magne Roar Sangolt",
+      "rank": null,
+      "bioChars": 778
+    },
+    {
+      "id": "1177",
+      "name": "Johan Bernhard Ugland",
+      "rank": null,
+      "bioChars": 1175
+    },
+    {
+      "id": "492",
+      "name": "Kjell Blakseth",
+      "rank": null,
+      "bioChars": 756
+    },
+    {
+      "id": "1405",
+      "name": "Egil Giortz",
+      "rank": null,
+      "bioChars": 793
+    },
+    {
+      "id": "1011",
+      "name": "Knut Flakk",
+      "rank": null,
+      "bioChars": 933
+    },
+    {
+      "id": "1406",
+      "name": "Geir Harald Hansen",
+      "rank": null,
+      "bioChars": 882
+    },
+    {
+      "id": "1407",
+      "name": "Steffen Kirknes",
+      "rank": null,
+      "bioChars": 835
+    },
+    {
+      "id": "645",
+      "name": "Carl Otto Lovenskiold",
+      "rank": null,
+      "bioChars": 1501
+    },
+    {
+      "id": "1163",
+      "name": "Agnes Elizabeth Astrup Mellbye",
+      "rank": null,
+      "bioChars": 781
+    },
+    {
+      "id": "870",
+      "name": "Ellen Karlsen Raaholt",
+      "rank": null,
+      "bioChars": 1189
+    },
+    {
+      "id": "986",
+      "name": "Frode Strand Nielsen",
+      "rank": null,
+      "bioChars": 905
+    },
+    {
+      "id": "1166",
+      "name": "Tone Bjorseth Andersen",
+      "rank": null,
+      "bioChars": 822
+    },
+    {
+      "id": "678",
+      "name": "Roger Halshamn",
+      "rank": null,
+      "bioChars": 974
+    },
+    {
+      "id": "1248",
+      "name": "Anders Pedersen",
+      "rank": null,
+      "bioChars": 1843
+    },
+    {
+      "id": "1408",
+      "name": "Carl August Ameln",
+      "rank": null,
+      "bioChars": 1340
+    },
+    {
+      "id": "1200",
+      "name": "Anne Lise Braathen",
+      "rank": null,
+      "bioChars": 1214
+    },
+    {
+      "id": "1203",
+      "name": "Per Georg Braathen",
+      "rank": null,
+      "bioChars": 3653
+    },
+    {
+      "id": "1255",
+      "name": "Bjorn Anders Braathen",
+      "rank": null,
+      "bioChars": 1214
+    },
+    {
+      "id": "713",
+      "name": "Cristina Gjurod Braathen",
+      "rank": null,
+      "bioChars": 1214
+    },
+    {
+      "id": "1409",
+      "name": "Lasse Clarence Jensen",
+      "rank": null,
+      "bioChars": 742
+    },
+    {
+      "id": "1253",
+      "name": "Geir Langfeldt Olsen",
+      "rank": null,
+      "bioChars": 1703
+    },
+    {
+      "id": "1051",
+      "name": "Peder Lie",
+      "rank": null,
+      "bioChars": 1015
+    },
+    {
+      "id": "1220",
+      "name": "Anders Masoval",
+      "rank": null,
+      "bioChars": 1010
+    },
+    {
+      "id": "640",
+      "name": "Else Katharina Astrup Petteroe",
+      "rank": null,
+      "bioChars": 781
+    },
+    {
+      "id": "1221",
+      "name": "Lars Masoval",
+      "rank": null,
+      "bioChars": 1010
+    },
+    {
+      "id": "677",
+      "name": "Eva Lilian Nordberg",
+      "rank": null,
+      "bioChars": 911
+    },
+    {
+      "id": "529",
+      "name": "Kim Wahl",
+      "rank": null,
+      "bioChars": 1709
+    },
+    {
+      "id": "814",
+      "name": "Espen Aubert",
+      "rank": null,
+      "bioChars": 835
+    },
+    {
+      "id": "1160",
+      "name": "Stale Fatland",
+      "rank": null,
+      "bioChars": 779
+    },
+    {
+      "id": "1048",
+      "name": "Thomas Gleditsch",
+      "rank": null,
+      "bioChars": 776
+    },
+    {
+      "id": "498",
+      "name": "Francis St Ckrath Hay",
+      "rank": null,
+      "bioChars": 739
+    },
+    {
+      "id": "682",
+      "name": "Bjorn Halvor Kise",
+      "rank": null,
+      "bioChars": 697
+    },
+    {
+      "id": "1165",
+      "name": "Henrik M Ller Hansen",
+      "rank": null,
+      "bioChars": 772
+    },
+    {
+      "id": "629",
+      "name": "Peder Naerbo",
+      "rank": null,
+      "bioChars": 783
+    },
+    {
+      "id": "1178",
+      "name": "Per Halvard Strand",
+      "rank": null,
+      "bioChars": 882
+    },
+    {
+      "id": "1181",
+      "name": "Carl Diderik Cappelen",
+      "rank": null,
+      "bioChars": 1046
+    },
+    {
+      "id": "487",
+      "name": "Arild Abel Engh",
+      "rank": null,
+      "bioChars": 776
+    },
+    {
+      "id": "1240",
+      "name": "Knut Erik Langtvedt Karlsen",
+      "rank": null,
+      "bioChars": 838
+    },
+    {
+      "id": "534",
+      "name": "Paul Christian Rieber",
+      "rank": null,
+      "bioChars": 842
+    },
+    {
+      "id": "1065",
+      "name": "Iben Anne Marta Steinsvik",
+      "rank": null,
+      "bioChars": 451
+    },
+    {
+      "id": "838",
+      "name": "Borger Borgenhaug",
+      "rank": null,
+      "bioChars": 1861
+    },
+    {
+      "id": "1036",
+      "name": "Erik Gunnar Braathen",
+      "rank": null,
+      "bioChars": 1019
+    },
+    {
+      "id": "699",
+      "name": "Einar Ogrey Brandsdal",
+      "rank": null,
+      "bioChars": 1885
+    },
+    {
+      "id": "819",
+      "name": "Randi Herre Eide",
+      "rank": null,
+      "bioChars": 1508
+    },
+    {
+      "id": "806",
+      "name": "Petter Fornaess",
+      "rank": null,
+      "bioChars": 910
+    },
+    {
+      "id": "1042",
+      "name": "Leopold Axel Lovenskiold",
+      "rank": null,
+      "bioChars": 1876
+    },
+    {
+      "id": "659",
+      "name": "Jens Rugseth",
+      "rank": null,
+      "bioChars": 1638
+    },
+    {
+      "id": "502",
+      "name": "Peter Tang Thomsen",
+      "rank": null,
+      "bioChars": 932
+    },
+    {
+      "id": "1199",
+      "name": "Elisabeth Brochmann",
+      "rank": null,
+      "bioChars": 775
+    },
+    {
+      "id": "639",
+      "name": "Henrik Advocaat Lund",
+      "rank": null,
+      "bioChars": 672
+    },
+    {
+      "id": "805",
+      "name": "Stale Gudmund Simonsen",
+      "rank": null,
+      "bioChars": 672
+    },
+    {
+      "id": "864",
+      "name": "Bertel Otto Steen Jr",
+      "rank": null,
+      "bioChars": 910
+    },
+    {
+      "id": "703",
+      "name": "Tore Thorstensen",
+      "rank": null,
+      "bioChars": 234
+    },
+    {
+      "id": "1252",
+      "name": "Arne Veidung",
+      "rank": null,
+      "bioChars": 692
+    },
+    {
+      "id": "1047",
+      "name": "Odd Johnny Winge",
+      "rank": null,
+      "bioChars": 1580
+    },
+    {
+      "id": "817",
+      "name": "Trygve Bjerke",
+      "rank": null,
+      "bioChars": 512
+    },
+    {
+      "id": "627",
+      "name": "Bernt Eidesvik",
+      "rank": null,
+      "bioChars": 1496
+    },
+    {
+      "id": "983",
+      "name": "Toril Eidesvik",
+      "rank": null,
+      "bioChars": 1496
+    },
+    {
+      "id": "801",
+      "name": "Eivind Eidesvik",
+      "rank": null,
+      "bioChars": 1496
+    },
+    {
+      "id": "1180",
+      "name": "Rolv Haugarvoll",
+      "rank": null,
+      "bioChars": 847
+    },
+    {
+      "id": "1411",
+      "name": "Bjarne Kveim Lie",
+      "rank": null,
+      "bioChars": 733
+    },
+    {
+      "id": "694",
+      "name": "Marianne Rieber",
+      "rank": null,
+      "bioChars": 583
+    },
+    {
+      "id": "490",
+      "name": "Ketil Sandhaug",
+      "rank": null,
+      "bioChars": 798
+    },
+    {
+      "id": "1017",
+      "name": "Bjorn Richard Schage",
+      "rank": null,
+      "bioChars": 1921
+    },
+    {
+      "id": "1201",
+      "name": "Knut Schage",
+      "rank": null,
+      "bioChars": 1899
+    },
+    {
+      "id": "532",
+      "name": "Jens Petter Selmer",
+      "rank": null,
+      "bioChars": 852
+    },
+    {
+      "id": "1441",
+      "name": "Svein Atle Berge",
+      "rank": null,
+      "bioChars": 990
+    },
+    {
+      "id": "643",
+      "name": "Harald Espedal",
+      "rank": null,
+      "bioChars": 1786
+    },
+    {
+      "id": "698",
+      "name": "Jill Beate Gleditsch",
+      "rank": null,
+      "bioChars": 776
+    },
+    {
+      "id": "1425",
+      "name": "Hans Martin Gravdal",
+      "rank": null,
+      "bioChars": 716
+    },
+    {
+      "id": "1032",
+      "name": "Pal Georg Gundersen",
+      "rank": null,
+      "bioChars": 1924
+    },
+    {
+      "id": "628",
+      "name": "Aage Johan Remoy",
+      "rank": null,
+      "bioChars": 614
+    },
+    {
+      "id": "638",
+      "name": "Bjarte Tunold",
+      "rank": null,
+      "bioChars": 827
+    },
+    {
+      "id": "827",
+      "name": "Terje Bondo",
+      "rank": null,
+      "bioChars": 697
+    },
+    {
+      "id": "799",
+      "name": "Maria Eidesvik",
+      "rank": null,
+      "bioChars": 1496
+    },
+    {
+      "id": "684",
+      "name": "Thor Johan Furuholmen",
+      "rank": null,
+      "bioChars": 1014
+    },
+    {
+      "id": "811",
+      "name": "Knut Herman Holler Gjovaag",
+      "rank": null,
+      "bioChars": 818
+    },
+    {
+      "id": "1046",
+      "name": "Fredrik Halvorsen",
+      "rank": null,
+      "bioChars": 1843
+    },
+    {
+      "id": "868",
+      "name": "Ivar Sigurdsson Loge",
+      "rank": null,
+      "bioChars": 884
+    },
+    {
+      "id": "530",
+      "name": "Leif Inge Nordhammer",
+      "rank": null,
+      "bioChars": 648
+    },
+    {
+      "id": "1031",
+      "name": "Ole Rugland",
+      "rank": null,
+      "bioChars": 965
+    },
+    {
+      "id": "499",
+      "name": "Thor Spandow",
+      "rank": null,
+      "bioChars": 1439
+    },
+    {
+      "id": "654",
+      "name": "Odd Arvid Sulland",
+      "rank": null,
+      "bioChars": 920
+    },
+    {
+      "id": "1023",
+      "name": "Nils Martin Williksen",
+      "rank": null,
+      "bioChars": 723
+    },
+    {
+      "id": "631",
+      "name": "Dag Adler Blakseth",
+      "rank": null,
+      "bioChars": 756
+    },
+    {
+      "id": "808",
+      "name": "Geir Olav Drangsland",
+      "rank": null,
+      "bioChars": 741
+    },
+    {
+      "id": "865",
+      "name": "Astrid Laerdal Froseth",
+      "rank": null,
+      "bioChars": 804
+    },
+    {
+      "id": "1169",
+      "name": "Thomas Johan Jessen",
+      "rank": null,
+      "bioChars": 826
+    },
+    {
+      "id": "863",
+      "name": "Maria Olaisen",
+      "rank": null,
+      "bioChars": 476
+    },
+    {
+      "id": "1038",
+      "name": "Hakon Olaisens Etterlatte",
+      "rank": null,
+      "bioChars": 323
+    },
+    {
+      "id": "991",
+      "name": "Bjorn Steinar Berg Hansen",
+      "rank": null,
+      "bioChars": 475
+    },
+    {
+      "id": "995",
+      "name": "Alexandra Margareth Angelil",
+      "rank": null,
+      "bioChars": 769
+    },
+    {
+      "id": "1227",
+      "name": "Edvin Austbo",
+      "rank": null,
+      "bioChars": 785
+    },
+    {
+      "id": "522",
+      "name": "Terje Haugan",
+      "rank": null,
+      "bioChars": 824
+    },
+    {
+      "id": "1234",
+      "name": "Asle Helgheim",
+      "rank": null,
+      "bioChars": 833
+    },
+    {
+      "id": "860",
+      "name": "Tor Kirkeng",
+      "rank": null,
+      "bioChars": 1078
+    },
+    {
+      "id": "705",
+      "name": "Ivar Johannes Koteng",
+      "rank": null,
+      "bioChars": 1164
+    },
+    {
+      "id": "696",
+      "name": "Aino Olaisen",
+      "rank": null,
+      "bioChars": 323
+    },
+    {
+      "id": "426",
+      "name": "Bjorn Petter Garder",
+      "rank": null,
+      "bioChars": 1039
+    },
+    {
+      "id": "984",
+      "name": "Ivar Refsnes",
+      "rank": null,
+      "bioChars": 789
+    },
+    {
+      "id": "861",
+      "name": "Knut Roald",
+      "rank": null,
+      "bioChars": 858
+    },
+    {
+      "id": "712",
+      "name": "Severin Skaugen",
+      "rank": null,
+      "bioChars": 690
+    },
+    {
+      "id": "1254",
+      "name": "Eli Saevareid",
+      "rank": null,
+      "bioChars": 904
+    },
+    {
+      "id": "636",
+      "name": "Ottar Vartdal",
+      "rank": null,
+      "bioChars": 831
+    },
+    {
+      "id": "1216",
+      "name": "Age Engelstrand Westbo",
+      "rank": null,
+      "bioChars": 985
+    },
+    {
+      "id": "1224",
+      "name": "Richard Trygve Andvord",
+      "rank": null,
+      "bioChars": 996
+    },
+    {
+      "id": "1028",
+      "name": "Kristian Michel Andvord",
+      "rank": null,
+      "bioChars": 988
+    },
+    {
+      "id": "989",
+      "name": "Odd Geir Bekkeli",
+      "rank": null,
+      "bioChars": 690
+    },
+    {
+      "id": "683",
+      "name": "Ola Emil Heggset",
+      "rank": null,
+      "bioChars": 935
+    },
+    {
+      "id": "661",
+      "name": "Dag Stian Stiansen",
+      "rank": null,
+      "bioChars": 880
+    },
+    {
+      "id": "419",
+      "name": "Aasulv Tveitereid",
+      "rank": null,
+      "bioChars": 750
+    },
+    {
+      "id": "1044",
+      "name": "Kjell Andenaes",
+      "rank": null,
+      "bioChars": 1456
+    },
+    {
+      "id": "1412",
+      "name": "Axel Camillo Eitzen",
+      "rank": null,
+      "bioChars": 880
+    },
+    {
+      "id": "422",
+      "name": "Erling Falch Monsen",
+      "rank": null,
+      "bioChars": 831
+    },
+    {
+      "id": "1413",
+      "name": "Reynir Indahl",
+      "rank": null,
+      "bioChars": 831
+    },
+    {
+      "id": "1040",
+      "name": "Jorgen Jorgensen",
+      "rank": null,
+      "bioChars": 810
+    },
+    {
+      "id": "704",
+      "name": "Ove Lofsnaes",
+      "rank": null,
+      "bioChars": 810
+    },
+    {
+      "id": "1414",
+      "name": "Christian Melby",
+      "rank": null,
+      "bioChars": 822
+    },
+    {
+      "id": "1246",
+      "name": "Ola Maele",
+      "rank": null,
+      "bioChars": 752
+    },
+    {
+      "id": "1170",
+      "name": "Kristin Rivelsrud Juul Moller",
+      "rank": null,
+      "bioChars": 857
+    },
+    {
+      "id": "994",
+      "name": "Jan Erik Rivelsrud",
+      "rank": null,
+      "bioChars": 857
+    },
+    {
+      "id": "500",
+      "name": "Kenneth Sandvold",
+      "rank": null,
+      "bioChars": 1072
+    },
+    {
+      "id": "1415",
+      "name": "Per Jorgen Weisethaunet",
+      "rank": null,
+      "bioChars": 825
+    },
+    {
+      "id": "1057",
+      "name": "Jo Hanssen",
+      "rank": null,
+      "bioChars": 610
+    },
+    {
+      "id": "982",
+      "name": "John Hatleskog",
+      "rank": null,
+      "bioChars": 866
+    },
+    {
+      "id": "846",
+      "name": "Erling Jenssen",
+      "rank": null,
+      "bioChars": 928
+    },
+    {
+      "id": "1026",
+      "name": "Anton Jenssen",
+      "rank": null,
+      "bioChars": 928
+    },
+    {
+      "id": "842",
+      "name": "Eva Maria Kristoffersen",
+      "rank": null,
+      "bioChars": 821
+    },
+    {
+      "id": "701",
+      "name": "Bjorn Henrik Rasmussen",
+      "rank": null,
+      "bioChars": 924
+    },
+    {
+      "id": "484",
+      "name": "Tollef Svenkerud",
+      "rank": null,
+      "bioChars": 761
+    },
+    {
+      "id": "795",
+      "name": "Hannah Eshete Wilhelmsen",
+      "rank": null,
+      "bioChars": 618
+    },
+    {
+      "id": "999",
+      "name": "Kjartan Aas",
+      "rank": null,
+      "bioChars": 995
+    },
+    {
+      "id": "1037",
+      "name": "Ragnvald Albretsen",
+      "rank": null,
+      "bioChars": 994
+    },
+    {
+      "id": "887",
+      "name": "Morten Berg",
+      "rank": null,
+      "bioChars": 733
+    },
+    {
+      "id": "1426",
+      "name": "Even Andre Karlsen",
+      "rank": null,
+      "bioChars": 690
+    },
+    {
+      "id": "873",
+      "name": "Espen Nordhus",
+      "rank": null,
+      "bioChars": 786
+    },
+    {
+      "id": "1049",
+      "name": "Sigurd Marius Skaugen",
+      "rank": null,
+      "bioChars": 670
+    },
+    {
+      "id": "1417",
+      "name": "Frithjof Anderssen",
+      "rank": null,
+      "bioChars": 728
+    },
+    {
+      "id": "1043",
+      "name": "Carl Haakon Garder",
+      "rank": null,
+      "bioChars": 739
+    },
+    {
+      "id": "844",
+      "name": "Torgeir Mjor Grimsrud",
+      "rank": null,
+      "bioChars": 829
+    },
+    {
+      "id": "1179",
+      "name": "Svein Tollef Helling",
+      "rank": null,
+      "bioChars": 879
+    },
+    {
+      "id": "700",
+      "name": "Paal Hveem",
+      "rank": null,
+      "bioChars": 680
+    },
+    {
+      "id": "433",
+      "name": "Hans Kristian Mong",
+      "rank": null,
+      "bioChars": 809
+    },
+    {
+      "id": "862",
+      "name": "Ole Eirik Leroy",
+      "rank": null,
+      "bioChars": 834
+    },
+    {
+      "id": "1041",
+      "name": "Celina Midelfart",
+      "rank": null,
+      "bioChars": 643
+    },
+    {
+      "id": "1045",
+      "name": "Leif Jorgen Moger",
+      "rank": null,
+      "bioChars": 873
+    },
+    {
+      "id": "1374",
+      "name": "Pal Magnus Reed",
+      "rank": null,
+      "bioChars": 749
+    },
+    {
+      "id": "1418",
+      "name": "Odd Rune Austgulen",
+      "rank": null,
+      "bioChars": 794
+    },
+    {
+      "id": "1427",
+      "name": "Tone Charlotte Bergesen",
+      "rank": null,
+      "bioChars": 780
+    },
+    {
+      "id": "707",
+      "name": "Borgny Eidesvik",
+      "rank": null,
+      "bioChars": 736
+    },
+    {
+      "id": "1419",
+      "name": "Olav Kristian Falnes",
+      "rank": null,
+      "bioChars": 922
+    },
+    {
+      "id": "988",
+      "name": "Per Magne Grondahl",
+      "rank": null,
+      "bioChars": 585
+    },
+    {
+      "id": "633",
+      "name": "Gunnar Haagensen",
+      "rank": null,
+      "bioChars": 1170
+    },
+    {
+      "id": "1420",
+      "name": "Tore H Haagensen",
+      "rank": null,
+      "bioChars": 761
+    },
+    {
+      "id": "1421",
+      "name": "Jorn Arve Longem",
+      "rank": null,
+      "bioChars": 645
+    },
+    {
+      "id": "625",
+      "name": "Alf Mokster",
+      "rank": null,
+      "bioChars": 700
+    },
+    {
+      "id": "1156",
+      "name": "Astrid Simone Mokster",
+      "rank": null,
+      "bioChars": 706
+    },
+    {
+      "id": "1155",
+      "name": "Anne Jorunn Mokster",
+      "rank": null,
+      "bioChars": 713
+    },
+    {
+      "id": "675",
+      "name": "Vibeke Nergaard",
+      "rank": null,
+      "bioChars": 999
+    },
+    {
+      "id": "515",
+      "name": "Kristian Nergaard",
+      "rank": null,
+      "bioChars": 999
+    },
+    {
+      "id": "1211",
+      "name": "Peder Nergaard",
+      "rank": null,
+      "bioChars": 999
+    },
+    {
+      "id": "681",
+      "name": "Torbjorn Seielstad",
+      "rank": null,
+      "bioChars": 878
+    },
+    {
+      "id": "548",
+      "name": "Roger Hofseth",
+      "rank": null,
+      "bioChars": 801
+    },
+    {
+      "id": "1422",
+      "name": "Dag Kittlaus",
+      "rank": null,
+      "bioChars": 630
+    },
+    {
+      "id": "1423",
+      "name": "Hans Peter Koppernaes",
+      "rank": null,
+      "bioChars": 837
+    },
+    {
+      "id": "1235",
+      "name": "Erik Tommeraas Veiby",
+      "rank": null,
+      "bioChars": 1259
+    },
+    {
+      "id": "1424",
+      "name": "Martin Odegaard",
+      "rank": null,
+      "bioChars": 841
+    }
+  ],
+  "failuresList": [
+    {
+      "id": "836",
+      "name": "Odd Reitan —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "874",
+      "name": "Kjell Inge Røkke —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "1195",
+      "name": "Bent Christian Wilhelmsen —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "504",
+      "name": "Arne Alexander Wilhelmsen —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "1196",
+      "name": "Peter Preben Wilhelmsen —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "1217",
+      "name": "Christen Sveaas —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "525",
+      "name": "Tore Lærdal —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "1034",
+      "name": "Ivar Erik Tollefsen —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "671",
+      "name": "Trygve Seglem —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "831",
+      "name": "Olav Nils Sunde —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "688",
+      "name": "Christian G. Sundt —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "855",
+      "name": "Helene Sundt —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "1218",
+      "name": "Nicolai Tangen —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "833",
+      "name": "Dag Rasmussen —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "849",
+      "name": "Aage Thoresen —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "668",
+      "name": "Hans Peter Jebsen —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "672",
+      "name": "Per Rolf Sævik —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "689",
+      "name": "Trond Mohn —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "843",
+      "name": "Stein Marius Varner —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "1210",
+      "name": "Petter Varner —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "845",
+      "name": "Anne Catrine Møller —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "1209",
+      "name": "Joakim Varner —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "1249",
+      "name": "Morten Angelil —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "1202",
+      "name": "Mélanie Tone Steensland Gotteberg —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "649",
+      "name": "Cathrine Rasmussen —",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "1020",
+      "name": "Morten Sigval Bergesen",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "826",
+      "name": "Johan Odvar Odfjell",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "1018",
+      "name": "Snorre Osvald Bentsen",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "508",
+      "name": "Jon Erling Melhus",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "832",
+      "name": "Per Grieg Jr",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "483",
+      "name": "Per Otto Rasmussen Dahl",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "829",
+      "name": "Camilla Marianne Grieg",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "1229",
+      "name": "Ragnar Horn",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "996",
+      "name": "Knut Ogreid",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "1183",
+      "name": "Morten Klein",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "841",
+      "name": "Erik Bohler",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "1014",
+      "name": "Eilert Hanoa",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "655",
+      "name": "Per Heidenreich",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "651",
+      "name": "Julie Bonnevie Rasmussen",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "650",
+      "name": "Carl Einar Bonnevie Rasmussen",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "821",
+      "name": "Karl Johan Sunde",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "1212",
+      "name": "Halle Ragnar Sivertsen",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "1189",
+      "name": "Olav Svendsen",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "1029",
+      "name": "Anders Endreson",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "708",
+      "name": "Nils Wenaas",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "1192",
+      "name": "Sigurd Wahl",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "520",
+      "name": "Hilde Midthjell",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "1050",
+      "name": "Roy Oddvar Myklebust",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "820",
+      "name": "Halgrim Thon",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "1416",
+      "name": "Ole Torberg Bjornevik",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "923",
+      "name": "Knut Galtung Dosvig",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    },
+    {
+      "id": "567",
+      "name": "Geir Bergheim",
+      "reason": "{\"error\":\"Internal server error\",\"message\":\"Failed to store memory\"}"
+    }
+  ],
+  "skippedList": []
+}

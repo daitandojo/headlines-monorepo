@@ -12,8 +12,12 @@ const RelationshipSchema = new Schema(
       index: true,
     },
     targetName: { type: String, required: true },
-    type: { type: String, required: true, trim: true }, // e.g., 'Founder Of', 'Acquired', 'Board Member Of'
-    context: { type: String, trim: true }, // e.g., "From event [Event ID]" or "Source: Wikipedia"
+    type: { type: String, required: true, trim: true },
+    context: { type: String, trim: true },
+    strength: { type: Number, min: 0, max: 100, default: 50 },
+    firstObservedDate: { type: Date },
+    lastObservedDate: { type: Date },
+    evidence: [{ source: { type: String }, url: { type: String }, date: { type: Date } }],
   },
   { _id: false }
 )
@@ -24,6 +28,14 @@ const EntityGraphSchema = new Schema(
     type: { type: String, enum: ENTITY_TYPES, required: true, index: true },
     aliases: { type: [String], index: true },
     relationships: { type: [RelationshipSchema], default: [] },
+    documents: [
+      {
+        type: { type: String, trim: true },
+        url: { type: String, trim: true },
+        title: { type: String, trim: true },
+        timestamp: { type: Date },
+      },
+    ],
   },
   {
     timestamps: true,

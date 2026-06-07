@@ -81,7 +81,7 @@ export function formatRunFunnel(runStats) {
   let section = `  ${colors.yellow}--- Funnel & Conversion (This Run) ---${colors.reset}\n`
   const headlineToEnrichRate = calculateRate(
     runStats.relevantHeadlines,
-    runStats.freshHeadlinesFound
+    runStats.headlinesAssessed
   )
   const enrichToEventRate = calculateRate(
     runStats.relevantArticles,
@@ -89,7 +89,7 @@ export function formatRunFunnel(runStats) {
   )
   const signalToNoiseRatio = calculateRate(
     runStats.eventsSynthesized,
-    runStats.freshHeadlinesFound
+    runStats.headlinesAssessed
   )
   section += `  ${'Headlines Scraped:'.padEnd(30)} ${runStats.headlinesScraped}\n`
   section += `  ${'Fresh/Refreshed Articles:'.padEnd(30)} ${runStats.freshHeadlinesFound}\n`
@@ -169,24 +169,67 @@ export function formatApiUsage(runStats) {
 }
 
 export function formatContentScrapingFailures(runStats) {
-  if (!runStats.enrichmentOutcomes || runStats.enrichmentOutcomes.length === 0) return ''
-  const contentFailures = runStats.enrichmentOutcomes.filter(
-    (outcome) =>
-      outcome.outcome === 'High-Signal Failure' ||
-      (outcome.outcome === 'Dropped' &&
-        (outcome.reason || '').includes('Content scrape failed'))
+  const failures = runStats.enrichmentOutcomes || []
+  const contentFailures = failures.filter(
+    (f) => (f.assessment_article || '').includes('Enrichment Failed')
   )
   if (contentFailures.length === 0) return ''
-  let section = `  ${colors.red}--- ACTION REQUIRED: Content Scraping Failures ---${colors.reset}\n`
-  section += `  The following sources successfully scraped headlines but failed to extract article content for high-relevance items.\n`
-  section += `  Their 'articleSelector' likely needs to be updated. Check the article trace logs for full HTML.\n`
-  contentFailures.forEach((item) => {
-    section += `  - ${colors.yellow}${item.newspaper}:${colors.reset} "${truncateString(item.headline, 50)}..."\n`
-    section += `    ${colors.grey}Reason: ${item.reason}${colors.reset}\n`
-    if (item.extractionSelectors && item.extractionSelectors.length > 0) {
-      section += `    ${colors.grey}Selectors Used (${item.extractionMethod}): [${item.extractionSelectors.join(', ')}]${colors.reset}\n`
-    }
+
+  let section = `${colors.magenta}  --- Content Scrape Failures (This Run) ---${colors.reset}\n`
+  contentFailures.slice(0, 5).forEach((f) => {
+    section += `    ${f.headline}\n`
   })
+  if (contentFailures.length > 5) {
+    section += `    ... and ${contentFailures.length - 5} more\n`
+  }
+  section += '\n'
+  return section
+}
+
+export function formatPreDealSignals(runStats) {
+  const signals = runStats.preDealSignals || []
+  if (signals.length === 0) return ''
+
+  let section = `${colors.magenta}  --- Pre-Deal Signals Detected ---${colors.reset}\n`
+  signals.forEach((s) => {
+    section += `  \x1b[33m⚠ ${s.headline?.substring(0, 60)}\x1b[0m\n`
+    s.signals.forEach(sig => {
+      section += `      → ${sig.signal}\n`
+    })
+  })
+  section += '\n'
+  return section
+}
+
+export function formatTransactionScores(runStats) {
+  const scores = runStats.transactionScores || []
+  if (scores.length === 0) return ''
+
+  scores.sort((a, b) => b.score - a.score)
+  const top = scores.slice(0, 10)
+
+  let section = `${colors.magenta}  --- Transaction Readiness Scores ---${colors.reset}\n`
+  top.forEach((s) => {
+    const color = s.score >= 60 ? '\x1b[32m' : s.score >= 40 ? '\x1b[33m' : '\x1b[90m'
+    section += `  ${color}[${String(s.score).padStart(3)}]\x1b[0m ${s.name?.substring(0, 30).padEnd(32)} | ${s.events?.[0]?.readiness || 'cold'}\n`
+  })
+  section += '\n'
+  return section
+}
+
+export function formatIntelligenceSummary(runStats) {
+  let section = `  ${colors.yellow}--- 🧠 Intelligence Enrichment Summary ---${colors.reset}\n`
+  const filings = runStats.filingsFound
+  const fos = runStats.familyOfficesDiscovered
+  const advisors = runStats.dealAdvisorsFound
+  const wealth = runStats.wealthChainsResolved
+  const sentiment = runStats.sentimentUpdated
+  if (!filings && !fos && !advisors && !wealth && !sentiment) return ''
+  if (filings) section += `  ${'Regulatory Filings:'.padEnd(30)} ${colors.cyan}${filings}${colors.reset}\n`
+  if (fos) section += `  ${'Family Offices Found:'.padEnd(30)} ${colors.green}${fos}${colors.reset}\n`
+  if (advisors) section += `  ${'Deal Advisors Found:'.padEnd(30)} ${colors.magenta}${advisors}${colors.reset}\n`
+  if (wealth) section += `  ${'Wealth Chains Resolved:'.padEnd(30)} ${colors.green}${wealth}${colors.reset}\n`
+  if (sentiment) section += `  ${'Sentiment Scores Updated:'.padEnd(30)} ${colors.cyan}${sentiment}${colors.reset}\n`
   return section + '\n'
 }
 

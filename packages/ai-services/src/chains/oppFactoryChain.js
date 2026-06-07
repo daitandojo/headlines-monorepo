@@ -11,6 +11,7 @@ const getAgent = () =>
     model: settings.LLM_MODEL_PRO,
     systemPrompt: instructionOppFactory,
     zodSchema: opportunitySchema,
+    maxTokens: 4096,
   })
 
 // --- START OF DEFINITIVE FIX: Re-architecting the OppFactory ---

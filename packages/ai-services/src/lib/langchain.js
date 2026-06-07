@@ -25,54 +25,34 @@ export function validatePromptBraces(promptText, agentName) {
 
 const modelConfig = { response_format: { type: "json_object" } };
 
-// LangChain model exports - configured for OpenRouter
+function makeModelConfig(modelName) {
+  const isDeepSeek = modelName?.includes('deepseek') && env.DEEPSEEK_API_KEY
+  return {
+    modelName: isDeepSeek ? DEEPSEEK_DEFAULT_MODEL : modelName,
+    configuration: {
+      baseURL: isDeepSeek ? "https://api.deepseek.com/v1" : "https://openrouter.ai/api/v1",
+      apiKey: isDeepSeek ? env.DEEPSEEK_API_KEY : (env.OPENROUTER_API_KEY || env.OPENAI_API_KEY),
+    },
+  }
+}
+
+// LangChain model exports - auto-routes deepseek models to DeepSeek API, others to OpenRouter
 export const getHeadlineModel = () =>
-  new ChatOpenAI({
-    modelName: settings.LLM_MODEL_HEADLINE_ASSESSMENT,
-    configuration: {
-      baseURL: "https://openrouter.ai/api/v1",
-      apiKey: env.OPENROUTER_API_KEY || env.OPENAI_API_KEY,
-    },
-  }).bind(modelConfig);
+  new ChatOpenAI(makeModelConfig(settings.LLM_MODEL_HEADLINE_ASSESSMENT)).bind(modelConfig);
 export const getHighPowerModel = () =>
-  new ChatOpenAI({
-    modelName: settings.LLM_MODEL_SYNTHESIS,
-    configuration: {
-      baseURL: "https://openrouter.ai/api/v1",
-      apiKey: env.OPENROUTER_API_KEY || env.OPENAI_API_KEY,
-    },
-  }).bind(modelConfig);
+  new ChatOpenAI(makeModelConfig(settings.LLM_MODEL_SYNTHESIS)).bind(modelConfig);
 export const getUtilityModel = () =>
-  new ChatOpenAI({
-    modelName: settings.LLM_MODEL_UTILITY,
-    configuration: {
-      baseURL: "https://openrouter.ai/api/v1",
-      apiKey: env.OPENROUTER_API_KEY || env.OPENAI_API_KEY,
-    },
-  }).bind(modelConfig);
+  new ChatOpenAI(makeModelConfig(settings.LLM_MODEL_UTILITY)).bind(modelConfig);
 export const getProModel = () =>
-  new ChatOpenAI({
-    modelName: settings.LLM_MODEL_PRO,
-    configuration: {
-      baseURL: "https://openrouter.ai/api/v1",
-      apiKey: env.OPENROUTER_API_KEY || env.OPENAI_API_KEY,
-    },
-  }).bind(modelConfig);
+  new ChatOpenAI(makeModelConfig(settings.LLM_MODEL_PRO)).bind(modelConfig);
 
 export const getFallbackModel = () =>
-  new ChatOpenAI({
-    modelName: settings.LLM_MODEL_FALLBACK || "xiaomi/mimo-v2-flash",
-    configuration: {
-      baseURL: "https://openrouter.ai/api/v1",
-      apiKey: env.OPENROUTER_API_KEY || env.OPENAI_API_KEY,
-    },
-  }).bind(modelConfig);
+  new ChatOpenAI(makeModelConfig(settings.LLM_MODEL_SYNTHESIS || "deepseek/deepseek-v4-flash")).bind(modelConfig);
 
 export function getModelWithFallback(primaryModelName) {
-  const fallbackModel = settings.LLM_MODEL_FALLBACK || "xiaomi/mimo-v2-flash";
   return {
     primary: primaryModelName,
-    fallback: fallbackModel,
+    fallback: "deepseek/deepseek-v4-flash",
   };
 }
 
@@ -97,6 +77,36 @@ const KIMI_TOOLS = [
 ];
 
 async function websearch({ query, numResults = 5 }) {
+  if (!query || query.trim().length < 3) {
+    return [{ title: "", content: "No query provided" }]
+  }
+  query = query.trim()
+
+  // Try Serper.dev first, then SerpAPI, then fallback
+  if (env.SERPER_API_KEY) {
+    try {
+      const response = await axios.post("https://google.serper.dev/search", {
+        q: query,
+        num: numResults,
+      }, {
+        headers: { 'X-API-KEY': env.SERPER_API_KEY },
+        timeout: 10000,
+      })
+      const organic = response.data.organic || []
+      return organic.map(r => ({
+        title: r.title?.substring(0, 200) || "",
+        content: r.snippet?.substring(0, 2000) || "",
+      }))
+    } catch (e) {
+      const status = e?.response?.status
+      const isHttpError = status && status >= 400 && status < 500
+      const msg = isHttpError
+        ? `Serper HTTP ${status} — check API key validity and quota`
+        : e?.message
+      logger.warn({ err: msg, query }, "[WebSearch] Serper failed")
+    }
+  }
+
   const apiKey = env.SERPAPI_KEY;
   if (!apiKey) {
     logger.warn("[WebSearch] No SERPAPI_KEY - using fallback");
@@ -126,17 +136,42 @@ async function websearch({ query, numResults = 5 }) {
 
 async function fallbackSearch(query) {
   const encodedQuery = encodeURIComponent(query);
-  const url = `https://ddg-api.herokuapp.com/search?q=${encodedQuery}&max_results=5`;
+  const url = `https://lite.duckduckgo.com/lite/?q=${encodedQuery}`;
   
   try {
-    const response = await axios.get(url, { timeout: 10000 });
-    const results = response.data.results || [];
-    return results.map((r) => ({
-      title: r.title?.substring(0, 200) || "",
-      content: r.body?.substring(0, 2000) || "",
-    }));
+    const response = await axios.get(url, {
+      timeout: 15000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml',
+      },
+    });
+    const html = response.data;
+    const results = [];
+    
+    const titleRegex = /<a[^>]*class='result-link'[^>]*>([\s\S]*?)<\/a>/gi;
+    const snippetRegex = /<td[^>]*class='result-snippet'[^>]*>([\s\S]*?)<\/td>/gi;
+    
+    const titles = [];
+    let m;
+    while ((m = titleRegex.exec(html)) !== null) {
+      titles.push(m[1].replace(/<[^>]*>/g, '').trim());
+    }
+    const snippets = [];
+    while ((m = snippetRegex.exec(html)) !== null) {
+      snippets.push(m[1].replace(/<[^>]*>/g, '').trim());
+    }
+    
+    for (let i = 0; i < Math.min(titles.length, 5); i++) {
+      results.push({
+        title: titles[i]?.substring(0, 200) || '',
+        content: snippets[i]?.substring(0, 2000) || titles[i]?.substring(0, 2000) || '',
+      });
+    }
+    return results.length > 0 ? results : [{ title: '', content: `No results for: ${query}` }];
   } catch (e) {
-    return [{ title: "", content: `No results for: ${query}` }];
+    logger.warn({ err: e?.message }, '[FallbackSearch] DuckDuckGo Lite failed');
+    return [{ title: '', content: `No results for: ${query}` }];
   }
 }
 
@@ -146,19 +181,32 @@ async function executeTool(fnName, fnArgs) {
   if (fnName === "web_search") {
     logger.info(`[WebSearch] Query: "${query}"`);
     try {
-      const results = await websearch({ query, numResults: 5 });
-      logger.info(`[WebSearch] Found ${results.length} results for: "${query}"`);
-      return results.map((r) => r.content?.substring(0, 2000) || r.title || "").join("\n---\n");
+      if (!query || query.trim().length < 2) {
+        logger.warn(`[WebSearch] Skipping empty query`);
+        return "No results: empty query";
+      }
+      const results = await fallbackSearch(query);
+      const searchText = results.map(r => r.title ? `${r.title}: ${r.content}` : r.content).join('\n').substring(0, 2000);
+      logger.info(`[WebSearch] Retrieved ${searchText.length} chars for: "${query}"`);
+      return searchText || `No results for: ${query}`;
     } catch (e) {
-      logger.error({ err: e, query }, "[WebSearch] Failed");
+      logger.error({ err: e, query }, "[WebSearch] Search failed");
       return `Search failed for: ${query}`;
     }
   }
   
   if (fnName === "fetch") {
     logger.info(`[Fetch] URL: "${query}"`);
+    if (!query || query.trim().length < 5) {
+      logger.warn(`[Fetch] Skipping empty/invalid URL`);
+      return "No content: empty URL";
+    }
     try {
-      const result = await webfetch({ url: query, format: "text" });
+      const response = await axios.get(query, {
+        timeout: 15000,
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; HeadlinesBot/1.0)' },
+      });
+      const result = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
       return result?.substring(0, 4000) || "No content";
     } catch (e) {
       logger.error({ err: e, url: query }, "[Fetch] Failed");
@@ -184,6 +232,23 @@ const baseClient = new OpenAI({
     "X-Title": "Headlines Pipeline",
   },
 });
+
+// DeepSeek client for direct access (bypasses OpenRouter rate limits)
+const getDeepSeekClient = () => {
+  if (!env.DEEPSEEK_API_KEY) return null
+  return new OpenAI({
+    baseURL: "https://api.deepseek.com/v1",
+    apiKey: env.DEEPSEEK_API_KEY,
+    timeout: 120 * 1000,
+    maxRetries: 2,
+  })
+}
+
+const DEEPSEEK_DEFAULT_MODEL = "deepseek-v4-flash"
+
+export function isDeepSeekConfigured() {
+  return !!env.DEEPSEEK_API_KEY
+}
 
 export async function callLanguageModel({
   modelName,
@@ -216,42 +281,49 @@ export async function callLanguageModel({
     apiPayload.max_tokens = maxTokens;
   }
 
-  const fallbackModel = settings.LLM_MODEL_FALLBACK || "xiaomi/mimo-v2-flash";
+  const fallbackModel = "deepseek/deepseek-v4-flash";
+  const isDeepSeekModel = modelName?.includes('deepseek')
+  const deepseekClient = isDeepSeekModel ? getDeepSeekClient() : null
   
   const tryCall = async (model) => {
-    const payloadWithModel = { ...apiPayload, model };
+    const payloadWithModel = { ...apiPayload, model: isDeepSeekModel && deepseekClient ? DEEPSEEK_DEFAULT_MODEL : model };
+    const client = (isDeepSeekModel && deepseekClient) ? deepseekClient : baseClient
     try {
       const result = await safeExecute(
-        () => baseClient.chat.completions.create(payloadWithModel),
-        { timeout: 85000 },
+        () => client.chat.completions.create(payloadWithModel),
+        { timeout: 120000 },
       );
-      return { success: true, result, usedModel: model };
+      return { success: true, result, usedModel: isDeepSeekModel && deepseekClient ? `deepseek-api:${DEEPSEEK_DEFAULT_MODEL}` : model };
     } catch (error) {
-      const isRateLimit = error.message && (
-        error.message.includes('429') || 
-        error.message.includes('rate-limited') ||
-        error.status === 429
-      );
-      return { success: false, error, isRateLimit, usedModel: model };
+      const errMsg = error.message || '';
+      const isRateLimit = error.status === 429 || errMsg.includes('429') || 
+        errMsg.includes('rate-limited') || errMsg.includes('Rate limit') ||
+        errMsg.includes('rate limit');
+      const isTimeout = errMsg.includes('timed out') || errMsg.includes('timeout');
+      return { success: false, error, isRateLimit, isTimeout, usedModel: model };
     }
   };
 
   let callResult = await tryCall(modelName);
   
-  if (!callResult.success && callResult.isRateLimit) {
-    logger.warn({ model: modelName, error: callResult.error.message }, '[LangChain] Rate limited, trying fallback');
+  if (!callResult.success && (callResult.isRateLimit || callResult.isTimeout)) {
+    const reason = callResult.isRateLimit ? 'Rate limited (429)' : 'Timeout';
+    logger.warn(`\x1b[33m[WARN] ${reason} on ${callResult.usedModel} - switching to fallback\x1b[0m`);
     callResult = await tryCall(fallbackModel);
     if (callResult.success) {
-      logger.info({ model: fallbackModel }, '[LangChain] Using fallback model');
+      logger.info(`\x1b[32m[OK] Fallback ${fallbackModel} working\x1b[0m`);
+    } else {
+      logger.warn(`\x1b[33m[WARN] Fallback also hit ${callResult.isRateLimit ? 'rate limit' : 'error'} - continuing anyway\x1b[0m`);
     }
   }
 
   if (!callResult.success) {
-    return { error: callResult.error.message || "API call failed" };
+    return { error: callResult.error?.message || "API call failed" };
   }
 
   const result = callResult.result;
-
+  
+  if (!result) return { error: "API call returned null result" };
   if (!result.choices || result.choices.length === 0) {
     logger.error({ response: result }, `LLM response for model ${callResult.usedModel} had no choices.`);
     return { error: "LLM response had no choices." };
@@ -261,7 +333,7 @@ export async function callLanguageModel({
 
   const responseContent = result.choices[0]?.message?.content;
 
-  if (typeof responseContent !== "string") {
+  if (typeof responseContent !== "string" || !responseContent.trim()) {
     logger.error(
       { response: result },
       `LLM response for model ${callResult.usedModel} was empty or in an unexpected format.`,
@@ -269,9 +341,16 @@ export async function callLanguageModel({
     return { error: "LLM response was empty or invalid." };
   }
 
+// In packages/ai-services/src/lib/langchain.js
+// Fix JSON parsing to handle both objects {...} and arrays [...] responses
+// and trim extra non-whitespace content after the JSON
   if (isJson) {
     try {
+      // Try to match a JSON object first, then a JSON array
       let jsonMatch = responseContent.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        jsonMatch = responseContent.match(/\[[\s\S]*\]/);
+      }
       if (!jsonMatch)
         throw new Error(
           "No valid JSON object found in the LLM's string response.",
@@ -287,10 +366,52 @@ export async function callLanguageModel({
           break;
         } catch (e) {
           attempts++;
-          if (text.startsWith("{") && text.endsWith("}")) {
-            text = text.slice(1, -1);
-          } else if (text.startsWith("{{") && text.endsWith("}}")) {
+          if (text.startsWith("{{") && text.endsWith("}}")) {
+            // DeepSeek v4-flash sometimes doubles ALL braces: {{"key": {{...}} }}
+            // Strip the outer pair and replace all inner {{ -> { and }} -> }
             text = "{" + text.slice(2, -2) + "}";
+            // Replace remaining doubled braces globally (inner nested objects)
+            text = text.replace(/{{/g, "{").replace(/}}/g, "}");
+          } else if (text.startsWith("{") && text.endsWith("}")) {
+            // Greedy match captured multiple JSON objects or trailing text.
+            // Extract the LAST complete JSON object by brace-depth scanning,
+            // skipping over preamble objects like {"role":"system"}.
+            // DeepSeek sometimes returns {"role":"system"}{"opportunities":[...]}
+            // — the preamble parse succeeds but has none of the expected fields.
+            let objects = [];
+            let depth = 0;
+            let start = -1;
+            for (let i = 0; i < text.length; i++) {
+              if (text[i] === "{") {
+                if (depth === 0) start = i;
+                depth++;
+              } else if (text[i] === "}") {
+                depth--;
+                if (depth === 0 && start >= 0) {
+                  objects.push(text.slice(start, i + 1));
+                  start = -1;
+                }
+              }
+            }
+            // Try each object (last-first since preamble is most likely first)
+            let found = false;
+            for (let idx = objects.length - 1; idx >= 0; idx--) {
+              try {
+                JSON.parse(objects[idx]);
+                text = objects[idx];
+                found = true;
+                break;
+              } catch (_) {
+                continue;
+              }
+            }
+            if (!found && objects.length > 0) {
+              text = objects[objects.length - 1];
+            } else if (!found) {
+              text = text.slice(1, -1);
+            }
+          } else if (text.startsWith("[") && text.endsWith("]")) {
+            text = text.slice(1, -1);
           } else {
             throw e;
           }
@@ -310,8 +431,11 @@ export async function callLanguageModel({
   return responseContent;
 }
 
+// Circuit breaker: skip Kimi API calls once we detect it's suspended
+let _kimiSuspended = false;
+
 export async function callKimiModel({
-  modelName = "kimi-k2-turbo-preview",
+  modelName = "kimi-latest",
   systemPrompt,
   userContent,
   isJson = true,
@@ -319,6 +443,10 @@ export async function callKimiModel({
   fewShotOutputs = [],
   maxToolRounds = 30,
 }) {
+  if (_kimiSuspended) {
+    return { error: "Kimi API is suspended (insufficient balance) — skipped" };
+  }
+
   const kimClient = getKimiClient();
   const messages = [];
   if (systemPrompt) {
@@ -347,7 +475,23 @@ export async function callKimiModel({
 
     const result = await safeExecute(
       () => kimClient.chat.completions.create(apiPayload),
-      { timeout: 180000 },
+      {
+        timeout: 180000,
+        errorHandler: (error) => {
+          if (
+            error?.message?.includes('suspended due to insufficient balance') ||
+            error?.error?.message?.includes('suspended due to insufficient balance')
+          ) {
+            _kimiSuspended = true;
+            logger.warn(
+              '[Kimi] API suspended due to insufficient balance. Circuit breaker activated. Skipping remaining Kimi calls.',
+            );
+            return null;
+          }
+          logger.error({ err: error }, 'An unexpected error occurred in a safeExecute block.');
+          return null;
+        },
+      },
     );
 
     if (!result) return { error: "Kimi API call failed or timed out" };

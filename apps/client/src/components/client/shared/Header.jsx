@@ -10,6 +10,7 @@ import {
   Crown,
   CalendarClock,
   Brain,
+  Bell,
 } from "lucide-react";
 import { InstallPwaButton } from "../../shared/buttons/InstallPwaButton";
 import { GlobalCountrySelector } from "../countries/GlobalCountrySelector";
@@ -81,6 +82,11 @@ export const Header = ({ globalCountries }) => {
               </Button>
             )}
             <GlobalCountrySelector allCountries={globalCountries || []} />
+            <Button asChild variant="ghost" size="icon" aria-label="Notifications">
+              <Link href="/settings/notifications">
+                <Bell className="h-4 w-4" />
+              </Link>
+            </Button>
             <NotificationToggles />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

@@ -35,10 +35,24 @@ import {
   Gamepad2,
   Gift,
   Building,
-  Share2, // ADDED
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { getCountryFlag } from '@headlines/utils-shared'
+
+function stringToColor(str) {
+  if (!str) return '#6366f1'
+  let hash = 0
+  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash)
+  const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#06b6d4']
+  return colors[Math.abs(hash) % colors.length]
+}
+
+function getInitials(name) {
+  if (!name) return '?'
+  const parts = name.trim().split(/\s+/)
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  return parts[0][0].toUpperCase()
+}
 
 const InfoItem = ({ icon, label, children, className = '' }) => {
   // ... (unchanged)
@@ -165,8 +179,11 @@ export default async function OpportunityDossierPage({ params }) {
                   />
                 </div>
               ) : (
-                <div className="h-28 w-28 rounded-full bg-slate-800 flex items-center justify-center border-2 border-slate-700">
-                  <User className="h-12 w-12 text-slate-500" />
+                <div className="h-28 w-28 rounded-full flex items-center justify-center border-2 border-slate-700"
+                     style={{ backgroundColor: stringToColor(opportunity.reachOutTo) }}>
+                  <span className="text-3xl font-bold text-white">
+                    {getInitials(opportunity.reachOutTo)}
+                  </span>
                 </div>
               )}
               <CardTitle className="text-2xl pt-2">{opportunity.reachOutTo}</CardTitle>

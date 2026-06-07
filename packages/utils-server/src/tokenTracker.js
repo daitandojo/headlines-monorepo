@@ -7,9 +7,12 @@ const modelPricing = {
   'gpt-4o': { input: 2.5, output: 10.0 },
   'xiaomi/mimo-v2-flash': { input: 0.0, output: 0.0 },
   'mimo-v2-flash': { input: 0.0, output: 0.0 },
-  'kimi-k2-turbo-preview': { input: 0.0, output: 0.0 },
+  'kimi-latest': { input: 0.0, output: 0.0 },
   'kimi-k2': { input: 0.0, output: 0.0 },
   'openai/gpt-4o-mini': { input: 0.15, output: 0.6 },
+  'deepseek-api:deepseek-chat': { input: 0.27, output: 1.10 },
+  'deepseek-api:deepseek-v4-flash': { input: 0.27, output: 1.10 },
+  'deepseek/deepseek-v4-flash': { input: 0.27, output: 1.10 },
 }
 
 class TokenTracker {

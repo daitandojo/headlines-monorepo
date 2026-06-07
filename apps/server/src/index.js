@@ -2,6 +2,7 @@
 import express from 'express'
 import cors from 'cors'
 import pino from 'pino'
+import rateLimit from 'express-rate-limit'
 import { createRequire } from 'module'
 import { env } from '@headlines/config/node'
 import { setLogger } from '@headlines/utils-shared'
@@ -18,7 +19,7 @@ const consoleTransport = pino.transport({
   options: { colorize: true, translateTime: 'HH:MM:ss', ignore: 'pid,hostname' },
 })
 const logger = pino({ level: 'info' }, consoleTransport)
-setLogger(logger) // Inject logger instance
+setLogger(logger)
 
 async function startServer() {
   logger.info('🚀 Starting API Server...')
@@ -35,6 +36,16 @@ async function startServer() {
 
   app.use(cors())
   app.use(express.json())
+
+  // Rate limiting
+  const limiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 60,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many requests, please try again later.', code: 'RATE_LIMIT' },
+  })
+  app.use('/api/', limiter)
 
   app.use('/api/scrape-test', scrapeTestRoute)
   app.use('/api/file-ingestion', fileIngestionRoute)

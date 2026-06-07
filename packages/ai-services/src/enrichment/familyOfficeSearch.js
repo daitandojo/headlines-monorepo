@@ -10,7 +10,7 @@ function getSettings() {
   try {
     return require('@headlines/config')
   } catch (e) {
-    return { settings: { LLM_MODEL_UTILITY: 'xiaomi/mimo-v2-flash' } }
+    return { settings: { LLM_MODEL_UTILITY: 'deepseek/deepseek-v4-flash' } }
   }
 }
 
@@ -54,7 +54,7 @@ export async function searchFamilyOffice(surname, countryCode) {
       const userContent = `Query: ${queryToUse}\n\nResults:\n${searchResult.snippets}`
       
       const result = await callLanguageModel({
-        modelName: getSettings().settings?.LLM_MODEL_UTILITY || 'xiaomi/mimo-v2-flash',
+        modelName: getSettings().settings?.LLM_MODEL_UTILITY || 'deepseek/deepseek-v4-flash',
         systemPrompt,
         userContent,
         isJson: true,

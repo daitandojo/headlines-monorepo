@@ -16,9 +16,16 @@ import {
   Code,
   ArrowLeftCircle,
   BarChart,
-  Activity, // ADDED ICON
-  Play, // ADDED ICON
-  UserPlus, // ADDED ICON
+  Activity,
+  Play,
+  UserPlus,
+  Landmark,
+  Building2,
+  Handshake,
+  PiggyBank,
+  TrendingUp,
+  Scale,
+  ShieldBan,
 } from 'lucide-react'
 import { cn } from '@headlines/utils-shared'
 import { Separator } from '@/components/shared'
@@ -50,6 +57,19 @@ const navSections = [
       { name: 'Opportunities', href: '/admin/opportunities', icon: Target },
       { name: 'Add Individual', href: '/admin/individuals/add', icon: UserPlus },
       { name: 'Pipeline', href: '/admin/pipeline', icon: Play },
+    ],
+  },
+  {
+    title: 'Intelligence',
+    items: [
+      { name: 'Deal Pipeline', href: '/admin/intelligence/deals', icon: TrendingUp },
+      { name: 'Source Health', href: '/admin/intelligence/sources', icon: Activity },
+      { name: 'Cost Center', href: '/admin/intelligence/costs', icon: PiggyBank },
+      { name: 'Regulatory Filings', href: '/admin/intelligence/filings', icon: Landmark },
+      { name: 'Ownership Stakes', href: '/admin/intelligence/ownership-stakes', icon: Building2 },
+      { name: 'Deal Advisors', href: '/admin/intelligence/advisors', icon: Handshake },
+      { name: 'Family Offices', href: '/admin/intelligence/family-offices', icon: Scale },
+      { name: 'Exclusions', href: '/admin/intelligence/exclusions', icon: ShieldBan },
     ],
   },
   {

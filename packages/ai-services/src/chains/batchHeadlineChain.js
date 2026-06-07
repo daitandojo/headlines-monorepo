@@ -9,6 +9,7 @@ const getAgent = () =>
     model: settings.LLM_MODEL_HEADLINE_ASSESSMENT,
     systemPrompt: instructionBatchHeadlineAssessment,
     zodSchema: batchHeadlineAssessmentSchema,
+    maxTokens: 4000,
   })
 
 async function invoke(input) {

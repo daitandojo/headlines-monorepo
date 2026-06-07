@@ -100,6 +100,25 @@ const JudgeVerdictSchema = new Schema(
   { _id: false }
 )
 
+const PreDealSignalSchema = new Schema(
+  {
+    signal: { type: String, trim: true },
+    confidence: { type: Number, min: 0, max: 100 },
+    source: { type: String, trim: true },
+  },
+  { _id: false }
+)
+
+const CompanyFinancialsSchema = new Schema(
+  {
+    revenueMM: { type: Number },
+    profitMM: { type: Number },
+    debtMM: { type: Number },
+    revenueGrowthPercent: { type: Number },
+  },
+  { _id: false }
+)
+
 const SynthesizedEventSchema = new Schema(
   {
     event_key: { type: String, required: true, unique: true, trim: true, index: true },
@@ -117,7 +136,7 @@ const SynthesizedEventSchema = new Schema(
     ],
     enrichmentSources: {
       type: [String],
-      enum: ['rag_db', 'wikipedia', 'news_api'],
+      enum: ['rag_db', 'wikipedia', 'news_api', 'knowledge_graph'],
       default: [],
     },
     emailed: { type: Boolean, default: false },
@@ -126,9 +145,10 @@ const SynthesizedEventSchema = new Schema(
     primarySubject: { type: PrimarySubjectSchema, required: false },
     relatedCompanies: { type: [String], default: [] },
     tags: { type: [String], default: [], index: true },
+    ingested: { type: Boolean, default: false },
     eventStatus: {
       type: String,
-      enum: ['Completed', 'Pending', 'Rumored'],
+      enum: ['Completed', 'Pending', 'Rumored', 'Other'],
       default: 'Completed',
     },
     // PHASE 1: Trigger classification + succession signals
@@ -142,6 +162,12 @@ const SynthesizedEventSchema = new Schema(
     },
     successionSignals: { type: SuccessionSignalsSchema },
     dealCloseDate: { type: String, trim: true },
+    dealStatus: {
+      type: String,
+      enum: ['rumor', 'announced', 'pending', 'completed', 'cancelled'],
+    },
+    preDealSignals: { type: [PreDealSignalSchema], default: [] },
+    companyFinancials: { type: CompanyFinancialsSchema },
     judgeVerdict: { type: JudgeVerdictSchema, required: false, select: false },
     pipelineTrace: { type: [LifecycleEventSchema], default: [], select: false },
     watchlistHits: [

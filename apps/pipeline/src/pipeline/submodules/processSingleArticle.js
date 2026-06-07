@@ -8,9 +8,17 @@ import {
 import { scrapeArticleContent } from '@headlines/scraper-logic/scraper/index.js'
 import { settings } from '@headlines/config'
 import { Source } from '@headlines/models'
+import { downloadArticleImage } from '../../utils/imageDownloader.js'
+
+const HEADLINE_ONLY_THRESHOLD = 50
+const MIN_PAYWALL_SALVAGE_CHARS = 500
 
 function createLifecycleEvent(stage, status, reason) {
   return { stage, status, reason, timestamp: new Date() }
+}
+
+function isPaywalledPreview(text) {
+  return text.length < MIN_PAYWALL_SALVAGE_CHARS
 }
 
 async function salvageHighSignalArticle(article, hits) {
@@ -115,21 +123,42 @@ async function salvageHighSignalArticle(article, hits) {
   }
 }
 
+async function createHeadlineOnlyEntry(article, finalAssessment, reason) {
+  return {
+    contentPreview: '',
+    rawHtml: '',
+    extractionMethod: 'HeadlineOnly',
+    extractionSelectors: [],
+    article: {
+      ...(finalAssessment || {}),
+      richness_source: 'headline_only',
+      relevance_article: article.relevance_headline || 60,
+      assessment_article: `[HEADLINE ONLY - paywall or content blocked] This article's content could not be extracted. However, the headline is promising.
+Headline: "${article.headline}"
+Assessment: ${article.assessment_headline || 'Promising headline'}
+Source: ${article.newspaper}, Link: ${article.link}
+IMPORTANT: Search the web for this individual/company to find actual details. The company or person named in the headline needs to be researched.`,
+    },
+    lifecycleEvent: createLifecycleEvent('enrichment', 'headline_only', reason),
+  }
+}
+
+async function attemptSalvageOrHeadlineOnly(article, hits, context) {
+  const salvageResult = await salvageHighSignalArticle(article, hits)
+  if (salvageResult.article) return salvageResult
+  return createHeadlineOnlyEntry(article, null, context)
+}
+
 export async function processSingleArticle(article, hits) {
   let transientArticle
   try {
     let source
-    // --- START OF DEFINITIVE FIX ---
-    // This new block handles the synthetic article from --test mode.
-    // It creates a mock source object in memory, completely bypassing the database lookup
-    // that was causing the crash.
     if (article.source === 'Test E2E Source') {
       logger.trace('Using mock source config for synthetic test article.')
       source = {
         name: 'Test E2E Source',
-        articleSelector: ['body'], // Use a generic selector that will work with the fake content
+        articleSelector: ['body'],
       }
-      // The synthetic article already has its content, so we just pass it through.
       transientArticle = {
         ...article,
         rawHtml: `Synthetic Article for ${article.headline}`,
@@ -137,13 +166,11 @@ export async function processSingleArticle(article, hits) {
         extractionSelectors: [],
       }
     } else {
-      // This is the normal path for all other articles.
       source = await Source.findOne({ name: article.source }).lean()
       if (!source)
         throw new Error(`Could not find source document for "${article.source}"`)
       transientArticle = await scrapeArticleContent(article, source)
     }
-    // --- END OF DEFINITIVE FIX ---
 
     const baseResult = {
       contentPreview: transientArticle.contentPreview,
@@ -168,51 +195,47 @@ export async function processSingleArticle(article, hits) {
       )
 
       const finalAssessment = await assessArticleContent(transientArticle, hits)
-
       if (finalAssessment.error) throw new Error(finalAssessment.error)
 
       if (finalAssessment.relevance_article >= settings.ARTICLES_RELEVANCE_THRESHOLD) {
+        if (article.imageUrl && !finalAssessment.imageCachedPath) {
+          const cachedPath = await downloadArticleImage(article.imageUrl, article._id, article.source)
+          if (cachedPath) finalAssessment.imageCachedPath = cachedPath
+        }
         return {
           ...baseResult,
           article: finalAssessment,
           lifecycleEvent: createLifecycleEvent(
-            'enrichment',
-            'success',
+            'enrichment', 'success',
             `Final score: ${finalAssessment.relevance_article}`
           ),
         }
-      } else {
-        return {
-          ...baseResult,
-          article: { ...finalAssessment },
-          lifecycleEvent: createLifecycleEvent(
-            'enrichment',
-            'dropped',
-            `Content score ${finalAssessment.relevance_article} < threshold ${settings.ARTICLES_RELEVANCE_THRESHOLD}`
-          ),
-        }
       }
-    } else {
-      if (article.relevance_headline >= settings.HIGH_SIGNAL_HEADLINE_THRESHOLD) {
-        const salvageResult = await salvageHighSignalArticle(article, hits)
-        return { ...baseResult, ...salvageResult }
-      } else {
-        return {
-          ...baseResult,
-          article: null,
-          lifecycleEvent: createLifecycleEvent(
-            'enrichment',
-            'dropped',
-            `Content scrape failed and headline score ${article.relevance_headline} was not high-signal`
-          ),
-        }
+
+      // Content score too low — check if it's paywalled with a strong headline
+      if (article.relevance_headline >= HEADLINE_ONLY_THRESHOLD && isPaywalledPreview(articleText)) {
+        return attemptSalvageOrHeadlineOnly(article, hits,
+          `Paywall: content ${finalAssessment.relevance_article}/${settings.ARTICLES_RELEVANCE_THRESHOLD}, headline ${article.relevance_headline} >= ${HEADLINE_ONLY_THRESHOLD}`
+        )
       }
+
+      return { ...baseResult, article: { ...finalAssessment }, lifecycleEvent: createLifecycleEvent('enrichment', 'dropped',
+        `Content score ${finalAssessment.relevance_article} < threshold ${settings.ARTICLES_RELEVANCE_THRESHOLD}`
+      )}
     }
+
+    // No content extracted at all
+    if (article.relevance_headline >= HEADLINE_ONLY_THRESHOLD) {
+      return attemptSalvageOrHeadlineOnly(article, hits,
+        `No content, headline ${article.relevance_headline} >= ${HEADLINE_ONLY_THRESHOLD}`
+      )
+    }
+
+    return { ...baseResult, article: null, lifecycleEvent: createLifecycleEvent('enrichment', 'dropped',
+      `Content scrape failed and headline ${article.relevance_headline} < ${HEADLINE_ONLY_THRESHOLD}`
+    )}
   } catch (error) {
-    logger.error(
-      { err: error, articleLink: article.link },
-      'Critical error during single article processing.'
-    )
+    logger.error({ err: error, articleLink: article.link }, 'Critical error during single article processing.')
     return {
       article: null,
       lifecycleEvent: createLifecycleEvent('enrichment', 'error', error.message),

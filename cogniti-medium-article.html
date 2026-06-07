@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Memory Systems Are Solving the Wrong Problem</title>
+<meta name="description" content="Vector databases are fast. Memory systems are accurate. Neither one can tell you who owns what, who reports to whom, or which facts contradict each other.">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0f;
+  color: #e8e8f0;
+  font-family: Georgia, 'Times New Roman', serif;
+  line-height: 1.8;
+  -webkit-font-smoothing: antialiased;
+}
+.wrapper { max-width: 720px; margin: 0 auto; padding: 48px 24px; }
+.glow {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(127,119,221,0.06) 0%, transparent 50%);
+}
+article { position: relative; z-index: 1; }
+.badge-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.badge { color: #7f77dd; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; letter-spacing: 0.1em; }
+.date { color: #52525b; font-size: 12px; }
+h1 { font-size: clamp(32px,4vw,44px); font-weight: 800; line-height: 1.15; margin-bottom: 16px; letter-spacing: -0.02em; }
+.deck { font-size: 18px; line-height: 1.6; color: #9ca3af; margin-bottom: 16px; }
+.meta { display: flex; gap: 8px; color: #6b7280; font-size: 13px; margin-bottom: 48px; }
+h2 { font-size: 28px; font-weight: 700; margin: 48px 0 16px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px; }
+h3 { font-size: 20px; font-weight: 600; margin: 32px 0 12px; }
+p { font-size: 17px; line-height: 1.8; color: #c8c8e0; margin-bottom: 16px; }
+ul, ol { margin-bottom: 16px; padding-left: 24px; }
+li { font-size: 16px; line-height: 1.7; color: #c8c8e0; margin-bottom: 8px; }
+.callout {
+  background: rgba(127,119,221,0.06); border-left: 3px solid #7f77dd;
+  border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 24px 0;
+  font-size: 16px; line-height: 1.6; color: #d0d0e8;
+}
+.code-block {
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;
+  padding: 24px; font-family: 'SF Mono','Fira Code',monospace; font-size: 13px; line-height: 1.6;
+  color: #9ca3af; white-space: pre; overflow-x: auto; margin: 24px 0;
+}
+table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 14px; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+th { text-align: left; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #6b7280; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #c8c8e0; }
+td strong { color: #fff; }
+.green { color: #22c55e; }
+.yellow { color: #f59e0b; }
+.empty { color: #52525b; }
+.footer { margin-top: 64px; padding-top: 32px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 13px; color: #52525b; line-height: 1.6; }
+.footer p { margin-bottom: 8px; }
+hr { border: none; border-top: 1px solid rgba(255,255,255,0.06); margin: 48px 0; }
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<div class="wrapper">
+<article>
+
+<div class="badge-row">
+  <span class="badge">TECHNICAL DEEP-DIVE</span>
+  <span class="date">May 2026</span>
+</div>
+
+<h1>Memory Systems Are Solving the Wrong Problem</h1>
+
+<p class="deck">Vector databases are fast. Memory systems are accurate. Neither one can tell you who owns what, who reports to whom, or which facts contradict each other. Here's why structured fact intelligence is a missing category — and what we built instead.</p>
+
+<div class="meta">
+  <span>By an anonymous builder</span>
+  <span>·</span>
+  <span>15 min read</span>
+</div>
+
+<h2>The Problem</h2>
+
+<p>In 2025, the AI memory market exploded. Mem0 raised $24M. Pinecone hit 4,000 paying customers. Zep published a paper showing 94.8% on the Deep Memory Retrieval benchmark. Everyone was racing to build the best memory for AI agents.</p>
+
+<p>But there's a class of problems these systems cannot touch:</p>
+
+<div class="callout">
+  <em>"Show me all UK properties owned by Danish business families, with source citations and confidence scores."</em>
+</div>
+
+<p>A vector database returns similar documents. A memory system returns relevant chat history. Neither can answer this question because neither extracts entities, builds relationships, tracks provenance, or detects contradictions.</p>
+
+<p><strong>This isn't a memory problem. It's a knowledge graph problem.</strong> And the existing tools — from Qdrant at 3ms vector search to Mem0 at 93% LongMemEval accuracy — were not designed for it.</p>
+
+<h2>The Landscape</h2>
+
+<p>Let's be honest about what exists and what it actually does.</p>
+
+<h3>Vector Databases (Qdrant, Pinecone, Weaviate, pgvector)</h3>
+
+<p>These store embeddings and return nearest neighbors. They are extremely good at this one thing: Qdrant achieves 3ms P50 latency at 1M vectors. pgvector costs nothing if you're already on Postgres.</p>
+
+<p><strong>What they cannot do:</strong></p>
+<ul>
+<li>Extract entities from unstructured text</li>
+<li>Build relationships between facts</li>
+<li>Track which source confirmed a fact</li>
+<li>Detect that "net worth: $4.6B" contradicts "net worth: $5.2B"</li>
+<li>Answer "who owns what?" as a structured query</li>
+</ul>
+
+<p>Vector databases are a component, not a solution. Teams building knowledge applications must glue together embedding models, extraction pipelines, graph databases, and search indexes — a fragile stack that requires engineering teams to maintain.</p>
+
+<h3>Memory Systems (Mem0, MemGPT, Zep)</h3>
+
+<p>These solve a different problem: conversational memory for AI agents. Mem0's v2 algorithm achieves 93.4% on LongMemEval with 6,800 tokens per query — genuinely impressive for chat recall.</p>
+
+<p><strong>What they cannot do:</strong></p>
+<ul>
+<li>Extract facts about <em>multiple entities</em> from a single document</li>
+<li>Build a knowledge graph with typed entities and relationships</li>
+<li>Distinguish "Troels Holch Povlsen founded Bestseller" from "Anders Holch Povlsen inherited Bestseller"</li>
+<li>Attribute facts to specific source documents</li>
+<li>Handle the "data room" use case at all</li>
+</ul>
+
+<table>
+<thead>
+<tr><th>Capability</th><th>Vector DB</th><th>Memory System</th><th>Needed for Facts</th></tr>
+</thead>
+<tbody>
+<tr><td>Vector similarity search</td><td>✅ 3ms</td><td>✅</td><td>✅</td></tr>
+<tr><td>Entity extraction</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td>Knowledge graph</td><td>❌</td><td>Limited</td><td>✅</td></tr>
+<tr><td>Relationship traversal</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td>Source provenance</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td>Dedup + reinforcement</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td>Contradiction detection</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td>Conversational recall</td><td>❌</td><td>✅ 93%</td><td>Optional</td></tr>
+</tbody>
+</table>
+
+<h2>The Approach</h2>
+
+<p>Rather than optimizing a single metric (latency, accuracy, token efficiency), we optimized for a single question: <strong>can this system turn a stack of documents into a queryable knowledge graph?</strong></p>
+
+<p>The answer required building what existing systems leave as exercises for the reader:</p>
+
+<ol>
+<li><strong>Automatic entity extraction</strong> — Every document is processed by an LLM (deepseek-v4-flash) that extracts self-contained atomic beliefs with explicit subject, predicate, object, and entity types.</li>
+<li><strong>Multi-entity separation</strong> — A single article mentioning 3 people and 2 companies produces 5 separate entity profiles, not one document summary.</li>
+<li><strong>Knowledge graph population</strong> — Every belief automatically creates or updates graph entities and relationships. No manual schema design. The graph grows organically.</li>
+<li><strong>Hybrid search</strong> — Vector similarity (70%) combined with full-text keyword search (30%) through pgvector.</li>
+<li><strong>Graph query API</strong> — Entity lookup, relationship browsing, and BFS graph traversal are first-class endpoints.</li>
+<li><strong>Source provenance</strong> — Every belief tracks which sources confirmed it, with reinforcement on repeat confirmation.</li>
+<li><strong>Contradiction detection</strong> — Conflicting facts are preserved and flagged, not silently overwritten.</li>
+</ol>
+
+<div class="callout">
+<strong>3 × 3 factorial study (arXiv:2603.02473):</strong> Hybrid reranking achieved 77.2% accuracy vs BM25's 57.1% — a 20-point gap from retrieval method alone. Retrieval failure was the dominant error mode (11-46% of all questions).
+</div>
+
+<h2>Architecture</h2>
+
+<div class="code-block">POST /v1/memories  →  deepseek-v4-flash splits into atomic beliefs
+         ↓
+  text-embedding-3-small generates 1536-dim vector per belief
+         ↓
+  pgvector IVFFlat index stores for cosine similarity search
+         ↓
+  graph_entities table: 25 columns (id, type, name, mentions ...)
+         ↓
+  graph_relationships table: 20 columns (source, target, predicate, ...)
+         ↓
+  entity_aliases table: canonical name → alias mapping
+         ↓
+  belief_conflicts: contradictions flagged, not overwritten
+
+GET  /v1/graph/entities          → list/search with type filter
+GET  /v1/graph/entities/:name    → profile + all beliefs
+GET  /v1/graph/entities/:name/relationships → incoming + outgoing
+POST /v1/graph/traverse          → BFS graph traversal
+POST /v1/memories/search         → hybrid (0.7 vector + 0.3 keyword)</div>
+
+<p><strong>Cost per article:</strong> ~$0.0037 (1,046 input tokens + 8,881 output tokens on deepseek-v4-flash + 34 embeddings on text-embedding-3-small).</p>
+<p><strong>Infrastructure:</strong> 32MB heap, 122MB RSS — runs on a $10/month VPS with PostgreSQL and pgvector.</p>
+
+<h2>Benchmarks</h2>
+
+<table>
+<thead><tr><th>Metric</th><th>Cogniti</th><th>Market</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Search P50</td><td><strong>94ms</strong></td><td>3-12ms (vector DBs)</td><td>Includes embedding gen + hybrid scoring</td></tr>
+<tr><td>Search P95</td><td><strong>258ms</strong></td><td>8-48ms</td><td>50 samples, 10 queries × 5 runs</td></tr>
+<tr><td>Entity lookup</td><td><strong>13ms</strong></td><td>N/A</td><td>No competitor exposes structured entity API</td></tr>
+<tr><td>Graph traversal</td><td><strong>49ms</strong></td><td>N/A</td><td>BFS depth 2, 13 nodes, 82 edges</td></tr>
+<tr><td>Entity resolution</td><td><strong>100%</strong></td><td>N/A</td><td>8/8 named entities found</td></tr>
+<tr><td>Storage</td><td><strong>32MB</strong></td><td>Varies</td><td>25 entities + 37 beliefs + pgvector index</td></tr>
+<tr><td>Cost per article</td><td><strong>$0.0037</strong></td><td>$0.01-0.05</td><td>DeepSeek + OpenAI embeddings</td></tr>
+</tbody>
+</table>
+
+<p><strong>Honest assessment:</strong> Cogniti is not competitive on pure vector search latency (94ms vs Qdrant's 3ms) because it does dramatically more per query. It is not competitive on LongMemEval accuracy because it wasn't designed for conversational recall. It <em>is</em> the only system that combines entity extraction, graph population, relationship traversal, provenance tracking, and contradiction detection in a single self-hosted stack. No competitor's benchmark measures this capability because no competitor has it.</p>
+
+<h2>Business Case</h2>
+
+<h3>Primary: Data Room Intelligence</h3>
+<p>A mid-market M&A deal involves reviewing 5,000-50,000 documents. Current practice: junior analysts and contract lawyers read documents, extract entities into Excel, and manually cross-reference. At $500+/hour for a team of 3-5, a single deal costs $50K-250K in document review alone.</p>
+<p>Cogniti ingests the data room, extracts every entity, builds the relationship graph, tracks provenance, and surfaces contradictions — in minutes. The output is a queryable knowledge graph that analysts can interrogate in natural language.</p>
+
+<h3>Adjacent Verticals</h3>
+<ul>
+<li><strong>Wealth Intelligence</strong> — HNWI profiling from public records and news</li>
+<li><strong>Compliance / AML</strong> — PEP screening, ownership structure mapping</li>
+<li><strong>Legal Discovery</strong> — Entity extraction from millions of documents</li>
+<li><strong>Competitive Intelligence</strong> — Company relationship mapping</li>
+<li><strong>Investigative Journalism</strong> — Network mapping from public records</li>
+</ul>
+
+<div class="callout">
+<strong>The market gap:</strong> Intelligent Document Processing tools extract entities but don't build graphs. Graph databases (Neo4j) require manual schema design. Vector databases retrieve documents but don't extract facts. Memory systems track conversations but don't handle documents. <strong>No existing product combines all four.</strong>
+</div>
+
+<h2>Roadmap</h2>
+
+<table>
+<thead><tr><th>Phase</th><th>Capability</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>LLM belief splitting + multi-entity extraction</td><td class="green">✅ Done</td></tr>
+<tr><td>2</td><td>Hybrid vector + keyword search</td><td class="green">✅ Done</td></tr>
+<tr><td>3</td><td>Knowledge graph population</td><td class="green">✅ Done</td></tr>
+<tr><td>4</td><td>Graph query API</td><td class="green">✅ Done</td></tr>
+<tr><td>5</td><td>Provenance + dedup + contradiction detection</td><td class="green">✅ Done</td></tr>
+<tr><td>6</td><td>LongMemEval benchmark integration</td><td class="yellow">🔄 Next</td></tr>
+<tr><td>7</td><td>Cross-encoder reranking</td><td class="yellow">🔄 Next</td></tr>
+<tr><td>8</td><td>Entity resolution at scale</td><td class="yellow">🔄 Next</td></tr>
+<tr><td>9</td><td>PDF/email/CSV ingestion pipelines</td><td class="empty">○ Planned</td></tr>
+<tr><td>10</td><td>Client SDK (Python, TypeScript)</td><td class="empty">○ Planned</td></tr>
+<tr><td>11</td><td>Multi-user data room isolation</td><td class="empty">○ Planned</td></tr>
+<tr><td>12</td><td>Real-time alerting (new entity, contradiction)</td><td class="empty">○ Planned</td></tr>
+</tbody>
+</table>
+
+<p style="margin-top: 24px;"><strong>The next 90 days</strong> focus on benchmark validation (LongMemEval), retrieval quality (cross-encoder reranking), and entity resolution at scale — the three capabilities that separate a demo from a product. The target: a self-contained system that can ingest a 1,000-document data room and produce a queryable knowledge graph with &gt;90% entity resolution accuracy.</p>
+
+<hr>
+
+<div class="footer">
+<p><em>This article is an honest technical account of what exists, what doesn't, and what we built to fill the gap. We publish benchmarks — real ones — because the market needs transparency more than marketing. The code is running on a $10/month VPS. The benchmarks are measured against a live instance. Anyone can verify them.</em></p>
+<p>Written May 2026. Sources: Mem0 ECAI 2025 (arXiv:2504.19413), AgentMarketCap Apr 2026, Zep/Graphiti (arXiv:2501.13956), Chroma Context Rot Jul 2025, Security Boulevard Aug 2025, Core.cz Vector DB Benchmarks 2026, Ailog RAG Study 2026, Inductivee Vector DB Benchmarks 2025.</p>
+</div>
+
+</article>
+</div>
+</body>
+</html>

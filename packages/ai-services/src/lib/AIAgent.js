@@ -14,6 +14,7 @@ export class AIAgent {
     fewShotOutputs = [],
     zodSchema,
     responseWrapperKey = null,
+    maxTokens = 4096,
   }) {
     if (!model || !systemPrompt) {
       throw new Error('AIAgent requires a model and systemPrompt.')
@@ -25,6 +26,7 @@ export class AIAgent {
     this.zodSchema = zodSchema
     this.systemPrompt = buildPrompt(systemPrompt)
     this.responseWrapperKey = responseWrapperKey
+    this.maxTokens = maxTokens
   }
 
   async execute(userContent) {
@@ -38,6 +40,7 @@ export class AIAgent {
           isJson: this.isJson,
           fewShotInputs: this.fewShotInputs,
           fewShotOutputs: this.fewShotOutputs,
+          maxTokens: this.maxTokens,
         })
 
         // --- START OF DEFINITIVE FIX ---
@@ -76,11 +79,28 @@ export class AIAgent {
         }
 
         if (attempt === MAX_CORRECTION_ATTEMPTS) {
+          const errorObj = validationResult.error.flatten()
+          const hasOpportunitiesError =
+            errorObj.fieldErrors?.opportunities &&
+            errorObj.fieldErrors.opportunities.length > 0
+
+          const rawHasOpportunities = response?.opportunities && Array.isArray(response.opportunities)
+
+          if (hasOpportunitiesError && rawHasOpportunities) {
+            logger.warn(
+              { agent: this.constructor.name, model: this.model },
+              `Zod rejected null in opportunities array but raw response has valid array. Recovering from raw response.`
+            )
+            return this.responseWrapperKey
+              ? { [this.responseWrapperKey]: { opportunities: response.opportunities } }
+              : { opportunities: response.opportunities }
+          }
+
           logger.error(
             {
               agentName: this.constructor.name,
               model: this.model,
-              validationErrors: validationResult.error.flatten(),
+              validationErrors: errorObj,
               rawResponseFromAI: response,
             },
             `AI response failed Zod validation after all correction attempts.`

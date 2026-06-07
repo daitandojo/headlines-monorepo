@@ -12,6 +12,7 @@ const getAgent = () =>
     model: settings.LLM_MODEL_SYNTHESIS,
     systemPrompt: instructionCluster,
     zodSchema: clusterSchema,
+    maxTokens: 8192,
   })
 
 export async function clusterArticlesIntoEvents(articles) {

@@ -32,7 +32,7 @@ export * from "./node/agents/watchlistAgent.js";
 export { callKimiModel, isKimiConfigured } from "./lib/langchain.js";
 
 import { logger } from "@headlines/utils-shared";
-import { settings } from "@headlines/config/node";
+import { env, settings } from "@headlines/config/node";
 import { callLanguageModel } from "./lib/langchain.js";
 import { SynthesizedEvent, Opportunity, Article } from "@headlines/models/node";
 import { synthesizeEvent } from "./shared/agents/synthesisAgent.js";
@@ -184,10 +184,18 @@ export async function suggestSections(url) {
 }
 
 export async function performAiSanityCheck() {
+  // Pipeline uses DeepSeek as primary model; test it instead of OpenAI.
+  if (!env.DEEPSEEK_API_KEY) {
+    logger.warn(
+      "⚠️ DeepSeek not configured — skipping AI service sanity check.",
+    );
+    return true;
+  }
+
   try {
-    logger.info("🔬 Performing AI service sanity check (OpenAI)...");
+    logger.info("🔬 Performing AI service sanity check (DeepSeek)...");
     const answer = await callLanguageModel({
-      modelName: "gpt-5-nano",
+      modelName: "deepseek/deepseek-v4-flash",
       userContent: "In one word, what is the capital of France?",
       isJson: false,
     });
@@ -195,7 +203,7 @@ export async function performAiSanityCheck() {
     if (answer && answer.error) {
       logger.fatal(
         { details: answer.error },
-        "OpenAI sanity check failed. The API call failed or timed out. This is often due to an incorrect API key, network issues, or service outage.",
+        "DeepSeek sanity check failed. The API call failed or timed out. This is often due to an incorrect API key, network issues, or service outage.",
       );
       return false;
     }
@@ -207,17 +215,17 @@ export async function performAiSanityCheck() {
     ) {
       logger.fatal(
         { details: { expected: "paris", received: answer } },
-        `OpenAI sanity check failed. The model did not return the expected response.`,
+        "DeepSeek sanity check failed. The model did not return the expected response.",
       );
       return false;
     }
 
-    logger.info("✅ AI service sanity check passed.");
+    logger.info("✅ DeepSeek sanity check passed.");
     return true;
   } catch (error) {
     logger.fatal(
       { err: error },
-      "OpenAI sanity check failed with an unexpected exception.",
+      "DeepSeek sanity check failed with an unexpected exception.",
     );
     return false;
   }

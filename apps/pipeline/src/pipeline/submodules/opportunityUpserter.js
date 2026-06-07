@@ -459,6 +459,13 @@ async function enrichWithExtensiveWealthData(opportunities, existingOppMap) {
   const pendingTransactions = [];
 
   for (const opp of opportunities) {
+    // Skip deep wealth research for excluded entities (globally-famous noise)
+    const { isExcluded } = await import('../../utils/enrichmentExclusions.js')
+    if (await isExcluded(opp.reachOutTo)) {
+      logger.info(`[Extensive Enrichment] Skipping ${opp.reachOutTo} — excluded entity`)
+      continue
+    }
+
     const existing = existingOppMap?.get(opp.reachOutTo.toLowerCase());
     const currentContext = existing?.profile?.biography
       ? JSON.stringify({ biography: existing.profile.biography })
@@ -468,6 +475,7 @@ async function enrichWithExtensiveWealthData(opportunities, existingOppMap) {
       name: opp.reachOutTo,
       company: opp.contactDetails?.company,
       currentContext,
+      country: opp.basedIn?.[0] || null,
     };
 
     try {

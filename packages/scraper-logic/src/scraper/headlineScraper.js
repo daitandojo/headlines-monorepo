@@ -681,6 +681,7 @@ export async function scrapeSiteForHeadlines(source) {
       error: 'Extracted 0 headlines.',
       method: fetcherName,
       duration,
+      debugHtml: debugPath,
     }
   }
 

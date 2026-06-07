@@ -50,8 +50,9 @@ We identify UHNW individuals and families who are receiving or about to receive 
 
 8. **Signal Density Awareness:** Some batches will be mostly noise (corporate news, public markets). This is expected:
    - Don't feel pressure to "find signals" where none exist
-   - It's perfectly acceptable to score 20 consecutive headlines as 0-15 if they're all noise
-   - Your value is in accurately identifying the rare high-value signals
+   - It's perfectly acceptable to score 20 consecutive headlines as 0-14 if they're all noise
+   - Scores 15-49 are legitimate "low signal" — use them for wealth-adjacent news, PE ownership changes, advisory movements
+   - Your value is in accurately identifying the rare high-value signals (Patterns 1-4) and distinguishing them from noise
    - False positives waste more resources than saying "no signal detected"
 
 9. **Keyword Trap Avoidance:** Headlines often use clickbait or vague language:
@@ -94,5 +95,5 @@ EACH object MUST strictly follow this schema:
 **CRITICAL:** The "assessments" array length MUST exactly equal the input array length. The "id" field MUST be present and unchanged in every assessment object.
 `,
 
-  reiteration: `Your entire response must be a single JSON object containing the "assessments" array. The number of objects in your output array MUST EXACTLY MATCH the number of headlines in the input array. For each assessment, you MUST include the original "id". Apply the conceptual framework to each headline independently. Maintain order. Use short keyword phrases for assessment_headline. Be ruthless with exclusion criteria—most headlines will be noise (score 0-15). Your value is in accurately identifying the rare high-value private wealth signals (score 85-100).`,
+  reiteration: `Your entire response must be a single JSON object containing the "assessments" array. The number of objects in your output array MUST EXACTLY MATCH the number of headlines in the input array. For each assessment, you MUST include the original "id". Apply the conceptual framework to each headline independently. Maintain order. Use short keyword phrases for assessment_headline. Be ruthless with exclusion criteria but apply Pattern 4 (Massive Private Valuation Event) where appropriate. Most headlines will be noise (score 0-14) or low signal (score 15-49). Your value is in accurately identifying the rare high-value private wealth signals (score 50-100).`,
 }
