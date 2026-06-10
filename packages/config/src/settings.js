@@ -17,11 +17,11 @@ const DEFAULTS = {
   WATCHLIST_SCORE_BOOST: 35,
   SUGGESTION_GENERATION_THRESHOLD: 80,
   MIN_ARTICLE_CHARS: 100,
-  LLM_MODEL_HEADLINE_ASSESSMENT: "deepseek/deepseek-v4-flash",
-  LLM_MODEL_ARTICLE_ASSESSMENT: "deepseek/deepseek-v4-flash",
-  LLM_MODEL_SYNTHESIS: "deepseek/deepseek-v4-flash",
-  LLM_MODEL_UTILITY: "deepseek/deepseek-v4-flash",
-  LLM_MODEL_PRO: "deepseek/deepseek-v4-flash",
+  LLM_MODEL_HEADLINE_ASSESSMENT: "deepseek-v4-flash",
+  LLM_MODEL_ARTICLE_ASSESSMENT: "deepseek-v4-flash",
+  LLM_MODEL_SYNTHESIS: "deepseek-v4-flash",
+  LLM_MODEL_UTILITY: "deepseek-v4-flash",
+  LLM_MODEL_PRO: "deepseek-v4-flash",
   COGNITI_ENABLED: true,
 };
 
@@ -34,7 +34,7 @@ let isInitialized = false;
  * This function is intended to be called by the application layer at startup.
  * @param {Array<object>} dbSettings - An array of setting objects from the database.
  */
-const MODEL_WHITELIST = ["deepseek/deepseek-v4-flash", "kimi-latest"];
+const MODEL_WHITELIST = ["deepseek-v4-flash", "deepseek-v4-pro", "kimi-latest"];
 
 export function populateSettings(dbSettings) {
   if (isInitialized) return;
