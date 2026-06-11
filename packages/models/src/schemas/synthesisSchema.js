@@ -107,7 +107,7 @@ export const synthesisSchema = z.object({
         .describe('A list of other relevant company names.'),
       tags: z.array(z.string()).describe('An array of 3-5 relevant lowercase tags.'),
       eventStatus: z
-        .enum(['Completed', 'Pending', 'Rumored'])
+        .enum(['Completed', 'Pending', 'Rumored', 'Other'])
         .describe('The current status of the event.'),
       // PHASE 1: Trigger classification
       triggerClass: triggerClassSchema,
@@ -115,6 +115,20 @@ export const synthesisSchema = z.object({
       successionSignals: successionSignalsSchema,
       // PHASE 1: Liquidity event timing
       dealCloseDate: z.string().nullable().optional(),
+      // PHASE 2: Deal lifecycle + pre-deal signals
+      dealStatus: z.enum(['rumor', 'announced', 'pending', 'completed', 'cancelled']).optional(),
+      preDealSignals: z.array(z.object({
+        signal: z.string(),
+        confidence: z.number().min(0).max(100),
+        source: z.string(),
+      })).optional().default([]),
+      // PHASE 2: Company financials
+      companyFinancials: z.object({
+        revenueMM: z.number().nullable().optional(),
+        profitMM: z.number().nullable().optional(),
+        debtMM: z.number().nullable().optional(),
+        revenueGrowthPercent: z.number().nullable().optional(),
+      }).optional(),
     })
   ),
 })

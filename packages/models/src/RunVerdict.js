@@ -10,6 +10,18 @@ const RunVerdictSchema = new Schema(
     generatedOpportunities: [{ type: Schema.Types.ObjectId, ref: 'Opportunity' }],
     duration_seconds: { type: Number, required: true },
     cost_summary: { type: Schema.Types.Mixed, required: false },
+    eventVerdicts: [{
+      eventId: { type: Schema.Types.ObjectId, ref: 'SynthesizedEvent' },
+      headline: String,
+      quality: String,
+      commentary: String,
+    }],
+    opportunityVerdicts: [{
+      opportunityId: { type: Schema.Types.ObjectId, ref: 'Opportunity' },
+      name: String,
+      quality: String,
+      commentary: String,
+    }],
   },
   { timestamps: true, collection: 'run_verdicts' }
 )

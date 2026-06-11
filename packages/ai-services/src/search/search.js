@@ -3,8 +3,9 @@ import axios from 'axios'
 import NewsAPI from 'newsapi'
 import { env } from '@headlines/config'
 import { logger, apiCallTracker } from '@headlines/utils-shared'
+import { callKimiModel } from '../lib/langchain.js'
 
-const { SERPER_API_KEY, NEWSAPI_API_KEY } = env
+const { SERPER_API_KEY, NEWSAPI_API_KEY, TAVILY_API_KEY } = env
 
 /**
  * API configuration constants
@@ -15,6 +16,11 @@ const API_CONFIG = {
     TIMEOUT: 30000,
     MAX_RETRIES: 2,
     DEFAULT_RESULTS: 5,
+  },
+  TAVILY: {
+    BASE_URL: 'https://api.tavily.com/search',
+    TIMEOUT: 20000,
+    MAX_RETRIES: 1,
   },
   NEWSAPI: {
     TIMEOUT: 30000,
@@ -35,9 +41,31 @@ const serperClient = SERPER_API_KEY
         'X-API-KEY': SERPER_API_KEY,
         'Content-Type': 'application/json',
       },
-      validateStatus: (status) => status < 500, // Don't throw on 4xx errors
+      validateStatus: (status) => status < 500,
     })
   : null
+
+const tavilyClient = TAVILY_API_KEY
+  ? axios.create({
+      baseURL: API_CONFIG.TAVILY.BASE_URL,
+      timeout: API_CONFIG.TAVILY.TIMEOUT,
+      headers: {
+        'X-API-KEY': TAVILY_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      validateStatus: (status) => status < 500,
+    })
+  : null
+
+function isSerperDownResponse(response) {
+  if (!response) return true
+  const data = response.data
+  if (!data) return true
+  if (data.error) return true
+  const organic = data.organic
+  if (!Array.isArray(organic) && data.status === 'Bad Request') return true
+  return false
+}
 
 /**
  * Initialize NewsAPI client
@@ -52,6 +80,42 @@ if (!serperClient) {
 if (!newsapi) {
   logger.warn('NEWSAPI_API_KEY not configured. NewsAPI features will be disabled.')
 }
+
+class SearchCache {
+  constructor(maxSize = 500, ttl = 1000 * 60 * 30) {
+    this.cache = new Map()
+    this.maxSize = maxSize
+    this.ttl = ttl
+  }
+
+  _hashKey(key) {
+    return key.toLowerCase().trim().substring(0, 200)
+  }
+
+  get(query) {
+    const k = this._hashKey(query)
+    const entry = this.cache.get(k)
+    if (!entry) return null
+    if (Date.now() > entry.expires) {
+      this.cache.delete(k)
+      return null
+    }
+    this.cache.delete(k)
+    this.cache.set(k, entry)
+    return entry.value
+  }
+
+  set(query, value) {
+    const k = this._hashKey(query)
+    if (this.cache.size >= this.maxSize) {
+      const firstKey = this.cache.keys().next().value
+      this.cache.delete(firstKey)
+    }
+    this.cache.set(k, { value, expires: Date.now() + this.ttl })
+  }
+}
+
+const serperCache = new SearchCache(500, 1000 * 60 * 30)
 
 /**
  * Determines if an error is retryable
@@ -178,6 +242,37 @@ function sanitizeQuery(query) {
     .substring(0, 500) // Limit length to prevent issues
 }
 
+async function searchTavily(query, numResults = 5) {
+  if (!tavilyClient) return null
+  try {
+    const response = await tavilyClient.post('/search', {
+      query,
+      search_depth: 'basic',
+      max_results: numResults,
+      include_answer: false,
+      include_images: false,
+    })
+    const results = response.data?.results || []
+    if (!results.length) return null
+    return {
+      success: true,
+      snippets: results
+        .slice(0, numResults)
+        .map((r, i) => `${i + 1}. ${r.title || 'Untitled'}: ${r.content || r.description || ''}`)
+        .join('\n'),
+      results: results.slice(0, numResults),
+      metadata: { query, resultCount: results.length, source: 'tavily' },
+    }
+  } catch (err) {
+    logger.warn({ err: err.message }, '[Tavily] Search failed')
+    return null
+  }
+}
+
+async function searchBrave(query, numResults = 5) {
+  return null
+}
+
 /**
  * Finds alternative news sources for a headline using Serper News API
  * @param {string} headline - Article headline to search for
@@ -217,6 +312,15 @@ export async function findAlternativeSources(headline, options = {}) {
 
     const response = await serperClient.post('/news', requestParams)
 
+    if (isSerperDownResponse(response)) {
+      return {
+        success: false,
+        results: [],
+        error: 'Serper returned bad response (HTTP 400/401/403 or empty data — check API key and quota)',
+        metadata: { duration: Date.now() - startTime },
+      }
+    }
+
     const duration = Date.now() - startTime
     const results = response.data.news || []
 
@@ -242,20 +346,12 @@ export async function findAlternativeSources(headline, options = {}) {
 }
 
 /**
- * Performs a Google search using Serper API
+ * Performs a Google search using Kimi K2 as primary, falling back to Serper
  * @param {string} query - Search query
  * @param {Object} options - Search options
  * @returns {Promise<Object>} Search results with snippets
  */
 export async function performGoogleSearch(query, options = {}) {
-  if (!serperClient) {
-    return {
-      success: false,
-      snippets: 'SERPER_API_KEY not configured.',
-      error: 'API not configured',
-    }
-  }
-
   const sanitizedQuery = sanitizeQuery(query)
 
   if (!sanitizedQuery) {
@@ -267,71 +363,106 @@ export async function performGoogleSearch(query, options = {}) {
     }
   }
 
+  const numResults = options.numResults || API_CONFIG.SERPER.DEFAULT_RESULTS
+  const maxSnippets = options.maxSnippets || API_CONFIG.SERPER.DEFAULT_RESULTS
+
+  // Try Kimi K2 first (primary)
+  try {
+    apiCallTracker.recordCall('kimi_search')
+    const kimiResult = await callKimiModel({
+      modelName: 'kimi-k2-turbo-preview',
+      systemPrompt: 'You are a research assistant. Use the web_search tool to find real, current information about the query. Then use the fetch tool to retrieve additional details if helpful. Return a concise summary of your findings.',
+      userContent: `Research: ${sanitizedQuery}\n\nUse web_search to find current information, then return a summary with key facts.`,
+      isJson: false,
+      maxToolRounds: 3,
+    })
+    const kimiText = typeof kimiResult === 'string' ? kimiResult : JSON.stringify(kimiResult)
+    if (kimiText && kimiText.length > 20 && !kimiText.includes('"error"')) {
+      logger.info({ query: sanitizedQuery }, '[performGoogleSearch] Kimi K2 succeeded')
+      return {
+        success: true,
+        snippets: kimiText.substring(0, 2000),
+        results: [],
+        metadata: { query: sanitizedQuery, resultCount: -1, source: 'kimi-k2-turbo-preview' },
+      }
+    }
+    logger.warn({ query: sanitizedQuery, result: kimiText.substring(0, 100) }, '[performGoogleSearch] Kimi K2 returned empty/error, falling back to Serper')
+  } catch (kimiErr) {
+    logger.warn({ err: kimiErr.message, query: sanitizedQuery }, '[performGoogleSearch] Kimi K2 failed, falling back to Serper')
+  }
+
+  // Fallback to Serper (with caching + Tavily on failure)
+  const cached = serperCache.get(sanitizedQuery)
+  if (cached) {
+    logger.info({ query: sanitizedQuery }, '[performGoogleSearch] Serper cache hit')
+    return cached
+  }
+
+  if (!serperClient) {
+    const tavilyResult = await searchTavily(sanitizedQuery, numResults)
+    if (tavilyResult) return tavilyResult
+    return {
+      success: false,
+      snippets: 'All search providers failed. Kimi K2, Serper, and Tavily all unavailable.',
+      error: 'No search providers configured',
+    }
+  }
+
   const startTime = Date.now()
 
-  return withRetry(async () => {
+  const serperResult = await withRetry(async () => {
     apiCallTracker.recordCall('serper_search')
 
     const requestParams = {
       q: sanitizedQuery,
-      num: options.numResults || API_CONFIG.SERPER.DEFAULT_RESULTS,
+      num: numResults,
       ...options.additionalParams,
     }
 
     const response = await serperClient.post('/search', requestParams)
 
+    if (isSerperDownResponse(response)) {
+      return {
+        success: false,
+        snippets: 'Serper returned bad response (HTTP 400/401/403 or empty data — check API key and quota)',
+        results: [],
+        metadata: { duration: Date.now() - startTime },
+      }
+    }
+
     const organicResults = response.data.organic || []
     const duration = Date.now() - startTime
 
     if (organicResults.length === 0) {
-      logger.debug(
-        { query: sanitizedQuery, duration: `${duration}ms` },
-        'Google search returned no results'
-      )
-
       return {
         success: false,
         snippets: 'No search results found.',
         results: [],
-        metadata: {
-          query: sanitizedQuery,
-          resultCount: 0,
-          duration,
-        },
+        metadata: { query: sanitizedQuery, resultCount: 0, duration },
       }
     }
 
-    // Format results into snippets
-    const maxResults = options.maxSnippets || API_CONFIG.SERPER.DEFAULT_RESULTS
     const snippets = organicResults
-      .slice(0, maxResults)
-      .map((res, index) => {
-        const title = res.title || 'Untitled'
-        const snippet = res.snippet || 'No description available'
-        return `${index + 1}. ${title}: ${snippet}`
-      })
+      .slice(0, maxSnippets)
+      .map((res, index) => `${index + 1}. ${res.title || 'Untitled'}: ${res.snippet || 'No description available'}`)
       .join('\n')
 
-    logger.debug(
-      {
-        query: sanitizedQuery,
-        results: organicResults.length,
-        duration: `${duration}ms`,
-      },
-      'Google search completed'
-    )
-
-    return {
+    const result = {
       success: true,
       snippets,
-      results: organicResults.slice(0, maxResults),
-      metadata: {
-        query: sanitizedQuery,
-        resultCount: organicResults.length,
-        duration,
-      },
+      results: organicResults.slice(0, maxSnippets),
+      metadata: { query: sanitizedQuery, resultCount: organicResults.length, duration, source: 'serper' },
     }
+    serperCache.set(sanitizedQuery, result)
+    return result
   }, 'Serper Search')
+
+  if (serperResult.success) return serperResult
+
+  const tavilyResult = await searchTavily(sanitizedQuery, numResults)
+  if (tavilyResult) return tavilyResult
+
+  return serperResult
 }
 
 /**

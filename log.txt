@@ -1,0 +1,24 @@
+🟢 LOADING: data-access/index.js
+[Extractor Registry] Statically loaded 12 headline extractors and 1 content extractors.
+[00:05:33] [32mINFO[39m: [36m--- Pipeline Execution Flags ---[39m
+[00:05:33] [32mINFO[39m: [36m- _: [][39m
+[00:05:33] [32mINFO[39m: [36m- $0: apps/pipeline/src/app.js[39m
+[00:05:33] [32mINFO[39m: [36m- paths: {"debugHtmlDir":"/home/mark/Shared/projects/headlines-monorepo/apps/pipeline/logs/debug_html"}[39m
+[00:05:33] [32mINFO[39m: [36m------------------------------------[39m
+[00:05:33] [32mINFO[39m: [36m[RunStatsManager] Initialized a new statistics object.[39m
+[00:05:33] [32mINFO[39m: [36m--- ARCHITECTURE: Running in Staged, Resumable Mode ---[39m
+[00:05:33] [32mINFO[39m: [36m--- STAGE 1: PRE-FLIGHT CHECKS & SETUP ---[39m
+[00:05:33] [32mINFO[39m: [36m[dbConnectCore] Creating new database connection to: mongodb+srv://haelpers:****@haelpers-m0.lz3bcwm.mongodb.net/haelpers?retryWrites=true&w=1[39m
+[00:05:34] [32mINFO[39m: [36m[dbConnectCore] ✅ New database connection established.[39m
+    readyState: 1
+[Config] Model override: LLM_MODEL_HEADLINE_ASSESSMENT = deepseek/deepseek-v4-flash
+[Config] Model override: LLM_MODEL_ARTICLE_ASSESSMENT = deepseek/deepseek-v4-flash
+[Config] Model override: LLM_MODEL_SYNTHESIS = deepseek/deepseek-v4-flash
+[Config] Model override: LLM_MODEL_UTILITY = deepseek/deepseek-v4-flash
+[Config] Model override: LLM_MODEL_PRO = deepseek/deepseek-v4-flash
+[Config] Successfully populated 17 settings from the database.
+[00:05:34] [32mINFO[39m: [36m🔬 Performing prompt syntax validation pre-flight check...[39m
+[00:05:34] [32mINFO[39m: [36m✅ All prompts passed syntax validation.[39m
+[00:05:34] [32mINFO[39m: [36m🔑 Validating all API keys and services...[39m
+[00:05:35] [32mINFO[39m: [36m✅ Kimi K2 validated[39m
+[00:05:36] [32mINFO[39m: [36m✅ DeepSeek v4 validated[39m

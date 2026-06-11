@@ -67,16 +67,21 @@ export async function performStandardScraping(sourcesToScrape, pipelinePayload) 
       error: result.error,
       debugHtml: result.debugHtml,
       failedSelector: result.success ? null : source.headlineSelector,
+      method: result.method || source.extractionMethod || 'unknown',
     };
     scraperHealthMap.set(source.name, healthReport);
 
     if (healthReport.success) {
+      const extractionMethod = result.method || source.extractionMethod || 'unknown'
+      const extractionSelector = source.headlineSelector?.[0] || null
       allArticles.push(
         ...result.articles.map((a) => ({
           ...a,
           source: source.name,
           newspaper: source.name,
           country: source.country,
+          _scrapeMethod: extractionMethod,
+          _scrapeSelector: extractionSelector,
         })),
       );
       bulkUpdateOps.push({
@@ -92,13 +97,16 @@ export async function performStandardScraping(sourcesToScrape, pipelinePayload) 
         },
       });
     } else {
-      logger.warn(
-        `[Scraping] ❌ FAILED for "${source.name}": ${result.error || "Extracted 0 headlines."}.`,
+logger.warn(
+        `\x1b[33m[WARN] Source failed:\x1b[0m "${source.name}" - ${result.error || "Extracted 0 headlines."}`
       );
       bulkUpdateOps.push({
         updateOne: {
           filter: { _id: source._id },
-          update: { $set: { lastScrapedAt: new Date() } },
+          update: {
+            $set: { lastScrapedAt: new Date() },
+            $inc: { consecutiveFailures: 1 },
+          },
         },
       });
     }

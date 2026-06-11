@@ -18,21 +18,21 @@ import * as allPrompts from "@headlines/prompts";
 import OpenAI from "openai";
 
 async function sendPipelineFailureAlert(errorMessage, details = {}) {
+  const detailSummary = details.criticalCount ? `${details.criticalCount} critical failures` : 'See logs for details';
   const htmlBody = `
     <h2 style="color: #dc2626;">Pipeline Failure Alert</h2>
     <p><strong>Error:</strong> ${errorMessage}</p>
     <p><strong>Time:</strong> ${new Date().toISOString()}</p>
-    <p><strong>Details:</strong></p>
-    <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px;">${JSON.stringify(details, null, 2)}</pre>
+    <p><strong>Summary:</strong> ${detailSummary}</p>
   `;
   try {
     await sendGenericEmail({
-      subject: `🚨 Pipeline Failed: ${errorMessage.substring(0, 50)}...`,
+      subject: `Pipeline Failed: ${errorMessage.substring(0, 40)}...`,
       html: htmlBody,
       emailType: "PipelineFailure",
     });
   } catch (e) {
-    logger.error({ err: e }, "Failed to send pipeline failure alert email");
+    logger.warn("Failed to send pipeline failure alert email");
   }
 }
 
@@ -58,9 +58,10 @@ async function validateApiKeys() {
       results.kimi = { valid: true };
       logger.info("✅ Kimi K2 validated");
     } catch (error) {
-      results.kimi = { valid: false, error: error.message };
-      failures.push(`Kimi: ${error.message}`);
-      logger.error({ err: error }, "❌ Kimi failed");
+      const errMsg = error.message?.substring(0, 50) || "Unknown";
+      results.kimi = { valid: false, error: errMsg };
+      failures.push(`Kimi: ${errMsg}`);
+      logger.error(`❌ Kimi failed: ${errMsg}`);
     }
   } else {
     results.kimi = { valid: false, error: "Not configured" };
@@ -68,32 +69,61 @@ async function validateApiKeys() {
     logger.error("❌ Kimi not configured (critical for enrichment)");
   }
 
-  // 2. OpenRouter (mimo-v2-flash)
-  if (env.OPENROUTER_API_KEY) {
+  // 2. DeepSeek (primary model - direct API)
+  if (env.DEEPSEEK_API_KEY) {
     try {
-      const openrouterClient = new OpenAI({
-        baseURL: "https://openrouter.ai/api/v1",
-        apiKey: env.OPENROUTER_API_KEY,
+      const deepseekClient = new OpenAI({
+        baseURL: "https://api.deepseek.com/v1",
+        apiKey: env.DEEPSEEK_API_KEY,
         timeout: 15000,
       });
-      await openrouterClient.chat.completions.create({
-        model: "xiaomi/mimo-v2-flash",
+      await deepseekClient.chat.completions.create({
+        model: "deepseek-chat",
         messages: [{ role: "user", content: "hi" }],
         max_tokens: 1,
       });
-      results.openrouter = { valid: true };
-      logger.info("✅ OpenRouter (mimo-v2-flash) validated");
+      results.deepseek = { valid: true };
+      logger.info("✅ DeepSeek v4 validated");
     } catch (error) {
-      results.openrouter = { valid: false, error: error.message };
-      failures.push(`OpenRouter: ${error.message}`);
-      logger.error({ err: error }, "❌ OpenRouter failed");
+      const errMsg = error.message?.substring(0, 50) || "Unknown";
+      results.deepseek = { valid: false, error: errMsg };
+      failures.push(`DeepSeek: ${errMsg}`);
+      logger.error(`❌ DeepSeek failed: ${errMsg}`);
     }
   } else {
-    results.openrouter = { valid: false, error: "Not configured" };
-    failures.push("OpenRouter: Not configured");
+    results.deepseek = { valid: false, error: "Not configured" };
+    failures.push("DeepSeek: Not configured (primary model)");
+    logger.error("❌ DeepSeek not configured (primary model)");
   }
 
-  // 3. Pinecone
+  // 3. DeepSeek (additional validation - uses same API key as primary)
+  if (env.DEEPSEEK_API_KEY) {
+    try {
+      const deepseekClient = new OpenAI({
+        baseURL: "https://api.deepseek.com/v1",
+        apiKey: env.DEEPSEEK_API_KEY,
+        timeout: 15000,
+      });
+      await deepseekClient.chat.completions.create({
+        model: "deepseek-chat",
+        messages: [{ role: "user", content: "hi" }],
+        max_tokens: 1,
+      });
+      results.deepseek = { valid: true };
+      logger.info("✅ DeepSeek v4 (secondary) validated");
+    } catch (error) {
+      const errMsg = error.message?.substring(0, 50) || "Unknown";
+      results.deepseek = { valid: false, error: errMsg };
+      failures.push(`DeepSeek (secondary): ${errMsg}`);
+      logger.error(`❌ DeepSeek (secondary) failed: ${errMsg}`);
+    }
+  } else {
+    results.deepseek = { valid: false, error: "Not configured" };
+    failures.push("DeepSeek (secondary): Not configured");
+    logger.error("❌ DeepSeek (secondary) not configured");
+  }
+
+  // 4. Pinecone
   if (env.PINECONE_API_KEY && env.PINECONE_INDEX_NAME) {
     try {
       const { Pinecone } = await import("@pinecone-database/pinecone");
@@ -102,9 +132,10 @@ async function validateApiKeys() {
       results.pinecone = { valid: true };
       logger.info("✅ Pinecone validated");
     } catch (error) {
-      results.pinecone = { valid: false, error: error.message };
-      failures.push(`Pinecone: ${error.message}`);
-      logger.error({ err: error }, "❌ Pinecone failed");
+      const errMsg = error.message?.substring(0, 50) || "Unknown";
+      results.pinecone = { valid: false, error: errMsg };
+      failures.push(`Pinecone: ${errMsg}`);
+      logger.error(`❌ Pinecone failed: ${errMsg}`);
     }
   } else {
     results.pinecone = { valid: false, error: "Not configured" };
@@ -134,19 +165,20 @@ async function validateApiKeys() {
   // 5. Serper (Optional)
   if (env.SERPER_API_KEY) {
     try {
-      const response = await fetch("https://google.serper.dev/search?q=test", {
+      const response = await fetch("https://google.serper.dev/search", {
         headers: {
           "X-API-KEY": env.SERPER_API_KEY,
           "Content-Type": "application/json",
         },
         method: "POST",
+        body: JSON.stringify({ q: "test" }),
       });
       results.serper = { valid: response.ok };
       if (response.ok) logger.info("✅ Serper validated");
       else throw new Error(`HTTP ${response.status}`);
     } catch (error) {
-      results.serper = { valid: false, error: error.message };
-      logger.warn({ err: error }, "⚠️ Serper failed (optional)");
+      results.serper = { valid: false, error: error.message?.substring(0, 50) };
+      logger.warn(`⚠️ Serper failed (optional): ${error.message?.substring(0, 50)}`);
     }
   } else {
     results.serper = { valid: false, error: "Not configured (optional)" };
@@ -178,8 +210,9 @@ async function validateApiKeys() {
   // Summary
   if (failures.length > 0) {
     const errorMsg = `Critical service failures: ${failures.join("; ")}`;
-    logger.fatal({ results }, errorMsg);
-    await sendPipelineFailureAlert(errorMsg, results);
+    const criticalCount = failures.length;
+    logger.fatal(`FATAL: ${errorMsg}`);
+    await sendPipelineFailureAlert(errorMsg, { criticalCount });
     throw new Error(errorMsg);
   }
 
@@ -257,7 +290,7 @@ export async function runPreFlightChecks(pipelinePayload) {
   } catch (error) {
     logger.fatal(
       { err: error },
-      "CRITICAL: Failed to load settings from database. Halting.",
+      "\x1b[31m💥 FATAL: Cannot load settings - pipeline halting!\x1b[0m",
     );
     throw error;
   }

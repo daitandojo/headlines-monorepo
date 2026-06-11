@@ -55,7 +55,7 @@ export async function generateContactSummary(opportunity) {
 
   try {
     const result = await callLanguageModel({
-      modelName: "xiaomi/mimo-v2-flash",
+      modelName: "deepseek/deepseek-v4-flash",
       systemPrompt: SYSTEM_PROMPT,
       userContent,
       isJson: false,

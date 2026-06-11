@@ -45,6 +45,6 @@ export async function sendSupervisorReportEmail(runStats, articleTraces = []) {
 
     logger.info('✅ Supervisor report email successfully sent/queued to all superusers.')
   } catch (error) {
-    logger.error({ err: error }, '💥 CRITICAL: Failed to send supervisor report email.')
+    logger.error('\x1b[31m💥 FATAL: Supervisor email failed!\x1b[0m', error.message?.substring(0, 80) || '')
   }
 }

@@ -90,27 +90,27 @@ const SETTINGS = [
   },
   {
     key: "LLM_MODEL_HEADLINE_ASSESSMENT",
-    value: "xiaomi/mimo-v2-flash",
+    value: "deepseek/deepseek-v4-flash",
     description:
       "LLM model used for the initial, high-volume headline assessment stage.",
     type: "string",
   },
   {
     key: "LLM_MODEL_ARTICLE_ASSESSMENT",
-    value: "xiaomi/mimo-v2-flash",
+    value: "deepseek/deepseek-v4-flash",
     description: "LLM model used for full article analysis and enrichment.",
     type: "string",
   },
   {
     key: "LLM_MODEL_SYNTHESIS",
-    value: "xiaomi/mimo-v2-flash",
+    value: "deepseek/deepseek-v4-flash",
     description:
       "LLM model used for clustering, synthesis, and other high-level reasoning tasks.",
     type: "string",
   },
   {
     key: "LLM_MODEL_UTILITY",
-    value: "xiaomi/mimo-v2-flash",
+    value: "deepseek/deepseek-v4-flash",
     description:
       "A smaller, faster model for simple, utility-focused tasks like classification or extraction.",
     type: "string",

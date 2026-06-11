@@ -12,9 +12,9 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from '@/components/shared'
+import { AvatarWithFallback } from '@/components/shared/Avatar'
 import Image from 'next/image'
 import {
-  User,
   Briefcase,
   MapPin,
   Mail,
@@ -149,15 +149,11 @@ export function OpportunityCard({
               <Link href={`/opportunities/${opportunity._id}`} className="block group flex-grow min-w-0">
                 <div className="flex justify-between items-start gap-3">
                   <div className="flex items-center gap-3 flex-1">
-                    {profile?.profilePhotoUrl ? (
-                      <div className="relative h-10 w-10 rounded-full overflow-hidden flex-shrink-0">
-                        <Image src={profile.profilePhotoUrl} alt={opportunity.reachOutTo} fill unoptimized className="object-cover" />
-                      </div>
-                    ) : (
-                      <div className="h-10 w-10 rounded-full bg-slate-800 flex items-center justify-center flex-shrink-0">
-                        <User className="h-5 w-5 text-slate-400" />
-                      </div>
-                    )}
+                    <AvatarWithFallback
+                      name={opportunity.reachOutTo}
+                      imageUrl={profile?.profilePhotoUrl}
+                      size={40}
+                    />
                     <div className="flex-1 space-y-1 min-w-0">
                       <p className="font-bold text-base text-slate-100 truncate group-hover:text-blue-400 transition-colors flex items-center gap-2">
                         <DossierQualityBadge quality={dossierQuality} />

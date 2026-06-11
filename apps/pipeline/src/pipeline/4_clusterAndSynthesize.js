@@ -8,10 +8,14 @@ import {
   opportunityChain,
   findSimilarArticles,
   searchFamilyOfficeForUBO,
+  fetchWikipediaSummary,
+  findNewsApiArticlesForEvent,
+  performGoogleSearch,
+  findAlternativeSources,
 } from '@headlines/ai-services'
 import { settings } from '@headlines/config'
-import { getConfig } from '@headlines/scraper-logic/config.js'
 import { SynthesizedEvent, EntityGraph } from '@headlines/models'
+import { trackDealLifecycle } from '../modules/dealTracker/index.js'
 import mongoose from 'mongoose'
 
 const SIMILARITY_THRESHOLD = 0.9
@@ -99,12 +103,17 @@ function buildSynthesisContext({
 }) {
   return {
     SOURCE_COUNTRY_CONTEXT: `The source newspaper for this event is from ${primaryCountry}. Prioritize this as the event's country unless the text explicitly states otherwise.`,
-    "[ TODAY'S NEWS ]": articles.map((article) => ({
-      headline: article.headline,
-      source: article.newspaper,
-      full_text: article.assessment_article,
-      key_individuals: article.key_individuals || [],
-    })),
+    "[ TODAY'S NEWS ]": articles.map((article) => {
+      const imageCaption = article.imageCaption || article.imageAlt || article.ogImageAlt || article.ogImageAltText || null
+      return {
+        headline: article.headline,
+        source: article.newspaper,
+        full_text: article.assessment_article,
+        key_individuals: article.key_individuals || [],
+        image_caption: imageCaption,
+        is_headline_only: article.richness_source === 'headline_only' || (article.assessment_article || '').startsWith('[HEADLINE ONLY]'),
+      }
+    }),
     '[ HISTORICAL CONTEXT (Internal Database) ]': historicalContext,
     '[ KNOWLEDGE GRAPH (Known Entity Relationships) ]': entityGraphContext,
     '[ PUBLIC WIKIPEDIA CONTEXT ]': wikipediaContext,
@@ -223,7 +232,7 @@ async function synthesizeEventsFromCluster(
   existingEvent = null,
   isLeanMode = false
 ) {
-  const config = getConfig()
+  const utilityFunctions = { fetchWikipediaSummary, findNewsApiArticlesForEvent, performGoogleSearch, findAlternativeSources }
   const allSourceArticles = existingEvent
     ? [...existingEvent.source_articles, ...articlesInCluster]
     : articlesInCluster
@@ -250,10 +259,46 @@ async function synthesizeEventsFromCluster(
   } else {
     const entityResult = await entityExtractorChain({ article_text: combinedText })
     const entities = entityResult.entities || []
+
+    // Phase 2: Resolve target company names to their human founders via Knowledge Graph
+    const entityGraphLookups = await Promise.all(
+      entities.map(async (name) => {
+        try {
+          const graphEntry = await EntityGraph.findOne({ name: { $regex: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } })
+            .select('relationships')
+            .lean()
+          if (graphEntry?.relationships?.length > 0) {
+            const founderRels = graphEntry.relationships.filter(r =>
+              r.type.toLowerCase().includes('founder') ||
+              r.type.toLowerCase().includes('owner') ||
+              r.type.toLowerCase().includes('ceo') ||
+              r.type.toLowerCase().includes('chairman')
+            )
+            if (founderRels.length > 0) {
+              return { company: name, relationships: founderRels }
+            }
+          }
+          return null
+        } catch { return null }
+      })
+    )
+    const foundRelationships = entityGraphLookups.filter(Boolean)
+    if (foundRelationships.length > 0) {
+      const entityGraphContextLines = [`Found ${foundRelationships.length} companies with known leadership:`]
+      for (const found of foundRelationships) {
+        entityGraphContextLines.push(`\n${found.company}:`)
+        for (const rel of found.relationships) {
+          entityGraphContextLines.push(`  - ${rel.targetName} (${rel.type})`)
+        }
+      }
+      entityGraphContext = entityGraphContextLines.join('\n')
+      logger.info(`[Synthesize] Knowledge Graph found ${foundRelationships.length} companies with leadership info`)
+    }
+
     historicalContext = await findSimilarArticles(entities.join(', '))
     ;[wikiEnrichment, newsApiResult, entityGraphContext] = await Promise.all([
-      enrichWithWikipedia(entities, config.utilityFunctions),
-      enrichWithNewsApi(primaryHeadline, config.utilityFunctions),
+      enrichWithWikipedia(entities, utilityFunctions),
+      enrichWithNewsApi(primaryHeadline, utilityFunctions),
       enrichWithEntityGraph(entities),
     ])
     enrichmentSources = determineEnrichmentSources(
@@ -505,6 +550,13 @@ export async function runClusterAndSynthesize(pipelinePayload) {
 
   pipelinePayload.synthesizedEvents = events
   pipelinePayload.opportunitiesToSave = opportunities
+
+  // Deal lifecycle tracking
+  if (events.length > 0) {
+    for (const event of events) {
+      await trackDealLifecycle(event, event.relatedCompanies || [])
+    }
+  }
 
   return { success: true, payload: pipelinePayload }
 }

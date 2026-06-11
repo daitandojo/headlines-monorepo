@@ -6,9 +6,20 @@ import { buildPrompt } from "../lib/promptBuilder.js";
 
 const systemPrompt = buildPrompt(instructionExtensiveEnrichment);
 
+const COUNTRY_SEARCH_TIPS = {
+  Denmark: 'SEARCH IN DANISH: Use "formue" (wealth), "familiekontor" (family office), "milliardær" (billionaire), "grundlægger" (founder). Danish news and registries write about Danish wealth in Danish, not English.',
+  Netherlands: 'SEARCH IN DUTCH: Use "vermogen" (wealth), "familievermogen" (family wealth), "miljardair" (billionaire), "oprichter" (founder). Dutch sources write about Dutch wealth in Dutch.',
+  Sweden: 'SEARCH IN SWEDISH: Use "förmögenhet" (wealth), "miljardär" (billionaire), "familjekontor" (family office).',
+  Norway: 'SEARCH IN NORWEGIAN: Use "formue" (wealth), "milliardær" (billionaire), "gründer" (founder).',
+  Germany: 'SEARCH IN GERMAN: Use "Vermögen" (wealth), "Milliardär" (billionaire), "Familienunternehmen" (family business).',
+  France: 'SEARCH IN FRENCH: Use "patrimoine" (wealth), "milliardaire" (billionaire), "fortune" (fortune).',
+  Spain: 'SEARCH IN SPANISH: Use "patrimonio" (wealth), "multimillonario" (billionaire), "fortuna" (fortune).',
+}
+
 export const extensiveEnrichmentChain = {
   async invoke(input) {
-    const { name, company, currentContext } = input;
+    const { name, company, currentContext, country } = input;
+    const searchTip = COUNTRY_SEARCH_TIPS[country] || 'Search in the local language of the individual\'s country. If Danish, use Danish terms. If Dutch, use Dutch terms. Do not assume English works for all countries.';
 
     if (!isKimiConfigured()) {
       logger.warn("Kimi K2 not configured, skipping extensive enrichment");
@@ -20,11 +31,14 @@ Research and map the family network, business peers, and related wealthy individ
 
 Seed Person: ${name}
 Company: ${company || "N/A"}
-
+Country: ${country || "Unknown"}
 Previous Context:
 ${currentContext || "N/A"}
 
-Use web search to find: family office, family members, business connections, related wealthy individuals.
+LANGUAGE INSTRUCTION (CRITICAL):
+${searchTip}
+
+Use web search to find: family office, family members, business connections, related wealthy individuals. Search in the LOCAL LANGUAGE of the individual's country, not in English.
 `.trim();
 
     try {

@@ -7,6 +7,7 @@ import { spawn } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 import os from 'os'
+import { z } from 'zod'
 
 const router = Router()
 router.use(verifyAdmin)
@@ -25,6 +26,12 @@ const upload = multer({
   },
 })
 
+const ingestionSchema = z.object({
+  dryRun: z.enum(['true', 'false']).optional(),
+  force: z.enum(['true', 'false']).optional(),
+  limit: z.string().optional(),
+})
+
 function runPipelineCli(filePath, options) {
   return new Promise((resolve, reject) => {
     const args = ['src/file-ingestion/index.js', '--file', filePath]
@@ -35,7 +42,6 @@ function runPipelineCli(filePath, options) {
       args.push('--limit', String(options.limit))
     }
 
-    const pipelineScript = path.resolve(process.cwd(), 'apps/pipeline/src/file-ingestion/index.js')
     const proc = spawn('node', args, {
       cwd: path.resolve(process.cwd(), 'apps/pipeline'),
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -60,7 +66,6 @@ function runPipelineCli(filePath, options) {
       if (code === 0) {
         resolve({ stdout, code })
       } else {
-        logger.error({ stderr, code }, 'Pipeline CLI exited with error')
         reject(new Error(stderr || `Pipeline exited with code ${code}`))
       }
     })
@@ -77,10 +82,15 @@ router.post('/', upload.single('file'), async (req, res) => {
     return res.status(400).json({ error: 'No file uploaded.' })
   }
 
+  const parsed = ingestionSchema.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: parsed.error.issues[0]?.message || 'Invalid input' })
+  }
+
   const options = {
-    dryRun: req.body.dryRun === 'true',
-    force: req.body.force === 'true',
-    limit: req.body.limit ? parseInt(req.body.limit, 10) : null,
+    dryRun: parsed.data.dryRun === 'true',
+    force: parsed.data.force === 'true',
+    limit: parsed.data.limit ? parseInt(parsed.data.limit, 10) : null,
     verbose: true,
   }
 
@@ -89,31 +99,23 @@ router.post('/', upload.single('file'), async (req, res) => {
 
   try {
     fs.writeFileSync(tmpPath, req.file.buffer)
-    logger.info({ file: req.file.originalname, size: req.file.size, options }, 'File ingestion started')
+    logger.info(`File ingestion started: ${req.file.originalname} (${req.file.size} bytes)`)
 
     await runPipelineCli(tmpPath, options)
 
-    const classification = {
-      classification: 'file_ingested',
-      confidence: 'completed',
-      detectedLanguage: null,
-      estimatedRecordCount: null,
-    }
-    const summary = { newOpportunitiesCreated: null, alreadyExisting: null, excluded: null }
-
-    logger.info({ file: req.file.originalname }, 'File ingestion completed via HTTP API')
+    logger.info('File ingestion completed via HTTP API')
     return res.status(200).json({
       success: true,
       runId: `http-${Date.now()}`,
       fileName: req.file.originalname,
-      classification,
+      classification: { classification: 'file_ingested', confidence: 'completed' },
       extraction: { totalExtracted: null, extractionErrors: 0 },
       deduplication: { alreadyExisting: null, newToEnrich: null },
-      summary,
+      summary: { newOpportunitiesCreated: null, alreadyExisting: null, excluded: null },
     })
   } catch (error) {
-    logger.error({ err: error, file: req.file.originalname }, 'File ingestion HTTP API error')
-    return res.status(500).json({ error: error.message })
+    logger.error(`File ingestion failed: ${error.message?.substring(0, 100) || ''}`)
+    return res.status(500).json({ error: 'File ingestion failed.', code: 'INGESTION_ERROR' })
   }
 })
 

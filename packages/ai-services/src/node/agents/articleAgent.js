@@ -63,6 +63,12 @@ export async function assessArticleContent(
     articleText = `[EXTERNAL CONTEXT FROM WEB SEARCH]:\n${externalContext}\n\n[ORIGINAL ARTICLE DATA]:\n${articleText}`
   }
 
+  const imageCaption = article.imageCaption || article.imageAlt || article.ogImageAlt
+  if (imageCaption) {
+    articleText = `[IMAGE CAPTION / ALT TEXT]:\n${imageCaption}\n\n${articleText}`
+    logger.info({ imageCaption: imageCaption.substring(0, 100) }, 'Image caption found - adding to article context.')
+  }
+
   const response = await articleAssessmentAgent.execute(articleText)
 
   if (response.error) {

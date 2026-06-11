@@ -116,7 +116,19 @@ export async function runEntityResolution(pipelinePayload) {
   }
 
   const highPotentialTargets = Array.from(dossiersToCreate)
-  if (highPotentialTargets.length === 0) {
+
+  // Filter out enrichment exclusions (globally-famous noise)
+  const { isExcluded } = await import('../utils/enrichmentExclusions.js')
+  const exclusionChecks = await Promise.all(
+    highPotentialTargets.map(async (name) => ({ name, excluded: await isExcluded(name) }))
+  )
+  const filteredTargets = exclusionChecks.filter(c => !c.excluded).map(c => c.name)
+  const skippedCount = highPotentialTargets.length - filteredTargets.length
+  if (skippedCount > 0) {
+    logger.info(`[Entity Resolution] Skipped ${skippedCount} excluded targets from dossier creation`)
+  }
+
+  if (filteredTargets.length === 0) {
     logger.info(
       '[Entity Resolution] No new high-potential targets identified for dossier creation.'
     )
@@ -124,7 +136,7 @@ export async function runEntityResolution(pipelinePayload) {
   }
 
   const limit = pLimit(2)
-  const dossierPromises = highPotentialTargets.map((name) =>
+  const dossierPromises = filteredTargets.map((name) =>
     limit(async () => {
       try {
         logger.info(`[Background Task] 🏭 Starting dossier creation for "${name}"...`)

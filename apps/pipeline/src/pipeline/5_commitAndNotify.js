@@ -5,6 +5,8 @@ import { sendSupervisorReportEmail } from '../modules/email/index.js'
 import { judgeAndFilterOutput } from './submodules/commit/1_judgeOutput.js'
 import { saveResultsToDb } from './submodules/commit/2_saveResults.js'
 import { triggerNotifications } from './submodules/commit/3_triggerNotifications.js'
+import { scoreAllIndividuals } from './submodules/scoringEngine.js'
+import { buildEntityTimelines } from './submodules/entityTimeline.js'
 
 const FATAL_JUDGEMENT_QUALITIES = ['Irrelevant', 'Poor']
 
@@ -149,6 +151,18 @@ export async function runCommitAndNotify(pipelinePayload) {
 
     updatePayloadWithResults(pipelinePayload, savedEvents, savedOpportunities)
     await executeNotifications(pipelinePayload, savedEvents, savedOpportunities)
+
+    // Intelligence upgrade: scoring + entity timelines
+    if (savedEvents && savedEvents.length > 0) {
+      const scores = scoreAllIndividuals(
+        pipelinePayload.assessedCandidates || [],
+        savedEvents
+      )
+      pipelinePayload.runStatsManager.set('transactionScores', scores)
+      logger.info(`[Scoring] Computed transaction scores for ${scores.length} individuals`)
+
+      await buildEntityTimelines(savedEvents)
+    }
   } catch (error) {
     logger.error({ err: error }, 'Failed during commit and notify stage')
     throw error

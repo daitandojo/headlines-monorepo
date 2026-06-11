@@ -5,12 +5,17 @@ import { NextResponse } from 'next/server'
 import { verifyAdmin } from '@/lib/auth/server'
 
 const SERVER_URL = process.env.PIPELINE_SERVER_URL || 'http://localhost:3002'
+const JWT_COOKIE_NAME = 'headlines-jwt'
 
-async function proxyToServer(endpoint, method, body) {
+async function proxyToServer(endpoint, method, body, request) {
+  const jwtToken = request.cookies.get(JWT_COOKIE_NAME)?.value
   const url = `${SERVER_URL}${endpoint}`
   const options = {
     method,
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
+    },
   }
   if (body) options.body = JSON.stringify(body)
 
@@ -26,12 +31,16 @@ const handlePost = async (request) => {
   }
 
   const body = await request.json()
-  const { data, status } = await proxyToServer('/api/pipeline/run/start', 'POST', body)
 
-  if (status !== 202) {
-    return NextResponse.json({ error: data.error || 'Failed to start pipeline.' }, { status: status })
+  if (body.action === 'stop') {
+    const { data, status } = await proxyToServer('/api/pipeline/run/stop', 'POST', { runId: body.runId }, request)
+    return NextResponse.json(data, { status })
   }
 
+  const { data, status } = await proxyToServer('/api/pipeline/run/start', 'POST', body, request)
+  if (status !== 202) {
+    return NextResponse.json({ error: data.error || 'Failed to start pipeline.' }, { status })
+  }
   return NextResponse.json(data)
 }
 
@@ -41,7 +50,7 @@ const handleGet = async (request) => {
     return NextResponse.json({ error: error || 'Unauthorized' }, { status: 401 })
   }
 
-  const { data, status } = await proxyToServer('/api/pipeline/run/status', 'GET')
+  const { data, status } = await proxyToServer('/api/pipeline/run/status', 'GET', null, request)
   return NextResponse.json(data)
 }
 

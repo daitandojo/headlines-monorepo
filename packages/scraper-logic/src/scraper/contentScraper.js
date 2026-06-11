@@ -8,6 +8,77 @@ import { contentExtractorRegistry } from './extractors/index.js'
 import { settings } from '@headlines/config/node'
 
 /**
+ * Extracts image metadata (URL, alt text, caption) from HTML page.
+ * Used to extract names from article hero images (e.g., "Baron Johan Wedell-Wedellsborg").
+ * @param {string} html - Raw HTML of the page.
+ * @returns {Object} Image metadata { imageUrl, imageAlt, imageCaption }
+ */
+function extractImageMetadata(html) {
+  if (!html) return { imageUrl: null, imageAlt: null, imageCaption: null }
+  
+  const $ = cheerio.load(html)
+  
+  let imageUrl = null
+  let imageAlt = null
+  let imageCaption = null
+
+  // Priority 1: og:image meta tag (most reliable for article hero image)
+  const ogImage = $('meta[property="og:image"]').attr('content')
+  if (ogImage) {
+    imageUrl = ogImage
+  }
+
+  // Priority 2: twitter:image as fallback
+  if (!imageUrl) {
+    const twitterImage = $('meta[name="twitter:image"]').attr('content')
+    if (twitterImage) imageUrl = twitterImage
+  }
+
+  // Priority 3: first large article image
+  if (!imageUrl) {
+    const articleImg = $('article img, .article-image img, .content img, main img')
+      .filter((_, el) => {
+        const src = $(el).attr('src') || $(el).attr('data-src') || ''
+        return src.length > 20
+      })
+      .first()
+      .attr('src')
+    if (articleImg) imageUrl = articleImg
+  }
+
+  // Extract alt text for the og:image
+  if (imageUrl) {
+    const allImgs = $('img')
+    allImgs.each((_, el) => {
+      const src = $(el).attr('src') || $(el).attr('data-src') || ''
+      if (imageUrl.includes(src.split('/').pop()) || src.includes(imageUrl.split('/').pop())) {
+        const alt = $(el).attr('alt')
+        if (alt && alt.length > 3) imageAlt = alt
+      }
+    })
+  }
+
+  // Extract figcaption or image caption (photo credit / byline text near the image)
+  // Look for figure > figcaption, or image wrappers with credit text
+  const figcaption = $('figcaption').first().text().trim()
+  if (figcaption && figcaption.length > 5) {
+    imageCaption = figcaption
+  }
+
+  // Fallback: look for image credit / photo credit text
+  if (!imageCaption) {
+    const credit = $('[class*="credit"], [class*="photo-credit"], [class*="billedtekst"]').first().text().trim()
+    if (credit && credit.length > 5) imageCaption = credit
+  }
+
+  // Extract from og:image:alt or og:image:secure_url (some sites use these)
+  const ogImageAlt = $('meta[property="og:image:alt"]').attr('content')
+  if (ogImageAlt) imageAlt = ogImageAlt
+
+  return { imageUrl, imageAlt, imageCaption }
+}
+
+/**
  * Cleans and formats text extracted by Readability or other methods.
  * @param {string} text - The raw text content.
  * @returns {string} The cleaned text.
@@ -134,23 +205,32 @@ export async function scrapeArticleContent(article, source) {
       '✅ Universal content extraction successful'
     )
 
+    const { imageUrl: extractedOgImage, imageAlt: extractedImageAlt, imageCaption: extractedImageCaption } = extractImageMetadata(html)
+
     return {
       ...article,
       articleContent: { contents: [content], method: 'Readability.js' },
       rawHtml: html,
       extractionMethod: 'Readability',
+      ogImage: extractedOgImage,
+      imageAlt: extractedImageAlt,
+      imageCaption: extractedImageCaption,
     }
   } catch (error) {
     logger.warn(
       { article: { headline: article.headline, link: article.link }, err: error.message },
       '❌ Universal content extraction failed'
     )
+    const { imageUrl: extractedOgImage, imageAlt: extractedImageAlt, imageCaption: extractedImageCaption } = extractImageMetadata(html)
     return {
       ...article,
       enrichment_error: `Readability Failed: ${error.message}`,
       contentPreview: extractFallbackSnippet(html).substring(0, 300),
       rawHtml: html,
       extractionMethod: 'Readability',
+      ogImage: extractedOgImage,
+      imageAlt: extractedImageAlt,
+      imageCaption: extractedImageCaption,
     }
   }
 }

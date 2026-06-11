@@ -118,6 +118,12 @@ export const getInstructionArticle = () => ({
   keyIndividualsExtraction: [
     `**STEP 4: EXTRACT KEY INDIVIDUALS (STRICT CRITERIA)**`,
     ``,
+    `**IMAGE CAPTION AS NAME SOURCE — CRITICAL:**`,
+    `If an [IMAGE CAPTION / ALT TEXT] section appears above the article body, ALWAYS extract names from it.`,
+    `Article hero images (photos of people) often have captions like "Baron Johan Wedell-Wedellsborg, CEO of Company X" or "Finansfoto: Mogens Flindt".`,
+    `These captions frequently contain the full name of the primary subject when the headline uses only a title (e.g., "Danish baron" in headline → caption shows "Baron Johan Wedell-Wedellsborg").`,
+    `Extract names from image captions and include them in key_individuals if they are relevant to the event.`,
+    ``,
     `**WHO QUALIFIES:**`,
     `• Founders selling their company`,
     `• Major private shareholders realizing liquidity (>5% stake)`,

@@ -41,5 +41,6 @@ else
   COMMAND="node $TARGET_SCRIPT_FULL $@"
 fi
 
-# Use dotenv-cli to load the .env file from the root, then execute the constructed command
-pnpm exec dotenv -e ./.env -- $COMMAND
+# Use dotenv-cli to load the .env file from the root, then execute the constructed command.
+# Full output (stdout + stderr) is captured to log.txt for post-run analysis.
+pnpm exec dotenv -e ./.env -- $COMMAND 2>&1 | tee "$MONOREPO_ROOT/log.txt"

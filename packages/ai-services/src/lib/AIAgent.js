@@ -76,11 +76,28 @@ export class AIAgent {
         }
 
         if (attempt === MAX_CORRECTION_ATTEMPTS) {
+          const errorObj = validationResult.error.flatten()
+          const isArrayNullIssue =
+            errorObj.fieldErrors?.opportunities &&
+            errorObj.fieldErrors.opportunities.some(e => e.includes('received null'))
+
+          const rawHasOpportunities = response?.opportunities && Array.isArray(response.opportunities)
+
+          if (isArrayNullIssue && rawHasOpportunities) {
+            logger.warn(
+              { agent: this.constructor.name, model: this.model },
+              `Zod rejected null in opportunities array but raw response has valid array. Recovering from raw response.`
+            )
+            return this.responseWrapperKey
+              ? { [this.responseWrapperKey]: { opportunities: response.opportunities } }
+              : { opportunities: response.opportunities }
+          }
+
           logger.error(
             {
               agentName: this.constructor.name,
               model: this.model,
-              validationErrors: validationResult.error.flatten(),
+              validationErrors: errorObj,
               rawResponseFromAI: response,
             },
             `AI response failed Zod validation after all correction attempts.`

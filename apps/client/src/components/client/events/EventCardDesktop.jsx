@@ -73,6 +73,12 @@ export function EventCardDesktop({
     const opportunityCount = event.key_individuals?.length || 0
     const valuation = event.transactionDetails?.valuationAtEventUSD
     const tags = event.tags || []
+    const hoursAgo = event.updatedAt
+      ? (Date.now() - new Date(event.updatedAt).getTime()) / (1000 * 60 * 60)
+      : 999
+    const badge = relevanceScore >= 90 && hoursAgo <= 6 ? 'breaking'
+      : relevanceScore >= 75 && hoursAgo <= 12 ? 'new'
+      : null
     return {
       flags,
       primaryImageUrl,
@@ -81,6 +87,7 @@ export function EventCardDesktop({
       opportunityCount,
       valuation,
       tags,
+      badge,
     }
   }, [event])
 
@@ -116,6 +123,7 @@ export function EventCardDesktop({
     opportunityCount,
     valuation,
     tags,
+    badge,
   } = computedData
 
   return (
@@ -124,21 +132,30 @@ export function EventCardDesktop({
         <div className="relative p-4 rounded-lg bg-slate-800/40 transition-all duration-300 hover:bg-slate-800/60 hover:shadow-xl hover:shadow-slate-900/30">
           <div className="flex items-start gap-4">
             <div className="flex flex-col items-center shrink-0 min-w-[70px]">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge
-                    className={`text-xl font-bold px-3 py-1.5 transition-all duration-200 ${getRelevanceBadgeClass(relevanceScore)}`}
-                  >
-                    {relevanceScore}
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <div className="text-center">
-                    <p className="font-semibold">{getRelevanceLabel(relevanceScore)}</p>
-                    <p className="text-xs text-slate-400">Relevance Score</p>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
+              <div className="flex flex-col items-center gap-1">
+                {badge && (
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse ${
+                    badge === 'breaking' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                  }`}>
+                    {badge === 'breaking' ? 'BREAKING' : 'NEW'}
+                  </span>
+                )}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge
+                      className={`text-xl font-bold px-3 py-1.5 transition-all duration-200 ${getRelevanceBadgeClass(relevanceScore)}`}
+                    >
+                      {relevanceScore}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="text-center">
+                      <p className="font-semibold">{getRelevanceLabel(relevanceScore)}</p>
+                      <p className="text-xs text-slate-400">Relevance Score</p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               <span className="text-xs text-slate-500 mt-1.5 font-medium">
                 {updatedAt}
               </span>

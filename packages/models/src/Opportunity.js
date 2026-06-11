@@ -135,6 +135,44 @@ const OpportunitySchema = new Schema(
     embedding: { type: [Number] },
     events: [{ type: Schema.Types.ObjectId, ref: 'SynthesizedEvent', index: true }],
     relatedOpportunities: [{ type: Schema.Types.ObjectId, ref: 'Opportunity' }],
+    // Intelligence upgrade fields
+    likelyToTransactInMonths: { type: Number },
+    transactionReadiness: {
+      type: String,
+      enum: ['cold', 'warm', 'hot', 'urgent'],
+    },
+    dealSignalSources: { type: [String], default: [] },
+    pastEvents: [
+      {
+        eventId: { type: Schema.Types.ObjectId, ref: 'SynthesizedEvent' },
+        headline: { type: String, trim: true },
+        date: { type: Date },
+        type: { type: String, trim: true },
+        amountMM: { type: Number },
+      },
+    ],
+    // Sentiment, confidence & decay (Tier 1 Intelligence)
+    sentimentTrend: [
+      {
+        date: { type: Date },
+        score: { type: Number, min: -1, max: 1 },
+        source: { type: String, trim: true },
+      },
+    ],
+    confidenceScore: { type: Number, min: 0, max: 100, default: 0 },
+    lastSignalDate: { type: Date },
+    coolingSince: { type: Date },
+    corroborationCount: { type: Number, default: 0 },
+    // Wealth chain fields
+    estimatedTotalWealthUSD_MM: { type: Number },
+    ownershipStakesSnapshot: [
+      {
+        company: { type: String, trim: true },
+        percentage: { type: Number },
+        estimatedValueUSD_MM: { type: Number },
+        stakeType: { type: String },
+      },
+    ],
   },
   {
     timestamps: true,

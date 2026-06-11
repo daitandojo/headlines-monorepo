@@ -10,6 +10,7 @@ const modelPricing = {
   'kimi-k2-turbo-preview': { input: 0.0, output: 0.0 },
   'kimi-k2': { input: 0.0, output: 0.0 },
   'openai/gpt-4o-mini': { input: 0.15, output: 0.6 },
+  'deepseek-api:deepseek-chat': { input: 0.27, output: 1.10 },
 }
 
 class TokenTracker {

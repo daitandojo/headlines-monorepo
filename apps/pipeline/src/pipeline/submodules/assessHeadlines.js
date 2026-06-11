@@ -97,7 +97,7 @@ export async function assessHeadlines(articles, articleTraceLogger) {
       const response = await batchHeadlineChain({
         headlines_json_string: JSON.stringify(
           batchWithContext.map((a) => ({
-            id: a._id.toString(),
+            id: a._id?.toString() || a.id?.toString() || Math.random().toString(36).slice(2, 10),
             headline: a.headlineWithContext,
           }))
         ),
@@ -114,7 +114,12 @@ export async function assessHeadlines(articles, articleTraceLogger) {
       )
 
       batchWithContext.forEach((originalArticle) => {
-        const assessment = assessmentMap.get(originalArticle._id.toString())
+        const articleId = originalArticle._id?.toString() || originalArticle.id?.toString()
+        if (!articleId) {
+          logger.warn({ headline: originalArticle.headline?.slice(0, 50) }, '[AssessHeadlines] Article has no _id, skipping')
+          return
+        }
+        const assessment = assessmentMap.get(articleId)
         if (assessment) {
           if (originalArticle.hits.length > 0) {
             let score = assessment.relevance_headline
@@ -232,42 +237,51 @@ export async function assessHeadlines(articles, articleTraceLogger) {
 
   const assessedCandidates = Array.from(assessedCandidatesMap.values())
 
-  logger.info('--- Headline Assessment Complete ---')
+  const passCount = assessedCandidates.filter(a => a.relevance_headline >= settings.HEADLINES_RELEVANCE_THRESHOLD).length
+  const failCount = assessedCandidates.length - passCount
+  
+  logger.info('═══════════════════════════════════════════════════════════════')
+  logger.info(' HEADLINE ASSESSMENT COMPLETE')
+  logger.info('═══════════════════════════════════════════════════════════════')
+  logger.info(`▸ Total processed: ${assessedCandidates.length}`)
+  logger.info(`▸ Passed (≥${settings.HEADLINES_RELEVANCE_THRESHOLD}): ${passCount}`)
+  logger.info(`▸ Failed: ${failCount}`)
 
   if (assessedCandidates.length > 0) {
-    const bulkOps = assessedCandidates.map((article) => ({
-      updateOne: {
-        filter: { link: article.link },
-        update: {
-          $setOnInsert: {
-            _id: article._id,
-            headline: article.headline,
-            newspaper: article.newspaper,
-            country: article.country,
-            source: article.source,
-          },
-          $set: {
-            status: 'assessed',
-            relevance_headline: article.relevance_headline,
-            assessment_headline: article.assessment_headline,
-            headline_en: article.headline_en,
-            watchlistHits:
-              article.watchlistHits || (article.hits || []).map((h) => h.entity._id),
-            pipelineTrace: [
-              {
+    const bulkOps = assessedCandidates.map((article) => {
+      const passed = article.relevance_headline >= settings.HEADLINES_RELEVANCE_THRESHOLD
+      const newStatus = passed ? 'headline_assessed' : 'failed_headline'
+      return {
+        updateOne: {
+          filter: { link: article.link },
+          update: {
+            $setOnInsert: {
+              _id: article._id,
+              headline: article.headline,
+              newspaper: article.newspaper,
+              country: article.country,
+              source: article.source,
+            },
+            $set: {
+              status: newStatus,
+              relevance_headline: article.relevance_headline,
+              assessment_headline: article.assessment_headline,
+              headline_en: article.headline_en,
+              watchlistHits:
+                article.watchlistHits || (article.hits || []).map((h) => h.entity._id),
+            },
+            $push: {
+              pipelineTrace: {
                 stage: 'Headline Assessment',
-                status:
-                  article.relevance_headline >= settings.HEADLINES_RELEVANCE_THRESHOLD
-                    ? 'PASSED'
-                    : 'DROPPED',
+                status: passed ? 'PASSED' : 'DROPPED',
                 reason: article.assessment_headline,
               },
-            ],
+            },
           },
+          upsert: true,
         },
-        upsert: true,
-      },
-    }))
+      }
+    })
     await bulkWriteArticles(bulkOps)
     logger.info(
       `Persisted ${assessedCandidates.length} assessed articles to prevent re-scraping.`

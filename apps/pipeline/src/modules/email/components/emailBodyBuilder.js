@@ -20,28 +20,37 @@ function createWarRoomDashboard(events, opportunities, pending) {
     return `$${val.toFixed(0)}M`;
   };
 
-  const dashboardCard = (emoji, label, value, sublabel, color) => `
-    <div style="flex: 1; min-width: 120px; text-align: center; padding: 16px 12px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
-      <div style="font-size: 28px; margin-bottom: 8px;">${emoji}</div>
-      <div style="font-size: 24px; font-weight: 700; color: ${color || '#EAEAEA'};">${value}</div>
-      <div style="font-size: 12px; color: #888; margin-top: 4px;">${label}</div>
-      ${sublabel ? `<div style="font-size: 11px; color: #666; margin-top: 2px;">${sublabel}</div>` : ''}
-    </div>
-  `;
+  const card = (emoji, label, value, color) => `
+    <td style="width:25%; padding:8px;" class="dash-cell">
+      <table role="presentation" style="width:100%;border-collapse:collapse;">
+        <tr><td style="text-align:center; padding:16px 8px; background:rgba(255,255,255,0.03); border-radius:12px; border:1px solid rgba(255,255,255,0.08);">
+          <div style="font-size:24px; line-height:1.4;" class="dash-emoji">${emoji}</div>
+          <div style="font-size:26px; font-weight:700; color:${color || '#EAEAEA'}; line-height:1.2;" class="dash-num">${value}</div>
+          <div style="font-size:11px; color:#888; margin-top:4px; line-height:1.3;" class="dash-label">${label}</div>
+        </td></tr>
+      </table>
+    </td>
+  `
 
   return `
-    <div style="background: linear-gradient(135deg, #1a1f2e 0%, #0d1117 100%); border-radius: 16px; padding: 24px; margin-bottom: 28px; border: 1px solid #2a3a50; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
-      <div style="display: flex; align-items: center; margin-bottom: 16px;">
-        <div style="font-size: 20px; margin-right: 10px;">🎯</div>
-        <div style="font-size: 16px; font-weight: 600; color: #D4AF37; letter-spacing: 0.5px;">TODAY'S DEAL WAR ROOM</div>
-        <div style="margin-left: auto; font-size: 12px; color: #666;">${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</div>
-      </div>
-      <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: space-between;">
-        ${dashboardCard('📰', 'Events Detected', eventCount, null, '#58a6ff')}
-        ${dashboardCard('💎', 'Opportunities', oppCount, null, '#4CAF50')}
-        ${dashboardCard('⏳', 'Pending Deals', pendingCount, null, '#FFC107')}
-        ${dashboardCard('💰', 'Est. Liquidity', formatLiquidity(totalLiquidity), totalLiquidity > 0 ? '#D4AF37' : '#666')}
-      </div>
+    <div style="background:linear-gradient(135deg,#1a1f2e 0%,#0d1117 100%); border-radius:16px; padding:24px 16px; margin-bottom:28px; border:1px solid #2a3a50;">
+      <table role="presentation" style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="padding:0 0 16px 8px;">
+            <span style="font-size:16px;">🎯</span>
+            <span style="font-size:15px; font-weight:600; color:#D4AF37; letter-spacing:0.5px; margin-left:8px;">TODAY'S DEAL WAR ROOM</span>
+            <span style="float:right; font-size:11px; color:#666; padding-right:8px;">${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</span>
+          </td>
+        </tr>
+      </table>
+      <table role="presentation" style="width:100%;border-collapse:collapse;table-layout:fixed;">
+        <tr>
+          ${card('📰', 'Events', eventCount, '#58a6ff')}
+          ${card('💎', 'Opportunities', oppCount, '#4CAF50')}
+          ${card('⏳', 'Pending Deals', pendingCount, '#FFC107')}
+          ${card('💰', 'Est. Liquidity', formatLiquidity(totalLiquidity), '#D4AF37')}
+        </tr>
+      </table>
     </div>
   `;
 }
@@ -65,6 +74,13 @@ function createEmailWrapper(bodyContent, subject) {
                 @media only screen and (max-width: 600px) {
                     .content-table { width: 100% !important; }
                     .content-background { padding: 20px 15px !important; }
+                    .dash-cell { width: 50% !important; display: block !important; float: left !important; box-sizing: border-box !important; }
+                    .dash-num { font-size: 20px !important; }
+                    .dash-emoji { font-size: 20px !important; }
+                    .dash-label { font-size: 10px !important; }
+                }
+                @media only screen and (max-width: 400px) {
+                    .dash-cell { width: 100% !important; float: none !important; }
                 }
             </style>
         </head>

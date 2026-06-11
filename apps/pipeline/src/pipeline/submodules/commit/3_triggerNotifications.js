@@ -116,5 +116,23 @@ export async function triggerNotifications(
       { _id: { $in: eventIds } },
       { $set: { emailed: true, email_sent_at: new Date() } },
     );
+    
+    // Mark all source articles as 'completed' after notification
+    const allArticleLinks = [];
+    for (const event of eventsForNotification) {
+      if (event.source_articles) {
+        for (const art of event.source_articles) {
+          allArticleLinks.push(art.link);
+        }
+      }
+    }
+    if (allArticleLinks.length > 0) {
+      const { Article } = await import('@headlines/models');
+      await Article.updateMany(
+        { link: { $in: allArticleLinks } },
+        { $set: { status: 'completed' } },
+      );
+      logger.info(`\x1b[32m[OK] Marked ${allArticleLinks.length} articles as completed after notification\x1b[0m`);
+    }
   }
 }

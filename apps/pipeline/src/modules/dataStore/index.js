@@ -224,7 +224,7 @@ export async function saveOpportunitiesToPinecone(savedOpportunities) {
     }
     return true;
   } catch (error) {
-    logger.error({ err: error }, "Failed to save opportunities to Pinecone");
+    logger.error('Failed to save opportunities to Pinecone:', error.message?.substring(0, 80) || '')
     return false;
   }
 }
